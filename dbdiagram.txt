@@ -1,0 +1,106 @@
+Enum roles {
+  "engineer"
+  "manager"
+  "supervisor"
+}
+
+Enum priorities {
+  "обычно"
+  "важно"
+  "срочно"
+  "критично"
+  "первостепенно"
+}
+
+Enum statuses {
+  "создано"
+  "в ожидании"
+  "в работе"
+  "выполнено"
+  "приостановлено"
+  "не выполнено"
+  "на пересмотрении"
+  "отозвано"
+}
+
+Table users {
+  id serial [pk, increment]
+  login varchar
+  password_hash varchar
+  password_salt varchar
+  name varchar
+  second_name varchar
+  third_name varchar
+  email varchar
+  role roles
+}
+
+Table applications {
+  id serial [pk, increment] // id в таблице
+  serial_number integer // номер заявки (может повторяться)
+  title text
+  priority priorities
+  description text
+  created_at timestamp
+  execution_time timestamp
+  closed_at timestamp
+  status statuses
+  responsible_engineer integer
+  responsible_manager integer
+
+  Note: '''
+  CREATE SEQUENCE serial_number_seq START 1 INCREMENT 1;
+  '''
+}
+
+Table application_changes {
+  id serial [pk, increment]
+  application_serial_number integer
+  application_id integer
+  is_current bool // актуальная ли заявка
+  author integer
+  changed_at timestamp
+}
+
+Table departments {
+  id serial [pk, increment]
+  title varchar
+  created_at timestamp
+  created_by integer
+}
+
+Table department_employees {
+  id serial [pk, increment]
+  user_id integer
+  department_id integer
+}
+
+Ref "applications_responsible_engineer_to_users": applications.responsible_engineer > users.id
+Ref "applications_responsible_manager_to_users": applications.responsible_manager > users.id
+
+Ref "application_changes_to_users": application_changes.author > users.id
+Ref "application_changes_to_application_id": application_changes.application_id - applications.id
+Ref "application_changes_to_application_serial_number": application_changes.application_serial_number < applications.serial_number
+
+Ref "departments_to_users": departments.created_by > users.id
+
+Ref "department_employees_to_users": department_employees.user_id > users.id
+Ref "department_employees_to_departments": department_employees.department_id > departments.id
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

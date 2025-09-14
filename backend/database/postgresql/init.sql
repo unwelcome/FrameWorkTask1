@@ -36,7 +36,7 @@ CREATE TABLE "users" (
     "login" varchar(255) NOT NULL,
     "password_hash" varchar(255) NOT NULL,
     "password_salt" varchar(255) NOT NULL,
-    "name" varchar(40) NOT NULL,
+    "first_name" varchar(40) NOT NULL,
     "second_name" varchar(40) NOT NULL,
     "third_name" varchar(40),
     "email" varchar(255) NOT NULL UNIQUE,

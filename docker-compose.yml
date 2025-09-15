@@ -23,8 +23,10 @@ services:
     env_file:
       - ./.env
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       GO_ENV: ${GO_ENV:-production}
     networks:
@@ -43,9 +45,10 @@ services:
       - ./backend/database/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
     networks:
       - app-network
 
@@ -80,10 +83,11 @@ services:
         redis-server /usr/local/etc/redis/redis.conf --aclfile /usr/local/etc/redis/users.acl
       '
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "$REDIS_PASSWORD", "ping"]
-      interval: 30s
+      test: [ "CMD", "redis-cli", "-a", "$REDIS_PASSWORD", "ping" ]
+      interval: 5s
       timeout: 10s
-      retries: 5
+      retries: 10
+      start_period: 10s
     restart: unless-stopped
     tty: true
     stdin_open: true

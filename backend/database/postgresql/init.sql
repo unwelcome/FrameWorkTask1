@@ -39,7 +39,7 @@ CREATE TABLE "users" (
     "first_name" varchar(40) NOT NULL,
     "second_name" varchar(40) NOT NULL,
     "third_name" varchar(40),
-    "email" varchar(255) NOT NULL UNIQUE,
+    "email" varchar(255) DEFAULT NULL,
     "role" roles NOT NULL,
     "created_at" timestamp DEFAULT NOW()
 );
@@ -92,19 +92,19 @@ ALTER TABLE "departments" DROP CONSTRAINT IF EXISTS "departments_to_users";
 ALTER TABLE "department_employees" DROP CONSTRAINT IF EXISTS "department_employees_to_users";
 ALTER TABLE "department_employees" DROP CONSTRAINT IF EXISTS "department_employees_to_departments";
 
-ALTER TABLE "applications" ADD CONSTRAINT "applicaitons_created_by_to_users" FOREIGN KEY ("created_by") REFERENCES "users" ("id") ON DELETE NULL;
+ALTER TABLE "applications" ADD CONSTRAINT "applications_created_by_to_users" FOREIGN KEY ("created_by") REFERENCES "users" ("id") ON DELETE SET NULL;
 
-ALTER TABLE "applications" ADD CONSTRAINT "applications_responsible_engineer_to_users" FOREIGN KEY ("responsible_engineer") REFERENCES "users" ("id") ON DELETE NULL;
+ALTER TABLE "applications" ADD CONSTRAINT "applications_responsible_engineer_to_users" FOREIGN KEY ("responsible_engineer") REFERENCES "users" ("id") ON DELETE SET NULL;
 
-ALTER TABLE "applications" ADD CONSTRAINT "applications_responsible_manager_to_users" FOREIGN KEY ("responsible_manager") REFERENCES "users" ("id") ON DELETE NULL;
+ALTER TABLE "applications" ADD CONSTRAINT "applications_responsible_manager_to_users" FOREIGN KEY ("responsible_manager") REFERENCES "users" ("id") ON DELETE SET NULL;
 
-ALTER TABLE "application_changes" ADD CONSTRAINT "application_changes_to_users" FOREIGN KEY ("author") REFERENCES "users" ("id") ON DELETE NULL;
+ALTER TABLE "application_changes" ADD CONSTRAINT "application_changes_to_users" FOREIGN KEY ("author") REFERENCES "users" ("id") ON DELETE SET NULL;
 
 ALTER TABLE "application_changes" ADD CONSTRAINT "application_changes_to_application_id" FOREIGN KEY ("application_id") REFERENCES "applications" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "application_changes" ADD CONSTRAINT "application_changes_to_application_serial_number" FOREIGN KEY ("application_serial_number") REFERENCES "applications" ("serial_number") ON DELETE CASCADE;
+-- ALTER TABLE "application_changes" ADD CONSTRAINT "application_changes_to_application_serial_number" FOREIGN KEY ("application_serial_number") REFERENCES "applications" ("serial_number") ON DELETE CASCADE;
 
-ALTER TABLE "departments" ADD CONSTRAINT "departments_to_users" FOREIGN KEY ("created_by") REFERENCES "users" ("id") ON DELETE NULL;
+ALTER TABLE "departments" ADD CONSTRAINT "departments_to_users" FOREIGN KEY ("created_by") REFERENCES "users" ("id") ON DELETE SET NULL;
 
 ALTER TABLE "department_employees" ADD CONSTRAINT "department_employees_to_users" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE;
 

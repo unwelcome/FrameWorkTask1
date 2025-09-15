@@ -4,14 +4,26 @@ import (
 	"backend/internal/config"
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 )
 
 type Database struct {
 	DB *sql.DB
 }
 
-func Connect(cfg *config.Config) (*Database, error) {
+func Connect(cfg *config.Config, l *slog.Logger) *Database {
+	postgres, err := ConnectToPostgres(cfg)
+	if err != nil {
+		l.Error("Database connection failed", "error", err)
+		os.Exit(1)
+	}
+
+	l.Info("Successfully connected to PostgresSQL!")
+	return postgres
+}
+
+func ConnectToPostgres(cfg *config.Config) (*Database, error) {
 	connStr := cfg.DBConnString()
 
 	db, err := sql.Open("postgres", connStr)
@@ -23,7 +35,6 @@ func Connect(cfg *config.Config) (*Database, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	log.Println("Successfully connected to PostgresSQL!")
 	return &Database{DB: db}, nil
 }
 

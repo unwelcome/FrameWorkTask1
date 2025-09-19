@@ -1,10 +1,6 @@
 <template>
   <header>
-    <div class=" bg-green-200 rounded-md p-4">
-      <p>Hello world!</p>
-    </div>
-
-    <div class="m-10 flex flex-row gap-8 justify-center">
+    <div class="m-4 flex flex-row gap-8 justify-center">
       <div class="flex flex-col gap-4 items-center">
         <TextButton :text="'bebra'" class="btn-main text-2xl px-6 py-1"/>
         <TextButton :text="'bebra'" class="btn-disabled"/>
@@ -57,6 +53,33 @@
         </IconTextButton>
       </div>
     </div>  
+
+    <div class="flex flex-row items-center justify-center gap-2 m-4">
+      <div class="flex flex-col gap-2">
+        <userAvatar :id="1" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="2" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="3" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="4" :last-name="'Фамилия'" :first-name="'Имя'"/>
+      </div>
+      <div class="flex flex-col gap-2">
+        <userAvatar :id="5" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="6" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="7" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="8" :last-name="'Фамилия'" :first-name="'Имя'"/>
+      </div>
+      <div class="flex flex-col gap-2">
+        <userAvatar :id="9" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="10" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="11" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="12" :last-name="'Фамилия'" :first-name="'Имя'"/>
+      </div>
+      <div class="flex flex-col gap-2">
+        <userAvatar :id="13" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="14" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="15" :last-name="'Фамилия'" :first-name="'Имя'"/>
+        <userAvatar :id="16" :last-name="'Фамилия'" :first-name="'Имя'"/>
+      </div>
+    </div>
   </header>
   
   <div class="flex flex-col items-center">
@@ -92,7 +115,6 @@
 
 import loginInput from './lib/loginInput.vue';
 import checkBox from './lib/checkBox.vue';
-import searchBar from './lib/searchBar.vue';
 import testUserItem from './shared/testUserItem.vue';
 import { markRaw } from 'vue';
 
@@ -105,7 +127,6 @@ export default {
   components: {
     loginInput,
     checkBox,
-    searchBar,
   },
   data() {
     return {

@@ -32,6 +32,41 @@
   </div>
 </template>
 <script lang="ts">
+/**
+ * Компонент поиска с списком подсказок
+ * 
+ * props:
+ * placeholder - плейсхолдер в окошке поиска
+ * 
+ * hintEnabled - включает список с подсказками
+ * 
+ * hintArray - исходный список для поиска
+ * 
+ * hintSearchFunction - функция для поиска, входные параметры (query - ввод пользователя, array - массив hintArray),
+ * возвращает массив, удовлетворяющий поиску
+ * 
+ * hintSelectEnabled - включает выбор элемента из списка с подсказками
+ * 
+ * hintOnSelectFunction - функция, срабатывающая при выборе пользователем элемента из списка подсказок,
+ * входные параметры (data - объект из массива hintArray, на котором сработал click)
+ * 
+ * hintMaxArrayItems - макс. число объектов из массива hintArray, которое отображается в списке
+ * 
+ * hintComponent - компонент, отрисовывающий компоненты из массива hintArray на экране
+ * чтобы передать компонент в hintComponent нужно в родительском компоненте подключить компонент-отрисовщик
+ * import renderComponent from "..."
+ * import { markRaw } from 'vue';
+ * не прописывать его в components: {X}
+ * а указать его в data:
+ * data() {
+ *  return {
+ *    renderComponent: markRaw(renderComponent) // делает его нереактивным
+ *  }
+ * } 
+ * 
+ */
+
+
 import type { PropType } from 'vue';
 
 export default {
@@ -57,6 +92,11 @@ export default {
       requred: false,
       default: (query: string, array: any[]) => { return []; }
     },
+    hintSelectEnabled: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
     hintOnSelectFunction: {
       type: Function as PropType<(data: any) => string>,
       requred: false,
@@ -77,6 +117,7 @@ export default {
     return {
       inputText: '',
       showHint: false,
+      isSelected: false,
       filteredHintArray: [] as any[],
     }
   },
@@ -85,9 +126,15 @@ export default {
       (this.$refs.inputRef as HTMLInputElement).focus();
     },
     onItemSelect(itemBack: any[]){
+      // если выключен выбор из списка подсказок - выходим
+      if (!this.hintSelectEnabled) return;
+
       this.inputText = this.hintOnSelectFunction(itemBack);
+
       // убираем список с подсказками
       this.showHint = false;
+      // устанавливаем флаг чтобы при срабатывании watch подсказки снова не появились в случае autocomplete
+      this.isSelected = true;
     }
   },
   watch: {
@@ -96,6 +143,13 @@ export default {
       
       if (this.hintEnabled && newText !== '') this.showHint = true;
       else this.showHint = false; 
+
+      // если пользователь выбрал элемент, то убираем повторно список подсказок 
+      // и убираем флажок isSelected, чтобы при следующем вводе он не мешал
+      if (this.isSelected){
+        this.showHint = false;
+        this.isSelected = false;
+      }
 
       if(this.hintEnabled) {
         this.filteredHintArray = this.hintSearchFunction(this.inputText, this.hintArray);

@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "./style.css";
+
+input {
+  outline: none;
+}

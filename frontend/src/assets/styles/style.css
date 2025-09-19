@@ -1,0 +1,113 @@
+@theme {
+  --color-bg-0: #191F28;
+  --color-bg-1: #313C4B;
+  --color-bg-2: #56606B;
+  --color-bg-3: #68717A;
+  --color-bg-5: #777E86;
+  --color-bg-6: #858D96;
+  --color-bg-input: #F0F0F0;
+  --color-btn-main: #557BEE;
+  --color-btn-main-hover: #678DFF;
+  --color-btn-main-active: #476BD8;
+  --color-btn-disabled: #8C8C8C;
+  --color-btn-change: #DCB800;
+  --color-btn-change-hover: #EEC600;
+  --color-btn-change-active: #CFAD00;
+  --color-btn-delete: #EA4242;
+  --color-btn-delete-hover: #FD4848;
+  --color-btn-delete-active: #DF3F3F;
+  --color-switch-selected: #6A91B8;
+  --color-switch-unselected: #68717A;
+  --color-priority-usual: #029F0D;
+  --color-priority-important: #B3B318;
+  --color-priority-quickly: #CC4919;
+  --color-priority-critical: #C53631;
+  --color-priority-paramount: #C30D07;
+  --color-text-main: #F0F0F0;
+  --color-text-placeholder: #455676;
+  --color-text-placeholder-input: #9C9C9C;
+  --color-text-link: #BCD1FF;
+  --color-text-wrong: #F45A5A;
+  --color-avatar-1: #EA4747;
+  --color-avatar-2: #BABB60;
+  --color-avatar-3: #669425;
+  --color-avatar-4: #3D4189;
+  --color-avatar-5: #6C1A83;
+  --color-avatar-6: #831A56;
+  --color-avatar-7: #31A49F;
+  --color-avatar-8: #922828;
+  --color-avatar-9: #BCBE00;
+  --color-avatar-10: #7CCA10;
+  --color-avatar-11: #272FC0;
+  --color-avatar-12: #9E2ABE;
+  --color-avatar-13: #BC297C;
+  --color-avatar-14: #12827C;
+  --color-avatar-15: #F0895C;
+  --color-avatar-16: #D85016;
+}
+@layer base {
+  .btn {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    align-items: center;
+    border-radius: var(--radius-md);
+    padding: 4px 16px;
+    font-size: var(--text-lg);
+    line-height: var(--text-lg-line-height);
+    transition: background-color 0.1s ease-out;
+    cursor: pointer;
+  }
+  .btn p {
+    -webkit-user-select: none;
+       -moz-user-select: none;
+            user-select: none;
+  }
+  .btn-main {
+    background-color: var(--color-btn-main);
+  }
+  .btn-main p {
+    color: var(--color-text-main);
+  }
+  .btn-main:hover {
+    background-color: var(--color-btn-main-hover);
+  }
+  .btn-main:active {
+    background-color: var(--color-btn-main-active);
+  }
+  .btn-disabled {
+    background-color: var(--color-btn-disabled);
+    cursor: not-allowed;
+  }
+  .btn-disabled p {
+    color: var(--color-text-main);
+  }
+  .btn-change {
+    background-color: var(--color-btn-change);
+  }
+  .btn-change p {
+    color: var(--color-text-main);
+  }
+  .btn-change:hover {
+    background-color: var(--color-btn-change-hover);
+  }
+  .btn-change:active {
+    background-color: var(--color-btn-change-active);
+  }
+  .btn-delete {
+    background-color: var(--color-btn-delete);
+  }
+  .btn-delete p {
+    color: var(--color-text-main);
+  }
+  .btn-delete:hover {
+    background-color: var(--color-btn-delete-hover);
+  }
+  .btn-delete:active {
+    background-color: var(--color-btn-delete-active);
+  }
+}
+@layer components {}
+@layer utilities {}/*# sourceMappingURL=style.css.map */

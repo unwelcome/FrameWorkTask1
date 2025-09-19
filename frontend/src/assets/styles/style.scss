@@ -1,0 +1,141 @@
+@theme {
+  --color-bg-0: #191F28; // ultradark
+  --color-bg-1: #313C4B; // dark
+  --color-bg-2: #56606B; // main window bg
+  --color-bg-3: #68717A; // block
+  --color-bg-5: #777E86; // odd item
+  --color-bg-6: #858D96; // even item
+  --color-bg-input: #F0F0F0; // input
+
+  //main btn
+  --color-btn-main: #557BEE;
+  --color-btn-main-hover: #678DFF;
+  --color-btn-main-active: #476BD8;
+  // disabled btn
+  --color-btn-disabled: #8C8C8C;
+  // change btn
+  --color-btn-change: #DCB800;
+  --color-btn-change-hover: #EEC600;
+  --color-btn-change-active: #CFAD00;
+  // delete btn
+  --color-btn-delete: #EA4242;
+  --color-btn-delete-hover: #FD4848;
+  --color-btn-delete-active: #DF3F3F;
+
+  --color-switch-selected: #6A91B8;
+  --color-switch-unselected: #68717A;
+
+  --color-priority-usual: #029F0D; // обычно
+  --color-priority-important: #B3B318; // важно
+  --color-priority-quickly: #CC4919; // срочно
+  --color-priority-critical: #C53631; // критично
+  --color-priority-paramount: #C30D07; // первостепенно
+
+  --color-text-main: #F0F0F0;
+  --color-text-placeholder: #455676;
+  --color-text-placeholder-input: #9C9C9C;
+  --color-text-link: #BCD1FF;
+  --color-text-wrong: #F45A5A;
+
+  --color-avatar-1: #EA4747; // light-red
+  --color-avatar-2: #BABB60; // light-yellow
+  --color-avatar-3: #669425; // green
+  --color-avatar-4: #3D4189; // dark-blue 
+  --color-avatar-5: #6C1A83; // dark-purple
+  --color-avatar-6: #831A56; // dark-magenta 
+  --color-avatar-7: #31A49F; // aquamarine 
+  --color-avatar-8: #922828; // dark-red
+  --color-avatar-9: #BCBE00; // yellow
+  --color-avatar-10: #7CCA10; // light-green
+  --color-avatar-11: #272FC0; // blue
+  --color-avatar-12: #9E2ABE; // light-purple
+  --color-avatar-13: #BC297C; // light-magenta
+  --color-avatar-14: #12827C; // dark-aquamarine
+  --color-avatar-15: #F0895C; // light-orange
+  --color-avatar-16: #D85016; // orange
+}
+
+@layer base{
+
+  .btn{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    align-items: center;
+    border-radius: var(--radius-md);
+    padding: 4px 16px;
+    font-size: var(--text-lg);
+    line-height: var(--text-lg-line-height);
+    transition: background-color .10s ease-out;
+    cursor: pointer;
+
+    & p{
+      user-select: none;
+    }
+
+    &-main{
+      background-color: var(--color-btn-main);
+
+      & p{
+        color: var(--color-text-main);
+      }
+
+      &:hover{
+        background-color: var(--color-btn-main-hover);
+      }
+      &:active{
+        background-color: var(--color-btn-main-active);
+      }
+    }
+
+    &-disabled{
+      background-color: var(--color-btn-disabled);
+      cursor: not-allowed;
+
+      & p{
+        color: var(--color-text-main);
+      }
+    }
+
+    &-change{
+      background-color: var(--color-btn-change);
+
+      & p{
+        color: var(--color-text-main);
+      }
+
+      &:hover{
+        background-color: var(--color-btn-change-hover);
+      }
+      &:active{
+        background-color: var(--color-btn-change-active);
+      }
+    }
+
+    &-delete{
+      background-color: var(--color-btn-delete);
+
+      & p{
+        color: var(--color-text-main);
+      }
+
+      &:hover{
+        background-color: var(--color-btn-delete-hover);
+      }
+      &:active{
+        background-color: var(--color-btn-delete-active);
+      }
+    }
+  }
+
+}
+
+@layer components{
+
+}
+
+@layer utilities{
+
+}

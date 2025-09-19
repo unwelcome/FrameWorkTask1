@@ -1,0 +1,109 @@
+<template>
+  <div class="relative flex flex-row gap-2 items-center h-10 px-3 py-1 bg-bg-input rounded-[10px] cursor-text" @click="setFocus">
+    
+    <input 
+      type="text" 
+      class="grow text-base placeholder:font-medium placeholder:text-lg placeholder:select-none" 
+      :placeholder="placeholder" 
+      v-model="inputText"
+      ref="inputRef"
+      />
+    
+    <div class="cursor-pointer select-none" @click="setFocus">
+      <img src="../assets/icons/icon_search.svg"/>
+    </div>
+
+    <div v-if="showHint" class="absolute bg-bg-input top-11 left-0 w-full rounded-[10px] cursor-default p-2">
+      <div v-if="filteredHintArray.length > 0" class="flex flex-col items-stretch gap-2">
+        
+        <div v-for="item, index in filteredHintArray" :key="index">
+          <component 
+            :is="hintComponent"
+            :data="item"
+            @select="onItemSelect"
+          />
+        </div>
+
+      </div>
+      <div v-else class="text-base">
+        <p>Ничего не найдено</p>
+      </div>
+    </div>
+  </div>
+</template>
+<script lang="ts">
+import type { PropType } from 'vue';
+
+export default {
+  emits: ['change:input'],
+  props: {
+    placeholder: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    hintEnabled: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    hintArray: {
+      type: Array as PropType<any[]>,
+      required: false,
+      default: [],
+    },
+    hintSearchFunction: {
+      type: Function as PropType<(query: string, array: any[]) => any[]>,
+      requred: false,
+      default: (query: string, array: any[]) => { return []; }
+    },
+    hintOnSelectFunction: {
+      type: Function as PropType<(data: any) => string>,
+      requred: false,
+      default: (data: any) => { return ''; }
+    },
+    hintMaxArrayItems: {
+      type: Number,
+      required: false,
+      default: 5,
+    },
+    hintComponent: {
+      type: Object as PropType<any>,
+      required: false,
+      default: {}
+    }
+  },
+  data() {
+    return {
+      inputText: '',
+      showHint: false,
+      filteredHintArray: [] as any[],
+    }
+  },
+  methods: {
+    setFocus() {      
+      (this.$refs.inputRef as HTMLInputElement).focus();
+    },
+    onItemSelect(itemBack: any[]){
+      this.inputText = this.hintOnSelectFunction(itemBack);
+      // убираем список с подсказками
+      this.showHint = false;
+    }
+  },
+  watch: {
+    inputText(newText: string) {
+      this.$emit('change:input', newText);
+      
+      if (this.hintEnabled && newText !== '') this.showHint = true;
+      else this.showHint = false; 
+
+      if(this.hintEnabled) {
+        this.filteredHintArray = this.hintSearchFunction(this.inputText, this.hintArray);
+
+        // оставляем не более, чем hintMaxArrayItems элементов в массиве для отображения
+        if (this.filteredHintArray.length > this.hintMaxArrayItems) this.filteredHintArray = this.filteredHintArray.slice(0, this.hintMaxArrayItems);
+      }
+    }
+  }
+}
+</script>

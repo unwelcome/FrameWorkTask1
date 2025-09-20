@@ -1,0 +1,187 @@
+@layer status-window-base{
+  .status-window-wrapper{
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 0);
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+    top: 64px;
+    row-gap: 4px;
+    z-index: 128;
+  }
+  
+  .status-window{
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+    padding: 4px 8px;
+  }
+
+  .status-window-header{
+    padding: 2px 8px;
+    background-color: var(--primary-color);
+    color: var(--text-color-primary);
+    border-radius: 6px 6px 0 0;
+    text-transform: capitalize;
+  }
+
+  .status-window-body{
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+    column-gap: 8px;
+    width: 100%;
+  }
+  
+  .status-window-text{
+    font-size: 18px;
+    line-height: 28px;
+    color: var(--text-color-primary);
+  }
+
+  .status-window-image{
+    width: 24px;
+    height: 24px;
+    user-select: none;
+  }
+
+  .status-window-close{
+    width: 16px;
+    height: 16px;
+    user-select: none;
+    cursor: pointer;
+  }
+
+  .status-window-timebar{
+    width: 100%;
+    height: 4px;
+    align-self: start;
+    border-radius: 2px;
+    margin-top: 2px;
+  }
+}
+
+@layer status-window-type{
+  .status-window-classic{
+    border-radius: 6px;
+    background-color: var(--primary-color);
+  }
+  .status-window-classic > .status-window-timebar{
+    background-color: var(--secondary-color);
+  }
+  
+  .status-window-border{
+    min-width: 300px;
+    max-width: 500px;
+    border-radius: 0 6px 6px 0;
+    border-left: 4px solid var(--primary-color);
+    background-color: var(--secondary-color);
+    color: var(--text-color-secondary);
+
+    --text-color-secondary-border: #555555;
+  }
+  .status-window-border > .status-window-body{
+    column-gap: 16px;
+    padding: 0 8px;
+  }
+  .status-window-border-text-wrapper{
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
+  .status-window-border-header{
+    color: var(--primary-color);
+    font-weight: bold;
+    text-transform: capitalize;
+  }
+  .status-window-border > .status-window-timebar{
+    background-color: var(--primary-color);
+  }
+  
+  .status-window-detail{
+    align-items: stretch;
+    padding: 4px;
+    overflow: hidden;
+    max-width: 350px;
+  }
+  .status-window-detail > .status-window-body{
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: start;
+    border-radius: 0 0 6px 6px;
+    background-color: var(--secondary-color);
+    overflow: hidden;
+  }
+  .status-window-detail > .status-window-body > .status-window-body-detail{
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+    column-gap: 16px;
+    padding: 4px 16px;
+  }
+  .status-window-detail > .status-window-body > .status-window-timebar{
+    background-color: var(--primary-color);
+    height: 4px;
+    flex-grow: 0;
+    flex-shrink: 0;
+  }
+}
+
+@layer status-window-recolors{
+  .status-window-detail > .status-window-body > .status-window-body-detail > .status-window-text{
+    color: var(--text-color-secondary);
+  }
+
+  .status-window-border > .status-window-body > .status-window-border-text-wrapper > .status-window-text{
+    color: var(--text-color-secondary-border);
+  }
+
+  .status-window-detail > .status-window-body > .status-window-body-detail > .status-window-image, 
+  .status-window-detail > .status-window-body > .status-window-body-detail > .status-window-close, 
+  .status-window-border > .status-window-body > .status-window-image,
+  .status-window-border > .status-window-body > .status-window-close{
+    filter: invert(0.75);
+  }
+  
+  .status-window-loading{
+    --primary-color: #e69b1a;
+    --secondary-color: #dddddd; 
+    --text-color-primary: rgb(236, 236, 236);
+    --text-color-secondary: rgb(27, 27, 27);
+  }
+  .status-window-success{
+    --primary-color: #36a860;
+    --secondary-color: #dddddd; 
+    --text-color-primary: rgb(236, 236, 236);
+    --text-color-secondary: rgb(27, 27, 27);
+  }
+  .status-window-error{
+    --primary-color: #d84545;
+    --secondary-color: #dddddd; 
+    --text-color-primary: rgb(236, 236, 236);
+    --text-color-secondary: rgb(27, 27, 27);
+  }
+  .status-window-info{
+    --primary-color: #1d9ab9;
+    --secondary-color: #dddddd; 
+    --text-color-primary: rgb(236, 236, 236);
+    --text-color-secondary: rgb(27, 27, 27);
+  }
+}
+
+@keyframes timeLine{
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0px;
+  }
+}
+
+@layer status-window-base, status-window-type, status-window-recolors;

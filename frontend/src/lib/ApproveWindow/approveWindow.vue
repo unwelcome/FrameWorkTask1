@@ -15,7 +15,7 @@
             'btn-main': btn.type === ApproveWindowAPI.getApproveWindowAnswerType.good,
             'btn-delete':  btn.type === ApproveWindowAPI.getApproveWindowAnswerType.bad,
           }"
-          @click="resolveAppworveWindow(btn.id)"
+          @click="resolveApproveWindow(btn.id)"
           :text="btn.text" 
         />
       </div>
@@ -37,7 +37,7 @@ export default {
     }
   },
   methods: {
-    resolveAppworveWindow(returnID: number){
+    resolveApproveWindow(returnID: number){
       this.ApproveWindowAPI.resolveFirst(returnID);
     }
   }

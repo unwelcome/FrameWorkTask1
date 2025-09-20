@@ -3,7 +3,7 @@
     
     <input 
       type="text" 
-      class="grow text-base placeholder:font-medium placeholder:text-lg placeholder:select-none" 
+      class="grow text-base placeholder:text-text-placeholder placeholder:text-lg placeholder:select-none" 
       :placeholder="placeholder" 
       v-model="inputText"
       ref="inputRef"

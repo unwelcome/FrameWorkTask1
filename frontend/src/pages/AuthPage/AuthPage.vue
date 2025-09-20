@@ -68,10 +68,11 @@ export default {
       const userPassword = ValidUserPassword(this.passwordInput);
       
       if (userLogin.error === '' && userLogin.value !== '' && userPassword.error === '' && userPassword.value !== ''){
+        console.log("send to backend: ", {login: userLogin.value, password: userPassword.value})
         const response = await authApi.login({login: userLogin.value, password: userPassword.value});
 
         this.$router.push({name: 'MainPage'});
-      }
+      }else console.log('wrong inputs')
     }
   }
 }

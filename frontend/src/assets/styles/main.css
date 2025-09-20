@@ -1,10 +1,2 @@
 @import "tailwindcss";
 @import "./style.css";
-
-input {
-  outline: none;
-}
-
-p, a, pre, span, li, div{
-  @apply text-text-main
-}

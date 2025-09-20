@@ -21,6 +21,10 @@
   --color-btn-delete: #EA4242;
   --color-btn-delete-hover: #FD4848;
   --color-btn-delete-active: #DF3F3F;
+  // sidebar btn
+  --color-btn-sidebar: #56606B;
+  --color-btn-sidebar-hover: #5F6770;
+  --color-btn-sidebar-active: #535C67;
 
   --color-switch-selected: #6A91B8;
   --color-switch-unselected: #68717A;
@@ -32,6 +36,7 @@
   --color-priority-paramount: #C30D07; // первостепенно
 
   --color-text-main: #F0F0F0;
+  --color-text-input: #3E4C65;
   --color-text-placeholder: #455676;
   --color-text-placeholder-input: #9C9C9C;
   --color-text-link: #BCD1FF;
@@ -56,6 +61,14 @@
 }
 
 @layer base{
+  p, a, pre, span, li, div{
+    @apply text-text-main
+  }
+
+  
+  input {
+    @apply text-text-input outline-none
+  }
 
   .btn{
     display: flex;
@@ -126,6 +139,21 @@
       }
       &:active{
         background-color: var(--color-btn-delete-active);
+      }
+    }
+
+    &-sidebar{
+      background-color: var(--color-btn-sidebar);
+
+      & p{
+        color: var(--color-text-main);
+      }
+
+      &:hover{
+        background-color: var(--color-btn-sidebar-hover);
+      }
+      &:active{
+        background-color: var(--color-btn-sidebar-active);
       }
     }
   }

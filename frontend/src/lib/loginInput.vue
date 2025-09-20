@@ -1,12 +1,12 @@
 <template>
-  <div class="flex flex-row items-stretch bg-bg-1 rounded-lg border-2 border-bg-input">
-    <div class="flex flex-col shrink-0 justify-center px-2 py-1 border-r-2 border-bg-input cursor-pointer select-none" @click="iconClick">
+  <div class="flex flex-row items-stretch bg-bg-2 rounded-lg border-2 border-bg-input">
+    <div class="flex flex-col shrink-0 justify-center px-3 py-2 border-r-2 border-bg-input cursor-pointer select-none" @click="iconClick">
       <slot></slot>
     </div>
     <div class="flex flex-col grow justify-center px-2">
       <input 
         :type="inputType" 
-        class="text-text-main text-lg placeholder:text-text-placeholder-input placeholder:select-none"
+        class="text-text-main text-xl placeholder:text-text-placeholder-input placeholder:select-none"
         :class="{'text-text-wrong': !isInputCorrect}"
         v-model="inputText" 
         :placeholder="placeholder"
@@ -16,6 +16,8 @@
   </div>
 </template>
 <script lang="ts">
+import type { PropType } from 'vue';
+
 export default {
   emits: ['change:input'],
   props: {
@@ -25,7 +27,7 @@ export default {
       default: '' 
     },
     validator: {
-      type: Function,
+      type: Function as PropType<(text: string) => boolean>,
       required: false,
       default: (text: string) => { return true; }
     },

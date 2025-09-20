@@ -15,6 +15,11 @@ const router = createRouter({
           component: () => import("../pages/MainPage/Pages/EmptyPage.vue"),
         },
         {
+          name: "ProfilePage",
+          path: "profile/:id(\\d+)",
+          component: () => import("../pages/MainPage/Pages/ProfilePage/ProfilePage.vue"),
+        },
+        {
           name: "EmployeesPage",
           path: "employees",
           component: () => import("../pages/MainPage/Pages/EmployeesPage/EmployeesPage.vue"),
@@ -26,6 +31,11 @@ const router = createRouter({
       path: "/login",
       component: () => import("../pages/AuthPage/AuthPage.vue"),
       meta: { authRequired: false },
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFoundPage',
+      component: () => import('../pages/NotFoundPage/NotFoundPage.vue')
     }
   ],
 });

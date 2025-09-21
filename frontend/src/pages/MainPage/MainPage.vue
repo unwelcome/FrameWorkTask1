@@ -8,7 +8,7 @@
           <img class="w-8 h-8 select-none" src="../../assets/icons/icon_users.svg"/>
         </iconTextButton>
 
-        <iconTextButton class="btn-sidebar justify-start text-xl py-1.5" :text="'Отделы'" @click="$router.push({name: ''})">
+        <iconTextButton class="btn-sidebar justify-start text-xl py-1.5" :text="'Отделы'" @click="$router.push({name: 'DepartmentsPage'})">
           <img class="w-8 h-8 select-none" src="../../assets/icons/icon_departments.svg"/>
         </iconTextButton>
 

@@ -7,6 +7,8 @@
   --color-bg-6: #858D96; // even item
   --color-bg-input: #F0F0F0; // input
 
+  --color-border-main: #F0F0F0;
+
   //main btn
   --color-btn-main: #557BEE;
   --color-btn-main-hover: #678DFF;
@@ -155,6 +157,75 @@
       &:active{
         background-color: var(--color-btn-sidebar-active);
       }
+    }
+  }
+
+    .scrollable {
+    --scroll-bar-width: 6px;
+    --scroll-bar-border-radius: 3px;
+    --scroll-track-color: #68717A;//#919191;
+    --scroll-thumb-color: #c9c9c9;
+
+    overflow-y: scroll;
+    scrollbar-width:var(--scroll-bar-width);
+    touch-action: pan-y; // обязательно для свайпа в сторону на мобильной версии
+
+    &::-webkit-scrollbar{
+      width: var(--scroll-bar-width);
+    }
+    &::-moz-scrollbar {
+      width: var(--scroll-bar-width);
+    }
+
+    &::-webkit-scrollbar-track{
+      background-color: var(--scroll-track-color);
+      border-radius: var(--scroll-bar-border-radius);
+      transition: background-color 1s ease-in-out;
+      cursor: pointer;
+    }
+    &::-moz-scrollbar-track {
+      background-color: var(--scroll-track-color);
+      border-radius: var(--scroll-bar-border-radius);
+      transition: background-color 1s ease-in-out;
+      cursor: pointer;
+    }
+
+    &::-webkit-scrollbar-thumb{
+      background-color: var(--scroll-thumb-color);
+      border-radius: var(--scroll-bar-border-radius);
+      transition: background-color 1s ease-in-out;
+      cursor: pointer;
+    }
+    &::-moz-scrollbar-thumb {
+      background-color: var(--scroll-thumb-color);
+      border-radius: var(--scroll-bar-border-radius);
+      transition: background-color 1s ease-in-out;
+      cursor: pointer;
+    }
+
+    &-invisible{
+      scrollbar-width: 0px;
+  
+      &::-webkit-scrollbar{
+        width: 0px;
+      }
+      &::-moz-scrollbar {
+        width: 0px;
+      }
+    }
+
+    &-track-invisible{
+      --scroll-track-color: transparent;
+    }
+
+    &-x-y{
+      --scroll-bar-width: 6px;
+      --scroll-bar-height: 6px;
+
+      overflow-x: scroll;
+      overflow-y: scroll;
+      scrollbar-width: thin;
+      scrollbar-color: var(--scroll-thumb-color) #dddddd;
     }
   }
 

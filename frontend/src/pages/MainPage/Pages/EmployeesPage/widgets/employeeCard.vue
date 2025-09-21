@@ -1,6 +1,6 @@
 <template>
   <div class="bg-bg-3 rounded-xl p-2 flex flex-col items-center gap-2 h-full justify-start">
-    <userAvatar class="text-4xl p-4 cursor-pointer" :id="2" :first-name="'Имя'" :last-name="'Фамилия'" @click="redirectToUserProfile"/>
+    <userAvatar class="text-4xl p-4 cursor-pointer" :id="2" :first-name="'Имя'" :second-name="'Фамилия'" @click="redirectToUserProfile"/>
     
     <div class="flex flex-col gap-2 w-full px-2 cursor-default">
       <div class="flex flex-col">

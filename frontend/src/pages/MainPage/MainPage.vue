@@ -32,7 +32,7 @@
       <div class="flex flex-col items-stretch justify-center bg-bg-0 rounded-t-lg h-20 mt-auto px-4">
         <div class="flex flex-row gap-1 items-center">
 
-          <userAvatar class="shrink-0 text-2xl cursor-pointer" :id="1" :first-name="'Имя'" :last-name="'Фамилия'" @click="$router.push({name: ''})"/>
+          <userAvatar class="shrink-0 text-2xl cursor-pointer" :id="1" :first-name="'Имя'" :second-name="'Фамилия'" @click="$router.push({name: ''})"/>
 
           <p class="text-xl shrink-0 cursor-pointer select-none" @click="$router.push({name: ''})">Фамилия Имя</p>
 

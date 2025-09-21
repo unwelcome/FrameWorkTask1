@@ -7,7 +7,7 @@
           <div class="flex flex-col justify-center items-center">
             <img src="../../../../../assets/icons/icon_arrow_up.svg" class="select-none" :class="{'rotate-180': showBody}"/>
           </div>
-          <h1 class="text-lg select-none">Отдел Строительства</h1>
+          <h1 class="text-lg select-none">{{ departmentData.title }}</h1>
         </div>
 
         <div class="border-b-2 border-bg-input grow"></div> <!-- Horizontal line -->
@@ -21,7 +21,7 @@
       <div class="grow">
         <department-employee-list :title="'Инженеры:'"/>
       </div>
-      <div class="flex flex-col gap-2 border-2 border-border-main p-2 rounded-lg shrink-0">
+      <div class="flex flex-col gap-2 border-2 border-border-main p-2 rounded-lg shrink-0 max-w-1/3">
         <h2>Информация:</h2>
         <div class="flex flex-col">
           <h3>Название: <span>Отдел Строительства</span></h3>
@@ -41,12 +41,17 @@
   </div>
 </template>
 <script lang="ts">
+import type { PropType } from 'vue';
 import departmentEmployeeList from './departmentEmployeeList.vue';
 export default {
   components: {
     departmentEmployeeList,
   },
   props: {
+    departmentData: {
+      type: Object as PropType<{id: number, title: string}>,
+      required: true,
+    },
     defaultShowBody: {
       type: Boolean,
       required: false,

@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col justify-center items-center rounded-full p-2 aspect-square cursor-default" :class="getBgColor">
-    <p class="text-text-main select-none">{{ lastName.charAt(0) + firstName.charAt(0) }}</p>
+    <p class="text-text-main select-none">{{ secondName.toUpperCase().charAt(0) + firstName.toUpperCase().charAt(0) }}</p>
   </div>
 </template>
 <script lang="ts">
@@ -10,7 +10,7 @@ export default {
       type: Number,
       required: true,
     },
-    lastName: {
+    secondName: {
       type: String,
       required: true,
     },

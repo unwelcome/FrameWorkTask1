@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-row gap-2 items-center">
-    <userAvatar :id="4" :first-name="'Имя'" :last-name="'Фамилия'" class="text-base cursor-pointer" @click="redirectToUserProfile"/>
+    <userAvatar :id="userData.id" :first-name="userData.first_name" :second-name="userData.second_name" class="text-base cursor-pointer" @click="redirectToUserProfile"/>
     <p class="cursor-default text-lg">{{ userData.second_name + ' ' + userData.first_name + ' ' + userData.third_name }}</p>
   </div>
 </template>

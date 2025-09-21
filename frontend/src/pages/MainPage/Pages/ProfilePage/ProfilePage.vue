@@ -6,7 +6,7 @@
       <div class="flex flex-col gap-6">
         <div class="flex flex-row gap-5 items-stretch">
           <div class="flex flex-col justify-center items-center">
-            <userAvatar class="text-6xl p-6" :id="3" :first-name="'Имя'" :last-name="'Фамилия'"/>
+            <userAvatar class="text-6xl p-6" :id="3" :first-name="'Имя'" :second-name="'Фамилия'"/>
           </div>
           <div class="flex flex-col justify-center">
             <h1 class="text-2xl mb-2 cursor-default">Фамилия Имя Отчетсво</h1>

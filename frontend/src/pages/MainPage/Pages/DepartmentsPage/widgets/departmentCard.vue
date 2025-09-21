@@ -1,20 +1,6 @@
 <template>
-  <div class="flex flex-col w-full bg-bg-3 rounded-lg gap-3">
-    <header class="flex flex-col justify-center w-full pr-3">
-      <div class="flex flex-row items-center">
-
-        <div class="flex flex-row gap-2 items-center p-2 pr-5 cursor-pointer" @click="showBody=!showBody">
-          <div class="flex flex-col justify-center items-center">
-            <img src="../../../../../assets/icons/icon_arrow_up.svg" class="select-none" :class="{'rotate-180': showBody}"/>
-          </div>
-          <h1 class="text-lg select-none">{{ departmentData.title }}</h1>
-        </div>
-
-        <div class="border-b-2 border-bg-input grow"></div> <!-- Horizontal line -->
-      </div>
-    </header>
-
-    <main v-if="showBody" class="flex flex-row gap-5 items-stretch px-5 pb-5">
+  <toggle-group :title="departmentData.title">
+    <div class="flex flex-row gap-5 items-stretch px-5 pb-5">
       <div class="grow">
         <department-employee-list :title="'Менеджеры:'"/>
       </div>
@@ -37,14 +23,16 @@
           <textButton class="btn-delete" :text="'Удалить отдел'"/>
         </div>
       </div>
-    </main>
-  </div>
+    </div>
+  </toggle-group>
 </template>
 <script lang="ts">
 import type { PropType } from 'vue';
+import toggleGroup from '@/features/toggleGroup.vue';
 import departmentEmployeeList from './departmentEmployeeList.vue';
 export default {
   components: {
+    toggleGroup,
     departmentEmployeeList,
   },
   props: {

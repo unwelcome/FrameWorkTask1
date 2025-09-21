@@ -29,6 +29,11 @@ const router = createRouter({
           path: "departments",
           component: () => import("../pages/MainPage/Pages/DepartmentsPage/DepartmentsPage.vue"),
         },
+        {
+          name: "ArchivePage",
+          path: "archive",
+          component: () => import("../pages/MainPage/Pages/ArchivePage/ArchivePage.vue"),
+        },
       ],
     },
     {

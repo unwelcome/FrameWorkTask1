@@ -12,7 +12,7 @@
           <img class="w-8 h-8 select-none" src="../../assets/icons/icon_departments.svg"/>
         </iconTextButton>
 
-        <iconTextButton class="btn-sidebar justify-start text-xl py-1.5" :text="'Архив'" @click="$router.push({name: ''})">
+        <iconTextButton class="btn-sidebar justify-start text-xl py-1.5" :text="'Архив'" @click="$router.push({name: 'ArchivePage'})">
           <img class="w-8 h-8 select-none" src="../../assets/icons/icon_archive.svg"/>
         </iconTextButton>
 

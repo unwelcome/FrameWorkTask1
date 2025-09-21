@@ -5,8 +5,8 @@
       <textButton class="btn-main text-lg h-10 px-6" :text="'Добавить сотрудника'"/>
     </header>
     <main class="flex flex-col items-stretch bg-bg-2 grow rounded-tl-xl overflow-hidden pt-5 pl-5">
-      <div class="flex flex-col justify-start items-stretch">
-        <div class="employees-container scrollable pr-5 grow">
+      <div class="flex flex-col justify-start items-stretch overflow-hidden">
+        <div class="employees-container scrollable pr-5 grow" id="employees-container">
           <div v-for="employee in employeesFilteredList" :key="employee.id" class="employee-item h-[300px] max-w-[250px]">
             <employeeCard :employee-data="employee" :show-btns="employee.id % 2 == 0" :redirect-to-profile="true"/>
           </div>
@@ -62,15 +62,13 @@ export default {
       },
       immediate: true
     }
-  }
-
+  },
 }
 </script>
 <style scoped>
   .employees-container {
-    display: grid;
+    display: grid; 
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
-    /* justify-items: start; */
   }
 </style>

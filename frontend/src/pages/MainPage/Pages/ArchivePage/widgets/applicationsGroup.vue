@@ -31,7 +31,7 @@ export default {
       required: true,
     },
     applicationsList: {
-      type: Array as PropType<{id: number, title: string}[]>,
+      type: Array as PropType<{id: number,title: string,created_by: {id: number,first_name: string,second_name: string,},created_at: string,status: string,responsible_manager: {id: number,first_name: string,second_name: string,},responsible_engineer: {id: number, first_name: string, second_name: string}, closed_at: string}[]>,
       required: true,
     },
     defaultShowBody: {
@@ -43,24 +43,6 @@ export default {
   data(){
     return {
       showBody: this.defaultShowBody,
-
-      applicationsList: [
-        {id: 1, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 2, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 3, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 4, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 5, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 6, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 7, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 8, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 9, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 10, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 11, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 12, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 13, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 14, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-        {id: 15, title: 'Проблема в розетке', created_by: {id: 1, first_name: 'Имя', second_name: 'Фамилия'}, created_at: '21.05.2013', status: 'В работе', responsible_manager: {id: 2, first_name: 'Имя', second_name: 'Фамилия'}, responsible_engineer: {id: 3, first_name: 'Имя', second_name: 'Фамилия'}, closed_at: '25.05.2013'},
-      ],
     }
   }
 }

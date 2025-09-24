@@ -9,7 +9,7 @@ services:
 #    depends_on:
 #      - backend
 #    environment:
-#      VUE_APP_API_URL: http://backend:8080
+#      VUE_APP_API_BASE_URL: http://backend:8080
 #    networks:
 #      - app-network
 
@@ -29,6 +29,7 @@ services:
         condition: service_healthy
     environment:
       GO_ENV: ${GO_ENV:-production}
+      IS_DOCKER: true
     networks:
       - app-network
 

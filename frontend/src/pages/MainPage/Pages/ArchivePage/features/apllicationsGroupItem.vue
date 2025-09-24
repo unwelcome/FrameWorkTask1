@@ -1,10 +1,10 @@
 <template>
   <div class="grid-container h-11 shrink-0 text-base">
       <!--SID-->
-      <p class="text-center">{{ data.id }}</p>
+      <p class="text-center cursor-default">{{ data.id }}</p>
 
       <!--Title-->
-      <p class="">{{ data.title }}</p>
+      <p class="cursor-pointer">{{ data.title }}</p>
 
       <!--Created by-->
       <p v-if="typeof data.created_by === 'string'" class="text-center">Создал</p>
@@ -22,7 +22,7 @@
       <p class="leading-4 text-center">{{ data.created_at }}</p>
 
       <!--Status-->
-      <p class="text-center">{{ data.status }}</p>
+      <p class="text-center cursor-default">{{ data.status }}</p>
 
       <!--Reponsible manager-->
       <p v-if="typeof data.responsible_manager === 'string'" class="leading-4 text-center">Ответств. менеджер</p>

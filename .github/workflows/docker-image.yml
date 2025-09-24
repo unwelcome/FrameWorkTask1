@@ -1,0 +1,33 @@
+name: Pull Request to Dev Docker Compose
+
+on:
+  pull_request:
+    branches: [ dev ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  docker-compose:
+    name: Docker Compose Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build and test with Docker Compose
+      run: |
+        # Сборка и запуск
+        docker-compose up -d --build
+        
+        # Ожидание запуска сервисов
+        sleep 30
+        
+        # Проверка что сервисы запущены
+        docker-compose ps
+        
+        # Простые проверки доступности
+        curl -f http://localhost:8080/api/health || exit 1
+        # curl -f http://localhost:3000 || exit 1
+        
+        # Остановка сервисов
+        docker-compose down

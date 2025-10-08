@@ -34,23 +34,4 @@ func SetupRoutes(app *fiber.App, container *dependency_injection.Container) {
 	api.Get("/auth/user/all", container.UserHandler.GetAllUsers)
 	api.Get("/auth/user/:id", container.UserHandler.GetUserByID)
 	api.Patch("/auth/user/password", container.UserHandler.UpdateUserPassword)
-
-	// Cat запросы
-	api.Get("/auth/cat/all", container.CatHandler.GetAllCats)
-	api.Get("/auth/cat/id/:id", container.CatHandler.GetCatByID)
-	api.Post("/auth/cat/create", container.CatHandler.CreateCat)
-
-	// Middleware проверки прав собственности пользователя на кота
-	api.Use("/auth/cat/mw/:id", container.CatOwnershipMiddleware)
-	api.Put("/auth/cat/mw/:id", container.CatHandler.UpdateCat)
-	api.Patch("/auth/cat/mw/:id/name", container.CatHandler.UpdateCatName)
-	api.Patch("/auth/cat/mw/:id/age", container.CatHandler.UpdateCatAge)
-	api.Patch("/auth/cat/mw/:id/description", container.CatHandler.UpdateCatDescription)
-	api.Delete("/auth/cat/mw/:id", container.CatHandler.DeleteCat)
-
-	// Cat photo запросы
-	api.Get("/auth/cat/photo/:photoID", container.CatPhotoHandler.GetCatPhotoByID)
-	api.Post("/auth/cat/mw/:id/photo/add", container.CatPhotoHandler.AddCatPhotos)
-	api.Patch("/auth/cat/mw/:id/photo/:photoID/primary", container.CatPhotoHandler.SetCatPhotoPrimary)
-	api.Delete("/auth/cat/mw/:id/photo/:photoID", container.CatPhotoHandler.DeleteCatPhoto)
 }

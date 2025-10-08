@@ -11,9 +11,9 @@ import (
 	"github.com/unwelcome/iqjtest/internal/routes"
 )
 
-// @title           IQJ Test Task
+// @title           Bug Tracker
 // @version         1.0
-// @description     Swagger for IQJ test task.
+// @description     Swagger for bug tracker.
 
 // @host      localhost:8080
 // @BasePath  /api

@@ -2,12 +2,17 @@ package handlers
 
 import "github.com/gofiber/fiber/v2"
 
-type HealthHandler struct{}
-
-func NewHealthHandler() *HealthHandler {
-	return &HealthHandler{}
+type HealthHandler interface {
+	Health(c *fiber.Ctx) error
 }
 
-func (h *HealthHandler) Health(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).SendString("Health")
+type healthHandlerImpl struct {
+}
+
+func NewHealthHandler() HealthHandler {
+	return &healthHandlerImpl{}
+}
+
+func (h *healthHandlerImpl) Health(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusOK).SendString("Healthy")
 }

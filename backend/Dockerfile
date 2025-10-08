@@ -11,7 +11,7 @@ RUN go mod download
 COPY . .
 
 # Собираем приложение
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags='-w -s' -o /app/main ./cmd/backend
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags='-w -s' -o /app/main ./cmd/api
 
 # Экспонируем порт
 EXPOSE 8080

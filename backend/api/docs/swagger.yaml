@@ -1,0 +1,951 @@
+basePath: /api
+definitions:
+  entities.AuthResponse:
+    properties:
+      access_token:
+        type: string
+      id:
+        type: integer
+      refresh_token:
+        type: string
+    type: object
+  entities.CatCreateResponse:
+    properties:
+      id:
+        type: integer
+      photo:
+        $ref: '#/definitions/entities.CatPhotoUploadResponse'
+    type: object
+  entities.CatPhoto:
+    properties:
+      cat_id:
+        type: integer
+      created_at:
+        type: string
+      file_name:
+        type: string
+      file_size:
+        type: integer
+      id:
+        type: integer
+      is_primary:
+        type: boolean
+      mime_type:
+        type: string
+      url:
+        type: string
+    type: object
+  entities.CatPhotoSetPrimaryResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  entities.CatPhotoUploadError:
+    properties:
+      error:
+        type: string
+      file_name:
+        type: string
+    type: object
+  entities.CatPhotoUploadResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/entities.CatPhotoUploadError'
+        type: array
+      failed_count:
+        type: integer
+      message:
+        type: string
+      uploaded_count:
+        type: integer
+      uploaded_photos:
+        items:
+          $ref: '#/definitions/entities.CatPhotoUploadSuccess'
+        type: array
+    type: object
+  entities.CatPhotoUploadSuccess:
+    properties:
+      file_name:
+        type: string
+      id:
+        type: integer
+      url:
+        type: string
+    type: object
+  entities.CatPhotoUrl:
+    properties:
+      id:
+        type: integer
+      is_primary:
+        type: boolean
+      url:
+        type: string
+    type: object
+  entities.CatUpdateAgeRequest:
+    properties:
+      age:
+        type: integer
+    type: object
+  entities.CatUpdateAgeResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  entities.CatUpdateDescriptionRequest:
+    properties:
+      description:
+        type: string
+    type: object
+  entities.CatUpdateDescriptionResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  entities.CatUpdateNameRequest:
+    properties:
+      name:
+        type: string
+    type: object
+  entities.CatUpdateNameResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  entities.CatUpdateRequest:
+    properties:
+      age:
+        type: integer
+      description:
+        type: string
+      name:
+        type: string
+    type: object
+  entities.CatUpdateResponse:
+    properties:
+      age:
+        type: integer
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  entities.CatWithPhotos:
+    properties:
+      age:
+        type: integer
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      photos:
+        items:
+          $ref: '#/definitions/entities.CatPhotoUrl'
+        type: array
+    type: object
+  entities.CatWithPrimePhoto:
+    properties:
+      age:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      photo_id:
+        type: integer
+      url:
+        type: string
+    type: object
+  entities.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  entities.LogoutTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  entities.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  entities.TokenPair:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  entities.UserCreateRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  entities.UserGet:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      login:
+        type: string
+    type: object
+  entities.UserLoginRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  entities.UserUpdatePasswordRequest:
+    properties:
+      password:
+        type: string
+    type: object
+  entities.UserUpdatePasswordResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Swagger for IQJ test task.
+  title: IQJ Test Task
+  version: "1.0"
+paths:
+  /auth/cat/all:
+    get:
+      consumes:
+      - application/json
+      description: Получение всех котов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.CatWithPrimePhoto'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение всех котов
+      tags:
+      - cat
+  /auth/cat/create:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Создает нового кота
+      parameters:
+      - description: Кличка кота
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Возраст кота
+        in: formData
+        name: age
+        required: true
+        type: integer
+      - description: Описание кота
+        in: formData
+        name: description
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: Файлы изображений
+        in: formData
+        items:
+          type: file
+        name: files
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CatCreateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Создание кота
+      tags:
+      - cat
+  /auth/cat/id/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Получение кота по ID
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatWithPhotos'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение кота по ID
+      tags:
+      - cat
+  /auth/cat/mw/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаление кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление кота
+      tags:
+      - cat
+    put:
+      consumes:
+      - application/json
+      description: Обновление клички, возраста и описания кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление клички, возраста и описания кота
+      tags:
+      - cat
+  /auth/cat/mw/{id}/age:
+    patch:
+      consumes:
+      - application/json
+      description: Обновление возраста кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateAgeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateAgeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление возраста кота
+      tags:
+      - cat
+  /auth/cat/mw/{id}/description:
+    patch:
+      consumes:
+      - application/json
+      description: Обновление описания кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateDescriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateDescriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление описания кота
+      tags:
+      - cat
+  /auth/cat/mw/{id}/name:
+    patch:
+      consumes:
+      - application/json
+      description: Обновление клички кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные кота
+        in: body
+        name: cat
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CatUpdateNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatUpdateNameResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновление клички кота
+      tags:
+      - cat
+  /auth/cat/mw/{id}/photo/{photoID}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаление фото кота по ID
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo ID
+        in: path
+        name: photoID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление фото кота по ID
+      tags:
+      - cat-photo
+  /auth/cat/mw/{id}/photo/{photoID}/primary:
+    patch:
+      consumes:
+      - application/json
+      description: Выбор основного фото кота
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo ID
+        in: path
+        name: photoID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatPhotoSetPrimaryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Выбор основного фото кота
+      tags:
+      - cat-photo
+  /auth/cat/mw/{id}/photo/add:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает фотографию для указанного кота (не более 20 файлов)
+      parameters:
+      - description: Cat ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: Файлы изображений
+        in: formData
+        items:
+          type: file
+        name: files
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CatPhotoUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.CatPhotoUploadResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Загрузить фото кота
+      tags:
+      - cat-photo
+  /auth/cat/photo/{photoID}:
+    get:
+      consumes:
+      - application/json
+      description: Получение всей информации о фото кота
+      parameters:
+      - description: Photo ID
+        in: path
+        name: photoID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.CatPhoto'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Получение фото кота
+      tags:
+      - cat-photo
+  /auth/logout:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет refresh токен
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: token
+        required: true
+        schema:
+          $ref: '#/definitions/entities.LogoutTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление токена
+      tags:
+      - auth
+  /auth/user/{id}:
+    get:
+      consumes:
+      - application/json
+      description: получаем пользователя по ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UserGet'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: получение пользователя по ID
+      tags:
+      - users
+  /auth/user/all:
+    get:
+      consumes:
+      - application/json
+      description: получение всех пользователей
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.UserGet'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: получение всех пользователей
+      tags:
+      - users
+  /auth/user/delete:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет пользователя из системы и отзывает все refresh токены
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Удаление пользователя
+      tags:
+      - auth
+  /auth/user/password:
+    patch:
+      consumes:
+      - application/json
+      description: обновление пароля пользователя
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UserUpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UserUpdatePasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: обновление пароля пользователя
+      tags:
+      - users
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Вход в аккаунт пользователя, возвращает access и refresh токены
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      summary: Вход в аккаунт пользователя
+      tags:
+      - auth
+  /refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет access и refresh токены
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: token
+        required: true
+        schema:
+          $ref: '#/definitions/entities.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.TokenPair'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      summary: Обновление токенов
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Создает нового пользователя в системе и возвращает access и refresh
+        токены
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UserCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/entities.ErrorResponse'
+      summary: Создание пользователя
+      tags:
+      - auth
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,4 +1,5 @@
 services:
+
 #  frontend:
 #    container_name: frontend
 #    build:
@@ -27,8 +28,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     environment:
-      GO_ENV: ${GO_ENV:-production}
       IS_DOCKER: true
     networks:
       - app-network
@@ -55,43 +57,43 @@ services:
 
   redis:
     container_name: redis
-    image: redis:latest
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_USER=${REDIS_USER}
-      - REDIS_USER_PASSWORD=${REDIS_USER_PASSWORD}
+    image: redis:7.2-alpine
     ports:
       - "6379:6379"
+    env_file:
+      - ./.env
     volumes:
-      - ./redisdata:/data
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-    command: >
-      sh -c '
-        mkdir -p /usr/local/etc/redis &&
-        echo "bind 0.0.0.0" > /usr/local/etc/redis/redis.conf &&
-        echo "requirepass $REDIS_PASSWORD" >> /usr/local/etc/redis/redis.conf &&
-        echo "appendonly yes" >> /usr/local/etc/redis/redis.conf &&
-        echo "appendfsync everysec" >> /usr/local/etc/redis/redis.conf &&
-        echo "user default on nopass ~* +@all" > /usr/local/etc/redis/users.acl &&
-        echo "user $REDIS_USER on >$REDIS_USER_PASSWORD ~* +@all" >> /usr/local/etc/redis/users.acl &&
-        redis-server /usr/local/etc/redis/redis.conf --aclfile /usr/local/etc/redis/users.acl
-      '
-    healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "$REDIS_PASSWORD", "ping" ]
-      interval: 5s
-      timeout: 10s
-      retries: 10
-      start_period: 10s
+      - redis_data:/data
+    command:
+      - redis-server
+      - --requirepass ${REDIS_PASSWORD}
     restart: unless-stopped
-    tty: true
-    stdin_open: true
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-network
+
+  minio:
+    container_name: minio
+    image: quay.io/minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: "${MINIO_USER}"
+      MINIO_ROOT_PASSWORD: "${MINIO_PASSWORD}"
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - app-network
 
@@ -101,3 +103,5 @@ networks:
 
 volumes:
   db_data:
+  redis_data:
+  minio_data:

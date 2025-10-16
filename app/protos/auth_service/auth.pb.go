@@ -535,10 +535,9 @@ type UpdateUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
 	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Login         string                 `protobuf:"bytes,3,opt,name=login,proto3" json:"login,omitempty"`
-	FirstName     string                 `protobuf:"bytes,4,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
-	SecondName    string                 `protobuf:"bytes,5,opt,name=second_name,json=secondName,proto3" json:"second_name,omitempty"`
-	ThirdName     string                 `protobuf:"bytes,6,opt,name=third_name,json=thirdName,proto3" json:"third_name,omitempty"`
+	FirstName     string                 `protobuf:"bytes,3,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
+	SecondName    string                 `protobuf:"bytes,4,opt,name=second_name,json=secondName,proto3" json:"second_name,omitempty"`
+	ThirdName     string                 `protobuf:"bytes,5,opt,name=third_name,json=thirdName,proto3" json:"third_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -587,13 +586,6 @@ func (x *UpdateUserRequest) GetUserId() int64 {
 	return 0
 }
 
-func (x *UpdateUserRequest) GetLogin() string {
-	if x != nil {
-		return x.Login
-	}
-	return ""
-}
-
 func (x *UpdateUserRequest) GetFirstName() string {
 	if x != nil {
 		return x.FirstName
@@ -618,11 +610,9 @@ func (x *UpdateUserRequest) GetThirdName() string {
 type UpdateUserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Login         string                 `protobuf:"bytes,2,opt,name=login,proto3" json:"login,omitempty"`
-	FirstName     string                 `protobuf:"bytes,3,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
-	SecondName    string                 `protobuf:"bytes,4,opt,name=second_name,json=secondName,proto3" json:"second_name,omitempty"`
-	ThirdName     string                 `protobuf:"bytes,5,opt,name=third_name,json=thirdName,proto3" json:"third_name,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	FirstName     string                 `protobuf:"bytes,2,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
+	SecondName    string                 `protobuf:"bytes,3,opt,name=second_name,json=secondName,proto3" json:"second_name,omitempty"`
+	ThirdName     string                 `protobuf:"bytes,4,opt,name=third_name,json=thirdName,proto3" json:"third_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -664,13 +654,6 @@ func (x *UpdateUserResponse) GetUserId() int64 {
 	return 0
 }
 
-func (x *UpdateUserResponse) GetLogin() string {
-	if x != nil {
-		return x.Login
-	}
-	return ""
-}
-
 func (x *UpdateUserResponse) GetFirstName() string {
 	if x != nil {
 		return x.FirstName
@@ -688,13 +671,6 @@ func (x *UpdateUserResponse) GetSecondName() string {
 func (x *UpdateUserResponse) GetThirdName() string {
 	if x != nil {
 		return x.ThirdName
-	}
-	return ""
-}
-
-func (x *UpdateUserResponse) GetCreatedAt() string {
-	if x != nil {
-		return x.CreatedAt
 	}
 	return ""
 }
@@ -851,28 +827,24 @@ const file_auth_service_auth_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"^\n" +
 	"\x14RefreshTokenResponse\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"\xc4\x01\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"\xae\x01\n" +
 	"\x11UpdateUserRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x14\n" +
-	"\x05login\x18\x03 \x01(\tR\x05login\x12\x1d\n" +
-	"\n" +
-	"first_name\x18\x04 \x01(\tR\tfirstName\x12\x1f\n" +
-	"\vsecond_name\x18\x05 \x01(\tR\n" +
-	"secondName\x12\x1d\n" +
-	"\n" +
-	"third_name\x18\x06 \x01(\tR\tthirdName\"\xc1\x01\n" +
-	"\x12UpdateUserResponse\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x14\n" +
-	"\x05login\x18\x02 \x01(\tR\x05login\x12\x1d\n" +
+	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x1d\n" +
 	"\n" +
 	"first_name\x18\x03 \x01(\tR\tfirstName\x12\x1f\n" +
 	"\vsecond_name\x18\x04 \x01(\tR\n" +
 	"secondName\x12\x1d\n" +
 	"\n" +
-	"third_name\x18\x05 \x01(\tR\tthirdName\x12\x1d\n" +
+	"third_name\x18\x05 \x01(\tR\tthirdName\"\x8c\x01\n" +
+	"\x12UpdateUserResponse\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\tR\tcreatedAt\"\\\n" +
+	"first_name\x18\x02 \x01(\tR\tfirstName\x12\x1f\n" +
+	"\vsecond_name\x18\x03 \x01(\tR\n" +
+	"secondName\x12\x1d\n" +
+	"\n" +
+	"third_name\x18\x04 \x01(\tR\tthirdName\"\\\n" +
 	"\x12RevokeTokenRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12#\n" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"O\n" +

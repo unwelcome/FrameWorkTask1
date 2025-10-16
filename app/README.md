@@ -49,7 +49,7 @@ api
 │   │   └── issue.pb.go
 │   └── log/
 │       └── log.pb.go
-├── configs/                    # Файлы конфигурации (YAML, JSON, env)
+├── configs/                    # Файлы конфигурации (YAML, JSON, envbbbb)
 │   ├── gateway.yaml
 │   ├── user.yaml
 │   ├── issue.yaml

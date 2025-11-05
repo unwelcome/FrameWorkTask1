@@ -6,7 +6,6 @@ option go_package = "proto/auth_proto";
 import "google/protobuf/empty.proto";
 
 service AuthService {
-  rpc Health(HealthRequest) returns (HealthResponse);
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
@@ -14,14 +13,6 @@ service AuthService {
   rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
   rpc RevokeToken(RevokeTokenRequest) returns (google.protobuf.Empty);
   rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
-}
-
-// Health
-message HealthRequest {
-  string operation_id = 1;
-}
-message HealthResponse {
-  string health = 1;
 }
 
 // Register user

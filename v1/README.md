@@ -2,7 +2,7 @@
 
 Для генерации кода необходимо:
 
-1) установить компилятор 
+1) Установить компилятор 
 ```
 https://github.com/protocolbuffers/protobuf/releases
 ```

@@ -17,13 +17,17 @@ import (
 func main() {
 	app := fiber.New()
 
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("auth_service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Printf("Failed to connect to auth service")
 	}
 	defer conn.Close()
 
 	client := pb.NewAuthServiceClient(conn)
+
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Gateway")
+	})
 
 	app.Get("/health", func(c *fiber.Ctx) error {
 		authServiceHealth := "unknown"
@@ -38,9 +42,10 @@ func main() {
 		res, err := client.Health(ctx, &pb.HealthRequest{OperationId: authOperationUUID})
 		if err != nil {
 			fmt.Printf("Service: auth UUID: %s Status: error Error: %v", authOperationUUID, err)
-		} else {
-			fmt.Printf("Service: auth UUID: %s Status: success\n", authOperationUUID)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
+
+		fmt.Printf("Service: auth UUID: %s Status: success\n", authOperationUUID)
 
 		authServiceHealth = res.Health
 
@@ -49,7 +54,7 @@ func main() {
 
 	fmt.Printf("Server listen on http://%s", "localhost:8080")
 
-	if err := app.Listen("localhost:8080"); err != nil {
+	if err := app.Listen(":8080"); err != nil {
 		fmt.Printf("Failed to start http server: %v", err)
 		os.Exit(1)
 	}

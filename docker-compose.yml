@@ -26,7 +26,7 @@ services:
       context: ./v1/auth
       dockerfile: Dockerfile
     ports:
-      - "50051:50051"
+      - "50051:50051" # для отладки
     env_file:
       - ./.env
     depends_on:

@@ -1,9 +1,10 @@
 package services
 
 import (
-	pb "auth/api"
 	"context"
 	"fmt"
+
+	pb "github.com/unwelcome/FrameWorkTask1/v1/auth/api"
 )
 
 type AuthService struct {
@@ -17,5 +18,5 @@ func NewauthService() *AuthService {
 // Health
 func (s *AuthService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
 	fmt.Printf("ID: %s Msg: health check\n", req.OperationId)
-	return &pb.HealthResponse{Health: "Auth service healthy"}, nil
+	return &pb.HealthResponse{Health: "healthy"}, nil
 }

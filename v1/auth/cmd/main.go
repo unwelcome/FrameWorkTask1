@@ -1,11 +1,12 @@
 package main
 
 import (
-	pb "auth/api"
-	"auth/internal/services"
 	"fmt"
 	"net"
 	"os"
+
+	pb "github.com/unwelcome/FrameWorkTask1/v1/auth/api"
+	"github.com/unwelcome/FrameWorkTask1/v1/auth/internal/services"
 
 	"google.golang.org/grpc"
 )

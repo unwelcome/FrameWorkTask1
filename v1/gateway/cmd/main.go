@@ -37,7 +37,9 @@ func main() {
 
 		res, err := client.Health(ctx, &pb.HealthRequest{OperationId: authOperationUUID})
 		if err != nil {
-			fmt.Printf("Service: auth UUID: %s Status: failed Error: %v", authOperationUUID, err)
+			fmt.Printf("Service: auth UUID: %s Status: error Error: %v", authOperationUUID, err)
+		} else {
+			fmt.Printf("Service: auth UUID: %s Status: success\n", authOperationUUID)
 		}
 
 		authServiceHealth = res.Health

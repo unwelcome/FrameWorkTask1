@@ -1,6 +1,0 @@
-env: "local"
-access_token_ttl: 5m
-refresh_token_ttl: 720h
-grpc:
-  port: 44044
-  timeout: 10h

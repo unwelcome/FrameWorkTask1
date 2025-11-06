@@ -1,0 +1,48 @@
+# Global settings
+app:
+  jwt_secret: abcd
+  log_path: /var/log/app
+
+# API Gateway service
+gateway:
+  host: localhost
+  port: 8080
+
+# Auth service
+auth_service:
+  port: 50051
+  # Database
+  db_user: auth_user
+  db_password: auth_user_123
+  db_name: auth_db
+  # Cache
+  cache_db: 1
+  # S3
+  s3_bucket: auth_bucket
+
+# Application service
+application_service:
+  port: 50052
+  # Database
+  db_user: application_user
+  db_password: application_user_123
+  db_name: application_db
+  # Cache
+  cache_db: 2
+  # S3
+  s3_bucket: application_bucket
+
+# Database settings
+database:
+  host: postgres
+  port: 5432
+
+# Cache settings
+cache:
+  host: redis
+  port: 6379
+
+# S3 settings
+s3:
+  host: minio
+  port: 9000

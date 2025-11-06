@@ -9,14 +9,15 @@ services:
       - "8080:8080"
     env_file:
       - ./.env
+    environment:
+      PRODUCTION_TYPE: prod
+    volumes:
+      - ./v1/config.yaml:/app/config/config.yaml:ro
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment:
-      # PRODUCTION_TYPE: docker
-      PRODUCTION_TYPE: other
     networks:
       - app-network
 
@@ -29,14 +30,15 @@ services:
       - "50051:50051" # для отладки
     env_file:
       - ./.env
+    environment:
+      PRODUCTION_TYPE: prod
+    volumes:
+      - ./config.yaml:/app/config/config.yaml:ro
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment:
-      # PRODUCTION_TYPE: docker
-      PRODUCTION_TYPE: other
     networks:
       - app-network
 
@@ -50,9 +52,9 @@ services:
       - ./.env
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./backend/database/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
+#      - ./backend/database/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -81,26 +83,26 @@ services:
     networks:
       - app-network
 
-  # minio:
-  #   container_name: minio
-  #   image: quay.io/minio/minio
-  #   ports:
-  #     - "9000:9000"
-  #     - "9001:9001"
-  #   volumes:
-  #     - minio_data:/data
-  #   environment:
-  #     MINIO_ROOT_USER: "${MINIO_USER}"
-  #     MINIO_ROOT_PASSWORD: "${MINIO_PASSWORD}"
-  #   command: server /data --console-address ":9001"
-  #   restart: unless-stopped
-  #   healthcheck:
-  #     test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 10
-  #   networks:
-  #     - app-network
+  minio:
+   container_name: minio
+   image: quay.io/minio/minio
+   ports:
+     - "9000:9000"
+     - "9001:9001"
+   volumes:
+     - minio_data:/data
+   environment:
+     MINIO_ROOT_USER: "${MINIO_USER}"
+     MINIO_ROOT_PASSWORD: "${MINIO_PASSWORD}"
+   command: server /data --console-address ":9001"
+   restart: unless-stopped
+   healthcheck:
+     test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+     interval: 5s
+     timeout: 5s
+     retries: 10
+   networks:
+     - app-network
 
 networks:
   app-network:
@@ -109,4 +111,4 @@ networks:
 volumes:
   db_data:
   redis_data:
-  # minio_data:
+  minio_data:

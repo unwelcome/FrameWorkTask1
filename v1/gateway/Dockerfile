@@ -14,7 +14,6 @@ FROM alpine:latest
 WORKDIR /app
 
 COPY --from=builder /app/gateway_bin /app/main/
-# COPY --from=builder /app/configs /app/configs
 
 RUN chmod +x /app/main/gateway_bin
 

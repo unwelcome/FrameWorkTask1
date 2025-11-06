@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/config"
 	"os"
 	"time"
 
@@ -15,6 +16,10 @@ import (
 )
 
 func main() {
+	cfg := config.NewConfig()
+	cfg.Print()
+	return
+
 	app := fiber.New()
 
 	conn, err := grpc.NewClient("auth_service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))

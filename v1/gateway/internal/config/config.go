@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
-	"gopkg.in/yaml.v3"
 	"os"
 	"strings"
+
+	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -24,7 +25,7 @@ type AppConfig struct {
 	ProductionType string `env:"PRODUCTION_TYPE"`
 	JWTSecret      string `yaml:"jwt_secret"`
 	LogPath        string `yaml:"log_path"`
-	LogPrint       bool   `yaml:"log_print"`
+	LogConsoleOut  bool   `yaml:"log_console_out"`
 }
 
 // Gateway settings
@@ -122,7 +123,7 @@ func (config *Config) Print() {
 	fmt.Printf("ProductionType: %s\n", config.App.ProductionType)
 	fmt.Printf("JWTSecret: %s\n", hideCredentials(config.App.JWTSecret))
 	fmt.Printf("LogPath: %s\n", config.App.LogPath)
-	fmt.Printf("LogPrint: %v\n", config.App.LogPrint)
+	fmt.Printf("LogConsoleOut: %v\n", config.App.LogConsoleOut)
 
 	fmt.Printf("=== Gateway ===\n")
 	fmt.Printf("Host: %s\n", config.Gateway.Host)

@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/config"
 	"os"
 	"time"
 
+	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/config"
+	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/logger"
+
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	pb "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,9 +19,13 @@ import (
 )
 
 func main() {
+	// Инициализация конфига
 	cfg := config.NewConfig()
 	cfg.Print()
-	return
+
+	// Инициализация логгера
+	loggerConf := logger.Setup(cfg.App.LogPath, cfg.App.LogConsoleOut)
+	log.Logger = *loggerConf
 
 	app := fiber.New()
 

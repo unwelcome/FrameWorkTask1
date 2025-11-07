@@ -2,6 +2,7 @@
 app:
   jwt_secret: abcd
   log_path: /var/log/app
+  log_console_out: true
 
 # API Gateway service
 gateway:

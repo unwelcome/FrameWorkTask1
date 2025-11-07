@@ -2,18 +2,19 @@ package logger
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
-	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/config"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog/log"
+
 	"github.com/rs/zerolog"
 )
 
-func Setup(envConf *config.Config) *zerolog.Logger {
+func Setup(logPath string, consoleOut bool) *zerolog.Logger {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	zerolog.TimeFieldFormat = "15:04:05 02.01.2006"
 
@@ -26,8 +27,7 @@ func Setup(envConf *config.Config) *zerolog.Logger {
 	}
 
 	var writer io.Writer
-	if envConf.Application.ProductionType == "prod" {
-		logPath := envConf.Application.LogPath
+	if !consoleOut {
 		if err := os.MkdirAll(filepath.Dir(logPath), 0755); err != nil {
 			log.Fatal().Err(err).Msg("failed to create logger directory")
 		}
@@ -51,28 +51,24 @@ func Setup(envConf *config.Config) *zerolog.Logger {
 	return &loggerContext
 }
 
-func RequestLogger(serviceName string) gin.HandlerFunc {
-	logger := log.Logger.
-		With().
-		Str("service", serviceName).
-		Logger()
-	return func(c *gin.Context) {
-		logger.Info().
-			Str("method", c.Request.Method).
-			Str("url", c.Request.URL.String()).
-			Msg("incoming request")
+func RequestLogger() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		startTime := time.Now()
 
-		start := time.Now()
-		defer func() {
-			if time.Since(start) > time.Second*2 {
-				log.Warn().
-					Str("method", c.Request.Method).
-					Str("url", c.Request.URL.String()).
-					Dur("elapsed_ms", time.Since(start)).
-					Msg("long response time")
-			}
-		}()
+		err := c.Next()
 
-		c.Next()
+		logLevel := zerolog.InfoLevel
+		if time.Since(startTime) > time.Second*2 {
+			logLevel = zerolog.WarnLevel
+		}
+
+		log.WithLevel(logLevel).
+			Str("method", c.Method()).
+			Str("path", c.Path()).
+			Int("duration", int(time.Since(startTime).Milliseconds())).
+			Int("status", c.Response().StatusCode()).
+			Msg("request")
+
+		return err
 	}
 }

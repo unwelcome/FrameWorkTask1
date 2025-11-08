@@ -19,8 +19,6 @@ type Config struct {
 	S3                 S3                       `yaml:"s3"`
 }
 
-// Application settings
-
 type AppConfig struct {
 	ProductionType string `env:"PRODUCTION_TYPE"`
 	JWTSecret      string `yaml:"jwt_secret"`
@@ -28,17 +26,14 @@ type AppConfig struct {
 	LogConsoleOut  bool   `yaml:"log_console_out"`
 }
 
-// Gateway settings
-
 type GatewayConfig struct {
 	Host string `yaml:"host"`
-	Port string `yaml:"port"`
+	Port int    `yaml:"port"`
 }
 
-// Auth service settings
-
 type AuthServiceConfig struct {
-	Port       string `yaml:"port"`
+	Host       string `yaml:"host"`
+	Port       int    `yaml:"port"`
 	DBUser     string `yaml:"db_user"`
 	DBPassword string `yaml:"db_password"`
 	DBName     string `yaml:"db_name"`
@@ -46,10 +41,9 @@ type AuthServiceConfig struct {
 	S3Bucket   string `yaml:"s3_bucket"`
 }
 
-// Application service settings
-
 type ApplicationServiceConfig struct {
-	Port       string `yaml:"port"`
+	Host       string `yaml:"host"`
+	Port       int    `yaml:"port"`
 	DBUser     string `yaml:"db_user"`
 	DBPassword string `yaml:"db_password"`
 	DBName     string `yaml:"db_name"`
@@ -127,10 +121,10 @@ func (config *Config) Print() {
 
 	fmt.Printf("=== Gateway ===\n")
 	fmt.Printf("Host: %s\n", config.Gateway.Host)
-	fmt.Printf("Port: %s\n", config.Gateway.Port)
+	fmt.Printf("Port: %d\n", config.Gateway.Port)
 
 	fmt.Printf("=== Auth service ===\n")
-	fmt.Printf("Port: %s\n", config.AuthService.Port)
+	fmt.Printf("Port: %d\n", config.AuthService.Port)
 	fmt.Printf("DBUser: %s\n", config.AuthService.DBUser)
 	fmt.Printf("DBPassword: %s\n", hideCredentials(config.AuthService.DBPassword))
 	fmt.Printf("DBName: %s\n", config.AuthService.DBName)
@@ -138,7 +132,7 @@ func (config *Config) Print() {
 	fmt.Printf("S3Bucket: %s\n", config.AuthService.S3Bucket)
 
 	fmt.Printf("=== Application service ===\n")
-	fmt.Printf("Port: %s\n", config.ApplicationService.Port)
+	fmt.Printf("Port: %d\n", config.ApplicationService.Port)
 	fmt.Printf("DBUser: %s\n", config.ApplicationService.DBUser)
 	fmt.Printf("DBPassword: %s\n", hideCredentials(config.ApplicationService.DBPassword))
 	fmt.Printf("DBName: %s\n", config.ApplicationService.DBName)

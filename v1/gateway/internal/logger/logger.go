@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"os"
 	"path/filepath"
@@ -54,6 +55,9 @@ func Setup(logPath string, consoleOut bool) *zerolog.Logger {
 func RequestLogger() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		startTime := time.Now()
+		operationID := uuid.NewString()
+
+		c.Locals("operationID", operationID)
 
 		err := c.Next()
 
@@ -63,6 +67,7 @@ func RequestLogger() fiber.Handler {
 		}
 
 		log.WithLevel(logLevel).
+			Str("id", operationID).
 			Str("method", c.Method()).
 			Str("path", c.Path()).
 			Int("duration", int(time.Since(startTime).Milliseconds())).

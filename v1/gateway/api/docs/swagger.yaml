@@ -1,0 +1,47 @@
+basePath: /api
+definitions:
+  apiErrors.HttpError:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  entities.Health:
+    properties:
+      application_service:
+        type: string
+      auth_service:
+        type: string
+      gateway:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  title: Framework task 2 API
+  version: "2.0"
+paths:
+  /health:
+    get:
+      description: Get all services health status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Health'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apiErrors.HttpError'
+      summary: Health check
+      tags:
+      - Health
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

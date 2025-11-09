@@ -16,10 +16,10 @@ func NewMigrator(db *sql.DB) *Migrator {
 func (m *Migrator) Migrate() {
 	var queries []string
 	queries = append(queries, `CREATE TABLE IF NOT EXISTS users (
-		id SERIAL PRIMARY KEY,
 		uuid VARCHAR(36) UNIQUE NOT NULL,
 		role varchar(15) NOT NULL DEFAULT 'unknown',
-		email varchar(255) NOT NULL,
+		email varchar(255) UNIQUE NOT NULL,
+    	password_hash VARCHAR(255) NOT NULL,
 		first_name varchar(50) NOT NULL,
 		last_name varchar(50) NOT NULL,
 		patronymic varchar(50),

@@ -10,10 +10,11 @@ service AuthService {
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
-  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
-  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
-  rpc RevokeToken(RevokeTokenRequest) returns (google.protobuf.Empty);
+  rpc UpdateUserBio(UpdateUserBioRequest) returns (google.protobuf.Empty);
+  rpc UpdateUserRole(UpdateUserRoleRequest) returns (google.protobuf.Empty);
   rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc RevokeToken(RevokeTokenRequest) returns (google.protobuf.Empty);
 }
 
 // Health
@@ -27,26 +28,26 @@ message HealthResponse {
 // Register user
 message RegisterRequest {
   string operation_id = 1;
-  string login = 2;
+  string email = 2;
   string password = 3;
   string first_name = 4;
-  string second_name = 5;
-  string third_name = 6;
+  string last_name = 5;
+  string patronymic = 6;
 }
 message RegisterResponse {
-  int64 user_id = 1;
+  string user_uuid = 1;
   string access_token = 2;
   string refresh_token = 3;
 }
 
-// Login user
+// Login
 message LoginRequest {
   string operation_id = 1;
-  string login = 2;
+  string email = 2;
   string password = 3;
 }
 message LoginResponse {
-  int64 user_id = 1;
+  string user_uuid = 1;
   string access_token = 2;
   string refresh_token = 3;
 }
@@ -54,16 +55,43 @@ message LoginResponse {
 // Get user
 message GetUserRequest {
   string operation_id = 1;
-  int64 user_id = 2;
+  string user_uuid = 2;
 }
 message GetUserResponse {
-  int64 user_id = 1;
-  string login = 2;
-  string first_name = 3;
-  string second_name = 4;
-  string third_name = 5;
-  string created_at = 6;
+  string user_uuid = 1;
+  string email = 2;
+  string role = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string patronymic = 6;
+  string created_at = 7;
 }
+
+// Update user bio
+message UpdateUserBioRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string patronymic = 5;
+}
+// Empty response
+
+// Update user role
+message UpdateUserRoleRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string role = 3;
+}
+// Empty response
+
+// Delete user
+message DeleteUserRequest {
+  string operation_id = 1;
+  string initiator_user_uuid = 2;
+  string target_user_uuid = 3;
+}
+// Empty response
 
 // Refresh token
 message RefreshTokenRequest {
@@ -75,29 +103,9 @@ message RefreshTokenResponse {
   string refresh_token = 2;
 }
 
-// Update user
-message UpdateUserRequest {
-  string operation_id = 1;
-  int64 user_id = 2;
-  string first_name = 3;
-  string second_name = 4;
-  string third_name = 5;
-}
-message UpdateUserResponse {
-  int64 user_id = 1;
-  string first_name = 2;
-  string second_name = 3;
-  string third_name = 4;
-}
-
 // Revoke token
 message RevokeTokenRequest {
   string operation_id = 1;
   string refresh_token = 2;
 }
-
-// Delete user
-message DeleteUserRequest {
-  string operation_id = 1;
-  string user_id = 2;
-}
+// Empty response

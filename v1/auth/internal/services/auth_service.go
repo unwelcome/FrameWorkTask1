@@ -2,21 +2,22 @@ package services
 
 import (
 	"context"
-	"fmt"
-
+	"github.com/rs/zerolog/log"
 	pb "github.com/unwelcome/FrameWorkTask1/v1/auth/api"
+	postgresDB "github.com/unwelcome/FrameWorkTask1/v1/auth/internal/database/postgres"
 )
 
 type AuthService struct {
+	db *postgresDB.DatabaseRepository
 	pb.UnimplementedAuthServiceServer
 }
 
-func NewauthService() *AuthService {
-	return &AuthService{}
+func NewAuthService(db *postgresDB.DatabaseRepository) *AuthService {
+	return &AuthService{db: db}
 }
 
-// Health
+// Health check
 func (s *AuthService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
-	fmt.Printf("ID: %s Msg: health check\n", req.OperationId)
+	log.Info().Str("id", req.OperationId).Str("method", "health").Msg("request")
 	return &pb.HealthResponse{Health: "healthy"}, nil
 }

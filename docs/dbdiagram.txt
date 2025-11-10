@@ -1,106 +1,81 @@
-Enum roles {
-  "engineer"
-  "manager"
-  "supervisor"
-}
-
-Enum priorities {
-  "обычно"
-  "важно"
-  "срочно"
-  "критично"
-  "первостепенно"
-}
-
-Enum statuses {
-  "создано"
-  "в ожидании"
-  "в работе"
-  "выполнено"
-  "приостановлено"
-  "не выполнено"
-  "на пересмотрении"
-  "отозвано"
-}
+// AUTH SERVICE
 
 Table users {
-  id serial [pk, increment]
-  login varchar
+  uuid varchar unique
+  email varchar unique
   password_hash varchar
-  password_salt varchar
-  name varchar
-  second_name varchar
-  third_name varchar
-  email varchar
+  first_name varchar
+  last_name varchar
+  patronymic varchar
+  created_at timestamp
+}
+
+// ENTERPRISE SERVICE
+
+Enum roles {
+  "not_belong"
+  "not_stated"
+  "engineer"
+  "manager"
+  "chief"
+}
+
+Table enterprises {
+  uuid varchar unique
+  title varchar
+}
+
+Table enterprise_employees {
+  enterprise_uuid varchar
+  user_uuid varchar
   role roles
 }
 
-Table applications {
-  id serial [pk, increment] // id в таблице
-  serial_number integer // номер заявки (может повторяться)
-  title text
-  priority priorities
-  description text
-  created_at timestamp
-  execution_time timestamp
-  closed_at timestamp
-  status statuses
-  responsible_engineer integer
-  responsible_manager integer
-
-  Note: '''
-  CREATE SEQUENCE serial_number_seq START 1 INCREMENT 1;
-  '''
-}
-
-Table application_changes {
-  id serial [pk, increment]
-  application_serial_number integer
-  application_id integer
-  is_current bool // актуальная ли заявка
-  author integer
-  changed_at timestamp
-}
+// DEPARTMENT SERVICE
 
 Table departments {
-  id serial [pk, increment]
+  uuid varchar unique
+  enterprise_uuid varchar
   title varchar
-  created_at timestamp
-  created_by integer
 }
 
 Table department_employees {
-  id serial [pk, increment]
-  user_id integer
-  department_id integer
+  department_uuid varchar
+  user_uuid varchar
 }
 
-Ref "applications_responsible_engineer_to_users": applications.responsible_engineer > users.id
-Ref "applications_responsible_manager_to_users": applications.responsible_manager > users.id
+// APPLICATION SERVICE
 
-Ref "application_changes_to_users": application_changes.author > users.id
-Ref "application_changes_to_application_id": application_changes.application_id - applications.id
-Ref "application_changes_to_application_serial_number": application_changes.application_serial_number < applications.serial_number
+Enum statuses {
+  "created"
+  "waiting"
+  "in_progress"
+  "complete"
+  "paused"
+  "dropped"
+}
 
-Ref "departments_to_users": departments.created_by > users.id
+Table applications {
+  uuid varchar
+  title text
+  description text
+  status statuses
+  author_uuid varchar
+  department_uuid varchar
+  executor_uuid varchar
+  manager_uuid varchar
+  fix_logs text[]
+  closed_at timestamp
+  created_at timestamp
+}
 
-Ref "department_employees_to_users": department_employees.user_id > users.id
-Ref "department_employees_to_departments": department_employees.department_id > departments.id
+Ref: enterprises.uuid < enterprise_employees.enterprise_uuid
+Ref: users.uuid < enterprise_employees.user_uuid
 
+Ref: departments.uuid < department_employees.department_uuid
+Ref: users.uuid < department_employees.user_uuid
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Ref: users.uuid < applications.author_uuid
+Ref: users.uuid < applications.executor_uuid
+Ref: users.uuid < applications.manager_uuid
+Ref: departments.uuid < applications.department_uuid

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/redis/go-redis/v9"
 	"os"
 	"strings"
 	"time"
@@ -42,7 +43,7 @@ type AuthServiceConfig struct {
 	DBUser     string `yaml:"db_user"`
 	DBPassword string `yaml:"db_password"`
 	DBName     string `yaml:"db_name"`
-	CacheDB    string `yaml:"cache_db"`
+	CacheDB    int    `yaml:"cache_db"`
 	S3Bucket   string `yaml:"s3_bucket"`
 }
 
@@ -52,23 +53,24 @@ type ApplicationServiceConfig struct {
 	DBUser     string `yaml:"db_user"`
 	DBPassword string `yaml:"db_password"`
 	DBName     string `yaml:"db_name"`
-	CacheDB    string `yaml:"cache_db"`
+	CacheDB    int    `yaml:"cache_db"`
 	S3Bucket   string `yaml:"s3_bucket"`
 }
 
 type Database struct {
 	Host string `yaml:"host"`
-	Port string `yaml:"port"`
+	Port int    `yaml:"port"`
 }
 
 type Cache struct {
-	Host string `yaml:"host"`
-	Port string `yaml:"port"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Password string `yaml:"password"`
 }
 
 type S3 struct {
 	Host string `yaml:"host"`
-	Port string `yaml:"port"`
+	Port int    `yaml:"port"`
 }
 
 func NewConfig() *Config {
@@ -120,8 +122,16 @@ func NewConfig() *Config {
 
 // GetDBConnectionString Строка подключения к Postgres для auth сервиса
 func (config *Config) GetDBConnectionString() string {
-	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		config.Db.Host, config.Db.Port, config.AuthService.DBUser, config.AuthService.DBPassword, config.AuthService.DBName)
+}
+
+func (config *Config) GetCacheConnectionOptions() *redis.Options {
+	return &redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", config.Cache.Host, config.Cache.Port),
+		Password: config.Cache.Password,
+		DB:       config.AuthService.CacheDB,
+	}
 }
 
 func (config *Config) parseDurations() error {
@@ -166,7 +176,7 @@ func (config *Config) Print() {
 	fmt.Printf("DBUser: %s\n", config.AuthService.DBUser)
 	fmt.Printf("DBPassword: %s\n", hideCredentials(config.AuthService.DBPassword))
 	fmt.Printf("DBName: %s\n", config.AuthService.DBName)
-	fmt.Printf("CacheDB: %s\n", config.AuthService.CacheDB)
+	fmt.Printf("CacheDB: %d\n", config.AuthService.CacheDB)
 	fmt.Printf("S3Bucket: %s\n", config.AuthService.S3Bucket)
 
 	fmt.Printf("=== Application service ===\n")
@@ -174,18 +184,19 @@ func (config *Config) Print() {
 	fmt.Printf("DBUser: %s\n", config.ApplicationService.DBUser)
 	fmt.Printf("DBPassword: %s\n", hideCredentials(config.ApplicationService.DBPassword))
 	fmt.Printf("DBName: %s\n", config.ApplicationService.DBName)
-	fmt.Printf("CacheDB: %s\n", config.ApplicationService.CacheDB)
+	fmt.Printf("CacheDB: %d\n", config.ApplicationService.CacheDB)
 	fmt.Printf("S3Bucket: %s\n", config.ApplicationService.S3Bucket)
 
 	fmt.Printf("=== Database ===\n")
 	fmt.Printf("Host: %s\n", config.Db.Host)
-	fmt.Printf("Port: %s\n", config.Db.Port)
+	fmt.Printf("Port: %d\n", config.Db.Port)
 
 	fmt.Printf("=== Cache ===\n")
 	fmt.Printf("Host: %s\n", config.Cache.Host)
-	fmt.Printf("Port: %s\n", config.Cache.Port)
+	fmt.Printf("Port: %d\n", config.Cache.Port)
+	fmt.Printf("Password: %s\n", hideCredentials(config.Cache.Password))
 
 	fmt.Printf("=== S3 ===\n")
 	fmt.Printf("Host: %s\n", config.S3.Host)
-	fmt.Printf("Port: %s\n", config.S3.Port)
+	fmt.Printf("Port: %d\n", config.S3.Port)
 }

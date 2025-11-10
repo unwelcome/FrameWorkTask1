@@ -1,10 +1,7 @@
 package entities
 
-var Roles [3]string = [3]string{"chief", "manager", "engineer"}
-
 type User struct {
 	UserUUID     string `db:"uuid"`
-	Role         string `db:"role"`
 	Email        string `db:"email"`
 	PasswordHash string `db:"password_hash"`
 	FirstName    string `db:"first_name"`
@@ -29,7 +26,6 @@ type UserLogin struct {
 
 type UserGet struct {
 	UserUUID   string `db:"uuid"`
-	Role       string `db:"role"`
 	Email      string `db:"email"`
 	FirstName  string `db:"first_name"`
 	LastName   string `db:"last_name"`
@@ -48,9 +44,4 @@ type UserUpdateBio struct {
 	FirstName  string `db:"first_name"`
 	LastName   string `db:"last_name"`
 	Patronymic string `db:"patronymic"`
-}
-
-type UserUpdateRole struct {
-	UserUUID string `db:"uuid"`
-	Role     string `db:"role"`
 }

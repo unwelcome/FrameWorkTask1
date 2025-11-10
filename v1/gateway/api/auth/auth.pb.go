@@ -199,8 +199,6 @@ func (x *RegisterRequest) GetPatronymic() string {
 type RegisterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
-	AccessToken   string                 `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
-	RefreshToken  string                 `protobuf:"bytes,3,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -238,20 +236,6 @@ func (*RegisterResponse) Descriptor() ([]byte, []int) {
 func (x *RegisterResponse) GetUserUuid() string {
 	if x != nil {
 		return x.UserUuid
-	}
-	return ""
-}
-
-func (x *RegisterResponse) GetAccessToken() string {
-	if x != nil {
-		return x.AccessToken
-	}
-	return ""
-}
-
-func (x *RegisterResponse) GetRefreshToken() string {
-	if x != nil {
-		return x.RefreshToken
 	}
 	return ""
 }
@@ -434,11 +418,10 @@ type GetUserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
 	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	Role          string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
-	FirstName     string                 `protobuf:"bytes,4,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
-	LastName      string                 `protobuf:"bytes,5,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
-	Patronymic    string                 `protobuf:"bytes,6,opt,name=patronymic,proto3" json:"patronymic,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	FirstName     string                 `protobuf:"bytes,3,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
+	LastName      string                 `protobuf:"bytes,4,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
+	Patronymic    string                 `protobuf:"bytes,5,opt,name=patronymic,proto3" json:"patronymic,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -483,13 +466,6 @@ func (x *GetUserResponse) GetUserUuid() string {
 func (x *GetUserResponse) GetEmail() string {
 	if x != nil {
 		return x.Email
-	}
-	return ""
-}
-
-func (x *GetUserResponse) GetRole() string {
-	if x != nil {
-		return x.Role
 	}
 	return ""
 }
@@ -599,67 +575,6 @@ func (x *UpdateUserBioRequest) GetPatronymic() string {
 	return ""
 }
 
-// Update user role
-type UpdateUserRoleRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	UserUuid      string                 `protobuf:"bytes,2,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
-	Role          string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UpdateUserRoleRequest) Reset() {
-	*x = UpdateUserRoleRequest{}
-	mi := &file_auth_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UpdateUserRoleRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UpdateUserRoleRequest) ProtoMessage() {}
-
-func (x *UpdateUserRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UpdateUserRoleRequest.ProtoReflect.Descriptor instead.
-func (*UpdateUserRoleRequest) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *UpdateUserRoleRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
-}
-
-func (x *UpdateUserRoleRequest) GetUserUuid() string {
-	if x != nil {
-		return x.UserUuid
-	}
-	return ""
-}
-
-func (x *UpdateUserRoleRequest) GetRole() string {
-	if x != nil {
-		return x.Role
-	}
-	return ""
-}
-
 // Delete user
 type DeleteUserRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
@@ -672,7 +587,7 @@ type DeleteUserRequest struct {
 
 func (x *DeleteUserRequest) Reset() {
 	*x = DeleteUserRequest{}
-	mi := &file_auth_proto_msgTypes[10]
+	mi := &file_auth_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -684,7 +599,7 @@ func (x *DeleteUserRequest) String() string {
 func (*DeleteUserRequest) ProtoMessage() {}
 
 func (x *DeleteUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[10]
+	mi := &file_auth_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -697,7 +612,7 @@ func (x *DeleteUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteUserRequest.ProtoReflect.Descriptor instead.
 func (*DeleteUserRequest) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{10}
+	return file_auth_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *DeleteUserRequest) GetOperationId() string {
@@ -732,7 +647,7 @@ type RefreshTokenRequest struct {
 
 func (x *RefreshTokenRequest) Reset() {
 	*x = RefreshTokenRequest{}
-	mi := &file_auth_proto_msgTypes[11]
+	mi := &file_auth_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -744,7 +659,7 @@ func (x *RefreshTokenRequest) String() string {
 func (*RefreshTokenRequest) ProtoMessage() {}
 
 func (x *RefreshTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[11]
+	mi := &file_auth_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -757,7 +672,7 @@ func (x *RefreshTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefreshTokenRequest.ProtoReflect.Descriptor instead.
 func (*RefreshTokenRequest) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{11}
+	return file_auth_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RefreshTokenRequest) GetOperationId() string {
@@ -784,7 +699,7 @@ type RefreshTokenResponse struct {
 
 func (x *RefreshTokenResponse) Reset() {
 	*x = RefreshTokenResponse{}
-	mi := &file_auth_proto_msgTypes[12]
+	mi := &file_auth_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -796,7 +711,7 @@ func (x *RefreshTokenResponse) String() string {
 func (*RefreshTokenResponse) ProtoMessage() {}
 
 func (x *RefreshTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[12]
+	mi := &file_auth_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -809,7 +724,7 @@ func (x *RefreshTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefreshTokenResponse.ProtoReflect.Descriptor instead.
 func (*RefreshTokenResponse) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{12}
+	return file_auth_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *RefreshTokenResponse) GetAccessToken() string {
@@ -837,7 +752,7 @@ type RevokeTokenRequest struct {
 
 func (x *RevokeTokenRequest) Reset() {
 	*x = RevokeTokenRequest{}
-	mi := &file_auth_proto_msgTypes[13]
+	mi := &file_auth_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -849,7 +764,7 @@ func (x *RevokeTokenRequest) String() string {
 func (*RevokeTokenRequest) ProtoMessage() {}
 
 func (x *RevokeTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_auth_proto_msgTypes[13]
+	mi := &file_auth_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -862,7 +777,7 @@ func (x *RevokeTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeTokenRequest.ProtoReflect.Descriptor instead.
 func (*RevokeTokenRequest) Descriptor() ([]byte, []int) {
-	return file_auth_proto_rawDescGZIP(), []int{13}
+	return file_auth_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RevokeTokenRequest) GetOperationId() string {
@@ -898,11 +813,9 @@ const file_auth_proto_rawDesc = "" +
 	"\tlast_name\x18\x05 \x01(\tR\blastName\x12\x1e\n" +
 	"\n" +
 	"patronymic\x18\x06 \x01(\tR\n" +
-	"patronymic\"w\n" +
+	"patronymic\"/\n" +
 	"\x10RegisterResponse\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12!\n" +
-	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\x12#\n" +
-	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\"c\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"c\n" +
 	"\fLoginRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
@@ -913,19 +826,18 @@ const file_auth_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\"P\n" +
 	"\x0eGetUserRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x1b\n" +
-	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\"\xd3\x01\n" +
+	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\"\xbf\x01\n" +
 	"\x0fGetUserResponse\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\x12\x12\n" +
-	"\x04role\x18\x03 \x01(\tR\x04role\x12\x1d\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1d\n" +
 	"\n" +
-	"first_name\x18\x04 \x01(\tR\tfirstName\x12\x1b\n" +
-	"\tlast_name\x18\x05 \x01(\tR\blastName\x12\x1e\n" +
+	"first_name\x18\x03 \x01(\tR\tfirstName\x12\x1b\n" +
+	"\tlast_name\x18\x04 \x01(\tR\blastName\x12\x1e\n" +
 	"\n" +
-	"patronymic\x18\x06 \x01(\tR\n" +
+	"patronymic\x18\x05 \x01(\tR\n" +
 	"patronymic\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\a \x01(\tR\tcreatedAt\"\xb2\x01\n" +
+	"created_at\x18\x06 \x01(\tR\tcreatedAt\"\xb2\x01\n" +
 	"\x14UpdateUserBioRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x1b\n" +
 	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\x12\x1d\n" +
@@ -934,11 +846,7 @@ const file_auth_proto_rawDesc = "" +
 	"\tlast_name\x18\x04 \x01(\tR\blastName\x12\x1e\n" +
 	"\n" +
 	"patronymic\x18\x05 \x01(\tR\n" +
-	"patronymic\"k\n" +
-	"\x15UpdateUserRoleRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x1b\n" +
-	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\x12\x12\n" +
-	"\x04role\x18\x03 \x01(\tR\x04role\"\x90\x01\n" +
+	"patronymic\"\x90\x01\n" +
 	"\x11DeleteUserRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12.\n" +
 	"\x13initiator_user_uuid\x18\x02 \x01(\tR\x11initiatorUserUuid\x12(\n" +
@@ -951,14 +859,13 @@ const file_auth_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"\\\n" +
 	"\x12RevokeTokenRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken2\xba\x04\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken2\xf3\x03\n" +
 	"\vAuthService\x123\n" +
 	"\x06Health\x12\x13.auth.HealthRequest\x1a\x14.auth.HealthResponse\x129\n" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.auth.RegisterResponse\x120\n" +
 	"\x05Login\x12\x12.auth.LoginRequest\x1a\x13.auth.LoginResponse\x126\n" +
 	"\aGetUser\x12\x14.auth.GetUserRequest\x1a\x15.auth.GetUserResponse\x12C\n" +
-	"\rUpdateUserBio\x12\x1a.auth.UpdateUserBioRequest\x1a\x16.google.protobuf.Empty\x12E\n" +
-	"\x0eUpdateUserRole\x12\x1b.auth.UpdateUserRoleRequest\x1a\x16.google.protobuf.Empty\x12=\n" +
+	"\rUpdateUserBio\x12\x1a.auth.UpdateUserBioRequest\x1a\x16.google.protobuf.Empty\x12=\n" +
 	"\n" +
 	"DeleteUser\x12\x17.auth.DeleteUserRequest\x1a\x16.google.protobuf.Empty\x12E\n" +
 	"\fRefreshToken\x12\x19.auth.RefreshTokenRequest\x1a\x1a.auth.RefreshTokenResponse\x12?\n" +
@@ -976,23 +883,22 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_auth_proto_goTypes = []any{
-	(*HealthRequest)(nil),         // 0: auth.HealthRequest
-	(*HealthResponse)(nil),        // 1: auth.HealthResponse
-	(*RegisterRequest)(nil),       // 2: auth.RegisterRequest
-	(*RegisterResponse)(nil),      // 3: auth.RegisterResponse
-	(*LoginRequest)(nil),          // 4: auth.LoginRequest
-	(*LoginResponse)(nil),         // 5: auth.LoginResponse
-	(*GetUserRequest)(nil),        // 6: auth.GetUserRequest
-	(*GetUserResponse)(nil),       // 7: auth.GetUserResponse
-	(*UpdateUserBioRequest)(nil),  // 8: auth.UpdateUserBioRequest
-	(*UpdateUserRoleRequest)(nil), // 9: auth.UpdateUserRoleRequest
-	(*DeleteUserRequest)(nil),     // 10: auth.DeleteUserRequest
-	(*RefreshTokenRequest)(nil),   // 11: auth.RefreshTokenRequest
-	(*RefreshTokenResponse)(nil),  // 12: auth.RefreshTokenResponse
-	(*RevokeTokenRequest)(nil),    // 13: auth.RevokeTokenRequest
-	(*emptypb.Empty)(nil),         // 14: google.protobuf.Empty
+	(*HealthRequest)(nil),        // 0: auth.HealthRequest
+	(*HealthResponse)(nil),       // 1: auth.HealthResponse
+	(*RegisterRequest)(nil),      // 2: auth.RegisterRequest
+	(*RegisterResponse)(nil),     // 3: auth.RegisterResponse
+	(*LoginRequest)(nil),         // 4: auth.LoginRequest
+	(*LoginResponse)(nil),        // 5: auth.LoginResponse
+	(*GetUserRequest)(nil),       // 6: auth.GetUserRequest
+	(*GetUserResponse)(nil),      // 7: auth.GetUserResponse
+	(*UpdateUserBioRequest)(nil), // 8: auth.UpdateUserBioRequest
+	(*DeleteUserRequest)(nil),    // 9: auth.DeleteUserRequest
+	(*RefreshTokenRequest)(nil),  // 10: auth.RefreshTokenRequest
+	(*RefreshTokenResponse)(nil), // 11: auth.RefreshTokenResponse
+	(*RevokeTokenRequest)(nil),   // 12: auth.RevokeTokenRequest
+	(*emptypb.Empty)(nil),        // 13: google.protobuf.Empty
 }
 var file_auth_proto_depIdxs = []int32{
 	0,  // 0: auth.AuthService.Health:input_type -> auth.HealthRequest
@@ -1000,21 +906,19 @@ var file_auth_proto_depIdxs = []int32{
 	4,  // 2: auth.AuthService.Login:input_type -> auth.LoginRequest
 	6,  // 3: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
 	8,  // 4: auth.AuthService.UpdateUserBio:input_type -> auth.UpdateUserBioRequest
-	9,  // 5: auth.AuthService.UpdateUserRole:input_type -> auth.UpdateUserRoleRequest
-	10, // 6: auth.AuthService.DeleteUser:input_type -> auth.DeleteUserRequest
-	11, // 7: auth.AuthService.RefreshToken:input_type -> auth.RefreshTokenRequest
-	13, // 8: auth.AuthService.RevokeToken:input_type -> auth.RevokeTokenRequest
-	1,  // 9: auth.AuthService.Health:output_type -> auth.HealthResponse
-	3,  // 10: auth.AuthService.Register:output_type -> auth.RegisterResponse
-	5,  // 11: auth.AuthService.Login:output_type -> auth.LoginResponse
-	7,  // 12: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
-	14, // 13: auth.AuthService.UpdateUserBio:output_type -> google.protobuf.Empty
-	14, // 14: auth.AuthService.UpdateUserRole:output_type -> google.protobuf.Empty
-	14, // 15: auth.AuthService.DeleteUser:output_type -> google.protobuf.Empty
-	12, // 16: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
-	14, // 17: auth.AuthService.RevokeToken:output_type -> google.protobuf.Empty
-	9,  // [9:18] is the sub-list for method output_type
-	0,  // [0:9] is the sub-list for method input_type
+	9,  // 5: auth.AuthService.DeleteUser:input_type -> auth.DeleteUserRequest
+	10, // 6: auth.AuthService.RefreshToken:input_type -> auth.RefreshTokenRequest
+	12, // 7: auth.AuthService.RevokeToken:input_type -> auth.RevokeTokenRequest
+	1,  // 8: auth.AuthService.Health:output_type -> auth.HealthResponse
+	3,  // 9: auth.AuthService.Register:output_type -> auth.RegisterResponse
+	5,  // 10: auth.AuthService.Login:output_type -> auth.LoginResponse
+	7,  // 11: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
+	13, // 12: auth.AuthService.UpdateUserBio:output_type -> google.protobuf.Empty
+	13, // 13: auth.AuthService.DeleteUser:output_type -> google.protobuf.Empty
+	11, // 14: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
+	13, // 15: auth.AuthService.RevokeToken:output_type -> google.protobuf.Empty
+	8,  // [8:16] is the sub-list for method output_type
+	0,  // [0:8] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -1031,7 +935,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

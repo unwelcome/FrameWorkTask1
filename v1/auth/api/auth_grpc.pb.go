@@ -20,15 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Health_FullMethodName         = "/auth.AuthService/Health"
-	AuthService_Register_FullMethodName       = "/auth.AuthService/Register"
-	AuthService_Login_FullMethodName          = "/auth.AuthService/Login"
-	AuthService_GetUser_FullMethodName        = "/auth.AuthService/GetUser"
-	AuthService_UpdateUserBio_FullMethodName  = "/auth.AuthService/UpdateUserBio"
-	AuthService_UpdateUserRole_FullMethodName = "/auth.AuthService/UpdateUserRole"
-	AuthService_DeleteUser_FullMethodName     = "/auth.AuthService/DeleteUser"
-	AuthService_RefreshToken_FullMethodName   = "/auth.AuthService/RefreshToken"
-	AuthService_RevokeToken_FullMethodName    = "/auth.AuthService/RevokeToken"
+	AuthService_Health_FullMethodName        = "/auth.AuthService/Health"
+	AuthService_Register_FullMethodName      = "/auth.AuthService/Register"
+	AuthService_Login_FullMethodName         = "/auth.AuthService/Login"
+	AuthService_GetUser_FullMethodName       = "/auth.AuthService/GetUser"
+	AuthService_UpdateUserBio_FullMethodName = "/auth.AuthService/UpdateUserBio"
+	AuthService_DeleteUser_FullMethodName    = "/auth.AuthService/DeleteUser"
+	AuthService_RefreshToken_FullMethodName  = "/auth.AuthService/RefreshToken"
+	AuthService_RevokeToken_FullMethodName   = "/auth.AuthService/RevokeToken"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -40,7 +39,6 @@ type AuthServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
 	UpdateUserBio(ctx context.Context, in *UpdateUserBioRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
 	RevokeToken(ctx context.Context, in *RevokeTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -104,16 +102,6 @@ func (c *authServiceClient) UpdateUserBio(ctx context.Context, in *UpdateUserBio
 	return out, nil
 }
 
-func (c *authServiceClient) UpdateUserRole(ctx context.Context, in *UpdateUserRoleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, AuthService_UpdateUserRole_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *authServiceClient) DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -153,7 +141,6 @@ type AuthServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
 	UpdateUserBio(context.Context, *UpdateUserBioRequest) (*emptypb.Empty, error)
-	UpdateUserRole(context.Context, *UpdateUserRoleRequest) (*emptypb.Empty, error)
 	DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error)
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
 	RevokeToken(context.Context, *RevokeTokenRequest) (*emptypb.Empty, error)
@@ -181,9 +168,6 @@ func (UnimplementedAuthServiceServer) GetUser(context.Context, *GetUserRequest) 
 }
 func (UnimplementedAuthServiceServer) UpdateUserBio(context.Context, *UpdateUserBioRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserBio not implemented")
-}
-func (UnimplementedAuthServiceServer) UpdateUserRole(context.Context, *UpdateUserRoleRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserRole not implemented")
 }
 func (UnimplementedAuthServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
@@ -305,24 +289,6 @@ func _AuthService_UpdateUserBio_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_UpdateUserRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateUserRoleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).UpdateUserRole(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthService_UpdateUserRole_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).UpdateUserRole(ctx, req.(*UpdateUserRoleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _AuthService_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteUserRequest)
 	if err := dec(in); err != nil {
@@ -403,10 +369,6 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateUserBio",
 			Handler:    _AuthService_UpdateUserBio_Handler,
-		},
-		{
-			MethodName: "UpdateUserRole",
-			Handler:    _AuthService_UpdateUserRole_Handler,
 		},
 		{
 			MethodName: "DeleteUser",

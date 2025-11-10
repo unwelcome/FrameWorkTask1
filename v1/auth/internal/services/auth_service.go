@@ -7,21 +7,41 @@ import (
 	"github.com/rs/zerolog/log"
 	pb "github.com/unwelcome/FrameWorkTask1/v1/auth/api"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/v1/auth/internal/database/postgres"
+	redisDB "github.com/unwelcome/FrameWorkTask1/v1/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/v1/auth/internal/entities"
+	Error "github.com/unwelcome/FrameWorkTask1/v1/auth/pkg/errors"
+	"github.com/unwelcome/FrameWorkTask1/v1/auth/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"time"
 )
 
 const bcryptCost = 12
 
 type AuthService struct {
-	db *postgresDB.DatabaseRepository
+	db              *postgresDB.DatabaseRepository
+	cache           *redisDB.CacheRepository
+	jwtSecretKey    string
+	accessTokenTTL  time.Duration
+	refreshTokenTTL time.Duration
 	pb.UnimplementedAuthServiceServer
 }
 
-func NewAuthService(db *postgresDB.DatabaseRepository) *AuthService {
-	return &AuthService{db: db}
+func NewAuthService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRepository, jwtSecretKey string, accessTokenTTL, refreshTokenTTL time.Duration) *AuthService {
+	return &AuthService{
+		db:              db,
+		cache:           cache,
+		jwtSecretKey:    jwtSecretKey,
+		accessTokenTTL:  accessTokenTTL,
+		refreshTokenTTL: refreshTokenTTL,
+	}
 }
+
+// TODO:
+// fix multiple refresh same token
+// add check token type
 
 // Health Проверка состояния сервиса
 func (s *AuthService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
@@ -31,8 +51,6 @@ func (s *AuthService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.He
 
 // Register Создание нового пользователя
 func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	log.Info().Str("id", req.GetOperationId()).Str("method", "register").Msg("request")
-
 	// Создаем uuid для пользователя
 	userUUID := uuid.New().String()
 
@@ -41,13 +59,15 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 
 	// Проверяем длину пароля, больше 72 байт библиотека не захеширует
 	if len(bytePassword) >= 70 {
-		return nil, fmt.Errorf("create user error: password too long")
+		log.Info().Str("id", req.GetOperationId()).Str("method", "register").Err(fmt.Errorf("password too long")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "password too long")
 	}
 
 	// Хешируем пароль
 	passwordHash, err := bcrypt.GenerateFromPassword(bytePassword, bcryptCost)
 	if err != nil {
-		return nil, fmt.Errorf("create user error: %w", err)
+		log.Error().Str("id", req.GetOperationId()).Str("method", "register").Err(err).Msg("error")
+		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
 	// Создаем пользователя
@@ -60,48 +80,62 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		Patronymic:   req.GetPatronymic(),
 	}
 
-	err = s.db.User.CreateUser(ctx, dto)
+	createErr := s.db.User.CreateUser(ctx, dto)
+	err = Error.HandleError(createErr, req.GetOperationId(), "register")
 	if err != nil {
-		return nil, fmt.Errorf("create user error: %w", err)
+		return nil, err
 	}
 
-	// Генерируем токены
-	return &pb.RegisterResponse{UserUuid: userUUID, AccessToken: "access_token", RefreshToken: "refresh_token"}, nil
+	log.Info().Str("id", req.GetOperationId()).Str("method", "register").Msg("success")
+	return &pb.RegisterResponse{UserUuid: userUUID}, nil
 }
 
 // Login Авторизация пользователя
 func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	log.Info().Str("id", req.GetOperationId()).Str("method", "login").Msg("request")
-
 	// Получаем пользователя по email
-	user, err := s.db.User.GetUserByEmail(ctx, req.GetEmail())
+	user, getErr := s.db.User.GetUserByEmail(ctx, req.GetEmail())
+	err := Error.HandleError(getErr, req.GetOperationId(), "login")
 	if err != nil {
-		return nil, fmt.Errorf("login error: %w", err)
+		return nil, err
 	}
 
 	// Проверяем пароль
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.GetPassword())) != nil {
-		return nil, fmt.Errorf("login error: wrong password")
+		log.Info().Str("id", req.GetOperationId()).Str("method", "login").Err(fmt.Errorf("wrong password")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "wrong password")
 	}
 
 	// Генерируем токены
-	return &pb.LoginResponse{UserUuid: user.UserUUID, AccessToken: "access_token", RefreshToken: "refresh_token"}, nil
+	tokenPair, err := utils.CreateTokens(user.UserUUID, s.jwtSecretKey, s.accessTokenTTL, s.refreshTokenTTL)
+	if err != nil {
+		log.Error().Str("id", req.GetOperationId()).Str("method", "login").Err(err).Msg("error")
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+
+	// Сохраняем refresh токен
+	saveErr := s.cache.Auth.SaveRefreshToken(ctx, user.UserUUID, tokenPair.RefreshToken)
+	err = Error.HandleError(saveErr, req.GetOperationId(), "login")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "login").Msg("success")
+	return &pb.LoginResponse{UserUuid: user.UserUUID, AccessToken: tokenPair.AccessToken, RefreshToken: tokenPair.RefreshToken}, nil
 }
 
 // GetUser Получение информации о пользователе
 func (s *AuthService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	log.Info().Str("id", req.GetOperationId()).Str("method", "get user").Msg("request")
-
 	// Получаем данные пользователя
-	user, err := s.db.User.GetUser(ctx, req.GetUserUuid())
+	user, getErr := s.db.User.GetUser(ctx, req.GetUserUuid())
+	err := Error.HandleError(getErr, req.GetOperationId(), "get user")
 	if err != nil {
-		return nil, fmt.Errorf("get user error: %w", err)
+		return nil, err
 	}
 
+	log.Info().Str("id", req.GetOperationId()).Str("method", "get user").Msg("success")
 	return &pb.GetUserResponse{
 		UserUuid:   user.UserUUID,
 		Email:      user.Email,
-		Role:       user.Role,
 		FirstName:  user.FirstName,
 		LastName:   user.LastName,
 		Patronymic: user.Patronymic,
@@ -111,8 +145,6 @@ func (s *AuthService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 
 // UpdateUserBio Обновление ФИО пользователя
 func (s *AuthService) UpdateUserBio(ctx context.Context, req *pb.UpdateUserBioRequest) (*emptypb.Empty, error) {
-	log.Info().Str("id", req.GetOperationId()).Str("method", "update user bio").Msg("request")
-
 	// Обновляем ФИО пользователя
 	dto := &entities.UserUpdateBio{
 		UserUUID:   req.GetUserUuid(),
@@ -121,72 +153,103 @@ func (s *AuthService) UpdateUserBio(ctx context.Context, req *pb.UpdateUserBioRe
 		Patronymic: req.GetPatronymic(),
 	}
 
-	err := s.db.User.UpdateUserBio(ctx, dto)
+	updateErr := s.db.User.UpdateUserBio(ctx, dto)
+	err := Error.HandleError(updateErr, req.GetOperationId(), "update user bio")
 	if err != nil {
-		return nil, fmt.Errorf("update user bio error: %w", err)
+		return nil, err
 	}
 
-	return &emptypb.Empty{}, nil
-}
-
-// UpdateUserRole Обновление роли пользователя
-func (s *AuthService) UpdateUserRole(ctx context.Context, req *pb.UpdateUserRoleRequest) (*emptypb.Empty, error) {
-	log.Info().Str("id", req.GetOperationId()).Str("method", "update user role").Msg("request")
-
-	// Обновляем роль пользователя
-	dto := &entities.UserUpdateRole{
-		UserUUID: req.GetUserUuid(),
-		Role:     req.GetRole(),
-	}
-
-	err := s.db.User.UpdateUserRole(ctx, dto)
-	if err != nil {
-		return nil, fmt.Errorf("update user role error: %w", err)
-	}
-
+	log.Info().Str("id", req.GetOperationId()).Str("method", "update user bio").Msg("success")
 	return &emptypb.Empty{}, nil
 }
 
 // DeleteUser Удаление пользователя
 func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*emptypb.Empty, error) {
-	log.Info().Str("id", req.GetOperationId()).Str("method", "delete user").Msg("request")
-
 	// Проверяем что пользователь обладает правом на удаление
-	if !(req.GetInitiatorUserUuid() == req.GetTargetUserUuid() || req.GetInitiatorUserUuid() == "chief") {
-		return nil, fmt.Errorf("delete user error: not enough rights")
+	if !(req.GetInitiatorUserUuid() == req.GetTargetUserUuid()) {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete user").Err(fmt.Errorf("not enough rights")).Msg("error")
+		return nil, status.Errorf(codes.PermissionDenied, "not enough rights")
 	}
 
 	// Отзываем все токены пользователя
-
-	// Удаляем пользователя
-	err := s.db.User.DeleteUser(ctx, req.GetTargetUserUuid())
+	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, req.GetTargetUserUuid())
+	err := Error.HandleError(revokeErr, req.GetOperationId(), "delete user")
 	if err != nil {
-		return nil, fmt.Errorf("delete user error: %w", err)
+		return nil, err
 	}
 
+	// Удаляем пользователя
+	deleteErr := s.db.User.DeleteUser(ctx, req.GetTargetUserUuid())
+	err = Error.HandleError(deleteErr, req.GetOperationId(), "delete user")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "delete user").Msg("success")
 	return &emptypb.Empty{}, nil
 }
 
 // RefreshToken Обновление токенов
 func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
-	log.Info().Str("id", req.GetOperationId()).Str("method", "refresh tokens").Msg("request")
+	// Парсинг refresh токена
+	tokenClaims, err := utils.ParseToken(req.GetRefreshToken(), s.jwtSecretKey)
+	if err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "refresh token").Err(err).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
 
-	// Проверка refresh токена
+	// Проверка существования refresh токена
+	cacheErr := s.cache.Auth.CheckRefreshTokenExists(ctx, tokenClaims.UserUUID, req.GetRefreshToken())
+	err = Error.HandleError(cacheErr, req.GetOperationId(), "refresh token")
+	if err != nil {
+		return nil, err
+	}
 
 	// Проверка существования пользователя
-
-	// Удаление старого refresh токена
+	_, getErr := s.db.User.GetUser(ctx, tokenClaims.UserUUID)
+	err = Error.HandleError(getErr, req.GetOperationId(), "refresh token")
+	if err != nil {
+		return nil, err
+	}
 
 	// Создание новых токенов
+	tokenPair, err := utils.CreateTokens(tokenClaims.UserUUID, s.jwtSecretKey, s.accessTokenTTL, s.refreshTokenTTL)
+	if err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "refresh token").Err(err).Msg("error")
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 
-	return &pb.RefreshTokenResponse{AccessToken: "access_token", RefreshToken: "refresh_token"}, nil
+	// Замена старого refresh токена на новый
+	revokeErr := s.cache.Auth.RefreshToken(ctx, tokenClaims.UserUUID, req.GetRefreshToken(), tokenPair.RefreshToken)
+	err = Error.HandleError(revokeErr, req.GetOperationId(), "refresh token")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "refresh tokens").Msg("success")
+	return &pb.RefreshTokenResponse{AccessToken: tokenPair.AccessToken, RefreshToken: tokenPair.RefreshToken}, nil
 }
 
 // RevokeToken Отзыв refresh токена
 func (s *AuthService) RevokeToken(ctx context.Context, req *pb.RevokeTokenRequest) (*emptypb.Empty, error) {
-	log.Info().Str("id", req.GetOperationId()).Str("method", "revoke token").Msg("request")
+	// Парсим refresh токен
+	tokenClaims, err := utils.ParseToken(req.GetRefreshToken(), s.jwtSecretKey)
+	if err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "revoke token").Err(err).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
 
 	// Удаление refresh токена
+	revokeErr := s.cache.Auth.RevokeRefreshToken(ctx, tokenClaims.UserUUID, req.GetRefreshToken())
+	err = Error.HandleError(revokeErr, req.GetOperationId(), "revoke token")
+	if err != nil {
+		return nil, err
+	}
 
+	log.Info().Str("id", req.GetOperationId()).Str("method", "revoke token").Msg("success")
 	return &emptypb.Empty{}, nil
 }
+
+// RevokeAllTokens
+
+// GetAllActiveTokens

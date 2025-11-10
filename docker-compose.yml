@@ -32,8 +32,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-#      redis:
-#        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -57,26 +57,26 @@ services:
     networks:
       - app-network
 
-#  redis:
-#    container_name: redis
-#    image: redis:7.2-alpine
-#    ports:
-#      - "6379:6379"
-#    env_file:
-#      - ./.env
-#    volumes:
-#      - redis_data:/data
-#    command:
-#      - redis-server
-#      - --requirepass ${REDIS_PASSWORD}
-#    restart: unless-stopped
-#    healthcheck:
-#      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
-#      interval: 5s
-#      timeout: 5s
-#      retries: 10
-#    networks:
-#      - app-network
+  redis:
+    container_name: redis
+    image: redis:7.2-alpine
+    ports:
+      - "6379:6379"
+    env_file:
+      - ./.env
+    volumes:
+      - redis_data:/data
+    command:
+      - redis-server
+      - --requirepass ${REDIS_PASSWORD}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-network
 
 #  minio:
 #   container_name: minio
@@ -105,5 +105,5 @@ networks:
 
 volumes:
   db_data:
-#  redis_data:
+  redis_data:
 #  minio_data:

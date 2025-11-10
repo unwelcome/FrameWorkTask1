@@ -46,6 +46,7 @@ database:
 cache:
   host: redis
   port: 6379
+  password: 12345678
 
 # S3 settings
 s3:

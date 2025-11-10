@@ -7,6 +7,7 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/v1/auth/api"
 	"github.com/unwelcome/FrameWorkTask1/v1/auth/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/v1/auth/internal/database/postgres"
+	redisDB "github.com/unwelcome/FrameWorkTask1/v1/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/v1/auth/internal/logger"
 	"github.com/unwelcome/FrameWorkTask1/v1/auth/internal/services"
 	"google.golang.org/grpc"
@@ -24,7 +25,9 @@ func main() {
 
 	// Подключение к Postgresql
 	db := postgresDB.NewDatabaseInstance(cfg.GetDBConnectionString())
+
 	// Подключение к Redis
+	cache := redisDB.NewCacheInstance(cfg.GetCacheConnectionOptions(), cfg.App.RefreshTokenLifetime)
 
 	// Создание сервера
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.AuthService.Port))
@@ -34,7 +37,7 @@ func main() {
 
 	// Подключение grpc
 	grpcServer := grpc.NewServer()
-	auth_proto.RegisterAuthServiceServer(grpcServer, services.NewAuthService(db))
+	auth_proto.RegisterAuthServiceServer(grpcServer, services.NewAuthService(db, cache, cfg.App.JWTSecret, cfg.App.AccessTokenLifetime, cfg.App.RefreshTokenLifetime))
 
 	// Запуск сервиса
 	log.Info().Int("port", cfg.AuthService.Port).Msg("Auth service started")

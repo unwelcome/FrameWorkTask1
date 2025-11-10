@@ -11,7 +11,6 @@ service AuthService {
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
   rpc UpdateUserBio(UpdateUserBioRequest) returns (google.protobuf.Empty);
-  rpc UpdateUserRole(UpdateUserRoleRequest) returns (google.protobuf.Empty);
   rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
   rpc RevokeToken(RevokeTokenRequest) returns (google.protobuf.Empty);
@@ -36,8 +35,6 @@ message RegisterRequest {
 }
 message RegisterResponse {
   string user_uuid = 1;
-  string access_token = 2;
-  string refresh_token = 3;
 }
 
 // Login
@@ -60,11 +57,10 @@ message GetUserRequest {
 message GetUserResponse {
   string user_uuid = 1;
   string email = 2;
-  string role = 3;
-  string first_name = 4;
-  string last_name = 5;
-  string patronymic = 6;
-  string created_at = 7;
+  string first_name = 3;
+  string last_name = 4;
+  string patronymic = 5;
+  string created_at = 6;
 }
 
 // Update user bio
@@ -74,14 +70,6 @@ message UpdateUserBioRequest {
   string first_name = 3;
   string last_name = 4;
   string patronymic = 5;
-}
-// Empty response
-
-// Update user role
-message UpdateUserRoleRequest {
-  string operation_id = 1;
-  string user_uuid = 2;
-  string role = 3;
 }
 // Empty response
 

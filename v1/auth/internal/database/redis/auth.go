@@ -5,10 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"time"
+
 	"github.com/redis/go-redis/v9"
 	Error "github.com/unwelcome/FrameWorkTask1/v1/auth/pkg/errors"
 	"google.golang.org/grpc/codes"
-	"time"
 )
 
 type AuthRepository interface {
@@ -50,7 +51,7 @@ func (r *authRepository) SaveRefreshToken(ctx context.Context, userUUID, rawToke
 	// Завершаем транзакцию
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
-		return &Error.CodeError{Code: int(codes.Internal), Err: err}
+		return &Error.CodeError{Code: 0, Err: err}
 	}
 	return &Error.CodeError{Code: -1, Err: nil}
 }
@@ -62,7 +63,7 @@ func (r *authRepository) GetAllRefreshTokens(ctx context.Context, userUUID strin
 	// Получаем все refresh токены пользователя
 	hashedTokens, err := r.redis.SMembers(ctx, userTokensKey).Result()
 	if err != nil {
-		return nil, &Error.CodeError{Code: int(codes.Internal), Err: err}
+		return nil, &Error.CodeError{Code: 0, Err: err}
 	}
 
 	actualRefreshTokens := make([]string, 0)
@@ -98,14 +99,20 @@ func (r *authRepository) CheckRefreshTokenExists(ctx context.Context, userUUID, 
 	tokenKey := r.getRefreshTokenKey(hash)
 
 	// Проверяем, существует ли токен
-	_, err := r.redis.Exists(ctx, tokenKey).Result()
+	exist, err := r.redis.Exists(ctx, tokenKey).Result()
 	if err != nil {
-		// Токен истек -> удаляем токен из токенов пользователя
+		return &Error.CodeError{Code: 0, Err: err}
+	}
+
+	// Проверяем что токен истек
+	if exist == 0 {
+		// Удаляем токен из токенов пользователя
 		userTokensKey := r.getUserTokensKey(userUUID)
 		_ = r.redis.SRem(ctx, userTokensKey, hash).Err()
 
-		return &Error.CodeError{Code: int(codes.Internal), Err: err}
+		return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("refresh token not found")}
 	}
+
 	return &Error.CodeError{Code: -1, Err: nil}
 }
 
@@ -122,12 +129,11 @@ func (r *authRepository) RevokeRefreshToken(ctx context.Context, userUUID, rawTo
 	// Удаляем токен из токенов пользователя
 	err2 := r.redis.SRem(ctx, userTokensKey, hash).Err()
 
-	if err1 != nil && err2 != nil {
+	if err1 != nil {
 		return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("refresh token not found")}
-	} else if err1 != nil {
-		return &Error.CodeError{Code: int(codes.Internal), Err: err1}
-	} else if err2 != nil {
-		return &Error.CodeError{Code: int(codes.Internal), Err: err2}
+	}
+	if err2 != nil {
+		return &Error.CodeError{Code: 0, Err: err2}
 	}
 
 	return &Error.CodeError{Code: -1, Err: nil}
@@ -140,7 +146,7 @@ func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, userUUID st
 	// Получаем все refresh токены пользователя
 	hashedTokens, err := r.redis.SMembers(ctx, userTokensKey).Result()
 	if err != nil {
-		return &Error.CodeError{Code: int(codes.Internal), Err: err}
+		return &Error.CodeError{Code: 0, Err: err}
 	}
 
 	// Удаляем каждый refresh токен
@@ -152,7 +158,7 @@ func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, userUUID st
 	// Удаляем все refresh токены пользователя
 	err = r.redis.SRem(ctx, userTokensKey, hashedTokens).Err()
 	if err != nil {
-		return &Error.CodeError{Code: int(codes.Internal), Err: err}
+		return &Error.CodeError{Code: 0, Err: err}
 	}
 	return &Error.CodeError{Code: -1, Err: nil}
 }

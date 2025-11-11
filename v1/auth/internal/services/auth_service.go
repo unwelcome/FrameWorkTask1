@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	pb "github.com/unwelcome/FrameWorkTask1/v1/auth/api"
@@ -15,7 +17,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"time"
 )
 
 const bcryptCost = 12
@@ -38,10 +39,6 @@ func NewAuthService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRepos
 		refreshTokenTTL: refreshTokenTTL,
 	}
 }
-
-// TODO:
-// fix multiple refresh same token
-// add check token type
 
 // Health Проверка состояния сервиса
 func (s *AuthService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
@@ -191,16 +188,21 @@ func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 
 // RefreshToken Обновление токенов
 func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
-	// Парсинг refresh токена
+	// Парсинг токена
 	tokenClaims, err := utils.ParseToken(req.GetRefreshToken(), s.jwtSecretKey)
 	if err != nil {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "refresh token").Err(err).Msg("error")
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
+	// Проверка типа токена
+	if tokenClaims.TokenType != entities.RefreshTokenType {
+		return nil, status.Errorf(codes.InvalidArgument, "wrong token type")
+	}
+
 	// Проверка существования refresh токена
-	cacheErr := s.cache.Auth.CheckRefreshTokenExists(ctx, tokenClaims.UserUUID, req.GetRefreshToken())
-	err = Error.HandleError(cacheErr, req.GetOperationId(), "refresh token")
+	checkErr := s.cache.Auth.CheckRefreshTokenExists(ctx, tokenClaims.UserUUID, req.GetRefreshToken())
+	err = Error.HandleError(checkErr, req.GetOperationId(), "refresh token")
 	if err != nil {
 		return nil, err
 	}
@@ -220,8 +222,8 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	}
 
 	// Замена старого refresh токена на новый
-	revokeErr := s.cache.Auth.RefreshToken(ctx, tokenClaims.UserUUID, req.GetRefreshToken(), tokenPair.RefreshToken)
-	err = Error.HandleError(revokeErr, req.GetOperationId(), "refresh token")
+	refreshErr := s.cache.Auth.RefreshToken(ctx, tokenClaims.UserUUID, req.GetRefreshToken(), tokenPair.RefreshToken)
+	err = Error.HandleError(refreshErr, req.GetOperationId(), "refresh token")
 	if err != nil {
 		return nil, err
 	}

@@ -10,10 +10,13 @@ service AuthService {
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty);
   rpc UpdateUserBio(UpdateUserBioRequest) returns (google.protobuf.Empty);
   rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc GetAllActiveTokens(GetAllActiveTokensRequest) returns (GetAllActiveTokensResponse);
   rpc RevokeToken(RevokeTokenRequest) returns (google.protobuf.Empty);
+  rpc RevokeAllTokens(RevokeAllTokensRequest) returns (google.protobuf.Empty);
 }
 
 // Health
@@ -63,6 +66,14 @@ message GetUserResponse {
   string created_at = 6;
 }
 
+// Change user password
+message ChangePasswordRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string password = 3;
+}
+// Empty response
+
 // Update user bio
 message UpdateUserBioRequest {
   string operation_id = 1;
@@ -91,9 +102,28 @@ message RefreshTokenResponse {
   string refresh_token = 2;
 }
 
+// Get all user active refresh tokens
+message GetAllActiveTokensRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+}
+message GetAllActiveTokensResponse{
+  repeated Token tokens = 1;
+}
+message Token {
+  string token = 1;
+}
+
 // Revoke token
 message RevokeTokenRequest {
   string operation_id = 1;
   string refresh_token = 2;
+}
+// Empty response
+
+// Revoke all user tokens
+message RevokeAllTokensRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
 }
 // Empty response

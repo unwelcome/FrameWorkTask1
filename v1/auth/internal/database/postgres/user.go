@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/lib/pq"
 	"github.com/unwelcome/FrameWorkTask1/v1/auth/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/v1/auth/pkg/errors"
@@ -15,6 +16,7 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, dto *entities.UserCreate) *Error.CodeError
 	GetUserByEmail(ctx context.Context, email string) (*entities.UserGetByEmail, *Error.CodeError)
 	GetUser(ctx context.Context, uuid string) (*entities.UserGet, *Error.CodeError)
+	UpdateUserPassword(ctx context.Context, uuid string, passwordHash string) *Error.CodeError
 	UpdateUserBio(ctx context.Context, dto *entities.UserUpdateBio) *Error.CodeError
 	DeleteUser(ctx context.Context, uuid string) *Error.CodeError
 }
@@ -72,6 +74,19 @@ func (r *userRepository) GetUser(ctx context.Context, uuid string) (*entities.Us
 		return nil, &Error.CodeError{Code: 0, Err: err}
 	}
 	return userGet, &Error.CodeError{Code: -1, Err: nil}
+}
+
+func (r *userRepository) UpdateUserPassword(ctx context.Context, uuid string, passwordHash string) *Error.CodeError {
+	query := `UPDATE users SET password_hash = $2 WHERE uuid = $1;`
+
+	_, err := r.db.ExecContext(ctx, query, uuid, passwordHash)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+		}
+		return &Error.CodeError{Code: 0, Err: err}
+	}
+	return &Error.CodeError{Code: -1, Err: nil}
 }
 
 func (r *userRepository) UpdateUserBio(ctx context.Context, dto *entities.UserUpdateBio) *Error.CodeError {

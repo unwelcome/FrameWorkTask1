@@ -140,6 +140,35 @@ func (s *AuthService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	}, nil
 }
 
+// ChangePassword Обновление пароля пользователя
+func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*emptypb.Empty, error) {
+	// Переводим пароль из строки в срез байт
+	bytePassword := []byte(req.GetPassword())
+
+	// Проверяем длину пароля, больше 72 байт библиотека не захеширует
+	if len(bytePassword) >= 70 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "change password").Err(fmt.Errorf("password too long")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "password too long")
+	}
+
+	// Хешируем пароль
+	passwordHash, err := bcrypt.GenerateFromPassword(bytePassword, bcryptCost)
+	if err != nil {
+		log.Error().Str("id", req.GetOperationId()).Str("method", "change password").Err(err).Msg("error")
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+
+	// Обновление пароля
+	updateErr := s.db.User.UpdateUserPassword(ctx, req.GetUserUuid(), string(passwordHash))
+	err = Error.HandleError(updateErr, req.GetOperationId(), "change password")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "change password").Err(err).Msg("success")
+	return &emptypb.Empty{}, nil
+}
+
 // UpdateUserBio Обновление ФИО пользователя
 func (s *AuthService) UpdateUserBio(ctx context.Context, req *pb.UpdateUserBioRequest) (*emptypb.Empty, error) {
 	// Обновляем ФИО пользователя
@@ -184,6 +213,25 @@ func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 
 	log.Info().Str("id", req.GetOperationId()).Str("method", "delete user").Msg("success")
 	return &emptypb.Empty{}, nil
+}
+
+// GetAllActiveTokens Получение всех активных токенов пользователя
+func (s *AuthService) GetAllActiveTokens(ctx context.Context, req *pb.GetAllActiveTokensRequest) (*pb.GetAllActiveTokensResponse, error) {
+	// Получение всех refresh токенов пользователя
+	userTokens, getErr := s.cache.Auth.GetAllRefreshTokens(ctx, req.GetUserUuid())
+	err := Error.HandleError(getErr, req.GetOperationId(), "get all tokens")
+	if err != nil {
+		return nil, err
+	}
+
+	// Форматирование ответа
+	tokens := make([]*pb.Token, 0)
+	for _, token := range userTokens {
+		tokens = append(tokens, &pb.Token{Token: token})
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "get all tokens").Msg("success")
+	return &pb.GetAllActiveTokensResponse{Tokens: tokens}, nil
 }
 
 // RefreshToken Обновление токенов
@@ -232,7 +280,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	return &pb.RefreshTokenResponse{AccessToken: tokenPair.AccessToken, RefreshToken: tokenPair.RefreshToken}, nil
 }
 
-// RevokeToken Отзыв refresh токена
+// RevokeToken Отзыв refresh токена пользователя
 func (s *AuthService) RevokeToken(ctx context.Context, req *pb.RevokeTokenRequest) (*emptypb.Empty, error) {
 	// Парсим refresh токен
 	tokenClaims, err := utils.ParseToken(req.GetRefreshToken(), s.jwtSecretKey)
@@ -252,6 +300,15 @@ func (s *AuthService) RevokeToken(ctx context.Context, req *pb.RevokeTokenReques
 	return &emptypb.Empty{}, nil
 }
 
-// RevokeAllTokens
+// RevokeAllTokens Отзыв всех refresh токенов пользователя
+func (s *AuthService) RevokeAllTokens(ctx context.Context, req *pb.RevokeAllTokensRequest) (*emptypb.Empty, error) {
+	// Отзыв всех refresh токенов пользователя
+	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, req.GetUserUuid())
+	err := Error.HandleError(revokeErr, req.GetOperationId(), "revoke all tokens")
+	if err != nil {
+		return nil, err
+	}
 
-// GetAllActiveTokens
+	log.Info().Str("id", req.GetOperationId()).Str("method", "revoke all tokens").Msg("success")
+	return &emptypb.Empty{}, nil
+}

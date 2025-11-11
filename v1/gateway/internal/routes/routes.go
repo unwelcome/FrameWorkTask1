@@ -18,4 +18,7 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 
 	// Health handler
 	api.Get("/health", app.HealthHandler.Health)
+
+	// Auth handler
+	api.Post("/register", app.AuthHandler.Register)
 }

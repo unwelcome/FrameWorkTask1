@@ -1,6 +1,6 @@
 basePath: /api
 definitions:
-  apiErrors.HttpError:
+  Error.HttpError:
     properties:
       code:
         type: integer
@@ -14,6 +14,24 @@ definitions:
       auth_service:
         type: string
       gateway:
+        type: string
+    type: object
+  entities.RegisterRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        type: string
+      patronymic:
+        type: string
+    type: object
+  entities.RegisterResponse:
+    properties:
+      user_uuid:
         type: string
     type: object
 host: localhost:8080
@@ -35,10 +53,44 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/apiErrors.HttpError'
+            $ref: '#/definitions/Error.HttpError'
       summary: Health check
       tags:
       - Health
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Register new user
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: Register
+      tags:
+      - Auth
 securityDefinitions:
   ApiKeyAuth:
     in: header

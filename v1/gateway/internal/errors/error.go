@@ -1,4 +1,4 @@
-package apiErrors
+package Error
 
 type HttpError struct {
 	Code    int    `json:"code"`

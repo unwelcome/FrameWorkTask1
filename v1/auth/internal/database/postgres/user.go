@@ -79,12 +79,18 @@ func (r *userRepository) GetUser(ctx context.Context, uuid string) (*entities.Us
 func (r *userRepository) UpdateUserPassword(ctx context.Context, uuid string, passwordHash string) *Error.CodeError {
 	query := `UPDATE users SET password_hash = $2 WHERE uuid = $1;`
 
-	_, err := r.db.ExecContext(ctx, query, uuid, passwordHash)
+	result, err := r.db.ExecContext(ctx, query, uuid, passwordHash)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
-		}
 		return &Error.CodeError{Code: 0, Err: err}
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return &Error.CodeError{Code: 0, Err: err}
+	}
+
+	if rowsAffected == 0 {
+		return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
 	}
 	return &Error.CodeError{Code: -1, Err: nil}
 }
@@ -92,12 +98,18 @@ func (r *userRepository) UpdateUserPassword(ctx context.Context, uuid string, pa
 func (r *userRepository) UpdateUserBio(ctx context.Context, dto *entities.UserUpdateBio) *Error.CodeError {
 	query := `UPDATE users SET (first_name, last_name, patronymic) = ($2, $3, $4) WHERE uuid = $1;`
 
-	_, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.FirstName, dto.LastName, dto.Patronymic)
+	result, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.FirstName, dto.LastName, dto.Patronymic)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
-		}
 		return &Error.CodeError{Code: 0, Err: err}
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return &Error.CodeError{Code: 0, Err: err}
+	}
+
+	if rowsAffected == 0 {
+		return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
 	}
 	return &Error.CodeError{Code: -1, Err: nil}
 }
@@ -105,12 +117,19 @@ func (r *userRepository) UpdateUserBio(ctx context.Context, dto *entities.UserUp
 func (r *userRepository) DeleteUser(ctx context.Context, uuid string) *Error.CodeError {
 	query := `DELETE FROM users WHERE uuid = $1;`
 
-	_, err := r.db.ExecContext(ctx, query, uuid)
+	result, err := r.db.ExecContext(ctx, query, uuid)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
-		}
 		return &Error.CodeError{Code: 0, Err: err}
+	}
+
+	// Проверяем количество удаленных строк
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return &Error.CodeError{Code: 0, Err: err}
+	}
+
+	if rowsAffected == 0 {
+		return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
 	}
 	return &Error.CodeError{Code: -1, Err: nil}
 }

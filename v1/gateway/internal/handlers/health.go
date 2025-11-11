@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"context"
-	"github.com/gofiber/fiber/v2"
-	"github.com/unwelcome/FrameWorkTask1/v1/gateway/api/auth"
-	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/entities"
-	apiErrors "github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/errors"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	auth_proto "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/auth"
+	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/entities"
+	Error "github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/errors"
 )
 
 type HealthHandler interface {
@@ -28,7 +29,7 @@ func NewHealthHandler(authServiceClient auth_proto.AuthServiceClient) HealthHand
 //	@Tags         Health
 //	@Produce      json
 //	@Success      200  {object}  entities.Health
-//	@Failure      500  {object}  apiErrors.HttpError
+//	@Failure      500  {object}  Error.HttpError
 //	@Router       /health [get]
 func (h *healthHandler) Health(c *fiber.Ctx) error {
 	operationID := c.Locals("operationID").(string)
@@ -39,7 +40,7 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 
 	res, err := h.AuthServiceClient.Health(ctx, &auth_proto.HealthRequest{OperationId: operationID})
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(apiErrors.HttpError{Code: 500, Message: err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(Error.HttpError{Code: 500, Message: err.Error()})
 	}
 
 	// Сборка ответа

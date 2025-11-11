@@ -2,9 +2,10 @@ package app
 
 import (
 	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
-	"github.com/unwelcome/FrameWorkTask1/v1/gateway/api/auth"
+	auth_proto "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/auth"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/config"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/handlers"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/logger"
@@ -21,6 +22,7 @@ type App struct {
 
 	// Handlers
 	HealthHandler handlers.HealthHandler
+	AuthHandler   handlers.AuthHandler
 }
 
 func InitApp(cfg *config.Config) *App {
@@ -34,6 +36,7 @@ func InitApp(cfg *config.Config) *App {
 
 	// Init handlers
 	app.HealthHandler = handlers.NewHealthHandler(app.AuthServiceClient)
+	app.AuthHandler = handlers.NewAuthHandler(app.AuthServiceClient)
 
 	return app
 }

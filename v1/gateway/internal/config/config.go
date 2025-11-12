@@ -14,6 +14,7 @@ type Config struct {
 	App                AppConfig                `yaml:"app"`
 	Gateway            GatewayConfig            `yaml:"gateway"`
 	AuthService        AuthServiceConfig        `yaml:"auth_service"`
+	CompanyService     CompanyServiceConfig     `yaml:"company_service"`
 	ApplicationService ApplicationServiceConfig `yaml:"application_service"`
 	Db                 Database                 `yaml:"database"`
 	Cache              Cache                    `yaml:"cache"`
@@ -37,6 +38,16 @@ type GatewayConfig struct {
 }
 
 type AuthServiceConfig struct {
+	Host       string `yaml:"host"`
+	Port       int    `yaml:"port"`
+	DBUser     string `yaml:"db_user"`
+	DBPassword string `yaml:"db_password"`
+	DBName     string `yaml:"db_name"`
+	CacheDB    int    `yaml:"cache_db"`
+	S3Bucket   string `yaml:"s3_bucket"`
+}
+
+type CompanyServiceConfig struct {
 	Host       string `yaml:"host"`
 	Port       int    `yaml:"port"`
 	DBUser     string `yaml:"db_user"`
@@ -163,6 +174,14 @@ func (config *Config) Print() {
 	fmt.Printf("DBName: %s\n", config.AuthService.DBName)
 	fmt.Printf("CacheDB: %d\n", config.AuthService.CacheDB)
 	fmt.Printf("S3Bucket: %s\n", config.AuthService.S3Bucket)
+
+	fmt.Printf("=== Company service ===\n")
+	fmt.Printf("Port: %d\n", config.CompanyService.Port)
+	fmt.Printf("DBUser: %s\n", config.CompanyService.DBUser)
+	fmt.Printf("DBPassword: %s\n", hideCredentials(config.CompanyService.DBPassword))
+	fmt.Printf("DBName: %s\n", config.CompanyService.DBName)
+	fmt.Printf("CacheDB: %d\n", config.CompanyService.CacheDB)
+	fmt.Printf("S3Bucket: %s\n", config.CompanyService.S3Bucket)
 
 	fmt.Printf("=== Application service ===\n")
 	fmt.Printf("Port: %d\n", config.ApplicationService.Port)

@@ -36,6 +36,27 @@ services:
         condition: service_healthy
     networks:
       - app-network
+  
+  company_service:
+    container_name: company_service
+    build:
+      context: ./v1/company
+      dockerfile: Dockerfile
+    ports:
+      - "50052:50052" # для отладки
+    env_file:
+      - ./.env
+    environment:
+      PRODUCTION_TYPE: prod
+    volumes:
+      - ./v1/config.yaml:/app/config/config.yaml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # redis:
+      #   condition: service_healthy
+    networks:
+      - app-network
 
   postgres:
     container_name: postgres

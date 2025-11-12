@@ -24,16 +24,29 @@ auth_service:
   # S3
   s3_bucket: auth_bucket
 
+# Company service
+company_service:
+  host: company_service
+  port: 50052
+  # Database
+  db_user: company_user
+  db_password: company_password
+  db_name: company_db
+  # Cache
+  cache_db: 2
+  # S3
+  s3_bucket: company_bucket
+
 # Application service
 application_service:
   host: auth_service
-  port: 50052
+  port: 50053
   # Database
   db_user: application_user
   db_password: application_password
   db_name: application_db
   # Cache
-  cache_db: 2
+  cache_db: 3
   # S3
   s3_bucket: application_bucket
 

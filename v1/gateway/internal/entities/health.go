@@ -1,6 +1,6 @@
 package entities
 
-type Health struct {
+type HealthResponse struct {
 	Gateway     string `json:"gateway"`
 	Auth        string `json:"auth_service"`
 	Application string `json:"application_service"`

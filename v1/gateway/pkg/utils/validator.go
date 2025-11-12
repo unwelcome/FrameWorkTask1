@@ -4,14 +4,44 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode"
 )
+
+// ValidateUUID проверяет uuid по регулярному выражению
+func ValidateUUID(uuid string) error {
+	if uuid == "" {
+		return fmt.Errorf("uuid missed")
+	}
+
+	pattern := `^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`
+	if !regexp.MustCompile(pattern).MatchString(uuid) {
+		return fmt.Errorf("incorrect uuid")
+	}
+	return nil
+}
+
+// ValidateJWT Проверка строки на схожесть на jwt токен
+func ValidateJWT(token string) error {
+	if token == "" {
+		return fmt.Errorf("token missed")
+	}
+
+	pattern := `^[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}$`
+	if !regexp.MustCompile(pattern).MatchString(token) {
+		return fmt.Errorf("incorrect token")
+	}
+	return nil
+}
 
 // ValidateEmail проверяет email по регулярному выражению
 func ValidateEmail(email string) error {
+	if email == "" {
+		return fmt.Errorf("email missed")
+	}
+
 	pattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 
-	matched, _ := regexp.MatchString(pattern, email)
-	if !matched {
+	if !regexp.MustCompile(pattern).MatchString(email) {
 		return fmt.Errorf("incorrect email")
 	}
 	return nil
@@ -19,6 +49,10 @@ func ValidateEmail(email string) error {
 
 // ValidatePassword Проверка пароля пользователя
 func ValidatePassword(password string, minLen, maxLen int) error {
+	if password == "" {
+		return fmt.Errorf("password missed")
+	}
+
 	if strings.TrimSpace(password) != password {
 		return fmt.Errorf("password contains extra spaces")
 	}
@@ -110,6 +144,16 @@ func ValidatePatronymic(s string, minLen, maxLen int) error {
 	}
 
 	return nil
+}
+
+func FCapitalize(str string) string {
+	if str == "" {
+		return ""
+	}
+
+	runes := []rune(strings.ToLower(str))
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
 }
 
 // ValidateNumber проверка числа

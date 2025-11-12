@@ -8,9 +8,14 @@ import (
 	auth_proto "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/auth"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/config"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/handlers"
-	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/logger"
+	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/middlewares"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+)
+
+const (
+	OperationIDKey = "operation_id"
+	UserUUIDKey    = "user_uuid"
 )
 
 type App struct {
@@ -18,7 +23,9 @@ type App struct {
 	AuthServiceClient auth_proto.AuthServiceClient
 
 	// Middlewares
-	LoggerMiddleware fiber.Handler
+	OperationIDMiddleware fiber.Handler
+	LoggerMiddleware      fiber.Handler
+	AuthMiddleware        fiber.Handler
 
 	// Handlers
 	HealthHandler handlers.HealthHandler
@@ -32,11 +39,13 @@ func InitApp(cfg *config.Config) *App {
 	app.AuthServiceClient = auth_proto.NewAuthServiceClient(getGRPCConnection(cfg.AuthService.Host, cfg.AuthService.Port))
 
 	// Init middlewares
-	app.LoggerMiddleware = logger.RequestLogger()
+	app.OperationIDMiddleware = middlewares.NewOperationIDMiddleware(OperationIDKey)
+	app.LoggerMiddleware = middlewares.NewRequestLoggerMiddleware()
+	app.AuthMiddleware = middlewares.NewAuthMiddleware(cfg.App.JWTSecret, UserUUIDKey)
 
 	// Init handlers
-	app.HealthHandler = handlers.NewHealthHandler(app.AuthServiceClient)
-	app.AuthHandler = handlers.NewAuthHandler(app.AuthServiceClient)
+	app.HealthHandler = handlers.NewHealthHandler(app.AuthServiceClient, OperationIDKey)
+	app.AuthHandler = handlers.NewAuthHandler(app.AuthServiceClient, OperationIDKey, UserUUIDKey)
 
 	return app
 }

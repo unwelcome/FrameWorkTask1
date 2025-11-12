@@ -151,7 +151,7 @@ func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, userUUID st
 
 	// Токенов нет
 	if len(hashedTokens) == 0 {
-		return &Error.CodeError{Code: -1, Err: nil}
+		return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("refresh tokens not found")}
 	}
 
 	// Удаляем каждый refresh токен

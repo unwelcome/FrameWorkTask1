@@ -7,13 +7,77 @@ definitions:
       message:
         type: string
     type: object
-  entities.Health:
+  entities.ChangePasswordRequest:
+    properties:
+      password:
+        type: string
+    type: object
+  entities.ChangePasswordResponse:
+    type: object
+  entities.DeleteUserRequest:
+    properties:
+      tagret_uuid:
+        type: string
+    type: object
+  entities.DeleteUserResponse:
+    type: object
+  entities.GetAllActiveTokensResponse:
+    properties:
+      tokens:
+        items:
+          $ref: '#/definitions/entities.TokenInfo'
+        type: array
+    type: object
+  entities.GetUserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      patronymic:
+        type: string
+      user_uuid:
+        type: string
+    type: object
+  entities.HealthResponse:
     properties:
       application_service:
         type: string
       auth_service:
         type: string
       gateway:
+        type: string
+    type: object
+  entities.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  entities.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user_uuid:
+        type: string
+    type: object
+  entities.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  entities.RefreshTokenResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
         type: string
     type: object
   entities.RegisterRequest:
@@ -34,12 +98,296 @@ definitions:
       user_uuid:
         type: string
     type: object
+  entities.RevokeAllTokensResponse:
+    type: object
+  entities.RevokeTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  entities.RevokeTokenResponse:
+    type: object
+  entities.TokenInfo:
+    properties:
+      token:
+        type: string
+    type: object
+  entities.UpdateUserBioRequest:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      patronymic:
+        type: string
+    type: object
+  entities.UpdateUserBioResponse:
+    type: object
 host: localhost:8080
 info:
   contact: {}
   title: Framework task 2 API
   version: "2.0"
 paths:
+  /auth/user/{user_uuid}/info:
+    get:
+      description: Get user info
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: GetUser
+      tags:
+      - User
+  /auth/user/account:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user
+      parameters:
+      - description: Target UUID
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.DeleteUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.DeleteUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: DeleteUser
+      tags:
+      - Auth
+  /auth/user/bio:
+    patch:
+      consumes:
+      - application/json
+      description: Update user firstName, lastName, patronymic
+      parameters:
+      - description: ФИО пользователя
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateUserBioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateUserBioResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: UpdateUserBio
+      tags:
+      - User
+  /auth/user/password:
+    patch:
+      consumes:
+      - application/json
+      description: Change user password
+      parameters:
+      - description: Новый пароль
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.ChangePasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: ChangePassword
+      tags:
+      - User
+  /auth/user/revoke/all:
+    delete:
+      description: Revoke all user refresh tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.RevokeAllTokensResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: RevokeAllTokens
+      tags:
+      - Auth
+  /auth/user/revoke/token:
+    delete:
+      consumes:
+      - application/json
+      description: Revoke refresh token
+      parameters:
+      - description: Refresh token for revoke
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.RevokeTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.RevokeTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: RevokeToken
+      tags:
+      - Auth
+  /auth/user/tokens:
+    get:
+      description: Get all active refresh tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetAllActiveTokensResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: GetAllActiveTokens
+      tags:
+      - Auth
   /health:
     get:
       description: Get all services health status
@@ -49,7 +397,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/entities.Health'
+            $ref: '#/definitions/entities.HealthResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -57,6 +405,72 @@ paths:
       summary: Health check
       tags:
       - Health
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login user
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: Login
+      tags:
+      - Auth
+  /refresh:
+    post:
+      description: Refresh tokens
+      parameters:
+      - description: Refresh token
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.RefreshTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: RefreshToken
+      tags:
+      - Auth
   /register:
     post:
       consumes:
@@ -65,7 +479,7 @@ paths:
       parameters:
       - description: Данные пользователя
         in: body
-        name: user
+        name: data
         required: true
         schema:
           $ref: '#/definitions/entities.RegisterRequest'
@@ -90,7 +504,7 @@ paths:
             $ref: '#/definitions/Error.HttpError'
       summary: Register
       tags:
-      - Auth
+      - User
 securityDefinitions:
   ApiKeyAuth:
     in: header

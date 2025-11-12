@@ -2,14 +2,11 @@ package logger
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
 
 	"github.com/rs/zerolog"
@@ -50,30 +47,4 @@ func Setup(logPath string, consoleOut bool) *zerolog.Logger {
 
 	log.Info().Msg("logger setup complete")
 	return &loggerContext
-}
-
-func RequestLogger() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		startTime := time.Now()
-		operationID := uuid.NewString()
-
-		c.Locals("operationID", operationID)
-
-		err := c.Next()
-
-		logLevel := zerolog.InfoLevel
-		if time.Since(startTime) > time.Second*2 {
-			logLevel = zerolog.WarnLevel
-		}
-
-		log.WithLevel(logLevel).
-			Str("id", operationID).
-			Str("method", c.Method()).
-			Str("path", c.Path()).
-			Int("duration", int(time.Since(startTime).Milliseconds())).
-			Int("status", c.Response().StatusCode()).
-			Msg("request")
-
-		return err
-	}
 }

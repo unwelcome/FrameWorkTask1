@@ -42,7 +42,7 @@ func NewAuthService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRepos
 
 // Health Проверка состояния сервиса
 func (s *AuthService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
-	log.Info().Str("id", req.GetOperationId()).Str("method", "health").Msg("request")
+	log.Info().Str("id", req.GetOperationId()).Str("method", "health").Msg("success")
 	return &pb.HealthResponse{Health: "healthy"}, nil
 }
 

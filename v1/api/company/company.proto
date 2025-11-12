@@ -1,0 +1,135 @@
+syntax="proto3";
+
+package company;
+option go_package = "proto/company_proto";
+
+import "google/protobuf/empty.proto";
+
+service CompanyService {
+  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc CreateCompany(CreateCompanyRequest) returns (CreateCompanyResponse);
+  rpc GetCompany(GetCompanyRequest) returns (GetCompanyResponse);
+  rpc GetCompanies(GetCompaniesRequest) returns (GetCompaniesResponse);
+  rpc UpdateCompanyTitle(UpdateCompanyTitleRequest) returns (google.protobuf.Empty);
+  rpc UpdateCompanyStatus(UpdateCompanyStatusRequest) returns (google.protobuf.Empty);
+  rpc DeleteCompany(DeleteCompanyRequest) returns (google.protobuf.Empty);
+  rpc GenerateJoinCompanyCode(GenerateJoinCompanyCodeRequest) returns (GenerateJoinCompanyCodeResponse);
+  rpc JoinCompany(JoinCompanyRequest) returns (JoinCompanyResponse);
+  rpc GetCompanyEmployees(GetCompanyEmployeesRequest) returns (GetCompanyEmployeesResponse);
+  rpc RemoveCompanyEmployee(RemoveCompanyEmployeeRequest) returns (google.protobuf.Empty);
+}
+
+// Health
+message HealthRequest {
+  string operation_id = 1;
+}
+message HealthResponse {
+  string health = 1;
+}
+
+// CreateCompany
+message CreateCompanyRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string title = 3;
+}
+message CreateCompanyResponse {
+  string company_uuid = 1;
+}
+
+// GetCompany
+message GetCompanyRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+}
+message GetCompanyResponse {
+  string company_uuid = 1;
+  string title = 2;
+  string status = 3;
+}
+
+// GetCompanies 
+message GetCompaniesRequest {
+  string operation_id = 1;
+  int64 offset = 2;
+  int64 count = 3;
+}
+message GetCompaniesResponse {
+  repeated Company companies = 1;
+}
+message Company {
+  string company_uuid = 1;
+  string title = 2;
+  string status = 3;
+}
+
+
+// UpdateCompanyTitle
+message UpdateCompanyTitleRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string title = 4;
+}
+// Empty response
+
+//UpdateCompanyStatus
+message UpdateCompanyStatusRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string status = 4;
+}
+// Empty response
+
+// DeleteCompany
+message DeleteCompanyRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+}
+// Empty response
+
+// GenerateJoinCompanyCode
+message GenerateJoinCompanyCodeRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+}
+message GenerateJoinCompanyCodeResponse {
+  string join_code = 1;
+}
+
+// JoinCompany
+message JoinCompanyRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string join_code = 3;
+}
+message JoinCompanyResponse {
+  string company_uuid = 1;
+  string role = 2;
+}
+
+// GetCompanyEmployees
+message GetCompanyEmployeesRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+}
+message GetCompanyEmployeesResponse {
+  int64 chief_count = 1;
+  int64 analytics_count = 2;
+  int64 manager_count = 3;
+  int64 engineer_count = 4;
+}
+
+// RemoveCompanyEmployee
+message RemoveCompanyEmployeeRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string company_uuid = 3;
+  string target_uuid = 4;
+}
+// Empty response

@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/auth"
+	company_proto "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/company"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/config"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/handlers"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/middlewares"
@@ -20,7 +21,8 @@ const (
 
 type App struct {
 	// Services
-	AuthServiceClient auth_proto.AuthServiceClient
+	AuthServiceClient    auth_proto.AuthServiceClient
+	CompanyServiceClient company_proto.CompanyServiceClient
 
 	// Middlewares
 	OperationIDMiddleware fiber.Handler
@@ -37,14 +39,15 @@ func InitApp(cfg *config.Config) *App {
 
 	// Init clients to services
 	app.AuthServiceClient = auth_proto.NewAuthServiceClient(getGRPCConnection(cfg.AuthService.Host, cfg.AuthService.Port))
+	app.CompanyServiceClient = company_proto.NewCompanyServiceClient(getGRPCConnection(cfg.CompanyService.Host, cfg.CompanyService.Port))
 
 	// Init middlewares
 	app.OperationIDMiddleware = middlewares.NewOperationIDMiddleware(OperationIDKey)
-	app.LoggerMiddleware = middlewares.NewRequestLoggerMiddleware()
+	app.LoggerMiddleware = middlewares.NewRequestLoggerMiddleware(OperationIDKey)
 	app.AuthMiddleware = middlewares.NewAuthMiddleware(cfg.App.JWTSecret, UserUUIDKey)
 
 	// Init handlers
-	app.HealthHandler = handlers.NewHealthHandler(app.AuthServiceClient, OperationIDKey)
+	app.HealthHandler = handlers.NewHealthHandler(app.AuthServiceClient, app.CompanyServiceClient, OperationIDKey)
 	app.AuthHandler = handlers.NewAuthHandler(app.AuthServiceClient, OperationIDKey, UserUUIDKey)
 
 	return app

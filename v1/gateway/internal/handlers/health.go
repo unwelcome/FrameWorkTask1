@@ -2,13 +2,15 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/auth"
+	company_proto "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/company"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/entities"
-	Error "github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/errors"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/pkg/utils"
+	"golang.org/x/sync/errgroup"
 )
 
 type HealthHandler interface {
@@ -16,12 +18,17 @@ type HealthHandler interface {
 }
 
 type healthHandler struct {
-	AuthServiceClient auth_proto.AuthServiceClient
-	operationIDKey    string
+	AuthServiceClient    auth_proto.AuthServiceClient
+	CompanyServiceClient company_proto.CompanyServiceClient
+	operationIDKey       string
 }
 
-func NewHealthHandler(authServiceClient auth_proto.AuthServiceClient, operationIDKey string) HealthHandler {
-	return &healthHandler{AuthServiceClient: authServiceClient, operationIDKey: operationIDKey}
+func NewHealthHandler(authServiceClient auth_proto.AuthServiceClient, companyServiceClient company_proto.CompanyServiceClient, operationIDKey string) HealthHandler {
+	return &healthHandler{
+		AuthServiceClient:    authServiceClient,
+		CompanyServiceClient: companyServiceClient,
+		operationIDKey:       operationIDKey,
+	}
 }
 
 // Health
@@ -31,7 +38,6 @@ func NewHealthHandler(authServiceClient auth_proto.AuthServiceClient, operationI
 //	@Tags         Health
 //	@Produce      json
 //	@Success      200  {object}  entities.HealthResponse
-//	@Failure      500  {object}  Error.HttpError
 //	@Router       /health [get]
 func (h *healthHandler) Health(c *fiber.Ctx) error {
 	operationID := utils.GetLocal[string](c, h.operationIDKey)
@@ -39,16 +45,49 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	// Health запрос в auth сервис
-	res, err := h.AuthServiceClient.Health(ctx, &auth_proto.HealthRequest{OperationId: operationID})
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(Error.HttpError{Code: 500, Message: err.Error()})
+	g, ctx := errgroup.WithContext(ctx)
+
+	// Результаты
+	var authHealth, companyHealth string
+
+	// Auth health check
+	g.Go(func() error {
+		res, err := h.AuthServiceClient.Health(ctx, &auth_proto.HealthRequest{OperationId: operationID})
+		if err != nil {
+			authHealth = "unhealthy"
+			return fmt.Errorf("auth service: %w", err)
+		}
+		authHealth = res.GetHealth()
+		return nil
+	})
+
+	// Company health check
+	g.Go(func() error {
+		res, err := h.CompanyServiceClient.Health(ctx, &company_proto.HealthRequest{OperationId: operationID})
+		if err != nil {
+			companyHealth = "unhealthy"
+			return fmt.Errorf("company service: %w", err)
+		}
+		companyHealth = res.GetHealth()
+		return nil
+	})
+
+	// Ждем завершения всех горутин
+	_ = g.Wait()
+
+	// Заполняем неизвестные статусы
+	if authHealth == "" {
+		authHealth = "timeout"
+	}
+	if companyHealth == "" {
+		companyHealth = "timeout"
 	}
 
 	// Сборка ответа
 	return c.Status(200).JSON(&entities.HealthResponse{
 		Gateway:     "health",
-		Auth:        res.GetHealth(),
+		Auth:        authHealth,
+		Company:     companyHealth,
 		Application: "not implemented",
 	})
 }

@@ -439,12 +439,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/entities.HealthResponse"
                         }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
                     }
                 }
             }
@@ -678,6 +672,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "auth_service": {
+                    "type": "string"
+                },
+                "company_service": {
                     "type": "string"
                 },
                 "gateway": {

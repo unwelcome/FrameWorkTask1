@@ -6,16 +6,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/unwelcome/FrameWorkTask1/v1/gateway/pkg/utils"
 )
 
-func NewRequestLoggerMiddleware() fiber.Handler {
+func NewRequestLoggerMiddleware(operationIDKey string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
 		// Получаем id запроса
-		operationID := c.Locals("operationID")
-		if operationID == nil {
-			operationID = ""
-		}
+		operationID := utils.GetLocal[string](c, operationIDKey)
 
 		startTime := time.Now()
 		err := c.Next()
@@ -26,7 +23,7 @@ func NewRequestLoggerMiddleware() fiber.Handler {
 		}
 
 		log.WithLevel(logLevel).
-			Str("id", operationID.(string)).
+			Str("id", operationID).
 			Str("method", c.Method()).
 			Str("path", c.Path()).
 			Int("duration", int(time.Since(startTime).Milliseconds())).

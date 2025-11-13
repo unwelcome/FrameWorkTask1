@@ -15,7 +15,7 @@ service CompanyService {
   rpc DeleteCompany(DeleteCompanyRequest) returns (google.protobuf.Empty);
   rpc GenerateJoinCompanyCode(GenerateJoinCompanyCodeRequest) returns (GenerateJoinCompanyCodeResponse);
   rpc JoinCompany(JoinCompanyRequest) returns (JoinCompanyResponse);
-  rpc GetCompanyEmployees(GetCompanyEmployeesRequest) returns (GetCompanyEmployeesResponse);
+  rpc GetCompanyEmployeesSummary(GetCompanyEmployeesSummaryRequest) returns (GetCompanyEmployeesSummaryResponse);
   rpc RemoveCompanyEmployee(RemoveCompanyEmployeeRequest) returns (google.protobuf.Empty);
 }
 
@@ -112,17 +112,18 @@ message JoinCompanyResponse {
   string role = 2;
 }
 
-// GetCompanyEmployees
-message GetCompanyEmployeesRequest {
+// GetCompanyEmployeesSummary
+message GetCompanyEmployeesSummaryRequest {
   string operation_id = 1;
   string user_uuid = 2;
   string company_uuid = 3;
 }
-message GetCompanyEmployeesResponse {
+message GetCompanyEmployeesSummaryResponse {
   int64 chief_count = 1;
   int64 analytics_count = 2;
   int64 manager_count = 3;
   int64 engineer_count = 4;
+  int64 unemployed_count = 5;
 }
 
 // RemoveCompanyEmployee

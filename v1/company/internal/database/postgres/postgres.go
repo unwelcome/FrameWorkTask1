@@ -30,7 +30,7 @@ func NewDatabaseInstance(connectString string) *DatabaseRepository {
 	databaseRepository.migrator = NewMigrator(db)
 
 	// Запускаем миграцию
-	// databaseRepository.migrator.Migrate()
+	databaseRepository.migrator.Migrate()
 
 	return databaseRepository
 }

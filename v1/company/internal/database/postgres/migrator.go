@@ -2,6 +2,7 @@ package postgresDB
 
 import (
 	"database/sql"
+
 	"github.com/rs/zerolog/log"
 )
 
@@ -15,14 +16,46 @@ func NewMigrator(db *sql.DB) *Migrator {
 
 func (m *Migrator) Migrate() {
 	var queries []string
-	queries = append(queries, `CREATE TABLE IF NOT EXISTS users (
-		uuid VARCHAR(36) UNIQUE NOT NULL,
-		email varchar(255) UNIQUE NOT NULL,
-    	password_hash VARCHAR(255) NOT NULL,
-		first_name varchar(50) NOT NULL,
-		last_name varchar(50) NOT NULL,
-		patronymic varchar(50),
-		created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP);`,
+	queries = append(queries,
+		`DO $$ BEGIN
+    	CREATE TYPE statuses AS ENUM (
+				'open',
+				'close'
+			);
+			EXCEPTION 
+				WHEN duplicate_object THEN null;
+		END $$;`,
+
+		`DO $$ BEGIN
+    	CREATE TYPE roles AS ENUM (
+				'unemployed',
+				'engineer',
+				'manager',
+				'analytic',
+				'chief'
+			);
+			EXCEPTION 
+				WHEN duplicate_object THEN null;
+		END $$;`,
+
+		`CREATE TABLE IF NOT EXISTS companies (
+			uuid VARCHAR(36) UNIQUE NOT NULL,
+			title varchar(255) NOT NULL,
+			status statuses NOT NULL DEFAULT 'close',
+			created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			created_by VARCHAR(36) NOT NULL
+		);`,
+
+		`CREATE TABLE IF NOT EXISTS employees (
+			company_uuid VARCHAR(36) NOT NULL,
+			user_uuid VARCHAR(36) NOT NULL,
+			role roles NOT NULL DEFAULT 'unemployed', 
+			joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(company_uuid, user_uuid)
+		);`,
+
+		`ALTER TABLE employees 
+			ADD CONSTRAINT fk_employees_company FOREIGN KEY (company_uuid) REFERENCES companies(uuid) ON DELETE CASCADE;`,
 	)
 
 	for _, query := range queries {

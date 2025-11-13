@@ -919,8 +919,8 @@ func (x *JoinCompanyResponse) GetRole() string {
 	return ""
 }
 
-// GetCompanyEmployees
-type GetCompanyEmployeesRequest struct {
+// GetCompanyEmployeesSummary
+type GetCompanyEmployeesSummaryRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
 	UserUuid      string                 `protobuf:"bytes,2,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
@@ -929,20 +929,20 @@ type GetCompanyEmployeesRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetCompanyEmployeesRequest) Reset() {
-	*x = GetCompanyEmployeesRequest{}
+func (x *GetCompanyEmployeesSummaryRequest) Reset() {
+	*x = GetCompanyEmployeesSummaryRequest{}
 	mi := &file_company_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetCompanyEmployeesRequest) String() string {
+func (x *GetCompanyEmployeesSummaryRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetCompanyEmployeesRequest) ProtoMessage() {}
+func (*GetCompanyEmployeesSummaryRequest) ProtoMessage() {}
 
-func (x *GetCompanyEmployeesRequest) ProtoReflect() protoreflect.Message {
+func (x *GetCompanyEmployeesSummaryRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_company_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -954,56 +954,57 @@ func (x *GetCompanyEmployeesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetCompanyEmployeesRequest.ProtoReflect.Descriptor instead.
-func (*GetCompanyEmployeesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetCompanyEmployeesSummaryRequest.ProtoReflect.Descriptor instead.
+func (*GetCompanyEmployeesSummaryRequest) Descriptor() ([]byte, []int) {
 	return file_company_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *GetCompanyEmployeesRequest) GetOperationId() string {
+func (x *GetCompanyEmployeesSummaryRequest) GetOperationId() string {
 	if x != nil {
 		return x.OperationId
 	}
 	return ""
 }
 
-func (x *GetCompanyEmployeesRequest) GetUserUuid() string {
+func (x *GetCompanyEmployeesSummaryRequest) GetUserUuid() string {
 	if x != nil {
 		return x.UserUuid
 	}
 	return ""
 }
 
-func (x *GetCompanyEmployeesRequest) GetCompanyUuid() string {
+func (x *GetCompanyEmployeesSummaryRequest) GetCompanyUuid() string {
 	if x != nil {
 		return x.CompanyUuid
 	}
 	return ""
 }
 
-type GetCompanyEmployeesResponse struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	ChiefCount     int64                  `protobuf:"varint,1,opt,name=chief_count,json=chiefCount,proto3" json:"chief_count,omitempty"`
-	AnalyticsCount int64                  `protobuf:"varint,2,opt,name=analytics_count,json=analyticsCount,proto3" json:"analytics_count,omitempty"`
-	ManagerCount   int64                  `protobuf:"varint,3,opt,name=manager_count,json=managerCount,proto3" json:"manager_count,omitempty"`
-	EngineerCount  int64                  `protobuf:"varint,4,opt,name=engineer_count,json=engineerCount,proto3" json:"engineer_count,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+type GetCompanyEmployeesSummaryResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ChiefCount      int64                  `protobuf:"varint,1,opt,name=chief_count,json=chiefCount,proto3" json:"chief_count,omitempty"`
+	AnalyticsCount  int64                  `protobuf:"varint,2,opt,name=analytics_count,json=analyticsCount,proto3" json:"analytics_count,omitempty"`
+	ManagerCount    int64                  `protobuf:"varint,3,opt,name=manager_count,json=managerCount,proto3" json:"manager_count,omitempty"`
+	EngineerCount   int64                  `protobuf:"varint,4,opt,name=engineer_count,json=engineerCount,proto3" json:"engineer_count,omitempty"`
+	UnemployedCount int64                  `protobuf:"varint,5,opt,name=unemployed_count,json=unemployedCount,proto3" json:"unemployed_count,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
-func (x *GetCompanyEmployeesResponse) Reset() {
-	*x = GetCompanyEmployeesResponse{}
+func (x *GetCompanyEmployeesSummaryResponse) Reset() {
+	*x = GetCompanyEmployeesSummaryResponse{}
 	mi := &file_company_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetCompanyEmployeesResponse) String() string {
+func (x *GetCompanyEmployeesSummaryResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetCompanyEmployeesResponse) ProtoMessage() {}
+func (*GetCompanyEmployeesSummaryResponse) ProtoMessage() {}
 
-func (x *GetCompanyEmployeesResponse) ProtoReflect() protoreflect.Message {
+func (x *GetCompanyEmployeesSummaryResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_company_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1015,35 +1016,42 @@ func (x *GetCompanyEmployeesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetCompanyEmployeesResponse.ProtoReflect.Descriptor instead.
-func (*GetCompanyEmployeesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetCompanyEmployeesSummaryResponse.ProtoReflect.Descriptor instead.
+func (*GetCompanyEmployeesSummaryResponse) Descriptor() ([]byte, []int) {
 	return file_company_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *GetCompanyEmployeesResponse) GetChiefCount() int64 {
+func (x *GetCompanyEmployeesSummaryResponse) GetChiefCount() int64 {
 	if x != nil {
 		return x.ChiefCount
 	}
 	return 0
 }
 
-func (x *GetCompanyEmployeesResponse) GetAnalyticsCount() int64 {
+func (x *GetCompanyEmployeesSummaryResponse) GetAnalyticsCount() int64 {
 	if x != nil {
 		return x.AnalyticsCount
 	}
 	return 0
 }
 
-func (x *GetCompanyEmployeesResponse) GetManagerCount() int64 {
+func (x *GetCompanyEmployeesSummaryResponse) GetManagerCount() int64 {
 	if x != nil {
 		return x.ManagerCount
 	}
 	return 0
 }
 
-func (x *GetCompanyEmployeesResponse) GetEngineerCount() int64 {
+func (x *GetCompanyEmployeesSummaryResponse) GetEngineerCount() int64 {
 	if x != nil {
 		return x.EngineerCount
+	}
+	return 0
+}
+
+func (x *GetCompanyEmployeesSummaryResponse) GetUnemployedCount() int64 {
+	if x != nil {
+		return x.UnemployedCount
 	}
 	return 0
 }
@@ -1176,23 +1184,24 @@ const file_company_proto_rawDesc = "" +
 	"\tjoin_code\x18\x03 \x01(\tR\bjoinCode\"L\n" +
 	"\x13JoinCompanyResponse\x12!\n" +
 	"\fcompany_uuid\x18\x01 \x01(\tR\vcompanyUuid\x12\x12\n" +
-	"\x04role\x18\x02 \x01(\tR\x04role\"\x7f\n" +
-	"\x1aGetCompanyEmployeesRequest\x12!\n" +
+	"\x04role\x18\x02 \x01(\tR\x04role\"\x86\x01\n" +
+	"!GetCompanyEmployeesSummaryRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x1b\n" +
 	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\"\xb3\x01\n" +
-	"\x1bGetCompanyEmployeesResponse\x12\x1f\n" +
+	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\"\xe5\x01\n" +
+	"\"GetCompanyEmployeesSummaryResponse\x12\x1f\n" +
 	"\vchief_count\x18\x01 \x01(\x03R\n" +
 	"chiefCount\x12'\n" +
 	"\x0fanalytics_count\x18\x02 \x01(\x03R\x0eanalyticsCount\x12#\n" +
 	"\rmanager_count\x18\x03 \x01(\x03R\fmanagerCount\x12%\n" +
-	"\x0eengineer_count\x18\x04 \x01(\x03R\rengineerCount\"\xac\x01\n" +
+	"\x0eengineer_count\x18\x04 \x01(\x03R\rengineerCount\x12)\n" +
+	"\x10unemployed_count\x18\x05 \x01(\x03R\x0funemployedCount\"\xac\x01\n" +
 	"\x1cRemoveCompanyEmployeeRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
 	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x1f\n" +
 	"\vtarget_uuid\x18\x04 \x01(\tR\n" +
-	"targetUuid2\x8f\a\n" +
+	"targetUuid2\xa4\a\n" +
 	"\x0eCompanyService\x129\n" +
 	"\x06Health\x12\x16.company.HealthRequest\x1a\x17.company.HealthResponse\x12N\n" +
 	"\rCreateCompany\x12\x1d.company.CreateCompanyRequest\x1a\x1e.company.CreateCompanyResponse\x12E\n" +
@@ -1203,8 +1212,8 @@ const file_company_proto_rawDesc = "" +
 	"\x13UpdateCompanyStatus\x12#.company.UpdateCompanyStatusRequest\x1a\x16.google.protobuf.Empty\x12F\n" +
 	"\rDeleteCompany\x12\x1d.company.DeleteCompanyRequest\x1a\x16.google.protobuf.Empty\x12l\n" +
 	"\x17GenerateJoinCompanyCode\x12'.company.GenerateJoinCompanyCodeRequest\x1a(.company.GenerateJoinCompanyCodeResponse\x12H\n" +
-	"\vJoinCompany\x12\x1b.company.JoinCompanyRequest\x1a\x1c.company.JoinCompanyResponse\x12`\n" +
-	"\x13GetCompanyEmployees\x12#.company.GetCompanyEmployeesRequest\x1a$.company.GetCompanyEmployeesResponse\x12V\n" +
+	"\vJoinCompany\x12\x1b.company.JoinCompanyRequest\x1a\x1c.company.JoinCompanyResponse\x12u\n" +
+	"\x1aGetCompanyEmployeesSummary\x12*.company.GetCompanyEmployeesSummaryRequest\x1a+.company.GetCompanyEmployeesSummaryResponse\x12V\n" +
 	"\x15RemoveCompanyEmployee\x12%.company.RemoveCompanyEmployeeRequest\x1a\x16.google.protobuf.EmptyB\x15Z\x13proto/company_protob\x06proto3"
 
 var (
@@ -1221,26 +1230,26 @@ func file_company_proto_rawDescGZIP() []byte {
 
 var file_company_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_company_proto_goTypes = []any{
-	(*HealthRequest)(nil),                   // 0: company.HealthRequest
-	(*HealthResponse)(nil),                  // 1: company.HealthResponse
-	(*CreateCompanyRequest)(nil),            // 2: company.CreateCompanyRequest
-	(*CreateCompanyResponse)(nil),           // 3: company.CreateCompanyResponse
-	(*GetCompanyRequest)(nil),               // 4: company.GetCompanyRequest
-	(*GetCompanyResponse)(nil),              // 5: company.GetCompanyResponse
-	(*GetCompaniesRequest)(nil),             // 6: company.GetCompaniesRequest
-	(*GetCompaniesResponse)(nil),            // 7: company.GetCompaniesResponse
-	(*Company)(nil),                         // 8: company.Company
-	(*UpdateCompanyTitleRequest)(nil),       // 9: company.UpdateCompanyTitleRequest
-	(*UpdateCompanyStatusRequest)(nil),      // 10: company.UpdateCompanyStatusRequest
-	(*DeleteCompanyRequest)(nil),            // 11: company.DeleteCompanyRequest
-	(*GenerateJoinCompanyCodeRequest)(nil),  // 12: company.GenerateJoinCompanyCodeRequest
-	(*GenerateJoinCompanyCodeResponse)(nil), // 13: company.GenerateJoinCompanyCodeResponse
-	(*JoinCompanyRequest)(nil),              // 14: company.JoinCompanyRequest
-	(*JoinCompanyResponse)(nil),             // 15: company.JoinCompanyResponse
-	(*GetCompanyEmployeesRequest)(nil),      // 16: company.GetCompanyEmployeesRequest
-	(*GetCompanyEmployeesResponse)(nil),     // 17: company.GetCompanyEmployeesResponse
-	(*RemoveCompanyEmployeeRequest)(nil),    // 18: company.RemoveCompanyEmployeeRequest
-	(*emptypb.Empty)(nil),                   // 19: google.protobuf.Empty
+	(*HealthRequest)(nil),                      // 0: company.HealthRequest
+	(*HealthResponse)(nil),                     // 1: company.HealthResponse
+	(*CreateCompanyRequest)(nil),               // 2: company.CreateCompanyRequest
+	(*CreateCompanyResponse)(nil),              // 3: company.CreateCompanyResponse
+	(*GetCompanyRequest)(nil),                  // 4: company.GetCompanyRequest
+	(*GetCompanyResponse)(nil),                 // 5: company.GetCompanyResponse
+	(*GetCompaniesRequest)(nil),                // 6: company.GetCompaniesRequest
+	(*GetCompaniesResponse)(nil),               // 7: company.GetCompaniesResponse
+	(*Company)(nil),                            // 8: company.Company
+	(*UpdateCompanyTitleRequest)(nil),          // 9: company.UpdateCompanyTitleRequest
+	(*UpdateCompanyStatusRequest)(nil),         // 10: company.UpdateCompanyStatusRequest
+	(*DeleteCompanyRequest)(nil),               // 11: company.DeleteCompanyRequest
+	(*GenerateJoinCompanyCodeRequest)(nil),     // 12: company.GenerateJoinCompanyCodeRequest
+	(*GenerateJoinCompanyCodeResponse)(nil),    // 13: company.GenerateJoinCompanyCodeResponse
+	(*JoinCompanyRequest)(nil),                 // 14: company.JoinCompanyRequest
+	(*JoinCompanyResponse)(nil),                // 15: company.JoinCompanyResponse
+	(*GetCompanyEmployeesSummaryRequest)(nil),  // 16: company.GetCompanyEmployeesSummaryRequest
+	(*GetCompanyEmployeesSummaryResponse)(nil), // 17: company.GetCompanyEmployeesSummaryResponse
+	(*RemoveCompanyEmployeeRequest)(nil),       // 18: company.RemoveCompanyEmployeeRequest
+	(*emptypb.Empty)(nil),                      // 19: google.protobuf.Empty
 }
 var file_company_proto_depIdxs = []int32{
 	8,  // 0: company.GetCompaniesResponse.companies:type_name -> company.Company
@@ -1253,7 +1262,7 @@ var file_company_proto_depIdxs = []int32{
 	11, // 7: company.CompanyService.DeleteCompany:input_type -> company.DeleteCompanyRequest
 	12, // 8: company.CompanyService.GenerateJoinCompanyCode:input_type -> company.GenerateJoinCompanyCodeRequest
 	14, // 9: company.CompanyService.JoinCompany:input_type -> company.JoinCompanyRequest
-	16, // 10: company.CompanyService.GetCompanyEmployees:input_type -> company.GetCompanyEmployeesRequest
+	16, // 10: company.CompanyService.GetCompanyEmployeesSummary:input_type -> company.GetCompanyEmployeesSummaryRequest
 	18, // 11: company.CompanyService.RemoveCompanyEmployee:input_type -> company.RemoveCompanyEmployeeRequest
 	1,  // 12: company.CompanyService.Health:output_type -> company.HealthResponse
 	3,  // 13: company.CompanyService.CreateCompany:output_type -> company.CreateCompanyResponse
@@ -1264,7 +1273,7 @@ var file_company_proto_depIdxs = []int32{
 	19, // 18: company.CompanyService.DeleteCompany:output_type -> google.protobuf.Empty
 	13, // 19: company.CompanyService.GenerateJoinCompanyCode:output_type -> company.GenerateJoinCompanyCodeResponse
 	15, // 20: company.CompanyService.JoinCompany:output_type -> company.JoinCompanyResponse
-	17, // 21: company.CompanyService.GetCompanyEmployees:output_type -> company.GetCompanyEmployeesResponse
+	17, // 21: company.CompanyService.GetCompanyEmployeesSummary:output_type -> company.GetCompanyEmployeesSummaryResponse
 	19, // 22: company.CompanyService.RemoveCompanyEmployee:output_type -> google.protobuf.Empty
 	12, // [12:23] is the sub-list for method output_type
 	1,  // [1:12] is the sub-list for method input_type

@@ -20,17 +20,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CompanyService_Health_FullMethodName                  = "/company.CompanyService/Health"
-	CompanyService_CreateCompany_FullMethodName           = "/company.CompanyService/CreateCompany"
-	CompanyService_GetCompany_FullMethodName              = "/company.CompanyService/GetCompany"
-	CompanyService_GetCompanies_FullMethodName            = "/company.CompanyService/GetCompanies"
-	CompanyService_UpdateCompanyTitle_FullMethodName      = "/company.CompanyService/UpdateCompanyTitle"
-	CompanyService_UpdateCompanyStatus_FullMethodName     = "/company.CompanyService/UpdateCompanyStatus"
-	CompanyService_DeleteCompany_FullMethodName           = "/company.CompanyService/DeleteCompany"
-	CompanyService_GenerateJoinCompanyCode_FullMethodName = "/company.CompanyService/GenerateJoinCompanyCode"
-	CompanyService_JoinCompany_FullMethodName             = "/company.CompanyService/JoinCompany"
-	CompanyService_GetCompanyEmployees_FullMethodName     = "/company.CompanyService/GetCompanyEmployees"
-	CompanyService_RemoveCompanyEmployee_FullMethodName   = "/company.CompanyService/RemoveCompanyEmployee"
+	CompanyService_Health_FullMethodName                     = "/company.CompanyService/Health"
+	CompanyService_CreateCompany_FullMethodName              = "/company.CompanyService/CreateCompany"
+	CompanyService_GetCompany_FullMethodName                 = "/company.CompanyService/GetCompany"
+	CompanyService_GetCompanies_FullMethodName               = "/company.CompanyService/GetCompanies"
+	CompanyService_UpdateCompanyTitle_FullMethodName         = "/company.CompanyService/UpdateCompanyTitle"
+	CompanyService_UpdateCompanyStatus_FullMethodName        = "/company.CompanyService/UpdateCompanyStatus"
+	CompanyService_DeleteCompany_FullMethodName              = "/company.CompanyService/DeleteCompany"
+	CompanyService_GenerateJoinCompanyCode_FullMethodName    = "/company.CompanyService/GenerateJoinCompanyCode"
+	CompanyService_JoinCompany_FullMethodName                = "/company.CompanyService/JoinCompany"
+	CompanyService_GetCompanyEmployeesSummary_FullMethodName = "/company.CompanyService/GetCompanyEmployeesSummary"
+	CompanyService_RemoveCompanyEmployee_FullMethodName      = "/company.CompanyService/RemoveCompanyEmployee"
 )
 
 // CompanyServiceClient is the client API for CompanyService service.
@@ -46,7 +46,7 @@ type CompanyServiceClient interface {
 	DeleteCompany(ctx context.Context, in *DeleteCompanyRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GenerateJoinCompanyCode(ctx context.Context, in *GenerateJoinCompanyCodeRequest, opts ...grpc.CallOption) (*GenerateJoinCompanyCodeResponse, error)
 	JoinCompany(ctx context.Context, in *JoinCompanyRequest, opts ...grpc.CallOption) (*JoinCompanyResponse, error)
-	GetCompanyEmployees(ctx context.Context, in *GetCompanyEmployeesRequest, opts ...grpc.CallOption) (*GetCompanyEmployeesResponse, error)
+	GetCompanyEmployeesSummary(ctx context.Context, in *GetCompanyEmployeesSummaryRequest, opts ...grpc.CallOption) (*GetCompanyEmployeesSummaryResponse, error)
 	RemoveCompanyEmployee(ctx context.Context, in *RemoveCompanyEmployeeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -148,10 +148,10 @@ func (c *companyServiceClient) JoinCompany(ctx context.Context, in *JoinCompanyR
 	return out, nil
 }
 
-func (c *companyServiceClient) GetCompanyEmployees(ctx context.Context, in *GetCompanyEmployeesRequest, opts ...grpc.CallOption) (*GetCompanyEmployeesResponse, error) {
+func (c *companyServiceClient) GetCompanyEmployeesSummary(ctx context.Context, in *GetCompanyEmployeesSummaryRequest, opts ...grpc.CallOption) (*GetCompanyEmployeesSummaryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetCompanyEmployeesResponse)
-	err := c.cc.Invoke(ctx, CompanyService_GetCompanyEmployees_FullMethodName, in, out, cOpts...)
+	out := new(GetCompanyEmployeesSummaryResponse)
+	err := c.cc.Invoke(ctx, CompanyService_GetCompanyEmployeesSummary_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ type CompanyServiceServer interface {
 	DeleteCompany(context.Context, *DeleteCompanyRequest) (*emptypb.Empty, error)
 	GenerateJoinCompanyCode(context.Context, *GenerateJoinCompanyCodeRequest) (*GenerateJoinCompanyCodeResponse, error)
 	JoinCompany(context.Context, *JoinCompanyRequest) (*JoinCompanyResponse, error)
-	GetCompanyEmployees(context.Context, *GetCompanyEmployeesRequest) (*GetCompanyEmployeesResponse, error)
+	GetCompanyEmployeesSummary(context.Context, *GetCompanyEmployeesSummaryRequest) (*GetCompanyEmployeesSummaryResponse, error)
 	RemoveCompanyEmployee(context.Context, *RemoveCompanyEmployeeRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCompanyServiceServer()
 }
@@ -220,8 +220,8 @@ func (UnimplementedCompanyServiceServer) GenerateJoinCompanyCode(context.Context
 func (UnimplementedCompanyServiceServer) JoinCompany(context.Context, *JoinCompanyRequest) (*JoinCompanyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method JoinCompany not implemented")
 }
-func (UnimplementedCompanyServiceServer) GetCompanyEmployees(context.Context, *GetCompanyEmployeesRequest) (*GetCompanyEmployeesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCompanyEmployees not implemented")
+func (UnimplementedCompanyServiceServer) GetCompanyEmployeesSummary(context.Context, *GetCompanyEmployeesSummaryRequest) (*GetCompanyEmployeesSummaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCompanyEmployeesSummary not implemented")
 }
 func (UnimplementedCompanyServiceServer) RemoveCompanyEmployee(context.Context, *RemoveCompanyEmployeeRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveCompanyEmployee not implemented")
@@ -409,20 +409,20 @@ func _CompanyService_JoinCompany_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CompanyService_GetCompanyEmployees_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCompanyEmployeesRequest)
+func _CompanyService_GetCompanyEmployeesSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCompanyEmployeesSummaryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CompanyServiceServer).GetCompanyEmployees(ctx, in)
+		return srv.(CompanyServiceServer).GetCompanyEmployeesSummary(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CompanyService_GetCompanyEmployees_FullMethodName,
+		FullMethod: CompanyService_GetCompanyEmployeesSummary_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CompanyServiceServer).GetCompanyEmployees(ctx, req.(*GetCompanyEmployeesRequest))
+		return srv.(CompanyServiceServer).GetCompanyEmployeesSummary(ctx, req.(*GetCompanyEmployeesSummaryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -489,8 +489,8 @@ var CompanyService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CompanyService_JoinCompany_Handler,
 		},
 		{
-			MethodName: "GetCompanyEmployees",
-			Handler:    _CompanyService_GetCompanyEmployees_Handler,
+			MethodName: "GetCompanyEmployeesSummary",
+			Handler:    _CompanyService_GetCompanyEmployeesSummary_Handler,
 		},
 		{
 			MethodName: "RemoveCompanyEmployee",

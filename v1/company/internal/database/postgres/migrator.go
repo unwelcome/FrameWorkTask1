@@ -2,6 +2,7 @@ package postgresDB
 
 import (
 	"database/sql"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 )
@@ -61,6 +62,12 @@ func (m *Migrator) Migrate() {
 	for _, query := range queries {
 		_, err := m.db.Exec(query)
 		if err != nil {
+			// Игнорируем ошибку, если constraint уже существует
+			if strings.Contains(err.Error(), "already exists") ||
+				strings.Contains(err.Error(), "duplicate_object") ||
+				strings.Contains(err.Error(), "constraint") {
+				continue
+			}
 			log.Fatal().Err(err).Msg("migrator failed to execute query")
 		}
 	}

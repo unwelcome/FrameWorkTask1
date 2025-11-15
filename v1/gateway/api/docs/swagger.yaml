@@ -125,7 +125,7 @@ definitions:
     type: object
   entities.UpdateUserBioResponse:
     type: object
-host: localhost:8080
+host: 4aik.ru
 info:
   contact: {}
   title: Framework task 2 API

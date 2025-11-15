@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
 	_ "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/docs"
@@ -13,7 +14,7 @@ import (
 
 // @title     Framework task 2 API
 // @version   2.0
-// @host      localhost:8080
+// @host      4aik.ru
 // @BasePath  /api
 // @securityDefinitions.apikey ApiKeyAuth
 // @in 		  header

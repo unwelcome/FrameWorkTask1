@@ -1,7 +1,7 @@
 # Global settings
 app:
   jwt_secret: abcd
-  log_path: /var/log/app
+  log_path: /var/log/app/logs.log
   log_console_out: true
   access_token_lifetime: 5m
   refresh_token_lifetime: 720h # 30 дней * 24 часа

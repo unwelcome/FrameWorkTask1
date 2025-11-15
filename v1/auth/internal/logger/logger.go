@@ -2,11 +2,12 @@ package logger
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/rs/zerolog"
 )
@@ -29,7 +30,7 @@ func Setup(logPath string, consoleOut bool) *zerolog.Logger {
 			log.Fatal().Err(err).Msg("failed to create logger directory")
 		}
 
-		logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+		logFile, err := os.OpenFile(fmt.Sprintf("%s/logs.log", logPath), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 		if err != nil {
 			log.Fatal().Err(err).Msg("failed to open logger file")
 		}

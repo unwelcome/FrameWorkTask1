@@ -25,7 +25,7 @@ func main() {
 	cfg.Print()
 
 	// Инициализация логгера
-	loggerConf := logger.Setup(cfg.App.LogPath, cfg.App.LogConsoleOut)
+	loggerConf := logger.Setup(cfg.Gateway.LogPath, cfg.App.LogConsoleOut)
 	log.Logger = *loggerConf
 
 	// Инициализация fiber сервера

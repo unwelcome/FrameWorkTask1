@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"net"
+
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	"github.com/unwelcome/FrameWorkTask1/v1/auth/api"
@@ -11,7 +13,6 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/v1/auth/internal/logger"
 	"github.com/unwelcome/FrameWorkTask1/v1/auth/internal/services"
 	"google.golang.org/grpc"
-	"net"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	cfg.Print()
 
 	// Инициализация логгера
-	loggerConf := logger.Setup(cfg.App.LogPath, cfg.App.LogConsoleOut)
+	loggerConf := logger.Setup(cfg.AuthService.LogPath, cfg.App.LogConsoleOut)
 	log.Logger = *loggerConf
 
 	// Подключение к Postgresql

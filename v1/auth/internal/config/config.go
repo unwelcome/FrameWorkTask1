@@ -24,7 +24,6 @@ type Config struct {
 type AppConfig struct {
 	ProductionType          string `env:"PRODUCTION_TYPE"`
 	JWTSecret               string `yaml:"jwt_secret"`
-	LogPath                 string `yaml:"log_path"`
 	LogConsoleOut           bool   `yaml:"log_console_out"`
 	AccessTokenLifetimeStr  string `yaml:"access_token_lifetime"`
 	AccessTokenLifetime     time.Duration
@@ -33,13 +32,15 @@ type AppConfig struct {
 }
 
 type GatewayConfig struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host    string `yaml:"host"`
+	Port    int    `yaml:"port"`
+	LogPath string `yaml:"log_path"`
 }
 
 type AuthServiceConfig struct {
 	Host       string `yaml:"host"`
 	Port       int    `yaml:"port"`
+	LogPath    string `yaml:"log_path"`
 	DBUser     string `yaml:"db_user"`
 	DBPassword string `yaml:"db_password"`
 	DBName     string `yaml:"db_name"`
@@ -50,6 +51,7 @@ type AuthServiceConfig struct {
 type CompanyServiceConfig struct {
 	Host       string `yaml:"host"`
 	Port       int    `yaml:"port"`
+	LogPath    string `yaml:"log_path"`
 	DBUser     string `yaml:"db_user"`
 	DBPassword string `yaml:"db_password"`
 	DBName     string `yaml:"db_name"`
@@ -60,6 +62,7 @@ type CompanyServiceConfig struct {
 type ApplicationServiceConfig struct {
 	Host       string `yaml:"host"`
 	Port       int    `yaml:"port"`
+	LogPath    string `yaml:"log_path"`
 	DBUser     string `yaml:"db_user"`
 	DBPassword string `yaml:"db_password"`
 	DBName     string `yaml:"db_name"`
@@ -158,7 +161,6 @@ func (config *Config) Print() {
 	fmt.Printf("=== App ===\n")
 	fmt.Printf("ProductionType: %s\n", config.App.ProductionType)
 	fmt.Printf("JWTSecret: %s\n", hideCredentials(config.App.JWTSecret))
-	fmt.Printf("LogPath: %s\n", config.App.LogPath)
 	fmt.Printf("LogConsoleOut: %v\n", config.App.LogConsoleOut)
 	fmt.Printf("AccessTokenLifetime: %v\n", config.App.AccessTokenLifetime)
 	fmt.Printf("RefreshTokenLifetime: %v\n", config.App.RefreshTokenLifetime)
@@ -166,9 +168,11 @@ func (config *Config) Print() {
 	fmt.Printf("=== Gateway ===\n")
 	fmt.Printf("Host: %s\n", config.Gateway.Host)
 	fmt.Printf("Port: %d\n", config.Gateway.Port)
+	fmt.Printf("LogPath: %s\n", config.Gateway.LogPath)
 
 	fmt.Printf("=== Auth service ===\n")
 	fmt.Printf("Port: %d\n", config.AuthService.Port)
+	fmt.Printf("LogPath: %s\n", config.AuthService.LogPath)
 	fmt.Printf("DBUser: %s\n", config.AuthService.DBUser)
 	fmt.Printf("DBPassword: %s\n", hideCredentials(config.AuthService.DBPassword))
 	fmt.Printf("DBName: %s\n", config.AuthService.DBName)
@@ -177,6 +181,7 @@ func (config *Config) Print() {
 
 	fmt.Printf("=== Company service ===\n")
 	fmt.Printf("Port: %d\n", config.CompanyService.Port)
+	fmt.Printf("LogPath: %s\n", config.CompanyService.LogPath)
 	fmt.Printf("DBUser: %s\n", config.CompanyService.DBUser)
 	fmt.Printf("DBPassword: %s\n", hideCredentials(config.CompanyService.DBPassword))
 	fmt.Printf("DBName: %s\n", config.CompanyService.DBName)
@@ -185,6 +190,7 @@ func (config *Config) Print() {
 
 	fmt.Printf("=== Application service ===\n")
 	fmt.Printf("Port: %d\n", config.ApplicationService.Port)
+	fmt.Printf("LogPath: %s\n", config.ApplicationService.LogPath)
 	fmt.Printf("DBUser: %s\n", config.ApplicationService.DBUser)
 	fmt.Printf("DBPassword: %s\n", hideCredentials(config.ApplicationService.DBPassword))
 	fmt.Printf("DBName: %s\n", config.ApplicationService.DBName)

@@ -20,7 +20,7 @@ func main() {
 	cfg.Print()
 
 	// Инициализация логгера
-	loggerConf := logger.Setup(cfg.App.LogPath, cfg.App.LogConsoleOut)
+	loggerConf := logger.Setup(cfg.CompanyService.LogPath, cfg.App.LogConsoleOut)
 	log.Logger = *loggerConf
 
 	// Подключение к Postgresql

@@ -1,7 +1,6 @@
 # Global settings
 app:
   jwt_secret: abcd
-  log_path: /var/log/app/logs.log
   log_console_out: true
   access_token_lifetime: 5m
   refresh_token_lifetime: 720h # 30 дней * 24 часа
@@ -10,11 +9,13 @@ app:
 gateway:
   host: localhost
   port: 8080
+  log_path: /var/log/app/gateway.log
 
 # Auth service
 auth_service:
   host: auth_service
   port: 50051
+  log_path: /var/log/app/auth.log
   # Database
   db_user: auth_user
   db_password: auth_password
@@ -28,6 +29,7 @@ auth_service:
 company_service:
   host: company_service
   port: 50052
+  log_path: /var/log/app/company.log
   # Database
   db_user: company_user
   db_password: company_password

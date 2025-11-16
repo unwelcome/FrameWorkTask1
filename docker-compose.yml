@@ -13,6 +13,7 @@ services:
       PRODUCTION_TYPE: prod
     volumes:
       - ./v1/config.yaml:/app/config/config.yaml:ro
+      - ./logs:/var/log/app
     networks:
       - app-network
 
@@ -29,6 +30,7 @@ services:
       PRODUCTION_TYPE: prod
     volumes:
       - ./v1/config.yaml:/app/config/config.yaml:ro
+      - ./logs:/var/log/app
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,6 +52,7 @@ services:
       PRODUCTION_TYPE: prod
     volumes:
       - ./v1/config.yaml:/app/config/config.yaml:ro
+      - ./logs:/var/log/app
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,7 +83,7 @@ services:
 
   redis:
     container_name: redis
-    image: redis:7.2-alpine
+    image: redis:8.0-alpine
     ports:
       - "6379:6379"
     env_file:

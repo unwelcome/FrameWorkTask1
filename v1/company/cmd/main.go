@@ -9,6 +9,7 @@ import (
 	company_proto "github.com/unwelcome/FrameWorkTask1/v1/company/api"
 	"github.com/unwelcome/FrameWorkTask1/v1/company/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/v1/company/internal/database/postgres"
+	redisDB "github.com/unwelcome/FrameWorkTask1/v1/company/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/v1/company/internal/logger"
 	"github.com/unwelcome/FrameWorkTask1/v1/company/internal/services"
 	"google.golang.org/grpc"
@@ -27,7 +28,7 @@ func main() {
 	db := postgresDB.NewDatabaseInstance(cfg.GetDBConnectionString())
 
 	// Подключение к Redis
-	// cache := redisDB.NewCacheInstance(cfg.GetCacheConnectionOptions(), cfg.App.RefreshTokenLifetime)
+	cache := redisDB.NewCacheInstance(cfg.GetCacheConnectionOptions())
 
 	// Создание сервера
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.CompanyService.Port))
@@ -37,7 +38,7 @@ func main() {
 
 	// Подключение grpc
 	grpcServer := grpc.NewServer()
-	company_proto.RegisterCompanyServiceServer(grpcServer, services.NewCompanyService(db))
+	company_proto.RegisterCompanyServiceServer(grpcServer, services.NewCompanyService(db, cache))
 
 	// Запуск сервиса
 	log.Info().Int("port", cfg.CompanyService.Port).Msg("Company service started")

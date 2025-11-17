@@ -7,14 +7,20 @@ import "google/protobuf/empty.proto";
 
 service CompanyService {
   rpc Health(HealthRequest) returns (HealthResponse);
+  //  Company
   rpc CreateCompany(CreateCompanyRequest) returns (CreateCompanyResponse);
   rpc GetCompany(GetCompanyRequest) returns (GetCompanyResponse);
   rpc GetCompanies(GetCompaniesRequest) returns (GetCompaniesResponse);
   rpc UpdateCompanyTitle(UpdateCompanyTitleRequest) returns (google.protobuf.Empty);
   rpc UpdateCompanyStatus(UpdateCompanyStatusRequest) returns (google.protobuf.Empty);
   rpc DeleteCompany(DeleteCompanyRequest) returns (google.protobuf.Empty);
-  rpc GenerateJoinCompanyCode(GenerateJoinCompanyCodeRequest) returns (GenerateJoinCompanyCodeResponse);
+  // Join code
+  rpc CreateCompanyJoinCode(CreateCompanyJoinCodeRequest) returns (CreateCompanyJoinCodeResponse);
+  rpc GetCompanyJoinCodes(GetCompanyJoinCodesRequest) returns (GetCompanyJoinCodesResponse);
+  rpc DeleteCompanyJoinCode(DeleteCompanyJoinCodeRequest) returns (google.protobuf.Empty);
+  // Employee
   rpc JoinCompany(JoinCompanyRequest) returns (JoinCompanyResponse);
+  rpc GetCompanyEmployee(GetCompanyEmployeeRequest) returns (GetCompanyEmployeeResponse);
   rpc GetCompanyEmployeesSummary(GetCompanyEmployeesSummaryRequest) returns (GetCompanyEmployeesSummaryResponse);
   rpc RemoveCompanyEmployee(RemoveCompanyEmployeeRequest) returns (google.protobuf.Empty);
 }
@@ -91,15 +97,35 @@ message DeleteCompanyRequest {
 }
 // Empty response
 
-// GenerateJoinCompanyCode
-message GenerateJoinCompanyCodeRequest {
+// CreateCompanyJoinCode
+message CreateCompanyJoinCodeRequest {
   string operation_id = 1;
   string user_uuid = 2;
   string company_uuid = 3;
 }
-message GenerateJoinCompanyCodeResponse {
+message CreateCompanyJoinCodeResponse {
   string join_code = 1;
 }
+
+// GetCompanyJoinCodes
+message GetCompanyJoinCodesRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+}
+message GetCompanyJoinCodesResponse {
+  repeated string codes = 1;
+}
+
+// DeleteCompanyJoinCodes
+message DeleteCompanyJoinCodeRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string code = 4;
+}
+// Empty response
+
 
 // JoinCompany
 message JoinCompanyRequest {
@@ -110,6 +136,18 @@ message JoinCompanyRequest {
 message JoinCompanyResponse {
   string company_uuid = 1;
   string role = 2;
+}
+
+// GetCompanyEmployee
+message GetCompanyEmployeeRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string target_uuid = 3;
+  string company_uuid = 4;
+}
+message GetCompanyEmployeeResponse {
+  string role = 1;
+  string joined_at = 2;
 }
 
 // GetCompanyEmployeesSummary

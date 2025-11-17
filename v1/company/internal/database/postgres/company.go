@@ -15,15 +15,15 @@ import (
 
 type CompanyRepository interface {
 	CreateCompany(ctx context.Context, dto *entities.CreateCompany) *Error.CodeError
-	GetCompany(ctx context.Context, company_uuid string) (*entities.Company, *Error.CodeError)
+	GetCompany(ctx context.Context, companyUUID string) (*entities.Company, *Error.CodeError)
 	GetCompanies(ctx context.Context, offset, count int) ([]*entities.GetCompanies, *Error.CodeError)
-	UpdateCompanyTitle(ctx context.Context, company_uuid, title string) *Error.CodeError
-	UpdateCompanyStatus(ctx context.Context, company_uuid, status string) *Error.CodeError
-	DeleteCompany(ctx context.Context, companu_uuid string) *Error.CodeError
-	JoinCompany(ctx context.Context, company_uuid, user_uuid string) *Error.CodeError
-	GetCompanyEmployee(ctx context.Context, company_uuid, user_uuid string) (*entities.Employee, *Error.CodeError)
-	GetCompanyEmployeesSummary(ctx context.Context, company_uuid string) (*entities.EmployeesSummary, *Error.CodeError)
-	RemoveCompanyEmployee(ctx context.Context, company_uuid, user_uuid string) *Error.CodeError
+	UpdateCompanyTitle(ctx context.Context, companyUUID, title string) *Error.CodeError
+	UpdateCompanyStatus(ctx context.Context, companyUUID, status string) *Error.CodeError
+	DeleteCompany(ctx context.Context, companyUUID string) *Error.CodeError
+	JoinCompany(ctx context.Context, companyUUID, userUUID string) *Error.CodeError
+	GetCompanyEmployee(ctx context.Context, companyUUID, userUUID string) (*entities.Employee, *Error.CodeError)
+	GetCompanyEmployeesSummary(ctx context.Context, companyUUID string) (*entities.EmployeesSummary, *Error.CodeError)
+	RemoveCompanyEmployee(ctx context.Context, companyUUID, userUUID string) *Error.CodeError
 }
 
 type companyRepository struct {
@@ -46,14 +46,14 @@ func (r *companyRepository) CreateCompany(ctx context.Context, dto *entities.Cre
 }
 
 // GetCompany Получение данных о компании по uuid
-func (r *companyRepository) GetCompany(ctx context.Context, company_uuid string) (*entities.Company, *Error.CodeError) {
+func (r *companyRepository) GetCompany(ctx context.Context, companyUUID string) (*entities.Company, *Error.CodeError) {
 	query := `SELECT title, status, created_by, created_at FROM companies WHERE uuid = $1;`
 
 	company := &entities.Company{
-		CompanyUUID: company_uuid,
+		CompanyUUID: companyUUID,
 	}
 
-	err := r.db.QueryRowContext(ctx, query, company_uuid).Scan(&company.Title, &company.Status, &company.CreatedBy, &company.CreatedAt)
+	err := r.db.QueryRowContext(ctx, query, companyUUID).Scan(&company.Title, &company.Status, &company.CreatedBy, &company.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("company not found")}
@@ -78,7 +78,7 @@ func (r *companyRepository) GetCompanies(ctx context.Context, offset, count int)
 	companies := make([]*entities.GetCompanies, 0)
 	for res.Next() {
 		company := &entities.GetCompanies{}
-		err := res.Scan(&company.CompanyUUID, &company.Title, &company.Status)
+		err = res.Scan(&company.CompanyUUID, &company.Title, &company.Status)
 		if err != nil {
 			return nil, &Error.CodeError{Code: 0, Err: nil}
 		}
@@ -90,11 +90,11 @@ func (r *companyRepository) GetCompanies(ctx context.Context, offset, count int)
 }
 
 // UpdateCompanyTitle Обновление названия компании
-func (r *companyRepository) UpdateCompanyTitle(ctx context.Context, company_uuid, title string) *Error.CodeError {
+func (r *companyRepository) UpdateCompanyTitle(ctx context.Context, companyUUID, title string) *Error.CodeError {
 	query := `UPDATE companies SET title = $2 WHERE uuid = $1;`
 
 	// Обновление названия компании
-	res, err := r.db.ExecContext(ctx, query, company_uuid, title)
+	res, err := r.db.ExecContext(ctx, query, companyUUID, title)
 	if err != nil {
 		return &Error.CodeError{Code: 0, Err: err}
 	}
@@ -112,10 +112,10 @@ func (r *companyRepository) UpdateCompanyTitle(ctx context.Context, company_uuid
 }
 
 // UpdateCompanyStatus Обновление статуса компании (open | close)
-func (r *companyRepository) UpdateCompanyStatus(ctx context.Context, company_uuid, status string) *Error.CodeError {
+func (r *companyRepository) UpdateCompanyStatus(ctx context.Context, companyUUID, status string) *Error.CodeError {
 	query := `UPDATE companies SET status = $2 WHERE uuid = $1;`
 
-	res, err := r.db.ExecContext(ctx, query, company_uuid, status)
+	res, err := r.db.ExecContext(ctx, query, companyUUID, status)
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
@@ -139,10 +139,10 @@ func (r *companyRepository) UpdateCompanyStatus(ctx context.Context, company_uui
 }
 
 // DeleteCompany Удаление компании
-func (r *companyRepository) DeleteCompany(ctx context.Context, companu_uuid string) *Error.CodeError {
+func (r *companyRepository) DeleteCompany(ctx context.Context, companyUUID string) *Error.CodeError {
 	query := `DELETE FROM companies WHERE uuid = $1;`
 
-	res, err := r.db.ExecContext(ctx, query, companu_uuid)
+	res, err := r.db.ExecContext(ctx, query, companyUUID)
 	if err != nil {
 		return &Error.CodeError{Code: 0, Err: err}
 	}
@@ -159,10 +159,10 @@ func (r *companyRepository) DeleteCompany(ctx context.Context, companu_uuid stri
 }
 
 // JoinCompany Добавление пользователя в список сотрудников компании
-func (r *companyRepository) JoinCompany(ctx context.Context, company_uuid, user_uuid string) *Error.CodeError {
+func (r *companyRepository) JoinCompany(ctx context.Context, companyUUID, userUUID string) *Error.CodeError {
 	query := `INSERT INTO employees (company_uuid, user_uuid) VALUES ($1, $2);`
 
-	_, err := r.db.ExecContext(ctx, query, company_uuid, user_uuid)
+	_, err := r.db.ExecContext(ctx, query, companyUUID, userUUID)
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
@@ -179,15 +179,15 @@ func (r *companyRepository) JoinCompany(ctx context.Context, company_uuid, user_
 }
 
 // GetCompanyEmployee Получение данных о сотруднике в компании (ошибка если сотрудника нет)
-func (r *companyRepository) GetCompanyEmployee(ctx context.Context, company_uuid, user_uuid string) (*entities.Employee, *Error.CodeError) {
+func (r *companyRepository) GetCompanyEmployee(ctx context.Context, companyUUID, userUUID string) (*entities.Employee, *Error.CodeError) {
 	query := `SELECT role, joined_at FROM employees WHERE company_uuid = $1 AND user_uuid = $2;`
 
 	employee := &entities.Employee{
-		CompanyUUID: company_uuid,
-		UserUUID:    user_uuid,
+		CompanyUUID: companyUUID,
+		UserUUID:    userUUID,
 	}
 
-	err := r.db.QueryRowContext(ctx, query, company_uuid, user_uuid).Scan(&employee.Role, &employee.JoinedAt)
+	err := r.db.QueryRowContext(ctx, query, companyUUID, userUUID).Scan(&employee.Role, &employee.JoinedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not in company")}
@@ -198,21 +198,21 @@ func (r *companyRepository) GetCompanyEmployee(ctx context.Context, company_uuid
 }
 
 // GetCompanyEmployeesSummary Получение кол-ва сотрудников по ролям в компании
-func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, company_uuid string) (*entities.EmployeesSummary, *Error.CodeError) {
+func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, companyUUID string) (*entities.EmployeesSummary, *Error.CodeError) {
 	query := `SELECT 
-    COUNT(CASE WHEN role = 'unemployed' THEN 1 END) as unemployed_count,
-    COUNT(CASE WHEN role = 'engineer' THEN 1 END) as engineer_count,
-    COUNT(CASE WHEN role = 'manager' THEN 1 END) as manager_count,
-    COUNT(CASE WHEN role = 'analytic' THEN 1 END) as analytic_count,
-    COUNT(CASE WHEN role = 'chief' THEN 1 END) as chief_count
+    	COUNT(CASE WHEN role = 'unemployed' THEN 1 END) as unemployed_count,
+    	COUNT(CASE WHEN role = 'engineer' THEN 1 END) as engineer_count,
+    	COUNT(CASE WHEN role = 'manager' THEN 1 END) as manager_count,
+    	COUNT(CASE WHEN role = 'analytic' THEN 1 END) as analytic_count,
+    	COUNT(CASE WHEN role = 'chief' THEN 1 END) as chief_count
 	FROM employees 
 	WHERE company_uuid = $1;`
 
 	employeeSummary := &entities.EmployeesSummary{
-		CompanyUUID: company_uuid,
+		CompanyUUID: companyUUID,
 	}
 
-	err := r.db.QueryRowContext(ctx, query, company_uuid).
+	err := r.db.QueryRowContext(ctx, query, companyUUID).
 		Scan(
 			&employeeSummary.UnemployedCount,
 			&employeeSummary.EngineerCount,
@@ -230,10 +230,10 @@ func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, comp
 }
 
 // RemoveCompanyEmployee Удаление пользователя из списка сотрудников компании
-func (r *companyRepository) RemoveCompanyEmployee(ctx context.Context, company_uuid, user_uuid string) *Error.CodeError {
+func (r *companyRepository) RemoveCompanyEmployee(ctx context.Context, companyUUID, userUUID string) *Error.CodeError {
 	query := `DELETE FROM employees WHERE company_uuid = $1 AND user_uuid = $2;`
 
-	res, err := r.db.ExecContext(ctx, query, company_uuid, user_uuid)
+	res, err := r.db.ExecContext(ctx, query, companyUUID, userUUID)
 	if err != nil {
 		return &Error.CodeError{Code: 0, Err: err}
 	}

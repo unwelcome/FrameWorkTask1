@@ -806,7 +806,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "2.0",
-	Host:             "4aik.ru",
+	Host:             "localhost:8080",
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Framework task 2 API",

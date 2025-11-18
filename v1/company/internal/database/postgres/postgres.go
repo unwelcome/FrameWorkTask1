@@ -8,6 +8,7 @@ import (
 
 type DatabaseRepository struct {
 	migrator *Migrator
+	Company  CompanyRepository
 }
 
 func NewDatabaseInstance(connectString string) *DatabaseRepository {
@@ -28,6 +29,7 @@ func NewDatabaseInstance(connectString string) *DatabaseRepository {
 
 	// Создаем репозитории
 	databaseRepository.migrator = NewMigrator(db)
+	databaseRepository.Company = NewCompanyRepository(db)
 
 	// Запускаем миграцию
 	databaseRepository.migrator.Migrate()

@@ -102,6 +102,7 @@ message CreateCompanyJoinCodeRequest {
   string operation_id = 1;
   string user_uuid = 2;
   string company_uuid = 3;
+  int64 code_ttl = 4;
 }
 message CreateCompanyJoinCodeResponse {
   string join_code = 1;

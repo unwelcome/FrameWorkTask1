@@ -16,7 +16,7 @@ import (
 type CompanyRepository interface {
 	CreateCompany(ctx context.Context, dto *entities.CreateCompany) *Error.CodeError
 	GetCompany(ctx context.Context, companyUUID string) (*entities.Company, *Error.CodeError)
-	GetCompanies(ctx context.Context, offset, count int) ([]*entities.GetCompanies, *Error.CodeError)
+	GetCompanies(ctx context.Context, offset, count int64) ([]*entities.GetCompanies, *Error.CodeError)
 	UpdateCompanyTitle(ctx context.Context, companyUUID, title string) *Error.CodeError
 	UpdateCompanyStatus(ctx context.Context, companyUUID, status string) *Error.CodeError
 	DeleteCompany(ctx context.Context, companyUUID string) *Error.CodeError
@@ -64,7 +64,7 @@ func (r *companyRepository) GetCompany(ctx context.Context, companyUUID string) 
 }
 
 // GetCompanies Получение списка компаний размера count со сдвигом offset
-func (r *companyRepository) GetCompanies(ctx context.Context, offset, count int) ([]*entities.GetCompanies, *Error.CodeError) {
+func (r *companyRepository) GetCompanies(ctx context.Context, offset, count int64) ([]*entities.GetCompanies, *Error.CodeError) {
 	query := `SELECT uuid, title, status FROM companies OFFSET $1 LIMIT $2;`
 
 	// Получение компаний

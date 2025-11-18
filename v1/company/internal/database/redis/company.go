@@ -15,6 +15,7 @@ type CompanyRepository interface {
 	CheckJoinCodeExists(ctx context.Context, code string) Error.CodeError
 	CheckJoinCodeBelongToCompany(ctx context.Context, companyUUID string, code string) Error.CodeError
 	GetCompanyJoinCodes(ctx context.Context, companyUUID string) ([]string, Error.CodeError)
+	GetCompanyByJoinCode(ctx context.Context, code string) (string, Error.CodeError)
 	DeleteCompanyJoinCode(ctx context.Context, companyUUID string, code string) Error.CodeError
 }
 
@@ -32,7 +33,7 @@ func (r *companyRepository) CreateCompanyJoinCode(ctx context.Context, companyUU
 	pipeline := r.redis.Pipeline()
 
 	// Сохраняем код
-	pipeline.Set(ctx, getCodeKey(code), 1, tokenTTL)
+	pipeline.Set(ctx, getCodeKey(code), companyUUID, tokenTTL)
 
 	// Добавляем код в коды компании
 	pipeline.SAdd(ctx, getCompanyCodesKey(companyUUID), code)
@@ -102,6 +103,17 @@ func (r *companyRepository) GetCompanyJoinCodes(ctx context.Context, companyUUID
 	_ = r.redis.SRem(ctx, getCompanyCodesKey(companyUUID), invalidCodes).Err()
 
 	return validCodes, Error.CodeError{Code: -1, Err: nil}
+}
+
+// GetCompanyByJoinCode Возвращает uuid компании, которой принадлежит данный код добавления
+func (r *companyRepository) GetCompanyByJoinCode(ctx context.Context, code string) (string, Error.CodeError) {
+	// Получаем uuid компании по коду
+	companyUUID, err := r.redis.Get(ctx, code).Result()
+	if err != nil {
+		return "", Error.CodeError{Code: 0, Err: err}
+	}
+
+	return companyUUID, Error.CodeError{Code: -1, Err: nil}
 }
 
 // DeleteCompanyJoinCode Удаляет код для вступления

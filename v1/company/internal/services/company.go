@@ -313,7 +313,7 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 		return nil, status.Error(codes.Canceled, "company is closed")
 	}
 
-	// Добавлем пользователя в компанию
+	// Добавление пользователя в компанию
 	addErr := s.db.Company.JoinCompany(ctx, companyUUID, req.GetUserUuid())
 	err = Error.HandleError(addErr, req.GetOperationId(), "join company")
 	if err != nil {
@@ -325,20 +325,68 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 
 // GetCompanyEmployee Возвращает роль сотрудника в компании, иначе возвращает ошибку
 func (s *CompanyService) GetCompanyEmployee(ctx context.Context, req *pb.GetCompanyEmployeeRequest) (*pb.GetCompanyEmployeeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Проверка роли пользователя
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employee", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Получаем данные сотрудника
+	employeeInfo, getErr := s.db.Company.GetCompanyEmployee(ctx, req.GetCompanyUuid(), req.GetTargetUuid())
+	err = Error.HandleError(getErr, req.GetOperationId(), "get company employee")
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetCompanyEmployeeResponse{
+		Role:     employeeInfo.Role,
+		JoinedAt: employeeInfo.JoinedAt,
+	}, nil
 }
 
 // GetCompanyEmployeesSummary Возвращает кол-во сотрудников компании по ролям
 func (s *CompanyService) GetCompanyEmployeesSummary(ctx context.Context, req *pb.GetCompanyEmployeesSummaryRequest) (*pb.GetCompanyEmployeesSummaryResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Проверка роли пользователя
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employee", req.GetCompanyUuid(), req.GetUserUuid(), []string{"chief", "analytic", "manager", "engineer", "unemployed"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Получаем данные сотрудника
+	employeesInfo, getErr := s.db.Company.GetCompanyEmployeesSummary(ctx, req.GetCompanyUuid())
+	err = Error.HandleError(getErr, req.GetOperationId(), "get company employee")
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetCompanyEmployeesSummaryResponse{
+		ChiefCount:      employeesInfo.ChiefCount,
+		AnalyticsCount:  employeesInfo.AnalyticCount,
+		ManagerCount:    employeesInfo.ManagerCount,
+		EngineerCount:   employeesInfo.EngineerCount,
+		UnemployedCount: employeesInfo.UnemployedCount,
+	}, nil
 }
 
 // RemoveCompanyEmployee Удаляет сотрудника из компании
 func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.RemoveCompanyEmployeeRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Проверка роли пользователя
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "remove company employee", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Удаление сотрудника
+	deleteErr := s.db.Company.RemoveCompanyEmployee(ctx, req.GetCompanyUuid(), req.GetTargetUuid())
+	err = Error.HandleError(deleteErr, req.GetOperationId(), "remove company employee")
+	if err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
-// generateJoinCode Генерирует рандомную строку цифр длинной length
+// generateJoinCode Генерирует случайную строку цифр длинной length
 func generateJoinCode(length int) string {
 	digits := make([]byte, length)
 

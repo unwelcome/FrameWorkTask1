@@ -292,8 +292,12 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 	// Проверяем, что пользователь еще не состоит в компании
 	_, getEmployeeErr := s.db.Company.GetCompanyEmployee(ctx, companyUUID, req.GetUserUuid())
 	if getEmployeeErr == nil || getEmployeeErr.Code != int(codes.NotFound) { // ошибка во всех случаях, если ошибка не NotFound (т.е. пользователь не в компании)
-		// TODO: фикс может быть без ошибок
+		// Если нет ошибки -> Значит пользователь уже в компании -> ошибка
+		if getEmployeeErr.Code == -1 {
+			return nil, status.Error(codes.AlreadyExists, "user already in company")
+		}
 
+		// Иначе возвращаем существующую ошибку
 		err = Error.HandleError(getEmployeeErr, req.GetOperationId(), "join company")
 	}
 
@@ -307,6 +311,13 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 	if companyInfo.Status != "open" {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "join company").Err(fmt.Errorf("company is closed")).Msg("error")
 		return nil, status.Error(codes.Canceled, "company is closed")
+	}
+
+	// Добавлем пользователя в компанию
+	addErr := s.db.Company.JoinCompany(ctx, companyUUID, req.GetUserUuid())
+	err = Error.HandleError(addErr, req.GetOperationId(), "join company")
+	if err != nil {
+		return nil, err
 	}
 
 	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")

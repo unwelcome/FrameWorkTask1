@@ -55,6 +55,24 @@ func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompan
 		return nil, err
 	}
 
+	// Добавляем руководителя в компанию
+	createChiefErr := s.db.Company.JoinCompany(ctx, companyUUID, req.GetUserUuid())
+	err = Error.HandleError(createChiefErr, req.GetOperationId(), "create company")
+	if err != nil {
+		// Не удалось добавить руководителя в компанию -> удаляем компанию
+		_ = s.db.Company.DeleteCompany(ctx, companyUUID)
+		return nil, err
+	}
+
+	// Устанавливаем роль руководителя
+	setRoleErr := s.db.Company.SetCompanyEmployeeRole(ctx, companyUUID, req.GetUserUuid(), "chief")
+	err = Error.HandleError(setRoleErr, req.GetOperationId(), "create company")
+	if err != nil {
+		// Не удалось установить руководителю роль "chief" -> удаляем компанию
+		_ = s.db.Company.DeleteCompany(ctx, companyUUID)
+		return nil, err
+	}
+
 	log.Info().Str("id", req.GetOperationId()).Str("method", "create company").Msg("success")
 	return &pb.CreateCompanyResponse{CompanyUuid: companyUUID}, nil
 }

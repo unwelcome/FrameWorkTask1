@@ -23,6 +23,7 @@ type CompanyRepository interface {
 	JoinCompany(ctx context.Context, companyUUID, userUUID string) *Error.CodeError
 	GetCompanyEmployee(ctx context.Context, companyUUID, userUUID string) (*entities.Employee, *Error.CodeError)
 	GetCompanyEmployeesSummary(ctx context.Context, companyUUID string) (*entities.EmployeesSummary, *Error.CodeError)
+	SetCompanyEmployeeRole(ctx context.Context, companyUUID string, userUUID string, role string) *Error.CodeError
 	RemoveCompanyEmployee(ctx context.Context, companyUUID, userUUID string) *Error.CodeError
 }
 
@@ -227,6 +228,34 @@ func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, comp
 		return nil, &Error.CodeError{Code: 0, Err: err}
 	}
 	return employeeSummary, &Error.CodeError{Code: -1, Err: nil}
+}
+
+// SetCompanyEmployeeRole Устанавливает новую роль сотруднику компании
+func (r *companyRepository) SetCompanyEmployeeRole(ctx context.Context, companyUUID string, userUUID string, role string) *Error.CodeError {
+	query := `UPDATE employees SET role = $3 WHERE company_uuid = $1 AND user_uuid = $2;`
+
+	res, err := r.db.ExecContext(ctx, query, companyUUID, userUUID, role)
+	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			// Неверное значение enum
+			if pqErr.Code == "22P02" {
+				return &Error.CodeError{Code: int(codes.InvalidArgument), Err: fmt.Errorf("invalid role value")}
+			}
+		}
+		return &Error.CodeError{Code: 0, Err: err}
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return &Error.CodeError{Code: 0, Err: err}
+	}
+
+	if rowsAffected == 0 {
+		return &Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("employee not found")}
+	}
+
+	return &Error.CodeError{Code: -1, Err: nil}
 }
 
 // RemoveCompanyEmployee Удаление пользователя из списка сотрудников компании

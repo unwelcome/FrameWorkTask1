@@ -21,6 +21,7 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 
 	// Middleware авторизации
 	api.Use("/auth", app.AuthMiddleware)
+	auth := api.Group("/auth")
 
 	// Health handler
 	api.Get("/health", app.HealthHandler.Health)
@@ -29,11 +30,14 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	api.Post("/register", app.AuthHandler.Register)
 	api.Post("/login", app.AuthHandler.Login)
 	api.Post("/refresh", app.AuthHandler.RefreshToken)
-	api.Get("/auth/user/:user_uuid/info", app.AuthHandler.GetUser)
-	api.Get("/auth/user/tokens", app.AuthHandler.GetAllActiveTokens)
-	api.Patch("/auth/user/password", app.AuthHandler.ChangePassword)
-	api.Patch("/auth/user/bio", app.AuthHandler.UpdateUserBio)
-	api.Delete("/auth/user/account", app.AuthHandler.DeleteUser)
-	api.Delete("/auth/user/revoke/token", app.AuthHandler.RevokeToken)
-	api.Delete("/auth/user/revoke/all", app.AuthHandler.RevokeAllTokens)
+	auth.Get("/user/:user_uuid/info", app.AuthHandler.GetUser)
+	auth.Get("/user/tokens", app.AuthHandler.GetAllActiveTokens)
+	auth.Patch("/user/password", app.AuthHandler.ChangePassword)
+	auth.Patch("/user/bio", app.AuthHandler.UpdateUserBio)
+	auth.Delete("/user/account", app.AuthHandler.DeleteUser)
+	auth.Delete("/user/revoke/token", app.AuthHandler.RevokeToken)
+	auth.Delete("/user/revoke/all", app.AuthHandler.RevokeAllTokens)
+
+	// Company handler
+	auth.Post("/company/create", app.CompanyHandler.CreateCompany)
 }

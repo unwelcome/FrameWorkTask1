@@ -7,7 +7,7 @@ import (
 	"unicode"
 )
 
-// ValidateUUID проверяет uuid по регулярному выражению
+// ValidateUUID Проверяет uuid по регулярному выражению
 func ValidateUUID(uuid string) error {
 	if uuid == "" {
 		return fmt.Errorf("uuid missed")
@@ -33,7 +33,7 @@ func ValidateJWT(token string) error {
 	return nil
 }
 
-// ValidateEmail проверяет email по регулярному выражению
+// ValidateEmail Проверяет email по регулярному выражению
 func ValidateEmail(email string) error {
 	if email == "" {
 		return fmt.Errorf("email missed")
@@ -141,6 +141,28 @@ func ValidatePatronymic(s string, minLen, maxLen int) error {
 
 	if !checkStringCharacters(s) {
 		return fmt.Errorf("patronymic contains incorrect characters")
+	}
+
+	return nil
+}
+
+// ValidateCompanyTitle Проверяет название компании
+func ValidateCompanyTitle(title string) error {
+	if title == "" {
+		return fmt.Errorf("title missed")
+	}
+
+	if strings.TrimSpace(title) != title {
+		return fmt.Errorf("title contains useless spaces")
+	}
+
+	if len([]rune(title)) > 250 {
+		return fmt.Errorf("title is too long")
+	}
+
+	pattern := `^[a-zA-Zа-яА-ЯёЁ0-9\s\-_&.,№#()'"°+]+$`
+	if !regexp.MustCompile(pattern).MatchString(title) {
+		return fmt.Errorf("title contains incorrect characters")
 	}
 
 	return nil

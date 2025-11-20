@@ -15,6 +15,63 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/company/create": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create new company (user that created company became \"chief\" automatically)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Company"
+                ],
+                "summary": "Create company",
+                "parameters": [
+                    {
+                        "description": "Данные компании",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.CreateCompanyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/entities.CreateCompanyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/user/account": {
             "delete": {
                 "security": [
@@ -619,6 +676,22 @@ const docTemplate = `{
         },
         "entities.ChangePasswordResponse": {
             "type": "object"
+        },
+        "entities.CreateCompanyRequest": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.CreateCompanyResponse": {
+            "type": "object",
+            "properties": {
+                "company_uuid": {
+                    "type": "string"
+                }
+            }
         },
         "entities.DeleteUserRequest": {
             "type": "object",

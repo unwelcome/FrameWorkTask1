@@ -14,6 +14,16 @@ definitions:
     type: object
   entities.ChangePasswordResponse:
     type: object
+  entities.CreateCompanyRequest:
+    properties:
+      title:
+        type: string
+    type: object
+  entities.CreateCompanyResponse:
+    properties:
+      company_uuid:
+        type: string
+    type: object
   entities.DeleteUserRequest:
     properties:
       tagret_uuid:
@@ -131,6 +141,42 @@ info:
   title: Framework task 2 API
   version: "2.0"
 paths:
+  /auth/company/create:
+    post:
+      consumes:
+      - application/json
+      description: Create new company (user that created company became "chief" automatically)
+      parameters:
+      - description: Данные компании
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CreateCompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CreateCompanyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Create company
+      tags:
+      - Company
   /auth/user/{user_uuid}/info:
     get:
       description: Get user info

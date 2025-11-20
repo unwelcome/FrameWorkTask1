@@ -30,8 +30,9 @@ type App struct {
 	AuthMiddleware        fiber.Handler
 
 	// Handlers
-	HealthHandler handlers.HealthHandler
-	AuthHandler   handlers.AuthHandler
+	HealthHandler  handlers.HealthHandler
+	AuthHandler    handlers.AuthHandler
+	CompanyHandler handlers.CompanyHandler
 }
 
 func InitApp(cfg *config.Config) *App {
@@ -49,6 +50,7 @@ func InitApp(cfg *config.Config) *App {
 	// Init handlers
 	app.HealthHandler = handlers.NewHealthHandler(app.AuthServiceClient, app.CompanyServiceClient, OperationIDKey)
 	app.AuthHandler = handlers.NewAuthHandler(app.AuthServiceClient, OperationIDKey, UserUUIDKey)
+	app.CompanyHandler = handlers.NewCompanyHandler(app.CompanyServiceClient, OperationIDKey, UserUUIDKey)
 
 	return app
 }

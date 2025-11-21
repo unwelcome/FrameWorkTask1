@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -168,6 +169,20 @@ func ValidateCompanyTitle(title string) error {
 	return nil
 }
 
+// ValidateCompanyJoinCode Проверяет код добавления в компанию
+func ValidateCompanyJoinCode(code string) error {
+	if code == "" {
+		return fmt.Errorf("join code missed")
+	}
+
+	pattern := `^[0-9]{8}$`
+	if !regexp.MustCompile(pattern).MatchString(code) {
+		return fmt.Errorf("invalid join code")
+	}
+
+	return nil
+}
+
 func FCapitalize(str string) string {
 	if str == "" {
 		return ""
@@ -188,11 +203,16 @@ func ValidateNumber(num, min, max int, title string) error {
 		return fmt.Errorf("%s should be more than %d", title, min)
 	}
 
-	if num > max {
-		return fmt.Errorf("%s chould be less than %d", title, max)
+	if max != 0 && num > max {
+		return fmt.Errorf("%s should be less than %d", title, max)
 	}
 
 	return nil
+}
+
+// ValidateIsArrayContain Проверяет, содержится ли объект в массиве объектов
+func ValidateIsArrayContain[T int | string | float64](str T, arr []T) bool {
+	return slices.Contains(arr, str)
 }
 
 func checkStringCharacters(str string) bool {

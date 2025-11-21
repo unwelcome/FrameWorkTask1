@@ -85,7 +85,7 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 
 	// Сборка ответа
 	return c.Status(200).JSON(&entities.HealthResponse{
-		Gateway:     "health",
+		Gateway:     "healthy",
 		Auth:        authHealth,
 		Company:     companyHealth,
 		Application: "not implemented",

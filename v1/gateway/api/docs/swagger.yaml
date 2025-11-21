@@ -14,6 +14,11 @@ definitions:
     type: object
   entities.ChangePasswordResponse:
     type: object
+  entities.CreateCompanyJoinCodeResponse:
+    properties:
+      code:
+        type: string
+    type: object
   entities.CreateCompanyRequest:
     properties:
       title:
@@ -23,6 +28,15 @@ definitions:
     properties:
       company_uuid:
         type: string
+    type: object
+  entities.DeleteCompanyJoinCodeRequest:
+    properties:
+      code:
+        type: string
+    type: object
+  entities.DeleteCompanyJoinCodeResponse:
+    type: object
+  entities.DeleteCompanyResponse:
     type: object
   entities.DeleteUserRequest:
     properties:
@@ -37,6 +51,56 @@ definitions:
         items:
           $ref: '#/definitions/entities.TokenInfo'
         type: array
+    type: object
+  entities.GetCompaniesRequest:
+    properties:
+      count:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  entities.GetCompaniesResponse:
+    properties:
+      companies:
+        items:
+          $ref: '#/definitions/entities.GetCompanyResponse'
+        type: array
+    type: object
+  entities.GetCompanyEmployeeResponse:
+    properties:
+      joined_at:
+        type: string
+      role:
+        type: string
+    type: object
+  entities.GetCompanyEmployeesSummaryResponse:
+    properties:
+      analytics_count:
+        type: integer
+      chief_count:
+        type: integer
+      engineer_count:
+        type: integer
+      manager_count:
+        type: integer
+      unemployed_count:
+        type: integer
+    type: object
+  entities.GetCompanyJoinCodesResponse:
+    properties:
+      codes:
+        items:
+          type: string
+        type: array
+    type: object
+  entities.GetCompanyResponse:
+    properties:
+      company_uuid:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
     type: object
   entities.GetUserResponse:
     properties:
@@ -62,6 +126,18 @@ definitions:
       company_service:
         type: string
       gateway:
+        type: string
+    type: object
+  entities.JoinCompanyRequest:
+    properties:
+      code:
+        type: string
+    type: object
+  entities.JoinCompanyResponse:
+    properties:
+      company_uuid:
+        type: string
+      role:
         type: string
     type: object
   entities.LoginRequest:
@@ -110,6 +186,8 @@ definitions:
       user_uuid:
         type: string
     type: object
+  entities.RemoveCompanyEmployeeResponse:
+    type: object
   entities.RevokeAllTokensResponse:
     type: object
   entities.RevokeTokenRequest:
@@ -123,6 +201,20 @@ definitions:
     properties:
       token:
         type: string
+    type: object
+  entities.UpdateCompanyStatusRequest:
+    properties:
+      status:
+        type: string
+    type: object
+  entities.UpdateCompanyStatusResponse:
+    type: object
+  entities.UpdateCompanyTitleRequest:
+    properties:
+      title:
+        type: string
+    type: object
+  entities.UpdateCompanyTitleResponse:
     type: object
   entities.UpdateUserBioRequest:
     properties:
@@ -141,6 +233,460 @@ info:
   title: Framework task 2 API
   version: "2.0"
 paths:
+  /auth/company/{company_uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete company by company uuid (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.DeleteCompanyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete company
+      tags:
+      - Company
+    get:
+      consumes:
+      - application/json
+      description: Get company info by company uuid
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get company info
+      tags:
+      - Company
+  /auth/company/{company_uuid}/code:
+    delete:
+      consumes:
+      - application/json
+      description: Delete company join code (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.DeleteCompanyJoinCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.DeleteCompanyJoinCodeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete company join code
+      tags:
+      - Company
+    post:
+      consumes:
+      - application/json
+      description: Create code for users to join company and became it's employee
+        (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CreateCompanyJoinCodeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Create join company code
+      tags:
+      - Company
+  /auth/company/{company_uuid}/codes:
+    get:
+      consumes:
+      - application/json
+      description: Get all company join codes (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyJoinCodesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all company join codes
+      tags:
+      - Company
+  /auth/company/{company_uuid}/employee/{employee_uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove company employee by his uuid
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Employee UUID
+        in: path
+        name: employee_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.RemoveCompanyEmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove company employee
+      tags:
+      - Employee
+  /auth/company/{company_uuid}/employee/{employee_uuid}/info:
+    get:
+      consumes:
+      - application/json
+      description: Get employee info by his uuid
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Employee UUID
+        in: path
+        name: employee_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyEmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get employee info
+      tags:
+      - Employee
+  /auth/company/{company_uuid}/employees/summary:
+    get:
+      consumes:
+      - application/json
+      description: Get company employees summary count by each role
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyEmployeesSummaryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get company employees summary
+      tags:
+      - Employee
+  /auth/company/{company_uuid}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 'Update company status by company uuid (chief only). Available
+        statuses: "unemployed", "engineer", "manager", "analytic", "chief"'
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateCompanyStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateCompanyStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Update company status
+      tags:
+      - Company
+  /auth/company/{company_uuid}/title:
+    patch:
+      consumes:
+      - application/json
+      description: Update company title by company uuid (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateCompanyTitleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateCompanyTitleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Update company title
+      tags:
+      - Company
   /auth/company/create:
     post:
       consumes:
@@ -175,6 +721,82 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Create company
+      tags:
+      - Company
+  /auth/company/join:
+    post:
+      consumes:
+      - application/json
+      description: Join company by join code
+      parameters:
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.JoinCompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.JoinCompanyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Join company
+      tags:
+      - Employee
+  /auth/company/list:
+    get:
+      consumes:
+      - application/json
+      description: Get companies list
+      parameters:
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.GetCompaniesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompaniesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get companies list
       tags:
       - Company
   /auth/user/{user_uuid}/info:

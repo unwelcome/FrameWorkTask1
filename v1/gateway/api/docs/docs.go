@@ -143,9 +143,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Get companies list",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -155,13 +152,18 @@ const docTemplate = `{
                 "summary": "Get companies list",
                 "parameters": [
                     {
-                        "description": "Параметры запроса",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entities.GetCompaniesRequest"
-                        }
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Count",
+                        "name": "count",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1555,17 +1557,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/entities.TokenInfo"
                     }
-                }
-            }
-        },
-        "entities.GetCompaniesRequest": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
                 }
             }
         },

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -40,8 +41,8 @@ func NewCompanyHandler(CompanyServiceClient company_proto.CompanyServiceClient, 
 // CreateCompany
 //
 //	@Summary			Create company
-//	@Description	Create new company (user that created company became "chief" automatically)
-//	@Tags					Company
+//	@Description		Create new company (user that created company became "chief" automatically)
+//	@Tags				Company
 //	@Accept				json
 //	@Produce			json
 //	@Security			ApiKeyAuth
@@ -146,12 +147,12 @@ func (h *companyHandler) GetCompany(c *fiber.Ctx) error {
 // GetCompanies
 //
 //	@Summary			Get companies list
-//	@Description	Get companies list
-//	@Tags					Company
-//	@Accept				json
+//	@Description		Get companies list
+//	@Tags				Company
 //	@Produce			json
 //	@Security			ApiKeyAuth
-//	@Param				data body entities.GetCompaniesRequest true "Параметры запроса"
+//	@Param				offset	query int false "Offset"	default(0)
+//	@Param				count	query int false "Count"		default(10)
 //	@Success			200  {object}  entities.GetCompaniesResponse
 //	@Failure			400  {object}  Error.HttpError
 //	@Failure			401  {object}  Error.HttpError
@@ -163,18 +164,21 @@ func (h *companyHandler) GetCompanies(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
+	fmt.Println("1")
 	// Парсинг тела запроса
 	httpReq := &entities.GetCompaniesRequest{}
-	if err := c.BodyParser(&httpReq); err != nil {
+	if err := c.QueryParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
 
+	fmt.Println("2")
 	// Валидация
 	err := httpReq.Validate()
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
+	fmt.Println("3")
 	// Формируем тело запроса
 	req := &company_proto.GetCompaniesRequest{
 		OperationId: operationID,
@@ -182,12 +186,14 @@ func (h *companyHandler) GetCompanies(c *fiber.Ctx) error {
 		Count:       httpReq.Count,
 	}
 
+	fmt.Println("4")
 	// Запрос в company сервис
 	res, err := h.CompanyServiceClient.GetCompanies(ctx, req)
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
+	fmt.Println("5")
 	// Маппинг ответа
 	companies := make([]*entities.GetCompanyResponse, 0)
 
@@ -199,6 +205,7 @@ func (h *companyHandler) GetCompanies(c *fiber.Ctx) error {
 		})
 	}
 
+	fmt.Println("6")
 	// Формируем тело ответа
 	httpRes := &entities.GetCompaniesResponse{
 		Companies: companies,

@@ -41,8 +41,8 @@ func (e *GetCompanyRequest) Validate() error {
 }
 
 type GetCompaniesRequest struct {
-	Offset int64 `json:"offset"`
-	Count  int64 `json:"count"`
+	Offset int64 `query:"offset"`
+	Count  int64 `query:"count"`
 }
 type GetCompaniesResponse struct {
 	Companies []*GetCompanyResponse `json:"companies"`

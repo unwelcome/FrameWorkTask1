@@ -52,13 +52,6 @@ definitions:
           $ref: '#/definitions/entities.TokenInfo'
         type: array
     type: object
-  entities.GetCompaniesRequest:
-    properties:
-      count:
-        type: integer
-      offset:
-        type: integer
-    type: object
   entities.GetCompaniesResponse:
     properties:
       companies:
@@ -765,16 +758,18 @@ paths:
       - Employee
   /auth/company/list:
     get:
-      consumes:
-      - application/json
       description: Get companies list
       parameters:
-      - description: Параметры запроса
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/entities.GetCompaniesRequest'
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 10
+        description: Count
+        in: query
+        name: count
+        type: integer
       produces:
       - application/json
       responses:

@@ -14,6 +14,11 @@ definitions:
     type: object
   entities.ChangePasswordResponse:
     type: object
+  entities.CreateCompanyJoinCodeRequest:
+    properties:
+      code_ttl:
+        type: integer
+    type: object
   entities.CreateCompanyJoinCodeResponse:
     properties:
       code:
@@ -65,6 +70,15 @@ definitions:
         type: string
       role:
         type: string
+      user_uuid:
+        type: string
+    type: object
+  entities.GetCompanyEmployeesResponse:
+    properties:
+      employees:
+        items:
+          $ref: '#/definitions/entities.GetCompanyEmployeeResponse'
+        type: array
     type: object
   entities.GetCompanyEmployeesSummaryResponse:
     properties:
@@ -208,6 +222,13 @@ definitions:
         type: string
     type: object
   entities.UpdateCompanyTitleResponse:
+    type: object
+  entities.UpdateEmployeeRoleRequest:
+    properties:
+      role:
+        type: string
+    type: object
+  entities.UpdateEmployeeRoleResponse:
     type: object
   entities.UpdateUserBioRequest:
     properties:
@@ -359,14 +380,21 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create code for users to join company and became it's employee
-        (chief only)
+      description: |-
+        Create code for users to join company and became its employee (chief only);
+        Min value: 60 (sec); Max value: 604800 (1 week)
       parameters:
       - description: Company UUID
         in: path
         name: company_uuid
         required: true
         type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CreateCompanyJoinCodeRequest'
       produces:
       - application/json
       responses:
@@ -538,6 +566,120 @@ paths:
       summary: Get employee info
       tags:
       - Employee
+  /auth/company/{company_uuid}/employee/{employee_uuid}/role:
+    patch:
+      consumes:
+      - application/json
+      description: 'Update employee role (chief only); Available roles: "unemployed",
+        "engineer", "manager", "analytic", "chief"'
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Employee UUID
+        in: path
+        name: employee_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateEmployeeRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateEmployeeRoleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Update employee role
+      tags:
+      - Employee
+  /auth/company/{company_uuid}/employees/list:
+    get:
+      consumes:
+      - application/json
+      description: 'Get company employees with sort by role; Available roles: "unemployed",
+        "engineer", "manager", "analytic", "chief"'
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - default: ""
+        description: Role
+        in: query
+        name: role
+        type: string
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 10
+        description: Count
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyEmployeesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get company employees
+      tags:
+      - Employee
   /auth/company/{company_uuid}/employees/summary:
     get:
       consumes:
@@ -586,7 +728,7 @@ paths:
       consumes:
       - application/json
       description: 'Update company status by company uuid (chief only). Available
-        statuses: "unemployed", "engineer", "manager", "analytic", "chief"'
+        statuses: "open", "close"'
       parameters:
       - description: Company UUID
         in: path

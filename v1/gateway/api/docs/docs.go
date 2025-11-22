@@ -327,7 +327,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create code for users to join company and became it's employee (chief only)",
+                "description": "Create code for users to join company and became its employee (chief only);\nMin value: 60 (sec); Max value: 604800 (1 week)",
                 "consumes": [
                     "application/json"
                 ],
@@ -345,6 +345,15 @@ const docTemplate = `{
                         "name": "company_uuid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Параметры запроса",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.CreateCompanyJoinCodeRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -676,6 +685,177 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/company/{company_uuid}/employee/{employee_uuid}/role": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update employee role (chief only); Available roles: \"unemployed\", \"engineer\", \"manager\", \"analytic\", \"chief\"",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Employee"
+                ],
+                "summary": "Update employee role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company UUID",
+                        "name": "company_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Employee UUID",
+                        "name": "employee_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Параметры запроса",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.UpdateEmployeeRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.UpdateEmployeeRoleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/company/{company_uuid}/employees/list": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get company employees with sort by role; Available roles: \"unemployed\", \"engineer\", \"manager\", \"analytic\", \"chief\"",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Employee"
+                ],
+                "summary": "Get company employees",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company UUID",
+                        "name": "company_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "",
+                        "description": "Role",
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Count",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.GetCompanyEmployeesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/company/{company_uuid}/employees/summary": {
             "get": {
                 "security": [
@@ -750,7 +930,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update company status by company uuid (chief only). Available statuses: \"unemployed\", \"engineer\", \"manager\", \"analytic\", \"chief\"",
+                "description": "Update company status by company uuid (chief only). Available statuses: \"open\", \"close\"",
                 "consumes": [
                     "application/json"
                 ],
@@ -1500,6 +1680,14 @@ const docTemplate = `{
         "entities.ChangePasswordResponse": {
             "type": "object"
         },
+        "entities.CreateCompanyJoinCodeRequest": {
+            "type": "object",
+            "properties": {
+                "code_ttl": {
+                    "type": "integer"
+                }
+            }
+        },
         "entities.CreateCompanyJoinCodeResponse": {
             "type": "object",
             "properties": {
@@ -1579,6 +1767,20 @@ const docTemplate = `{
                 },
                 "role": {
                     "type": "string"
+                },
+                "user_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.GetCompanyEmployeesResponse": {
+            "type": "object",
+            "properties": {
+                "employees": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entities.GetCompanyEmployeeResponse"
+                    }
                 }
             }
         },
@@ -1803,6 +2005,17 @@ const docTemplate = `{
             }
         },
         "entities.UpdateCompanyTitleResponse": {
+            "type": "object"
+        },
+        "entities.UpdateEmployeeRoleRequest": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.UpdateEmployeeRoleResponse": {
             "type": "object"
         },
         "entities.UpdateUserBioRequest": {

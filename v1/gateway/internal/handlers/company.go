@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,7 +23,9 @@ type CompanyHandler interface {
 	DeleteCompanyJoinCode(c *fiber.Ctx) error
 	JoinCompany(c *fiber.Ctx) error
 	GetCompanyEmployee(c *fiber.Ctx) error
+	GetCompanyEmployees(c *fiber.Ctx) error
 	GetCompanyEmployeesSummary(c *fiber.Ctx) error
+	UpdateEmployeeRole(c *fiber.Ctx) error
 	RemoveCompanyEmployee(c *fiber.Ctx) error
 }
 
@@ -164,21 +165,18 @@ func (h *companyHandler) GetCompanies(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	fmt.Println("1")
 	// Парсинг тела запроса
 	httpReq := &entities.GetCompaniesRequest{}
 	if err := c.QueryParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
 
-	fmt.Println("2")
 	// Валидация
 	err := httpReq.Validate()
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
-	fmt.Println("3")
 	// Формируем тело запроса
 	req := &company_proto.GetCompaniesRequest{
 		OperationId: operationID,
@@ -186,14 +184,12 @@ func (h *companyHandler) GetCompanies(c *fiber.Ctx) error {
 		Count:       httpReq.Count,
 	}
 
-	fmt.Println("4")
 	// Запрос в company сервис
 	res, err := h.CompanyServiceClient.GetCompanies(ctx, req)
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	fmt.Println("5")
 	// Маппинг ответа
 	companies := make([]*entities.GetCompanyResponse, 0)
 
@@ -205,7 +201,6 @@ func (h *companyHandler) GetCompanies(c *fiber.Ctx) error {
 		})
 	}
 
-	fmt.Println("6")
 	// Формируем тело ответа
 	httpRes := &entities.GetCompaniesResponse{
 		Companies: companies,
@@ -277,7 +272,7 @@ func (h *companyHandler) UpdateCompanyTitle(c *fiber.Ctx) error {
 // UpdateCompanyStatus
 //
 //	@Summary			Update company status
-//	@Description	Update company status by company uuid (chief only). Available statuses: "unemployed", "engineer", "manager", "analytic", "chief"
+//	@Description	Update company status by company uuid (chief only). Available statuses: "open", "close"
 //	@Tags					Company
 //	@Accept				json
 //	@Produce			json
@@ -388,12 +383,14 @@ func (h *companyHandler) DeleteCompany(c *fiber.Ctx) error {
 // CreateCompanyJoinCode
 //
 //	@Summary			Create join company code
-//	@Description	Create code for users to join company and became it's employee (chief only)
-//	@Tags					Company
+//	@Description		Create code for users to join company and became its employee (chief only);
+//	@Description		Min value: 60 (sec); Max value: 604800 (1 week)
+//	@Tags				Company
 //	@Accept				json
 //	@Produce			json
 //	@Security			ApiKeyAuth
 //	@Param 				company_uuid path string true "Company UUID"
+//	@Param				data body entities.CreateCompanyJoinCodeRequest true "Параметры запроса"
 //	@Success			201  {object}  entities.CreateCompanyJoinCodeResponse
 //	@Failure			400  {object}  Error.HttpError
 //	@Failure			401  {object}  Error.HttpError
@@ -407,12 +404,19 @@ func (h *companyHandler) CreateCompanyJoinCode(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	httpReq := &entities.CreateCompanyJoinCodeRequest{
+	// Парсинг тела запроса
+	httpReq := &entities.CreateCompanyJoinCodeRequest{}
+	if err := c.BodyParser(&httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+
+	httpReqFull := &entities.CreateCompanyJoinCodeRequestFull{
 		CompanyUUID: c.Params("company_uuid", ""),
+		CodeTTL:     httpReq.CodeTTL,
 	}
 
 	// Валидация
-	err := httpReq.Validate()
+	err := httpReqFull.Validate()
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
@@ -421,7 +425,8 @@ func (h *companyHandler) CreateCompanyJoinCode(c *fiber.Ctx) error {
 	req := &company_proto.CreateCompanyJoinCodeRequest{
 		OperationId: operationID,
 		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid: httpReq.CompanyUUID,
+		CompanyUuid: httpReqFull.CompanyUUID,
+		CodeTtl:     httpReqFull.CodeTTL,
 	}
 
 	// Запрос в company сервис
@@ -460,7 +465,7 @@ func (h *companyHandler) GetCompanyJoinCodes(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	httpReq := &entities.CreateCompanyJoinCodeRequest{
+	httpReq := &entities.GetCompanyJoinCodesRequest{
 		CompanyUUID: c.Params("company_uuid", ""),
 	}
 
@@ -656,10 +661,82 @@ func (h *companyHandler) GetCompanyEmployee(c *fiber.Ctx) error {
 
 	// Формируем тело ответа
 	httpRes := &entities.GetCompanyEmployeeResponse{
+		UserUUID: httpReq.TargetUUID,
 		Role:     res.GetRole(),
 		JoinedAt: res.GetJoinedAt(),
 	}
 
+	return c.Status(fiber.StatusOK).JSON(httpRes)
+}
+
+// GetCompanyEmployees
+//
+//	@Summary			Get company employees
+//	@Description		Get company employees with sort by role; Available roles: "unemployed", "engineer", "manager", "analytic", "chief"
+//	@Tags				Employee
+//	@Accept				json
+//	@Produce			json
+//	@Security			ApiKeyAuth
+//	@Param 				company_uuid path string true "Company UUID"
+//	@Param				role	query string 	false "Role"	default()
+//	@Param				offset	query int 		false "Offset"	default(0)
+//	@Param				count	query int 		false "Count"	default(10)
+//	@Success			200  {object}  entities.GetCompanyEmployeesResponse
+//	@Failure			400  {object}  Error.HttpError
+//	@Failure			401  {object}  Error.HttpError
+//	@Failure			403  {object}  Error.HttpError
+//	@Failure			404  {object}  Error.HttpError
+//	@Failure			500  {object}  Error.HttpError
+//	@Router				/auth/company/{company_uuid}/employees/list [get]
+func (h *companyHandler) GetCompanyEmployees(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	// Парсинг query параметров
+	httpReq := &entities.GetCompanyEmployeesRequest{}
+	if err := c.QueryParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+
+	// Получаем CompanyUUID из пути
+	httpReq.CompanyUUID = c.Params("company_uuid", "")
+
+	// Валидация
+	err := httpReq.Validate()
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	// Формируем тело запроса
+	req := &company_proto.GetCompanyEmployeesRequest{
+		OperationId: operationID,
+		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
+		CompanyUuid: httpReq.CompanyUUID,
+		Role:        httpReq.Role,
+		Count:       httpReq.Count,
+		Offset:      httpReq.Offset,
+	}
+
+	// Запрос в company сервис
+	res, err := h.CompanyServiceClient.GetCompanyEmployees(ctx, req)
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	// Формируем тело ответа
+	employees := make([]*entities.GetCompanyEmployeeResponse, 0)
+
+	for _, employee := range res.GetEmployees() {
+		employees = append(employees, &entities.GetCompanyEmployeeResponse{
+			UserUUID: employee.GetUserUuid(),
+			Role:     employee.GetRole(),
+			JoinedAt: employee.GetJoinedAt(),
+		})
+	}
+
+	httpRes := &entities.GetCompanyEmployeesResponse{Employees: employees}
 	return c.Status(fiber.StatusOK).JSON(httpRes)
 }
 
@@ -720,6 +797,69 @@ func (h *companyHandler) GetCompanyEmployeesSummary(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(httpRes)
 }
 
+// UpdateEmployeeRole
+//
+//	 @Summary			Update employee role
+//		@Description		Update employee role (chief only); Available roles: "unemployed", "engineer", "manager", "analytic", "chief"
+//		@Tags				Employee
+//		@Accept				json
+//		@Produce			json
+//		@Security			ApiKeyAuth
+//		@Param 				company_uuid path string true "Company UUID"
+//		@Param 				employee_uuid path string true "Employee UUID"
+//		@Param				data body entities.UpdateEmployeeRoleRequest true "Параметры запроса"
+//		@Success			200  {object}  entities.UpdateEmployeeRoleResponse
+//		@Failure			400  {object}  Error.HttpError
+//		@Failure			401  {object}  Error.HttpError
+//		@Failure			403  {object}  Error.HttpError
+//		@Failure			404  {object}  Error.HttpError
+//		@Failure			500  {object}  Error.HttpError
+//		@Router				/auth/company/{company_uuid}/employee/{employee_uuid}/role [patch]
+func (h *companyHandler) UpdateEmployeeRole(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	// Парсинг тела запроса
+	httpReq := &entities.UpdateEmployeeRoleRequest{}
+	if err := c.BodyParser(&httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+
+	httpReqFull := &entities.UpdateEmployeeRoleRequestFull{
+		CompanyUUID: c.Params("company_uuid", ""),
+		TargetUUID:  c.Params("employee_uuid", ""),
+		Role:        httpReq.Role,
+	}
+
+	// Валидация
+	err := httpReqFull.Validate()
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	// Формируем тело запроса
+	req := &company_proto.UpdateEmployeeRoleRequest{
+		OperationId:   operationID,
+		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		TargetUuid:    httpReqFull.TargetUUID,
+		CompanyUuid:   httpReqFull.CompanyUUID,
+		Role:          httpReqFull.Role,
+	}
+
+	// Запрос в company сервис
+	_, err = h.CompanyServiceClient.UpdateEmployeeRole(ctx, req)
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	// Формируем тело ответа
+	httpRes := &entities.UpdateEmployeeRoleResponse{}
+
+	return c.Status(fiber.StatusOK).JSON(httpRes)
+}
+
 // RemoveCompanyEmployee
 //
 //	@Summary			Remove company employee
@@ -745,7 +885,7 @@ func (h *companyHandler) RemoveCompanyEmployee(c *fiber.Ctx) error {
 
 	httpReq := &entities.RemoveCompanyEmployeeRequest{
 		CompanyUUID: c.Params("company_uuid", ""),
-		TargetUUID:  c.Params("target_uuid", ""),
+		TargetUUID:  c.Params("employee_uuid", ""),
 	}
 
 	// Валидация

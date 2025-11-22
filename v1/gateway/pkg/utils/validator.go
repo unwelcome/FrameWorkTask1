@@ -175,7 +175,7 @@ func ValidateCompanyJoinCode(code string) error {
 		return fmt.Errorf("join code missed")
 	}
 
-	pattern := `^[0-9]{8}$`
+	pattern := `^[0-9]{6}$`
 	if !regexp.MustCompile(pattern).MatchString(code) {
 		return fmt.Errorf("invalid join code")
 	}

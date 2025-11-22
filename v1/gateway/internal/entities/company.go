@@ -103,7 +103,7 @@ func (e *UpdateCompanyStatusRequestFull) Validate() error {
 	}
 
 	// Валидация status
-	if !utils.ValidateIsArrayContain(e.Status, []string{"unemployed", "engineer", "manager", "analytic", "chief"}) {
+	if !utils.ValidateIsArrayContain(e.Status, []string{"open", "close"}) {
 		return fmt.Errorf("incorrect company status")
 	}
 
@@ -126,15 +126,24 @@ func (e *DeleteCompanyRequest) Validate() error {
 }
 
 type CreateCompanyJoinCodeRequest struct {
+	CodeTTL int64 `json:"code_ttl"`
+}
+type CreateCompanyJoinCodeRequestFull struct {
 	CompanyUUID string `json:"company_uuid"`
+	CodeTTL     int64  `json:"code_ttl"`
 }
 type CreateCompanyJoinCodeResponse struct {
 	Code string `json:"code"`
 }
 
-func (e *CreateCompanyJoinCodeRequest) Validate() error {
+func (e *CreateCompanyJoinCodeRequestFull) Validate() error {
 	// Валидация company_uuid
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
+		return err
+	}
+
+	// Валидация CodeTTL (min: 60s; max: 1 week)
+	if err := utils.ValidateNumber(int(e.CodeTTL), 60, 60*60*24*7, "code_ttl"); err != nil {
 		return err
 	}
 
@@ -203,6 +212,7 @@ type GetCompanyEmployeeRequest struct {
 	CompanyUUID string `json:"company_uuid"`
 }
 type GetCompanyEmployeeResponse struct {
+	UserUUID string `json:"user_uuid"`
 	Role     string `json:"role"`
 	JoinedAt string `json:"joined_at"`
 }
@@ -215,6 +225,40 @@ func (e *GetCompanyEmployeeRequest) Validate() error {
 
 	// Валидация company_uuid
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type GetCompanyEmployeesRequest struct {
+	CompanyUUID string `json:"company_uuid"`
+	Role        string `query:"role"`
+	Offset      int64  `query:"offset"`
+	Count       int64  `query:"count"`
+}
+type GetCompanyEmployeesResponse struct {
+	Employees []*GetCompanyEmployeeResponse `json:"employees"`
+}
+
+func (e *GetCompanyEmployeesRequest) Validate() error {
+	// Валидация company_uuid
+	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
+		return err
+	}
+
+	// Валидация role
+	if !utils.ValidateIsArrayContain(e.Role, []string{"", "unemployed", "engineer", "manager", "analytic", "chief"}) {
+		return fmt.Errorf("incorrect employee role")
+	}
+
+	// Валидация offset
+	if err := utils.ValidateNumber(int(e.Offset), 0, 0, "offset"); err != nil {
+		return err
+	}
+
+	// Валидация count
+	if err := utils.ValidateNumber(int(e.Count), 1, 100, "count"); err != nil {
 		return err
 	}
 
@@ -236,6 +280,36 @@ func (e *GetCompanyEmployeesSummaryRequest) Validate() error {
 	// Валидация company_uuid
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+type UpdateEmployeeRoleRequest struct {
+	Role string `json:"role"`
+}
+type UpdateEmployeeRoleRequestFull struct {
+	CompanyUUID string `json:"company_uuid"`
+	TargetUUID  string `json:"target_uuid"`
+	Role        string `json:"role"`
+}
+type UpdateEmployeeRoleResponse struct {
+}
+
+func (e *UpdateEmployeeRoleRequestFull) Validate() error {
+	// Валидация target_uuid
+	if err := utils.ValidateUUID(e.TargetUUID); err != nil {
+		return err
+	}
+
+	// Валидация company_uuid
+	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
+		return err
+	}
+
+	// Валидация role
+	if !utils.ValidateIsArrayContain(e.Role, []string{"unemployed", "engineer", "manager", "analytic", "chief"}) {
+		return fmt.Errorf("incorrect employee role")
 	}
 
 	return nil

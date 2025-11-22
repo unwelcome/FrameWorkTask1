@@ -108,7 +108,7 @@ func (r *companyRepository) GetCompanyJoinCodes(ctx context.Context, companyUUID
 // GetCompanyByJoinCode Возвращает uuid компании, которой принадлежит данный код добавления
 func (r *companyRepository) GetCompanyByJoinCode(ctx context.Context, code string) (string, Error.CodeError) {
 	// Получаем uuid компании по коду
-	companyUUID, err := r.redis.Get(ctx, code).Result()
+	companyUUID, err := r.redis.Get(ctx, getCodeKey(code)).Result()
 	if err != nil {
 		return "", Error.CodeError{Code: 0, Err: err}
 	}

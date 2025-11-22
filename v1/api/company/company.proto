@@ -21,7 +21,9 @@ service CompanyService {
   // Employee
   rpc JoinCompany(JoinCompanyRequest) returns (JoinCompanyResponse);
   rpc GetCompanyEmployee(GetCompanyEmployeeRequest) returns (GetCompanyEmployeeResponse);
+  rpc GetCompanyEmployees(GetCompanyEmployeesRequest) returns (GetCompanyEmployeesResponse);
   rpc GetCompanyEmployeesSummary(GetCompanyEmployeesSummaryRequest) returns (GetCompanyEmployeesSummaryResponse);
+  rpc UpdateEmployeeRole(UpdateEmployeeRoleRequest) returns (google.protobuf.Empty);
   rpc RemoveCompanyEmployee(RemoveCompanyEmployeeRequest) returns (google.protobuf.Empty);
 }
 
@@ -151,6 +153,24 @@ message GetCompanyEmployeeResponse {
   string joined_at = 2;
 }
 
+// GetCompanyEmployees
+message GetCompanyEmployeesRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string role = 4;
+  int64 count = 5;
+  int64 offset = 6;
+}
+message GetCompanyEmployeesResponse {
+  repeated Employee employees = 1;
+}
+message Employee {
+  string user_uuid = 1;
+  string role = 2;
+  string joined_at = 3;
+}
+
 // GetCompanyEmployeesSummary
 message GetCompanyEmployeesSummaryRequest {
   string operation_id = 1;
@@ -164,6 +184,16 @@ message GetCompanyEmployeesSummaryResponse {
   int64 engineer_count = 4;
   int64 unemployed_count = 5;
 }
+
+// UpdateEmployeeRole
+message UpdateEmployeeRoleRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string target_uuid = 3;
+  string company_uuid = 4;
+  string role = 5;
+}
+// Empty response
 
 // RemoveCompanyEmployee
 message RemoveCompanyEmployeeRequest {

@@ -2,6 +2,7 @@ package Error
 
 import (
 	"fmt"
+
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -40,12 +41,7 @@ func (e *CodeError) Error() string {
 }
 
 // HandleError Обрабатывает ошибку CodeError, логирует и возвращает готовую grpc ошибку
-func HandleError(errorCode *CodeError, opID, method string) error {
-	// Вместо CodeError получили nil
-	if errorCode == nil {
-		log.Error().Str("id", opID).Str("method", method).Err(fmt.Errorf("CodeError is nil")).Msg("error")
-		return status.Errorf(codes.Internal, "internal error")
-	}
+func HandleError(errorCode CodeError, opID, method string) error {
 	// Проверяем, есть ли ошибка
 	if errorCode.Err != nil {
 		switch errorCode.Code {
@@ -61,6 +57,11 @@ func HandleError(errorCode *CodeError, opID, method string) error {
 			log.Error().Str("id", opID).Str("method", method).Err(fmt.Errorf("CodeError.Code is incorrect")).Msg("error")
 			return status.Errorf(codes.Internal, "internal error")
 		}
+	}
+
+	// Ошибки нет, но код ошибки не -1 -> ошибка разработчика
+	if errorCode.Code != -1 {
+		log.Error().Str("id", opID).Str("method", method).Err(fmt.Errorf("err is nil but code not -1")).Msg("error")
 	}
 
 	return nil

@@ -18,7 +18,9 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-const JOIN_CODE_LENGTH = 6
+const JoinCodeLength = 6
+
+var AllRoles = []string{"chief", "analytic", "manager", "engineer", "unemployed"}
 
 type CompanyService struct {
 	db    *postgresDB.DatabaseRepository
@@ -96,14 +98,14 @@ func (s *CompanyService) GetCompany(ctx context.Context, req *pb.GetCompanyReque
 
 // GetCompanies Возвращает список всех компаний (count, offset)
 func (s *CompanyService) GetCompanies(ctx context.Context, req *pb.GetCompaniesRequest) (*pb.GetCompaniesResponse, error) {
-	// Валидируем offset
+	// Валидация offset
 	offset := req.GetOffset()
 	if offset < 0 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "get companies").Err(fmt.Errorf("invalid offset")).Msg("error")
 		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
 	}
 
-	// Валидируем count
+	// Валидация count
 	count := req.GetCount()
 	if count < 0 || count > 100 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "get companies").Err(fmt.Errorf("invalid count")).Msg("error")
@@ -177,7 +179,7 @@ func (s *CompanyService) DeleteCompany(ctx context.Context, req *pb.DeleteCompan
 		return nil, err
 	}
 
-	// Обновляем статус компании
+	// Удаляем компанию
 	deleteErr := s.db.Company.DeleteCompany(ctx, req.GetCompanyUuid())
 	err = Error.HandleError(deleteErr, req.GetOperationId(), "delete company")
 	if err != nil {
@@ -196,23 +198,34 @@ func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.Crea
 		return nil, err
 	}
 
-	// Валидация времени жизни кода
+	// Валидация времени жизни кода: мин - 60 сек / макс - 7 дней
 	ttl := req.GetCodeTtl()
 	if ttl < 0 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "create join code").Err(fmt.Errorf("invalid code ttl")).Msg("error")
 		return nil, status.Errorf(codes.InvalidArgument, "invalid code ttl")
 	}
+	if ttl < 60 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create join code").Err(fmt.Errorf("too short code ttl")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid code ttl")
+	}
+	if ttl > 60*60*24*7 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create join code").Err(fmt.Errorf("too long code ttl")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid code ttl")
+	}
 	joinCodeTTL := time.Second * time.Duration(ttl)
 
 	// Создаем код добавления
-	joinCode := generateJoinCode(JOIN_CODE_LENGTH)
+	var joinCode string
 	loopCount := 0
 	for ; true; loopCount++ {
+		// Генерируем код
+		joinCode = generateJoinCode(JoinCodeLength)
+
 		// Проверяем, что такого кода еще нет
-		getErr := s.cache.Company.CheckJoinCodeBelongToCompany(ctx, req.GetCompanyUuid(), joinCode)
+		getErr := s.cache.Company.CheckJoinCodeExists(ctx, joinCode)
 
 		// Код еще не зарегистрирован -> выходим из цикла
-		if getErr.Code == -1 {
+		if getErr.Code == int(codes.NotFound) {
 			break
 		}
 
@@ -230,7 +243,7 @@ func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.Crea
 
 	// Сохраняем код добавления
 	saveErr := s.cache.Company.CreateCompanyJoinCode(ctx, req.GetCompanyUuid(), joinCode, joinCodeTTL)
-	err = Error.HandleError(&saveErr, req.GetOperationId(), "create join code")
+	err = Error.HandleError(saveErr, req.GetOperationId(), "create join code")
 	if err != nil {
 		return nil, err
 	}
@@ -248,14 +261,14 @@ func (s *CompanyService) GetCompanyJoinCodes(ctx context.Context, req *pb.GetCom
 	}
 
 	// Получаем все коды добавления компании
-	codes, getCodesErr := s.cache.Company.GetCompanyJoinCodes(ctx, req.GetCompanyUuid())
-	err = Error.HandleError(&getCodesErr, req.GetOperationId(), "get company codes")
+	companyCodes, getCodesErr := s.cache.Company.GetCompanyJoinCodes(ctx, req.GetCompanyUuid())
+	err = Error.HandleError(getCodesErr, req.GetOperationId(), "get company codes")
 	if err != nil {
 		return nil, err
 	}
 
 	log.Info().Str("id", req.GetOperationId()).Str("method", "get company codes").Msg("success")
-	return &pb.GetCompanyJoinCodesResponse{Codes: codes}, nil
+	return &pb.GetCompanyJoinCodesResponse{Codes: companyCodes}, nil
 }
 
 // DeleteCompanyJoinCode Удаляет код добавления в компанию
@@ -277,12 +290,12 @@ func (s *CompanyService) DeleteCompanyJoinCode(ctx context.Context, req *pb.Dele
 	belongErr := s.cache.Company.CheckJoinCodeBelongToCompany(ctx, req.GetCompanyUuid(), req.GetCode())
 	if belongErr.Code != -1 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "delete join code").Err(fmt.Errorf("join code not belong to company")).Msg("error")
-		return nil, status.Error(codes.PermissionDenied, "join code not belong to company")
+		return nil, status.Error(codes.PermissionDenied, "join code not belong to this company")
 	}
 
 	// Удаляем код добавления
 	deleteErr := s.cache.Company.DeleteCompanyJoinCode(ctx, req.GetCompanyUuid(), req.GetCode())
-	err = Error.HandleError(&deleteErr, req.GetOperationId(), "delete join code")
+	err = Error.HandleError(deleteErr, req.GetOperationId(), "delete join code")
 	if err != nil {
 		return nil, err
 	}
@@ -302,14 +315,14 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 
 	// Получаем uuid компании по коду добавления
 	companyUUID, getErr := s.cache.Company.GetCompanyByJoinCode(ctx, req.GetJoinCode())
-	err := Error.HandleError(&getErr, req.GetOperationId(), "join company")
+	err := Error.HandleError(getErr, req.GetOperationId(), "join company")
 	if err != nil {
 		return nil, err
 	}
 
 	// Проверяем, что пользователь еще не состоит в компании
 	_, getEmployeeErr := s.db.Company.GetCompanyEmployee(ctx, companyUUID, req.GetUserUuid())
-	if getEmployeeErr == nil || getEmployeeErr.Code != int(codes.NotFound) { // ошибка во всех случаях, если ошибка не NotFound (т.е. пользователь не в компании)
+	if getEmployeeErr.Code != int(codes.NotFound) { // Если ошибка не NotFound, то выкидываем ошибку
 		// Если нет ошибки -> Значит пользователь уже в компании -> ошибка
 		if getEmployeeErr.Code == -1 {
 			return nil, status.Error(codes.AlreadyExists, "user already in company")
@@ -338,13 +351,13 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 		return nil, err
 	}
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	return &pb.JoinCompanyResponse{CompanyUuid: companyUUID, Role: "unemployed"}, nil
 }
 
 // GetCompanyEmployee Возвращает роль сотрудника в компании, иначе возвращает ошибку
 func (s *CompanyService) GetCompanyEmployee(ctx context.Context, req *pb.GetCompanyEmployeeRequest) (*pb.GetCompanyEmployeeResponse, error) {
 	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employee", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employee", req.GetCompanyUuid(), req.GetInitiatorUuid(), AllRoles)
 	if err != nil {
 		return nil, err
 	}
@@ -362,10 +375,67 @@ func (s *CompanyService) GetCompanyEmployee(ctx context.Context, req *pb.GetComp
 	}, nil
 }
 
+// GetCompanyEmployees Возвращает список сотрудников компании с фильтрацией (count, offset, role)
+func (s *CompanyService) GetCompanyEmployees(ctx context.Context, req *pb.GetCompanyEmployeesRequest) (*pb.GetCompanyEmployeesResponse, error) {
+	// Проверка роли пользователя
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employees", req.GetCompanyUuid(), req.GetUserUuid(), AllRoles)
+	if err != nil {
+		return nil, err
+	}
+
+	// Валидация role
+	role := req.GetRole()
+	if role != "" && !checkArrayContain(AllRoles, role) {
+		return nil, status.Error(codes.InvalidArgument, "incorrect role")
+	}
+
+	// Валидация count
+	count := req.GetCount()
+	if count < 0 || count > 100 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid count")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
+	}
+
+	// Валидация offset
+	offset := req.GetOffset()
+	if offset < 0 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid count")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
+	}
+
+	var employees []*entities.Employee
+	var getErr Error.CodeError
+
+	// Получаем сотрудников
+	if role == "" { // Без конкретной роли
+		employees, getErr = s.db.Company.GetCompanyEmployees(ctx, req.GetCompanyUuid(), offset, count)
+	} else { // С определенной ролью
+		employees, getErr = s.db.Company.GetCompanyEmployeesByRole(ctx, req.GetCompanyUuid(), role, offset, count)
+	}
+
+	// Проверка ошибки
+	err = Error.HandleError(getErr, req.GetOperationId(), "get company employees")
+	if err != nil {
+		return nil, err
+	}
+
+	// Маппинг ответа
+	resEmployees := make([]*pb.Employee, 0)
+	for _, employee := range employees {
+		resEmployees = append(resEmployees, &pb.Employee{
+			UserUuid: employee.UserUUID,
+			Role:     employee.Role,
+			JoinedAt: employee.JoinedAt,
+		})
+	}
+
+	return &pb.GetCompanyEmployeesResponse{Employees: resEmployees}, nil
+}
+
 // GetCompanyEmployeesSummary Возвращает кол-во сотрудников компании по ролям
 func (s *CompanyService) GetCompanyEmployeesSummary(ctx context.Context, req *pb.GetCompanyEmployeesSummaryRequest) (*pb.GetCompanyEmployeesSummaryResponse, error) {
 	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employee", req.GetCompanyUuid(), req.GetUserUuid(), []string{"chief", "analytic", "manager", "engineer", "unemployed"})
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employee", req.GetCompanyUuid(), req.GetUserUuid(), AllRoles)
 	if err != nil {
 		return nil, err
 	}
@@ -386,6 +456,31 @@ func (s *CompanyService) GetCompanyEmployeesSummary(ctx context.Context, req *pb
 	}, nil
 }
 
+// UpdateEmployeeRole Обновляет роль сотрудника компании
+func (s *CompanyService) UpdateEmployeeRole(ctx context.Context, req *pb.UpdateEmployeeRoleRequest) (*emptypb.Empty, error) {
+	// Проверка роли пользователя
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "update employee role", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Проверяем наличие сотрудника
+	_, checkErr := s.db.Company.GetCompanyEmployee(ctx, req.GetCompanyUuid(), req.GetTargetUuid())
+	err = Error.HandleError(checkErr, req.GetOperationId(), "update employee role")
+	if err != nil {
+		return nil, err
+	}
+
+	// Обновляем роль сотрудника
+	updateErr := s.db.Company.SetCompanyEmployeeRole(ctx, req.GetCompanyUuid(), req.GetTargetUuid(), req.GetRole())
+	err = Error.HandleError(updateErr, req.GetOperationId(), "update employee role")
+	if err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
 // RemoveCompanyEmployee Удаляет сотрудника из компании
 func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.RemoveCompanyEmployeeRequest) (*emptypb.Empty, error) {
 	// Проверка роли пользователя
@@ -404,6 +499,8 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 	return &emptypb.Empty{}, nil
 }
 
+// ДОП ФУНКЦИИ
+
 // generateJoinCode Генерирует случайную строку цифр длинной length
 func generateJoinCode(length int) string {
 	digits := make([]byte, length)
@@ -417,15 +514,28 @@ func generateJoinCode(length int) string {
 
 // checkEmployeeRole Проверяет роль пользователя
 func (s *CompanyService) checkEmployeeRole(ctx context.Context, operationUUID, methodName, companyUUID, userUUID string, requiredRoles []string) error {
-	// Получаем роль пользователя в компании
-	employee, getErr := s.db.Company.GetCompanyEmployee(ctx, companyUUID, userUUID)
-	err := Error.HandleError(getErr, operationUUID, methodName)
+	// Проверяем существование компании
+	_, getCompanyErr := s.db.Company.GetCompany(ctx, companyUUID)
+	if getCompanyErr.Code == int(codes.NotFound) { // Компания не найдена
+		return status.Error(codes.InvalidArgument, "company not found")
+	}
+	err := Error.HandleError(getCompanyErr, operationUUID, methodName)
 	if err != nil {
 		return err
 	}
 
-	// Проверяем роль (только chief может удалять коды добавления)
-	if !contain(requiredRoles, employee.Role) {
+	// Получаем роль пользователя в компании
+	employee, getErr := s.db.Company.GetCompanyEmployee(ctx, companyUUID, userUUID)
+	if getErr.Code == int(codes.NotFound) { // Пользователь не состоит в компании
+		return status.Errorf(codes.PermissionDenied, "access denied")
+	}
+	err = Error.HandleError(getErr, operationUUID, methodName)
+	if err != nil {
+		return err
+	}
+
+	// Проверяем роль сотрудника
+	if !checkArrayContain(requiredRoles, employee.Role) {
 		log.Info().Str("id", operationUUID).Str("method", methodName).Err(fmt.Errorf("not enought rights")).Msg("error")
 		return status.Errorf(codes.PermissionDenied, "not enough rights")
 	}
@@ -433,8 +543,8 @@ func (s *CompanyService) checkEmployeeRole(ctx context.Context, operationUUID, m
 	return nil
 }
 
-// contain Функция проверка наличия строки в массиве строк
-func contain(arr []string, target string) bool {
+// checkArrayContain Проверяет наличие строки в массиве строк
+func checkArrayContain(arr []string, target string) bool {
 	for _, item := range arr {
 		if item == target {
 			return true

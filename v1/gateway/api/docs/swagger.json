@@ -5,7 +5,7 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "https://4aik.ru",
+    "host": "4aik.ru",
     "basePath": "/api",
     "paths": {
         "/auth/company/create": {

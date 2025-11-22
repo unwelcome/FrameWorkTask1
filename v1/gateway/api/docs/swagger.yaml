@@ -241,7 +241,7 @@ definitions:
     type: object
   entities.UpdateUserBioResponse:
     type: object
-host: https://4aik.ru
+host: 4aik.ru
 info:
   contact: {}
   title: Framework task 2 API

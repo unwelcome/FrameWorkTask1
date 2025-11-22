@@ -38,7 +38,7 @@ services:
         condition: service_healthy
     networks:
       - app-network
-  
+
   company_service:
     container_name: company_service
     build:
@@ -56,8 +56,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      # redis:
-      #   condition: service_healthy
+      redis:
+         condition: service_healthy
     networks:
       - app-network
 

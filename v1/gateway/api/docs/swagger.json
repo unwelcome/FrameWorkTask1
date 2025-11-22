@@ -3,9 +3,9 @@
     "info": {
         "title": "Framework task 2 API",
         "contact": {},
-        "version": "2.0"
+        "version": "1.0"
     },
-    "host": "localhost:8080",
+    "host": "https://4aik.ru",
     "basePath": "/api",
     "paths": {
         "/auth/company/create": {

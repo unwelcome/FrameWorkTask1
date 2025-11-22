@@ -13,8 +13,8 @@ import (
 )
 
 // @title     Framework task 2 API
-// @version   2.0
-// @host      localhost:8080
+// @version   1.0
+// @host      https://4aik.ru
 // @BasePath  /api
 // @securityDefinitions.apikey ApiKeyAuth
 // @in 		  header

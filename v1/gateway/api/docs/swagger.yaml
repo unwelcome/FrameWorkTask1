@@ -241,11 +241,11 @@ definitions:
     type: object
   entities.UpdateUserBioResponse:
     type: object
-host: localhost:8080
+host: https://4aik.ru
 info:
   contact: {}
   title: Framework task 2 API
-  version: "2.0"
+  version: "1.0"
 paths:
   /auth/company/{company_uuid}:
     delete:

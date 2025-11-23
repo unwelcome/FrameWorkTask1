@@ -40,7 +40,7 @@ GRANT USAGE ON SEQUENCES TO company_user;
 CREATE USER application_user WITH PASSWORD 'application_password';
 GRANT CONNECT ON DATABASE application_db TO application_user;
 
--- Переходим в auth_db
+-- Переходим в application_db
 \c application_db;
 GRANT USAGE ON SCHEMA public TO application_user;
 GRANT CREATE ON SCHEMA public TO application_user;

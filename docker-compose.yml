@@ -61,6 +61,26 @@ services:
     networks:
       - app-network
 
+  application_service:
+    container_name: application_service
+    build:
+      context: ./v1/application
+      dockerfile: Dockerfile
+    ports:
+      - "50053:50053" # для отладки
+    env_file:
+      - ./.env
+    environment:
+      PRODUCTION_TYPE: prod
+    volumes:
+      - ./v1/config.yaml:/app/config/config.yaml:ro
+      - ./logs:/var/log/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
   postgres:
     container_name: postgres
     image: postgres:17

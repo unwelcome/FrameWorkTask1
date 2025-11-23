@@ -1,0 +1,18 @@
+syntax="proto3";
+
+package application;
+option go_package = "proto/application_proto";
+
+import "google/protobuf/empty.proto";
+
+service ApplicationService {
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+// Health
+message HealthRequest {
+  string operation_id = 1;
+}
+message HealthResponse {
+  string health = 1;
+}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	application_proto "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/application"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/auth"
 	company_proto "github.com/unwelcome/FrameWorkTask1/v1/gateway/api/company"
 	"github.com/unwelcome/FrameWorkTask1/v1/gateway/internal/entities"
@@ -18,16 +19,18 @@ type HealthHandler interface {
 }
 
 type healthHandler struct {
-	AuthServiceClient    auth_proto.AuthServiceClient
-	CompanyServiceClient company_proto.CompanyServiceClient
-	operationIDKey       string
+	AuthServiceClient        auth_proto.AuthServiceClient
+	CompanyServiceClient     company_proto.CompanyServiceClient
+	ApplicationServiceClient application_proto.ApplicationServiceClient
+	operationIDKey           string
 }
 
-func NewHealthHandler(authServiceClient auth_proto.AuthServiceClient, companyServiceClient company_proto.CompanyServiceClient, operationIDKey string) HealthHandler {
+func NewHealthHandler(authServiceClient auth_proto.AuthServiceClient, companyServiceClient company_proto.CompanyServiceClient, applicationServiceClient application_proto.ApplicationServiceClient, operationIDKey string) HealthHandler {
 	return &healthHandler{
-		AuthServiceClient:    authServiceClient,
-		CompanyServiceClient: companyServiceClient,
-		operationIDKey:       operationIDKey,
+		AuthServiceClient:        authServiceClient,
+		CompanyServiceClient:     companyServiceClient,
+		ApplicationServiceClient: applicationServiceClient,
+		operationIDKey:           operationIDKey,
 	}
 }
 
@@ -48,7 +51,7 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Результаты
-	var authHealth, companyHealth string
+	var authHealth, companyHealth, applicationHealth string
 
 	// Auth health check
 	g.Go(func() error {
@@ -72,6 +75,17 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 		return nil
 	})
 
+	// Application healt check
+	g.Go(func() error {
+		res, err := h.ApplicationServiceClient.Health(ctx, &application_proto.HealthRequest{OperationId: operationID})
+		if err != nil {
+			applicationHealth = "unhealthy"
+			return fmt.Errorf("application service: %w", err)
+		}
+		applicationHealth = res.GetHealth()
+		return nil
+	})
+
 	// Ждем завершения всех горутин
 	_ = g.Wait()
 
@@ -82,12 +96,15 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 	if companyHealth == "" {
 		companyHealth = "timeout"
 	}
+	if applicationHealth == "" {
+		applicationHealth = "timeout"
+	}
 
 	// Сборка ответа
 	return c.Status(200).JSON(&entities.HealthResponse{
 		Gateway:     "healthy",
 		Auth:        authHealth,
 		Company:     companyHealth,
-		Application: "not implemented",
+		Application: applicationHealth,
 	})
 }

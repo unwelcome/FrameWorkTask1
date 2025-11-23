@@ -14,7 +14,7 @@ import (
 
 // @title     Framework task 2 API
 // @version   1.0
-// @host      4aik.ru
+// @host      localhost:8080
 // @BasePath  /api
 // @securityDefinitions.apikey ApiKeyAuth
 // @in 		  header

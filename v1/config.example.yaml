@@ -41,8 +41,9 @@ company_service:
 
 # Application service
 application_service:
-  host: auth_service
+  host: application_service
   port: 50053
+  log_path: /var/log/app/application.log
   # Database
   db_user: application_user
   db_password: application_password

@@ -11,6 +11,7 @@ service CompanyService {
   rpc CreateCompany(CreateCompanyRequest) returns (CreateCompanyResponse);
   rpc GetCompany(GetCompanyRequest) returns (GetCompanyResponse);
   rpc GetCompanies(GetCompaniesRequest) returns (GetCompaniesResponse);
+  rpc GetUserCompanies(GetUserCompaniesRequest) returns (GetUserCompaniesResponse);
   rpc UpdateCompanyTitle(UpdateCompanyTitleRequest) returns (google.protobuf.Empty);
   rpc UpdateCompanyStatus(UpdateCompanyStatusRequest) returns (google.protobuf.Empty);
   rpc DeleteCompany(DeleteCompanyRequest) returns (google.protobuf.Empty);
@@ -27,6 +28,7 @@ service CompanyService {
   rpc RemoveCompanyEmployee(RemoveCompanyEmployeeRequest) returns (google.protobuf.Empty);
 }
 
+
 // Health
 message HealthRequest {
   string operation_id = 1;
@@ -34,6 +36,7 @@ message HealthRequest {
 message HealthResponse {
   string health = 1;
 }
+
 
 // CreateCompany
 message CreateCompanyRequest {
@@ -44,6 +47,7 @@ message CreateCompanyRequest {
 message CreateCompanyResponse {
   string company_uuid = 1;
 }
+
 
 // GetCompany
 message GetCompanyRequest {
@@ -56,6 +60,7 @@ message GetCompanyResponse {
   string title = 2;
   string status = 3;
 }
+
 
 // GetCompanies 
 message GetCompaniesRequest {
@@ -73,6 +78,17 @@ message Company {
 }
 
 
+// GetUserCompanies
+message GetUserCompaniesRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+}
+message GetUserCompaniesResponse {
+  repeated Company companies = 1;
+}
+
+
+
 // UpdateCompanyTitle
 message UpdateCompanyTitleRequest {
   string operation_id = 1;
@@ -81,6 +97,7 @@ message UpdateCompanyTitleRequest {
   string title = 4;
 }
 // Empty response
+
 
 //UpdateCompanyStatus
 message UpdateCompanyStatusRequest {
@@ -91,6 +108,7 @@ message UpdateCompanyStatusRequest {
 }
 // Empty response
 
+
 // DeleteCompany
 message DeleteCompanyRequest {
   string operation_id = 1;
@@ -98,6 +116,7 @@ message DeleteCompanyRequest {
   string company_uuid = 3;
 }
 // Empty response
+
 
 // CreateCompanyJoinCode
 message CreateCompanyJoinCodeRequest {
@@ -110,6 +129,7 @@ message CreateCompanyJoinCodeResponse {
   string join_code = 1;
 }
 
+
 // GetCompanyJoinCodes
 message GetCompanyJoinCodesRequest {
   string operation_id = 1;
@@ -119,6 +139,7 @@ message GetCompanyJoinCodesRequest {
 message GetCompanyJoinCodesResponse {
   repeated string codes = 1;
 }
+
 
 // DeleteCompanyJoinCodes
 message DeleteCompanyJoinCodeRequest {
@@ -141,6 +162,7 @@ message JoinCompanyResponse {
   string role = 2;
 }
 
+
 // GetCompanyEmployee
 message GetCompanyEmployeeRequest {
   string operation_id = 1;
@@ -152,6 +174,7 @@ message GetCompanyEmployeeResponse {
   string role = 1;
   string joined_at = 2;
 }
+
 
 // GetCompanyEmployees
 message GetCompanyEmployeesRequest {
@@ -171,6 +194,7 @@ message Employee {
   string joined_at = 3;
 }
 
+
 // GetCompanyEmployeesSummary
 message GetCompanyEmployeesSummaryRequest {
   string operation_id = 1;
@@ -185,6 +209,7 @@ message GetCompanyEmployeesSummaryResponse {
   int64 unemployed_count = 5;
 }
 
+
 // UpdateEmployeeRole
 message UpdateEmployeeRoleRequest {
   string operation_id = 1;
@@ -194,6 +219,7 @@ message UpdateEmployeeRoleRequest {
   string role = 5;
 }
 // Empty response
+
 
 // RemoveCompanyEmployee
 message RemoveCompanyEmployeeRequest {

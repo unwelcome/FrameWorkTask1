@@ -20,10 +20,29 @@ service ApplicationService {
 }
 
 
+message Application {
+  string application_uuid = 1;
+  string title = 2;
+  string description = 3;
+  string status = 4;
+  string created_at = 5;
+  string created_by = 6;
+  string closed_at = 7;
+  string responsible_manager = 8;
+  string responsible_engineer = 9;
+  repeated FixLog fix_logs = 10;
+}
+
 message FixLog {
-  string created_by = 1;
-  string created_at = 2;
-  string text = 3;
+  int64 id = 1;
+  string text = 2;
+  string created_at = 3;
+  string created_by = 4;
+}
+
+message ApplicationData {
+  string title = 1;
+  string description = 2;
 }
 
 
@@ -45,8 +64,7 @@ message CreateApplicationRequest {
   string description = 5;
 }
 message CreateApplicationResponse {
-  string application_uuid = 1;
-  string status = 2;
+  Application application = 1;
 }
 
 
@@ -58,74 +76,109 @@ message GetApplicationRequest {
   string application_uuid = 4;
 }
 message GetApplicationResponse {
-  string application_uuid = 1;
-  string title = 2;
-  string description = 3;
-  string status = 4;
-  string created_at = 5;
-  string closed_at = 6;
-  string responsible_manager = 7;
-  string responsible_engineer = 8;
-  repeated FixLog fix_logs = 9;
+  Application application = 1;
 }
+
 
 // GetApplications
 message GetApplicationsRequest {
-
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  int64 count = 4;
+  int64 offset = 5;
 }
 message GetApplicationsResponse {
-
+  repeated Application applications = 1;
 }
 
 
 // GetCompanyApplicationStatistic
 message GetCompanyApplicationStatisticRequest {
-
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
 }
 message GetCompanyApplicationStatisticResponse {
-
+  int64 created = 1;
+  int64 assigned = 2;
+  int64 in_progress = 3;
+  int64 on_hold = 4;
+  int64 completed = 5;
+  int64 cancelled = 6;
+  int64 failed = 7;
+  int64 archived = 8;
 }
 
 
 // GetEmployeeApplicationStatistic
 message GetEmployeeApplicationStatisticRequest {
-
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string company_uuid = 3;
+  string target_uuid = 4;
 }
 message GetEmployeeApplicationStatisticResponse {
-
+  int64 created = 1; // Сколько пользователь создал задач (all)
+  int64 assigned = 2; // Сколько у пользователя текущих задач (engineer)
+  int64 in_progress = 3; // Сколько у пользователя задач на выполнении (engineer)
+  int64 on_hold = 4; // Сколько у пользователя задач на паузе (engineer)
+  int64 completed = 5; // Сколько пользователь завершил задач (engineer, manager)
+  int64 cancelled = 6; // Сколько пользователь отменил задач (manager)
+  int64 failed = 7; // Сколько пользователь провалил задач (engineer)
+  int64 archived = 8; // Сколько пользователь заморозил задач (manager)
 }
 
 
 // UpdateApplicationData
 message UpdateApplicationDataRequest {
-
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string application_uuid = 4;
+  ApplicationData data = 5;
 }
 // Empty response
 
 
 // UpdateApplicationStatus
 message UpdateApplicationStatusRequest {
-
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string application_uuid = 4;
+  string status = 5;
 }
 // Empty response
 
 
 // AssignApplicationToEmployee
 message AssignApplicationToEmployeeRequest {
-
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string company_uuid = 3;
+  string target_uuid = 4;
+  string application_uuid = 5;
 }
 // Empty response
 
 
 // AddApplicationFixLog
 message AddApplicationFixLogRequest {
-
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string application_uuid = 4;
+  string log_text = 5;
 }
 // Empty response
 
 
 // DeleteApplication
 message DeleteApplicationRequest {
-
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string application_uuid = 4;
 }
 // Empty response

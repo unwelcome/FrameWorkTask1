@@ -7,7 +7,25 @@ import "google/protobuf/empty.proto";
 
 service ApplicationService {
   rpc Health(HealthRequest) returns (HealthResponse);
+  rpc CreateApplication(CreateApplicationRequest) returns (CreateApplicationResponse);
+  rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
+  rpc GetApplications(GetApplicationsRequest) returns (GetApplicationsResponse);
+  rpc GetCompanyApplicationStatistic(GetCompanyApplicationStatisticRequest) returns (GetCompanyApplicationStatisticResponse);
+  rpc GetEmployeeApplicationStatistic(GetEmployeeApplicationStatisticRequest) returns (GetEmployeeApplicationStatisticResponse);
+  rpc UpdateApplicationData(UpdateApplicationDataRequest) returns (google.protobuf.Empty);
+  rpc UpdateApplicationStatus(UpdateApplicationStatusRequest) returns (google.protobuf.Empty);
+  rpc AssignApplicationToEmployee(AssignApplicationToEmployeeRequest) returns (google.protobuf.Empty);
+  rpc AddApplicationFixLog(AddApplicationFixLogRequest) returns (google.protobuf.Empty);
+  rpc DeleteApplication(DeleteApplicationRequest) returns (google.protobuf.Empty);
 }
+
+
+message FixLog {
+  string created_by = 1;
+  string created_at = 2;
+  string text = 3;
+}
+
 
 // Health
 message HealthRequest {
@@ -16,3 +34,98 @@ message HealthRequest {
 message HealthResponse {
   string health = 1;
 }
+
+
+// CreateApplication
+message CreateApplicationRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string title = 4;
+  string description = 5;
+}
+message CreateApplicationResponse {
+  string application_uuid = 1;
+  string status = 2;
+}
+
+
+// GetApplication
+message GetApplicationRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string application_uuid = 4;
+}
+message GetApplicationResponse {
+  string application_uuid = 1;
+  string title = 2;
+  string description = 3;
+  string status = 4;
+  string created_at = 5;
+  string closed_at = 6;
+  string responsible_manager = 7;
+  string responsible_engineer = 8;
+  repeated FixLog fix_logs = 9;
+}
+
+// GetApplications
+message GetApplicationsRequest {
+
+}
+message GetApplicationsResponse {
+
+}
+
+
+// GetCompanyApplicationStatistic
+message GetCompanyApplicationStatisticRequest {
+
+}
+message GetCompanyApplicationStatisticResponse {
+
+}
+
+
+// GetEmployeeApplicationStatistic
+message GetEmployeeApplicationStatisticRequest {
+
+}
+message GetEmployeeApplicationStatisticResponse {
+
+}
+
+
+// UpdateApplicationData
+message UpdateApplicationDataRequest {
+
+}
+// Empty response
+
+
+// UpdateApplicationStatus
+message UpdateApplicationStatusRequest {
+
+}
+// Empty response
+
+
+// AssignApplicationToEmployee
+message AssignApplicationToEmployeeRequest {
+
+}
+// Empty response
+
+
+// AddApplicationFixLog
+message AddApplicationFixLogRequest {
+
+}
+// Empty response
+
+
+// DeleteApplication
+message DeleteApplicationRequest {
+
+}
+// Empty response

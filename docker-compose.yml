@@ -26,8 +26,6 @@ services:
       - "50051:50051" # для отладки
     env_file:
       - ./.env
-    environment:
-      PRODUCTION_TYPE: prod
     volumes:
       - ./v1/config.yaml:/app/config/config.yaml:ro
       - ./logs:/var/log/app
@@ -48,8 +46,6 @@ services:
       - "50052:50052" # для отладки
     env_file:
       - ./.env
-    environment:
-      PRODUCTION_TYPE: prod
     volumes:
       - ./v1/config.yaml:/app/config/config.yaml:ro
       - ./logs:/var/log/app
@@ -70,8 +66,6 @@ services:
       - "50053:50053" # для отладки
     env_file:
       - ./.env
-    environment:
-      PRODUCTION_TYPE: prod
     volumes:
       - ./v1/config.yaml:/app/config/config.yaml:ro
       - ./logs:/var/log/app

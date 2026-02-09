@@ -119,14 +119,14 @@ message GetEmployeeApplicationStatisticRequest {
   string target_uuid = 4;
 }
 message GetEmployeeApplicationStatisticResponse {
-  int64 created = 1; // Сколько пользователь создал задач (all)
-  int64 assigned = 2; // Сколько у пользователя текущих задач (engineer)
-  int64 in_progress = 3; // Сколько у пользователя задач на выполнении (engineer)
-  int64 on_hold = 4; // Сколько у пользователя задач на паузе (engineer)
-  int64 completed = 5; // Сколько пользователь завершил задач (engineer, manager)
-  int64 cancelled = 6; // Сколько пользователь отменил задач (manager)
-  int64 failed = 7; // Сколько пользователь провалил задач (engineer)
-  int64 archived = 8; // Сколько пользователь заморозил задач (manager)
+  int64 created = 1; // Сколько пользователь создал задач 
+  int64 assigned = 2; // Сколько у пользователя текущих задач 
+  int64 in_progress = 3; // Сколько у пользователя задач на выполнении 
+  int64 on_hold = 4; // Сколько у пользователя задач на паузе 
+  int64 completed = 5; // Сколько пользователь завершил задач 
+  int64 cancelled = 6; // Сколько пользователь отменил задач 
+  int64 failed = 7; // Сколько пользователь провалил задач 
+  int64 archived = 8; // Сколько пользователь заморозил задач 
 }
 
 

@@ -14,11 +14,17 @@ import (
 )
 
 type ApplicationRepository interface {
-	CreateApplication(ctx context.Context, dto *entities.CreateApplication) Error.CodeError
-	AddApplicationFixLog(ctx context.Context, dto *entities.CreateFixLog) Error.CodeError
-	GetApplication(ctx context.Context, applicationUUID string) (*entities.Application, Error.CodeError)
-	GetApplicationFixLogs(ctx context.Context, applicationUUID string) ([]*entities.FixLog, Error.CodeError)
-	GetApplications(ctx context.Context, status string, count int, offset int) ([]*entities.Application, Error.CodeError)
+	CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError
+	AddApplicationFixLog(ctx context.Context, dto entities.CreateFixLogDTO) Error.CodeError
+	GetApplication(ctx context.Context, dto entities.GetApplicationDTO) (*entities.Application, Error.CodeError)
+	GetApplicationFixLogs(ctx context.Context, dto entities.GetApplicationFixLogsDTO) ([]*entities.FixLog, Error.CodeError)
+	GetApplications(ctx context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError)
+	GetCompanyApplicationStatistic(ctx context.Context, dto entities.GetCompanyApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError)
+	GetEmployeeApplicationStatistic(ctx context.Context, dto entities.GetEmployeeApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError)
+	UpdateApplicationData(ctx context.Context, dto entities.UpdateApplicationDataDTO) Error.CodeError
+	UpdateApplicationStatus(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError
+	AssignApplicationToEmployee(ctx context.Context, dto entities.AssignApplicationToEmployeeDTO) Error.CodeError
+	DeleteApplicationRequest(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError
 }
 
 type applicationRepository struct {
@@ -29,19 +35,21 @@ func NewApplicationRepository(db *sql.DB) ApplicationRepository {
 	return &applicationRepository{db: db}
 }
 
-func (r *applicationRepository) CreateApplication(ctx context.Context, dto *entities.CreateApplication) Error.CodeError {
+// CreateApplication Создание заявки
+func (r *applicationRepository) CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError {
 	query := `INSERT INTO applications 
-	(uuid, version, title, description, status, created_by) VALUES 
+	(uuid, company_uuid, version, title, description, status, created_by) VALUES 
 	($1, 1, $2, $3, 'created', $4);`
 
-	_, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.Title, dto.Description, dto.CreatedBy)
+	_, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.CompanyUUID, dto.Title, dto.Description, dto.CreatedBy)
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
 	return Error.CodeError{Code: -1, Err: nil}
 }
 
-func (r *applicationRepository) AddApplicationFixLog(ctx context.Context, dto *entities.CreateFixLog) Error.CodeError {
+// AddApplicationFixLog Добавление записи в fix log-и заявки
+func (r *applicationRepository) AddApplicationFixLog(ctx context.Context, dto entities.CreateFixLogDTO) Error.CodeError {
 	query := `INSERT INTO application_fix_logs
 	(application_uuid, text, created_by) VALUES 
 	($1, $2, $3);`
@@ -60,8 +68,10 @@ func (r *applicationRepository) AddApplicationFixLog(ctx context.Context, dto *e
 	return Error.CodeError{Code: -1, Err: nil}
 }
 
-func (r *applicationRepository) GetApplication(ctx context.Context, applicationUUID string) (*entities.Application, Error.CodeError) {
+// GetApplication Получение информации по заявке
+func (r *applicationRepository) GetApplication(ctx context.Context, dto entities.GetApplicationDTO) (*entities.Application, Error.CodeError) {
 	query := `SELECT 
+			company_uuid,
 			title, 
 			description, 
 			status, 
@@ -73,8 +83,9 @@ func (r *applicationRepository) GetApplication(ctx context.Context, applicationU
 		FROM applications 
 		WHERE uuid = $1;`
 
-	application := &entities.Application{ApplicationUUID: applicationUUID}
-	err := r.db.QueryRowContext(ctx, query, applicationUUID).Scan(
+	application := &entities.Application{ApplicationUUID: dto.ApplicationUUID}
+	err := r.db.QueryRowContext(ctx, query, dto.ApplicationUUID).Scan(
+		&application.CompanyUUID,
 		&application.Title,
 		&application.Description,
 		&application.Status,
@@ -92,7 +103,8 @@ func (r *applicationRepository) GetApplication(ctx context.Context, applicationU
 	return application, Error.CodeError{Code: -1, Err: nil}
 }
 
-func (r *applicationRepository) GetApplicationFixLogs(ctx context.Context, applicationUUID string) ([]*entities.FixLog, Error.CodeError) {
+// GetApplicationFixLogs Получение всех fix log-ов заявки
+func (r *applicationRepository) GetApplicationFixLogs(ctx context.Context, dto entities.GetApplicationFixLogsDTO) ([]*entities.FixLog, Error.CodeError) {
 	query := `SELECT 
 			id, 
 			text, 
@@ -101,7 +113,7 @@ func (r *applicationRepository) GetApplicationFixLogs(ctx context.Context, appli
 		FROM application_fix_logs 
 		WHERE application_uuid = $1;`
 
-	res, err := r.db.QueryContext(ctx, query, applicationUUID)
+	res, err := r.db.QueryContext(ctx, query, dto.ApplicationUUID)
 	if err != nil {
 		return nil, Error.CodeError{Code: 0, Err: fmt.Errorf("failed get application fix logs")}
 	}
@@ -120,24 +132,25 @@ func (r *applicationRepository) GetApplicationFixLogs(ctx context.Context, appli
 	return fixLogs, Error.CodeError{Code: -1, Err: nil}
 }
 
-func (r *applicationRepository) GetApplications(ctx context.Context, status string, count int, offset int) ([]*entities.Application, Error.CodeError) {
+// GetApplications Получение списка заявок по uuid компании и статусу
+func (r *applicationRepository) GetApplications(ctx context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
 	query := `
 		SELECT 
 			uuid, 
+			version,
 			title, 
 			description, 
-			status, 
 			created_at, 
 			created_by, 
 			closed_at, 
 			managed_by, 
 			executed_by 
 		FROM applications 
-		WHERE status = $1 
+		WHERE company_uuid = $1 AND status = $2 
 		ORDER BY created_at DESC, uuid
-		OFFSET $2 LIMIT $3;`
+		OFFSET $3 LIMIT $4;`
 
-	rows, err := r.db.QueryContext(ctx, query, status, offset, count)
+	rows, err := r.db.QueryContext(ctx, query, dto.CompanyUUID, dto.Status, dto.Offset, dto.Count)
 	if err != nil {
 		return nil, Error.CodeError{Code: 0, Err: err}
 	}
@@ -145,12 +158,12 @@ func (r *applicationRepository) GetApplications(ctx context.Context, status stri
 
 	applications := make([]*entities.Application, 0)
 	for rows.Next() {
-		item := &entities.Application{}
+		item := &entities.Application{CompanyUUID: dto.CompanyUUID, Status: dto.Status}
 		err = rows.Scan(
 			&item.ApplicationUUID,
+			&item.Version,
 			&item.Title,
 			&item.Description,
-			&item.Status,
 			&item.CreatedAt,
 			&item.CreatedBy,
 			&item.ClosedAt,
@@ -164,4 +177,213 @@ func (r *applicationRepository) GetApplications(ctx context.Context, status stri
 	}
 
 	return applications, Error.CodeError{Code: -1, Err: nil}
+}
+
+// GetCompanyApplicationStatistic Получение статистики компании по заявкам
+func (r *applicationRepository) GetCompanyApplicationStatistic(ctx context.Context, dto entities.GetCompanyApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
+	query := `SELECT 
+		COUNT(*) FILTER (WHERE status = 'created'),
+		COUNT(*) FILTER (WHERE status = 'assigned'),
+		COUNT(*) FILTER (WHERE status = 'in_progress'),
+		COUNT(*) FILTER (WHERE status = 'on_hold'),
+		COUNT(*) FILTER (WHERE status = 'awaiting_approval'),
+		COUNT(*) FILTER (WHERE status = 'completed'),
+		COUNT(*) FILTER (WHERE status = 'cancelled'),
+		COUNT(*) FILTER (WHERE status = 'failed'),
+		COUNT(*) FILTER (WHERE status = 'archived')
+	FROM applications
+	WHERE company_uuid = $1 AND deleted_at IS NULL;`
+
+	statistic := &entities.ApplicationStatistic{}
+
+	err := r.db.QueryRow(query, dto.CompanyUUID).Scan(
+		&statistic.Created,
+		&statistic.Assigned,
+		&statistic.InProgress,
+		&statistic.OnHold,
+		&statistic.AwaitingApproval,
+		&statistic.Completed,
+		&statistic.Cancelled,
+		&statistic.Failed,
+		&statistic.Archived,
+	)
+
+	if err != nil {
+		return nil, Error.CodeError{Code: 0, Err: err}
+	}
+
+	return statistic, Error.CodeError{Code: -1, Err: nil}
+}
+
+// GetEmployeeApplicationStatistic Получение статистики работника по заявкам
+func (r *applicationRepository) GetEmployeeApplicationStatistic(ctx context.Context, dto entities.GetEmployeeApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
+	query := `
+		SELECT 
+			COUNT(*) FILTER (WHERE status = 'created' AND created_by = $2) as created,
+			COUNT(*) FILTER (WHERE status = 'assigned' AND (
+				($1 = 'engineer' AND executed_by = $2) OR ($1 = 'manager' AND managed_by = $2)
+			)) as assigned,
+			COUNT(*) FILTER (WHERE status = 'in_progress' AND (
+				($1 = 'engineer' AND executed_by = $2) OR ($1 = 'manager' AND managed_by = $2)
+			)) as in_progress,
+			COUNT(*) FILTER (WHERE status = 'on_hold' AND (
+				($1 = 'engineer' AND executed_by = $2) OR ($1 = 'manager' AND managed_by = $2)
+			)) as on_hold,
+			COUNT(*) FILTER (WHERE status = 'awaiting_approval' AND (
+				($1 = 'engineer' AND executed_by = $2) OR ($1 = 'manager' AND managed_by = $2)
+			)) as awaiting_approval,
+			COUNT(*) FILTER (WHERE status = 'completed' AND (
+				($1 = 'engineer' AND executed_by = $2) OR ($1 = 'manager' AND managed_by = $2)
+			)) as completed,
+			COUNT(*) FILTER (WHERE status = 'cancelled' AND (
+				($1 = 'engineer' AND executed_by = $2) OR ($1 = 'manager' AND managed_by = $2)
+			)) as cancelled,
+			COUNT(*) FILTER (WHERE status = 'failed' AND (
+				($1 = 'engineer' AND executed_by = $2) OR ($1 = 'manager' AND managed_by = $2)
+			)) as failed,
+			COUNT(*) FILTER (WHERE status = 'archived' AND (
+				($1 = 'engineer' AND executed_by = $2) OR ($1 = 'manager' AND managed_by = $2)
+			)) as archived
+		FROM applications
+		WHERE deleted_at IS NULL 
+			AND company_uuid = $3
+			AND ($1 IN ('engineer', 'manager') OR status = 'created')
+			AND (created_by = $2 OR managed_by = $2 OR executed_by = $2);`
+
+	statistic := &entities.ApplicationStatistic{}
+
+	err := r.db.QueryRowContext(ctx, query, dto.TargetRole, dto.TargetUUID, dto.CompanyUUID).Scan(
+		&statistic.Created,
+		&statistic.Assigned,
+		&statistic.InProgress,
+		&statistic.OnHold,
+		&statistic.AwaitingApproval,
+		&statistic.Completed,
+		&statistic.Cancelled,
+		&statistic.Failed,
+		&statistic.Archived,
+	)
+	if err != nil {
+		return nil, Error.CodeError{Code: 0, Err: err}
+	}
+
+	return statistic, Error.CodeError{Code: -1, Err: nil}
+}
+
+// UpdateApplicationData Обновление содержимого заявки
+func (r *applicationRepository) UpdateApplicationData(ctx context.Context, dto entities.UpdateApplicationDataDTO) Error.CodeError {
+	query := ` UPDATE applications SET 
+		version = version + 1,
+    title = COALESCE($2, title),
+    description = COALESCE($3, description) 
+	WHERE uuid = $1 AND deleted_at IS NULL;`
+
+	res, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.Title, dto.Desctiption)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+	if affected == 0 {
+		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+	}
+
+	return Error.CodeError{Code: -1, Err: nil}
+}
+
+// UpdateApplicationStatus Обновление статуса заявки
+func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError {
+	query := `UPDATE applications 
+	SET 
+		version = version + 1,
+		status = $2,
+		
+		-- Логика для managed_by
+		managed_by = CASE 
+			WHEN $2 IN ('assigned', 'completed', 'cancelled', 'failed', 'archived') THEN $3 
+			ELSE managed_by 
+		END,
+		
+		-- Логика для executed_by
+		executed_by = CASE 
+			WHEN $2 IN ('in_progress', 'on_hold', 'awaiting_approval') THEN $3 
+			ELSE executed_by 
+		END,
+		
+		-- Логика для closed_at
+		closed_at = CASE 
+			WHEN $2 IN ('completed', 'cancelled', 'failed', 'archived') THEN CURRENT_TIMESTAMP 
+			ELSE NULL
+		END
+	WHERE uuid = $1 AND deleted_at IS NULL;`
+
+	res, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.Status, dto.InitiatorUUID)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	if affected == 0 {
+		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+	}
+
+	return Error.CodeError{Code: -1, Err: nil}
+}
+
+// AssignApplicationToEmployee Назначение заявки инженеру
+func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context, dto entities.AssignApplicationToEmployeeDTO) Error.CodeError {
+	query := `UPDATE applications 
+	SET 
+		version = version + 1,
+		status = 'assigned',
+		managed_by = $2,
+		executed_by = $3
+	WHERE uuid = $1 AND deleted_at IS NOT NULL;`
+
+	res, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID, dto.TargetUUID)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	if affected == 0 {
+		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+	}
+
+	return Error.CodeError{Code: -1, Err: nil}
+}
+
+// DeleteApplicationRequest Удаление заявки (заявка помечается удаленной но не стирается из бд)
+func (r *applicationRepository) DeleteApplicationRequest(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError {
+	query := `UPDATE applications 
+	SET
+		deleted_at = CURRENT_TIMESTAMP
+	WHERE uuid = $1 AND deleted_at IS NULL;`
+
+	res, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	if affected == 0 {
+		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+	}
+
+	return Error.CodeError{Code: -1, Err: nil}
 }

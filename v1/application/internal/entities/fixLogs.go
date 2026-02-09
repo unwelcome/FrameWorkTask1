@@ -8,8 +8,12 @@ type FixLog struct {
 	CreatedBy       string `db:"created_by"`
 }
 
-type CreateFixLog struct {
-	ApplicationUUID string `db:"application_uuid"`
-	Text            string `db:"text"`
-	CreatedBy       string `db:"created_by"`
+type CreateFixLogDTO struct {
+	ApplicationUUID string
+	Text            string
+	CreatedBy       string
+}
+
+type GetApplicationFixLogsDTO struct {
+	ApplicationUUID string
 }

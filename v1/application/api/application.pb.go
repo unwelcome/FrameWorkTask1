@@ -29,10 +29,11 @@ type Application struct {
 	Description         string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	Status              string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
 	CreatedAt           string                 `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	ClosedAt            string                 `protobuf:"bytes,6,opt,name=closed_at,json=closedAt,proto3" json:"closed_at,omitempty"`
-	ResponsibleManager  string                 `protobuf:"bytes,7,opt,name=responsible_manager,json=responsibleManager,proto3" json:"responsible_manager,omitempty"`
-	ResponsibleEngineer string                 `protobuf:"bytes,8,opt,name=responsible_engineer,json=responsibleEngineer,proto3" json:"responsible_engineer,omitempty"`
-	FixLogs             []*FixLog              `protobuf:"bytes,9,rep,name=fix_logs,json=fixLogs,proto3" json:"fix_logs,omitempty"`
+	CreatedBy           string                 `protobuf:"bytes,6,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
+	ClosedAt            string                 `protobuf:"bytes,7,opt,name=closed_at,json=closedAt,proto3" json:"closed_at,omitempty"`
+	ResponsibleManager  string                 `protobuf:"bytes,8,opt,name=responsible_manager,json=responsibleManager,proto3" json:"responsible_manager,omitempty"`
+	ResponsibleEngineer string                 `protobuf:"bytes,9,opt,name=responsible_engineer,json=responsibleEngineer,proto3" json:"responsible_engineer,omitempty"`
+	FixLogs             []*FixLog              `protobuf:"bytes,10,rep,name=fix_logs,json=fixLogs,proto3" json:"fix_logs,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -98,6 +99,13 @@ func (x *Application) GetStatus() string {
 func (x *Application) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *Application) GetCreatedBy() string {
+	if x != nil {
+		return x.CreatedBy
 	}
 	return ""
 }
@@ -417,10 +425,10 @@ func (x *CreateApplicationRequest) GetDescription() string {
 }
 
 type CreateApplicationResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Application   *Application           `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ApplicationUuid string                 `protobuf:"bytes,1,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateApplicationResponse) Reset() {
@@ -453,11 +461,11 @@ func (*CreateApplicationResponse) Descriptor() ([]byte, []int) {
 	return file_application_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *CreateApplicationResponse) GetApplication() *Application {
+func (x *CreateApplicationResponse) GetApplicationUuid() string {
 	if x != nil {
-		return x.Application
+		return x.ApplicationUuid
 	}
-	return nil
+	return ""
 }
 
 // GetApplication
@@ -926,14 +934,14 @@ func (x *GetEmployeeApplicationStatisticRequest) GetTargetUuid() string {
 
 type GetEmployeeApplicationStatisticResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Created       int64                  `protobuf:"varint,1,opt,name=created,proto3" json:"created,omitempty"`                         // Сколько пользователь создал задач (all)
-	Assigned      int64                  `protobuf:"varint,2,opt,name=assigned,proto3" json:"assigned,omitempty"`                       // Сколько у пользователя текущих задач (engineer)
-	InProgress    int64                  `protobuf:"varint,3,opt,name=in_progress,json=inProgress,proto3" json:"in_progress,omitempty"` // Сколько у пользователя задач на выполнении (engineer)
-	OnHold        int64                  `protobuf:"varint,4,opt,name=on_hold,json=onHold,proto3" json:"on_hold,omitempty"`             // Сколько у пользователя задач на паузе (engineer)
-	Completed     int64                  `protobuf:"varint,5,opt,name=completed,proto3" json:"completed,omitempty"`                     // Сколько пользователь завершил задач (engineer, manager)
-	Cancelled     int64                  `protobuf:"varint,6,opt,name=cancelled,proto3" json:"cancelled,omitempty"`                     // Сколько пользователь отменил задач (manager)
-	Failed        int64                  `protobuf:"varint,7,opt,name=failed,proto3" json:"failed,omitempty"`                           // Сколько пользователь провалил задач (engineer)
-	Archived      int64                  `protobuf:"varint,8,opt,name=archived,proto3" json:"archived,omitempty"`                       // Сколько пользователь заморозил задач (manager)
+	Created       int64                  `protobuf:"varint,1,opt,name=created,proto3" json:"created,omitempty"`                         // Сколько пользователь создал задач
+	Assigned      int64                  `protobuf:"varint,2,opt,name=assigned,proto3" json:"assigned,omitempty"`                       // Сколько у пользователя текущих задач
+	InProgress    int64                  `protobuf:"varint,3,opt,name=in_progress,json=inProgress,proto3" json:"in_progress,omitempty"` // Сколько у пользователя задач на выполнении
+	OnHold        int64                  `protobuf:"varint,4,opt,name=on_hold,json=onHold,proto3" json:"on_hold,omitempty"`             // Сколько у пользователя задач на паузе
+	Completed     int64                  `protobuf:"varint,5,opt,name=completed,proto3" json:"completed,omitempty"`                     // Сколько пользователь завершил задач
+	Cancelled     int64                  `protobuf:"varint,6,opt,name=cancelled,proto3" json:"cancelled,omitempty"`                     // Сколько пользователь отменил задач
+	Failed        int64                  `protobuf:"varint,7,opt,name=failed,proto3" json:"failed,omitempty"`                           // Сколько пользователь провалил задач
+	Archived      int64                  `protobuf:"varint,8,opt,name=archived,proto3" json:"archived,omitempty"`                       // Сколько пользователь заморозил задач
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1405,18 +1413,21 @@ var File_application_proto protoreflect.FileDescriptor
 
 const file_application_proto_rawDesc = "" +
 	"\n" +
-	"\x11application.proto\x12\vapplication\x1a\x1bgoogle/protobuf/empty.proto\"\xd8\x02\n" +
+	"\x11application.proto\x12\vapplication\x1a\x1bgoogle/protobuf/empty.proto\"\xf7\x02\n" +
 	"\vApplication\x12)\n" +
 	"\x10application_uuid\x18\x01 \x01(\tR\x0fapplicationUuid\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x16\n" +
 	"\x06status\x18\x04 \x01(\tR\x06status\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\tR\tcreatedAt\x12\x1b\n" +
-	"\tclosed_at\x18\x06 \x01(\tR\bclosedAt\x12/\n" +
-	"\x13responsible_manager\x18\a \x01(\tR\x12responsibleManager\x121\n" +
-	"\x14responsible_engineer\x18\b \x01(\tR\x13responsibleEngineer\x12.\n" +
-	"\bfix_logs\x18\t \x03(\v2\x13.application.FixLogR\afixLogs\"j\n" +
+	"created_at\x18\x05 \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"created_by\x18\x06 \x01(\tR\tcreatedBy\x12\x1b\n" +
+	"\tclosed_at\x18\a \x01(\tR\bclosedAt\x12/\n" +
+	"\x13responsible_manager\x18\b \x01(\tR\x12responsibleManager\x121\n" +
+	"\x14responsible_engineer\x18\t \x01(\tR\x13responsibleEngineer\x12.\n" +
+	"\bfix_logs\x18\n" +
+	" \x03(\v2\x13.application.FixLogR\afixLogs\"j\n" +
 	"\x06FixLog\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\x12\x1d\n" +
@@ -1436,9 +1447,9 @@ const file_application_proto_rawDesc = "" +
 	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\x12!\n" +
 	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x05 \x01(\tR\vdescription\"W\n" +
-	"\x19CreateApplicationResponse\x12:\n" +
-	"\vapplication\x18\x01 \x01(\v2\x18.application.ApplicationR\vapplication\"\xa5\x01\n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\"F\n" +
+	"\x19CreateApplicationResponse\x12)\n" +
+	"\x10application_uuid\x18\x01 \x01(\tR\x0fapplicationUuid\"\xa5\x01\n" +
 	"\x15GetApplicationRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x1b\n" +
 	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\x12!\n" +
@@ -1565,37 +1576,36 @@ var file_application_proto_goTypes = []any{
 }
 var file_application_proto_depIdxs = []int32{
 	1,  // 0: application.Application.fix_logs:type_name -> application.FixLog
-	0,  // 1: application.CreateApplicationResponse.application:type_name -> application.Application
-	0,  // 2: application.GetApplicationResponse.application:type_name -> application.Application
-	0,  // 3: application.GetApplicationsResponse.applications:type_name -> application.Application
-	2,  // 4: application.UpdateApplicationDataRequest.data:type_name -> application.ApplicationData
-	3,  // 5: application.ApplicationService.Health:input_type -> application.HealthRequest
-	5,  // 6: application.ApplicationService.CreateApplication:input_type -> application.CreateApplicationRequest
-	7,  // 7: application.ApplicationService.GetApplication:input_type -> application.GetApplicationRequest
-	9,  // 8: application.ApplicationService.GetApplications:input_type -> application.GetApplicationsRequest
-	11, // 9: application.ApplicationService.GetCompanyApplicationStatistic:input_type -> application.GetCompanyApplicationStatisticRequest
-	13, // 10: application.ApplicationService.GetEmployeeApplicationStatistic:input_type -> application.GetEmployeeApplicationStatisticRequest
-	15, // 11: application.ApplicationService.UpdateApplicationData:input_type -> application.UpdateApplicationDataRequest
-	16, // 12: application.ApplicationService.UpdateApplicationStatus:input_type -> application.UpdateApplicationStatusRequest
-	17, // 13: application.ApplicationService.AssignApplicationToEmployee:input_type -> application.AssignApplicationToEmployeeRequest
-	18, // 14: application.ApplicationService.AddApplicationFixLog:input_type -> application.AddApplicationFixLogRequest
-	19, // 15: application.ApplicationService.DeleteApplication:input_type -> application.DeleteApplicationRequest
-	4,  // 16: application.ApplicationService.Health:output_type -> application.HealthResponse
-	6,  // 17: application.ApplicationService.CreateApplication:output_type -> application.CreateApplicationResponse
-	8,  // 18: application.ApplicationService.GetApplication:output_type -> application.GetApplicationResponse
-	10, // 19: application.ApplicationService.GetApplications:output_type -> application.GetApplicationsResponse
-	12, // 20: application.ApplicationService.GetCompanyApplicationStatistic:output_type -> application.GetCompanyApplicationStatisticResponse
-	14, // 21: application.ApplicationService.GetEmployeeApplicationStatistic:output_type -> application.GetEmployeeApplicationStatisticResponse
-	20, // 22: application.ApplicationService.UpdateApplicationData:output_type -> google.protobuf.Empty
-	20, // 23: application.ApplicationService.UpdateApplicationStatus:output_type -> google.protobuf.Empty
-	20, // 24: application.ApplicationService.AssignApplicationToEmployee:output_type -> google.protobuf.Empty
-	20, // 25: application.ApplicationService.AddApplicationFixLog:output_type -> google.protobuf.Empty
-	20, // 26: application.ApplicationService.DeleteApplication:output_type -> google.protobuf.Empty
-	16, // [16:27] is the sub-list for method output_type
-	5,  // [5:16] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	0,  // 1: application.GetApplicationResponse.application:type_name -> application.Application
+	0,  // 2: application.GetApplicationsResponse.applications:type_name -> application.Application
+	2,  // 3: application.UpdateApplicationDataRequest.data:type_name -> application.ApplicationData
+	3,  // 4: application.ApplicationService.Health:input_type -> application.HealthRequest
+	5,  // 5: application.ApplicationService.CreateApplication:input_type -> application.CreateApplicationRequest
+	7,  // 6: application.ApplicationService.GetApplication:input_type -> application.GetApplicationRequest
+	9,  // 7: application.ApplicationService.GetApplications:input_type -> application.GetApplicationsRequest
+	11, // 8: application.ApplicationService.GetCompanyApplicationStatistic:input_type -> application.GetCompanyApplicationStatisticRequest
+	13, // 9: application.ApplicationService.GetEmployeeApplicationStatistic:input_type -> application.GetEmployeeApplicationStatisticRequest
+	15, // 10: application.ApplicationService.UpdateApplicationData:input_type -> application.UpdateApplicationDataRequest
+	16, // 11: application.ApplicationService.UpdateApplicationStatus:input_type -> application.UpdateApplicationStatusRequest
+	17, // 12: application.ApplicationService.AssignApplicationToEmployee:input_type -> application.AssignApplicationToEmployeeRequest
+	18, // 13: application.ApplicationService.AddApplicationFixLog:input_type -> application.AddApplicationFixLogRequest
+	19, // 14: application.ApplicationService.DeleteApplication:input_type -> application.DeleteApplicationRequest
+	4,  // 15: application.ApplicationService.Health:output_type -> application.HealthResponse
+	6,  // 16: application.ApplicationService.CreateApplication:output_type -> application.CreateApplicationResponse
+	8,  // 17: application.ApplicationService.GetApplication:output_type -> application.GetApplicationResponse
+	10, // 18: application.ApplicationService.GetApplications:output_type -> application.GetApplicationsResponse
+	12, // 19: application.ApplicationService.GetCompanyApplicationStatistic:output_type -> application.GetCompanyApplicationStatisticResponse
+	14, // 20: application.ApplicationService.GetEmployeeApplicationStatistic:output_type -> application.GetEmployeeApplicationStatisticResponse
+	20, // 21: application.ApplicationService.UpdateApplicationData:output_type -> google.protobuf.Empty
+	20, // 22: application.ApplicationService.UpdateApplicationStatus:output_type -> google.protobuf.Empty
+	20, // 23: application.ApplicationService.AssignApplicationToEmployee:output_type -> google.protobuf.Empty
+	20, // 24: application.ApplicationService.AddApplicationFixLog:output_type -> google.protobuf.Empty
+	20, // 25: application.ApplicationService.DeleteApplication:output_type -> google.protobuf.Empty
+	15, // [15:26] is the sub-list for method output_type
+	4,  // [4:15] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_application_proto_init() }

@@ -18,6 +18,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+// TODO
+// [ ] Провести код ревью
+// [ ] Проверить логи при всех return
+// [ ] Убрать константы в конфиг
+
 const JoinCodeLength = 6
 
 var AllRoles = []string{"chief", "analytic", "manager", "engineer", "unemployed"}

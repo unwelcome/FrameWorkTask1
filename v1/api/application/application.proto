@@ -64,7 +64,7 @@ message CreateApplicationRequest {
   string description = 5;
 }
 message CreateApplicationResponse {
-  Application application = 1;
+  string application_uuid = 1;
 }
 
 

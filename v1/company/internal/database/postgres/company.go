@@ -68,7 +68,7 @@ func (r *companyRepository) GetCompany(ctx context.Context, companyUUID string) 
 
 // GetCompanies Получение списка компаний размера count со сдвигом offset
 func (r *companyRepository) GetCompanies(ctx context.Context, offset, count int64) ([]*entities.GetCompanies, Error.CodeError) {
-	query := `SELECT uuid, title, status FROM companies OFFSET $1 LIMIT $2;`
+	query := `SELECT uuid, title, status FROM companies ORDER BY created_at DESC, uuid OFFSET $1 LIMIT $2;`
 
 	// Получение компаний
 	res, err := r.db.QueryContext(ctx, query, offset, count)

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	Error "github.com/unwelcome/FrameWorkTask1/backend/company/pkg/errors"
+	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc/codes"
 )
 

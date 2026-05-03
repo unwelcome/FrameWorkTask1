@@ -9,7 +9,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
-	Error "github.com/unwelcome/FrameWorkTask1/backend/application/pkg/errors"
+	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc/codes"
 )
 
@@ -364,7 +364,7 @@ func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context,
 	return Error.CodeError{Code: -1, Err: nil}
 }
 
-// DeleteApplicationRequest Удаление заявки (заявка помечается удаленной но не стирается из бд)
+// DeleteApplicationRequest Удаление заявки (заявка помечается удаленной, но не стирается из бд)
 func (r *applicationRepository) DeleteApplicationRequest(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError {
 	query := `UPDATE applications 
 	SET

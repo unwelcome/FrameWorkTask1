@@ -9,7 +9,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/entities"
-	Error "github.com/unwelcome/FrameWorkTask1/backend/company/pkg/errors"
+	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc/codes"
 )
 

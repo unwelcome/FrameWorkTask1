@@ -6,6 +6,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/rs/zerolog v1.35.1
+	google.golang.org/grpc v1.80.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

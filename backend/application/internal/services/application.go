@@ -9,7 +9,7 @@ import (
 	pb "github.com/unwelcome/FrameWorkTask1/backend/application/api"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
-	Error "github.com/unwelcome/FrameWorkTask1/backend/application/pkg/errors"
+	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 

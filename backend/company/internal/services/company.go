@@ -12,7 +12,7 @@ import (
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/entities"
-	Error "github.com/unwelcome/FrameWorkTask1/backend/company/pkg/errors"
+	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"

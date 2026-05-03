@@ -135,8 +135,8 @@ github.com/unwelcome/FrameWorkTask1/backend/auth v0.1.0 h1:wRQMRGaIwov7a4B3rQDHi
 github.com/unwelcome/FrameWorkTask1/backend/auth v0.1.0/go.mod h1:K8c5AnT8oNWz5FFK3gcWxle8KWgsZ4oE340LTuI+/3E=
 github.com/unwelcome/FrameWorkTask1/backend/company v0.1.0 h1:edt79WNsVJMpqFqkmZ4U3/Wm0rWU61b6Y5TwDVU2YQ4=
 github.com/unwelcome/FrameWorkTask1/backend/company v0.1.0/go.mod h1:eu/SA5uT4cD83WwCSVPPFBusmWoZfmoSt3nWaqrbzvo=
-github.com/unwelcome/FrameWorkTask1/backend/shared v0.4.0 h1:AmVJNBrDkYkYsMe0q9auJEsYqcQzsHed/RS0XZkoheI=
-github.com/unwelcome/FrameWorkTask1/backend/shared v0.4.0/go.mod h1:jKxA75WSFFGpjLsjFSLn3y4CnK9XNOxSwQQEju07U+c=
+github.com/unwelcome/FrameWorkTask1/backend/shared v0.5.0 h1:t1+8cdWgVv35loLv2GLC+rEL8Dj0Lunr2bTXAGFB63c=
+github.com/unwelcome/FrameWorkTask1/backend/shared v0.5.0/go.mod h1:jKxA75WSFFGpjLsjFSLn3y4CnK9XNOxSwQQEju07U+c=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=

@@ -6,3 +6,5 @@ redisdata/
 /logs
 /logs/*
 .claude/
+go.work
+go.work.sum

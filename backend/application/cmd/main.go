@@ -7,9 +7,9 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	application_proto "github.com/unwelcome/FrameWorkTask1/backend/application/api"
-	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/services"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 )
@@ -24,7 +24,7 @@ func main() {
 	log.Logger = *loggerConf
 
 	// Подключение к Postgresql
-	db := postgresDB.NewDatabaseInstance(cfg.GetDBConnectionString())
+	db := postgresDB.NewDatabaseInstance(cfg.GetDBConnectionString(cfg.ApplicationService.ServiceConfig))
 
 	// Создание сервера
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.ApplicationService.Port))

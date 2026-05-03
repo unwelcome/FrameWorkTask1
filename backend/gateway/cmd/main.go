@@ -7,8 +7,8 @@ import (
 	"github.com/rs/zerolog/log"
 	_ "github.com/unwelcome/FrameWorkTask1/backend/gateway/api/docs"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/app"
-	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/routes"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 )
 

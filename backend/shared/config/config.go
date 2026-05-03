@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 	"gopkg.in/yaml.v3"
 )
 
@@ -37,7 +38,9 @@ type GatewayConfig struct {
 	LogPath string `yaml:"log_path"`
 }
 
-type AuthServiceConfig struct {
+// ServiceConfig содержит общие поля для всех микросервисов.
+// Встраивается в конкретные конфиги сервисов через yaml:",inline".
+type ServiceConfig struct {
 	Host       string `yaml:"host"`
 	Port       int    `yaml:"port"`
 	LogPath    string `yaml:"log_path"`
@@ -46,28 +49,18 @@ type AuthServiceConfig struct {
 	DBName     string `yaml:"db_name"`
 	CacheDB    int    `yaml:"cache_db"`
 	S3Bucket   string `yaml:"s3_bucket"`
+}
+
+type AuthServiceConfig struct {
+	ServiceConfig `yaml:",inline"`
 }
 
 type CompanyServiceConfig struct {
-	Host       string `yaml:"host"`
-	Port       int    `yaml:"port"`
-	LogPath    string `yaml:"log_path"`
-	DBUser     string `yaml:"db_user"`
-	DBPassword string `yaml:"db_password"`
-	DBName     string `yaml:"db_name"`
-	CacheDB    int    `yaml:"cache_db"`
-	S3Bucket   string `yaml:"s3_bucket"`
+	ServiceConfig `yaml:",inline"`
 }
 
 type ApplicationServiceConfig struct {
-	Host       string `yaml:"host"`
-	Port       int    `yaml:"port"`
-	LogPath    string `yaml:"log_path"`
-	DBUser     string `yaml:"db_user"`
-	DBPassword string `yaml:"db_password"`
-	DBName     string `yaml:"db_name"`
-	CacheDB    int    `yaml:"cache_db"`
-	S3Bucket   string `yaml:"s3_bucket"`
+	ServiceConfig `yaml:",inline"`
 }
 
 type Database struct {
@@ -209,4 +202,19 @@ func (config *Config) Print() {
 	fmt.Printf("=== S3 ===\n")
 	fmt.Printf("Host: %s\n", config.S3.Host)
 	fmt.Printf("Port: %d\n", config.S3.Port)
+}
+
+// GetDBConnectionString возвращает строку подключения к Postgres для указанного сервиса.
+func (config *Config) GetDBConnectionString(svc ServiceConfig) string {
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		config.Db.Host, config.Db.Port, svc.DBUser, svc.DBPassword, svc.DBName)
+}
+
+// GetCacheConnectionOptions возвращает конфиг подключения к Redis для указанного сервиса.
+func (config *Config) GetCacheConnectionOptions(svc ServiceConfig) *redis.Options {
+	return &redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", config.Cache.Host, config.Cache.Port),
+		Password: config.Cache.Password,
+		DB:       svc.CacheDB,
+	}
 }

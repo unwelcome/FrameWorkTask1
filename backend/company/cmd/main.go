@@ -7,10 +7,10 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api"
-	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/services"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 )
@@ -25,10 +25,10 @@ func main() {
 	log.Logger = *loggerConf
 
 	// Подключение к Postgresql
-	db := postgresDB.NewDatabaseInstance(cfg.GetDBConnectionString())
+	db := postgresDB.NewDatabaseInstance(cfg.GetDBConnectionString(cfg.CompanyService.ServiceConfig))
 
 	// Подключение к Redis
-	cache := redisDB.NewCacheInstance(cfg.GetCacheConnectionOptions())
+	cache := redisDB.NewCacheInstance(cfg.GetCacheConnectionOptions(cfg.CompanyService.ServiceConfig))
 
 	// Создание сервера
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.CompanyService.Port))

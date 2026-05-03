@@ -8,9 +8,9 @@ import (
 	application_proto "github.com/unwelcome/FrameWorkTask1/backend/gateway/api/application"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/gateway/api/auth"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/gateway/api/company"
-	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/handlers"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/middlewares"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/config"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

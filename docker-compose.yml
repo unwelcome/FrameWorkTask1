@@ -3,7 +3,7 @@ services:
   gateway:
     container_name: gateway
     build:
-      context: ./v1/gateway
+      context: backend/gateway
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
@@ -12,7 +12,7 @@ services:
     environment:
       PRODUCTION_TYPE: prod
     volumes:
-      - ./v1/config.yaml:/app/config/config.yaml:ro
+      - ./backend/config.yaml:/app/config/config.yaml:ro
       - ./logs:/var/log/app
     networks:
       - app-network
@@ -20,16 +20,14 @@ services:
   auth_service:
     container_name: auth_service
     build:
-      context: ./v1/auth
+      context: backend/auth
       dockerfile: Dockerfile
     ports:
       - "50051:50051" # для отладки
     env_file:
       - ./.env
-    environment:
-      PRODUCTION_TYPE: prod
     volumes:
-      - ./v1/config.yaml:/app/config/config.yaml:ro
+      - ./backend/config.yaml:/app/config/config.yaml:ro
       - ./logs:/var/log/app
     depends_on:
       postgres:
@@ -38,26 +36,42 @@ services:
         condition: service_healthy
     networks:
       - app-network
-  
+
   company_service:
     container_name: company_service
     build:
-      context: ./v1/company
+      context: backend/company
       dockerfile: Dockerfile
     ports:
       - "50052:50052" # для отладки
     env_file:
       - ./.env
-    environment:
-      PRODUCTION_TYPE: prod
     volumes:
-      - ./v1/config.yaml:/app/config/config.yaml:ro
+      - ./backend/config.yaml:/app/config/config.yaml:ro
       - ./logs:/var/log/app
     depends_on:
       postgres:
         condition: service_healthy
-      # redis:
-      #   condition: service_healthy
+      redis:
+         condition: service_healthy
+    networks:
+      - app-network
+
+  application_service:
+    container_name: application_service
+    build:
+      context: backend/application
+      dockerfile: Dockerfile
+    ports:
+      - "50053:50053" # для отладки
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend/config.yaml:/app/config/config.yaml:ro
+      - ./logs:/var/log/app
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -99,7 +113,7 @@ services:
       - "pg_stat_statements.track=all"
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./v1/init:/docker-entrypoint-initdb.d/
+      - ./backend/init:/docker-entrypoint-initdb.d/
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
       interval: 5s

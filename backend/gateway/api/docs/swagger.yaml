@@ -1,0 +1,1316 @@
+basePath: /api
+definitions:
+  Error.HttpError:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  entities.ChangePasswordRequest:
+    properties:
+      password:
+        type: string
+    type: object
+  entities.ChangePasswordResponse:
+    type: object
+  entities.CreateCompanyJoinCodeRequest:
+    properties:
+      code_ttl:
+        type: integer
+    type: object
+  entities.CreateCompanyJoinCodeResponse:
+    properties:
+      code:
+        type: string
+    type: object
+  entities.CreateCompanyRequest:
+    properties:
+      title:
+        type: string
+    type: object
+  entities.CreateCompanyResponse:
+    properties:
+      company_uuid:
+        type: string
+    type: object
+  entities.DeleteCompanyJoinCodeRequest:
+    properties:
+      code:
+        type: string
+    type: object
+  entities.DeleteCompanyJoinCodeResponse:
+    type: object
+  entities.DeleteCompanyResponse:
+    type: object
+  entities.DeleteUserRequest:
+    properties:
+      tagret_uuid:
+        type: string
+    type: object
+  entities.DeleteUserResponse:
+    type: object
+  entities.GetAllActiveTokensResponse:
+    properties:
+      tokens:
+        items:
+          $ref: '#/definitions/entities.TokenInfo'
+        type: array
+    type: object
+  entities.GetCompaniesResponse:
+    properties:
+      companies:
+        items:
+          $ref: '#/definitions/entities.GetCompanyResponse'
+        type: array
+    type: object
+  entities.GetCompanyEmployeeResponse:
+    properties:
+      joined_at:
+        type: string
+      role:
+        type: string
+      user_uuid:
+        type: string
+    type: object
+  entities.GetCompanyEmployeesResponse:
+    properties:
+      employees:
+        items:
+          $ref: '#/definitions/entities.GetCompanyEmployeeResponse'
+        type: array
+    type: object
+  entities.GetCompanyEmployeesSummaryResponse:
+    properties:
+      analytics_count:
+        type: integer
+      chief_count:
+        type: integer
+      engineer_count:
+        type: integer
+      manager_count:
+        type: integer
+      unemployed_count:
+        type: integer
+    type: object
+  entities.GetCompanyJoinCodesResponse:
+    properties:
+      codes:
+        items:
+          type: string
+        type: array
+    type: object
+  entities.GetCompanyResponse:
+    properties:
+      company_uuid:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  entities.GetUserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      patronymic:
+        type: string
+      user_uuid:
+        type: string
+    type: object
+  entities.HealthResponse:
+    properties:
+      application_service:
+        type: string
+      auth_service:
+        type: string
+      company_service:
+        type: string
+      gateway:
+        type: string
+    type: object
+  entities.JoinCompanyRequest:
+    properties:
+      code:
+        type: string
+    type: object
+  entities.JoinCompanyResponse:
+    properties:
+      company_uuid:
+        type: string
+      role:
+        type: string
+    type: object
+  entities.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  entities.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user_uuid:
+        type: string
+    type: object
+  entities.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  entities.RefreshTokenResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  entities.RegisterRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        type: string
+      patronymic:
+        type: string
+    type: object
+  entities.RegisterResponse:
+    properties:
+      user_uuid:
+        type: string
+    type: object
+  entities.RemoveCompanyEmployeeResponse:
+    type: object
+  entities.RevokeAllTokensResponse:
+    type: object
+  entities.RevokeTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  entities.RevokeTokenResponse:
+    type: object
+  entities.TokenInfo:
+    properties:
+      token:
+        type: string
+    type: object
+  entities.UpdateCompanyStatusRequest:
+    properties:
+      status:
+        type: string
+    type: object
+  entities.UpdateCompanyStatusResponse:
+    type: object
+  entities.UpdateCompanyTitleRequest:
+    properties:
+      title:
+        type: string
+    type: object
+  entities.UpdateCompanyTitleResponse:
+    type: object
+  entities.UpdateEmployeeRoleRequest:
+    properties:
+      role:
+        type: string
+    type: object
+  entities.UpdateEmployeeRoleResponse:
+    type: object
+  entities.UpdateUserBioRequest:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      patronymic:
+        type: string
+    type: object
+  entities.UpdateUserBioResponse:
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  title: Framework task 2 API
+  version: "1.0"
+paths:
+  /auth/company/{company_uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete company by company uuid (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.DeleteCompanyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete company
+      tags:
+      - Company
+    get:
+      consumes:
+      - application/json
+      description: Get company info by company uuid
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get company info
+      tags:
+      - Company
+  /auth/company/{company_uuid}/code:
+    delete:
+      consumes:
+      - application/json
+      description: Delete company join code (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.DeleteCompanyJoinCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.DeleteCompanyJoinCodeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete company join code
+      tags:
+      - Company
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Create code for users to join company and became its employee (chief only);
+        Min value: 60 (sec); Max value: 604800 (1 week)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CreateCompanyJoinCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CreateCompanyJoinCodeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Create join company code
+      tags:
+      - Company
+  /auth/company/{company_uuid}/codes:
+    get:
+      consumes:
+      - application/json
+      description: Get all company join codes (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyJoinCodesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all company join codes
+      tags:
+      - Company
+  /auth/company/{company_uuid}/employee/{employee_uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove company employee by his uuid
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Employee UUID
+        in: path
+        name: employee_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.RemoveCompanyEmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove company employee
+      tags:
+      - Employee
+  /auth/company/{company_uuid}/employee/{employee_uuid}/info:
+    get:
+      consumes:
+      - application/json
+      description: Get employee info by his uuid
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Employee UUID
+        in: path
+        name: employee_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyEmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get employee info
+      tags:
+      - Employee
+  /auth/company/{company_uuid}/employee/{employee_uuid}/role:
+    patch:
+      consumes:
+      - application/json
+      description: 'Update employee role (chief only); Available roles: "unemployed",
+        "engineer", "manager", "analytic", "chief"'
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Employee UUID
+        in: path
+        name: employee_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateEmployeeRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateEmployeeRoleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Update employee role
+      tags:
+      - Employee
+  /auth/company/{company_uuid}/employees/list:
+    get:
+      consumes:
+      - application/json
+      description: 'Get company employees with sort by role; Available roles: "unemployed",
+        "engineer", "manager", "analytic", "chief"'
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - default: ""
+        description: Role
+        in: query
+        name: role
+        type: string
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 10
+        description: Count
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyEmployeesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get company employees
+      tags:
+      - Employee
+  /auth/company/{company_uuid}/employees/summary:
+    get:
+      consumes:
+      - application/json
+      description: Get company employees summary count by each role
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyEmployeesSummaryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get company employees summary
+      tags:
+      - Employee
+  /auth/company/{company_uuid}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 'Update company status by company uuid (chief only). Available
+        statuses: "open", "close"'
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateCompanyStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateCompanyStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Update company status
+      tags:
+      - Company
+  /auth/company/{company_uuid}/title:
+    patch:
+      consumes:
+      - application/json
+      description: Update company title by company uuid (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateCompanyTitleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateCompanyTitleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Update company title
+      tags:
+      - Company
+  /auth/company/create:
+    post:
+      consumes:
+      - application/json
+      description: Create new company (user that created company became "chief" automatically)
+      parameters:
+      - description: Данные компании
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CreateCompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CreateCompanyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Create company
+      tags:
+      - Company
+  /auth/company/join:
+    post:
+      consumes:
+      - application/json
+      description: Join company by join code
+      parameters:
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.JoinCompanyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.JoinCompanyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Join company
+      tags:
+      - Employee
+  /auth/company/list:
+    get:
+      description: Get companies list
+      parameters:
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 10
+        description: Count
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompaniesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get companies list
+      tags:
+      - Company
+  /auth/user/{user_uuid}/info:
+    get:
+      description: Get user info
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: GetUser
+      tags:
+      - User
+  /auth/user/account:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user
+      parameters:
+      - description: Target UUID
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.DeleteUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.DeleteUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: DeleteUser
+      tags:
+      - Auth
+  /auth/user/bio:
+    patch:
+      consumes:
+      - application/json
+      description: Update user firstName, lastName, patronymic
+      parameters:
+      - description: ФИО пользователя
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateUserBioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateUserBioResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: UpdateUserBio
+      tags:
+      - User
+  /auth/user/password:
+    patch:
+      consumes:
+      - application/json
+      description: Change user password
+      parameters:
+      - description: Новый пароль
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.ChangePasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: ChangePassword
+      tags:
+      - User
+  /auth/user/revoke/all:
+    delete:
+      description: Revoke all user refresh tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.RevokeAllTokensResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: RevokeAllTokens
+      tags:
+      - Auth
+  /auth/user/revoke/token:
+    delete:
+      consumes:
+      - application/json
+      description: Revoke refresh token
+      parameters:
+      - description: Refresh token for revoke
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.RevokeTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.RevokeTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: RevokeToken
+      tags:
+      - Auth
+  /auth/user/tokens:
+    get:
+      description: Get all active refresh tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetAllActiveTokensResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: GetAllActiveTokens
+      tags:
+      - Auth
+  /health:
+    get:
+      description: Get all services health status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.HealthResponse'
+      summary: Health check
+      tags:
+      - Health
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login user
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: Login
+      tags:
+      - Auth
+  /refresh:
+    post:
+      description: Refresh tokens
+      parameters:
+      - description: Refresh token
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.RefreshTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: RefreshToken
+      tags:
+      - Auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Register new user
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: Register
+      tags:
+      - User
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

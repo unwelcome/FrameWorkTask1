@@ -1,0 +1,184 @@
+syntax="proto3";
+
+package application;
+option go_package = "proto/application_proto";
+
+import "google/protobuf/empty.proto";
+
+service ApplicationService {
+  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc CreateApplication(CreateApplicationRequest) returns (CreateApplicationResponse);
+  rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
+  rpc GetApplications(GetApplicationsRequest) returns (GetApplicationsResponse);
+  rpc GetCompanyApplicationStatistic(GetCompanyApplicationStatisticRequest) returns (GetCompanyApplicationStatisticResponse);
+  rpc GetEmployeeApplicationStatistic(GetEmployeeApplicationStatisticRequest) returns (GetEmployeeApplicationStatisticResponse);
+  rpc UpdateApplicationData(UpdateApplicationDataRequest) returns (google.protobuf.Empty);
+  rpc UpdateApplicationStatus(UpdateApplicationStatusRequest) returns (google.protobuf.Empty);
+  rpc AssignApplicationToEmployee(AssignApplicationToEmployeeRequest) returns (google.protobuf.Empty);
+  rpc AddApplicationFixLog(AddApplicationFixLogRequest) returns (google.protobuf.Empty);
+  rpc DeleteApplication(DeleteApplicationRequest) returns (google.protobuf.Empty);
+}
+
+
+message Application {
+  string application_uuid = 1;
+  string title = 2;
+  string description = 3;
+  string status = 4;
+  string created_at = 5;
+  string created_by = 6;
+  string closed_at = 7;
+  string responsible_manager = 8;
+  string responsible_engineer = 9;
+  repeated FixLog fix_logs = 10;
+}
+
+message FixLog {
+  int64 id = 1;
+  string text = 2;
+  string created_at = 3;
+  string created_by = 4;
+}
+
+message ApplicationData {
+  string title = 1;
+  string description = 2;
+}
+
+
+// Health
+message HealthRequest {
+  string operation_id = 1;
+}
+message HealthResponse {
+  string health = 1;
+}
+
+
+// CreateApplication
+message CreateApplicationRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string title = 4;
+  string description = 5;
+}
+message CreateApplicationResponse {
+  string application_uuid = 1;
+}
+
+
+// GetApplication
+message GetApplicationRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string application_uuid = 4;
+}
+message GetApplicationResponse {
+  Application application = 1;
+}
+
+
+// GetApplications
+message GetApplicationsRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  int64 count = 4;
+  int64 offset = 5;
+}
+message GetApplicationsResponse {
+  repeated Application applications = 1;
+}
+
+
+// GetCompanyApplicationStatistic
+message GetCompanyApplicationStatisticRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+}
+message GetCompanyApplicationStatisticResponse {
+  int64 created = 1;
+  int64 assigned = 2;
+  int64 in_progress = 3;
+  int64 on_hold = 4;
+  int64 completed = 5;
+  int64 cancelled = 6;
+  int64 failed = 7;
+  int64 archived = 8;
+}
+
+
+// GetEmployeeApplicationStatistic
+message GetEmployeeApplicationStatisticRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string company_uuid = 3;
+  string target_uuid = 4;
+}
+message GetEmployeeApplicationStatisticResponse {
+  int64 created = 1; // Сколько пользователь создал задач 
+  int64 assigned = 2; // Сколько у пользователя текущих задач 
+  int64 in_progress = 3; // Сколько у пользователя задач на выполнении 
+  int64 on_hold = 4; // Сколько у пользователя задач на паузе 
+  int64 completed = 5; // Сколько пользователь завершил задач 
+  int64 cancelled = 6; // Сколько пользователь отменил задач 
+  int64 failed = 7; // Сколько пользователь провалил задач 
+  int64 archived = 8; // Сколько пользователь заморозил задач 
+}
+
+
+// UpdateApplicationData
+message UpdateApplicationDataRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string application_uuid = 4;
+  ApplicationData data = 5;
+}
+// Empty response
+
+
+// UpdateApplicationStatus
+message UpdateApplicationStatusRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string application_uuid = 4;
+  string status = 5;
+}
+// Empty response
+
+
+// AssignApplicationToEmployee
+message AssignApplicationToEmployeeRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string company_uuid = 3;
+  string target_uuid = 4;
+  string application_uuid = 5;
+}
+// Empty response
+
+
+// AddApplicationFixLog
+message AddApplicationFixLogRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string application_uuid = 4;
+  string log_text = 5;
+}
+// Empty response
+
+
+// DeleteApplication
+message DeleteApplicationRequest {
+  string operation_id = 1;
+  string user_uuid = 2;
+  string company_uuid = 3;
+  string application_uuid = 4;
+}
+// Empty response

@@ -5,9 +5,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
-	application_proto "github.com/unwelcome/FrameWorkTask1/backend/gateway/api/application"
-	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/gateway/api/auth"
-	company_proto "github.com/unwelcome/FrameWorkTask1/backend/gateway/api/company"
+	application_proto "github.com/unwelcome/FrameWorkTask1/backend/application/api/generated"
+	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/auth/api/generated"
+	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/handlers"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/middlewares"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/config"

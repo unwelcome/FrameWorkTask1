@@ -129,8 +129,8 @@ github.com/swaggo/files v1.0.1/go.mod h1:0qXmMNH6sXNf+73t65aKeB+ApmgxdnkQzVTAj2u
 github.com/swaggo/swag v1.8.1/go.mod h1:ugemnJsPZm/kRwFUnzBlbHRd0JY9zE1M4F+uy2pAaPQ=
 github.com/swaggo/swag v1.16.6 h1:qBNcx53ZaX+M5dxVyTrgQ0PJ/ACK+NzhwcbieTt+9yI=
 github.com/swaggo/swag v1.16.6/go.mod h1:ngP2etMK5a0P3QBizic5MEwpRmluJZPHjXcMoj4Xesg=
-github.com/unwelcome/FrameWorkTask1/backend/shared v0.2.0 h1:2YvsMQ55c1byLkkK+zHQ/AKMjGkAgn4PDJj+JRHCMwc=
-github.com/unwelcome/FrameWorkTask1/backend/shared v0.2.0/go.mod h1:Er9PJwAY44R/h7oiXyr6fCLN4QdyY0ss8XFZEpVD5WI=
+github.com/unwelcome/FrameWorkTask1/backend/shared v0.3.0 h1:TTU1WbMGnSPxxIcpPOdh0q9Gbvm8i3dR+MxXyg9Am9g=
+github.com/unwelcome/FrameWorkTask1/backend/shared v0.3.0/go.mod h1:Krtd2dpjlzhAJKQ892U00GcY6phWk+OT1/hqid6VxaY=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=

@@ -37,8 +37,8 @@ github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0t
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/rs/zerolog v1.35.1 h1:m7xQeoiLIiV0BCEY4Hs+j2NG4Gp2o2KPKmhnnLiazKI=
 github.com/rs/zerolog v1.35.1/go.mod h1:EjML9kdfa/RMA7h/6z6pYmq1ykOuA8/mjWaEvGI+jcw=
-github.com/unwelcome/FrameWorkTask1/backend/shared v0.2.0 h1:2YvsMQ55c1byLkkK+zHQ/AKMjGkAgn4PDJj+JRHCMwc=
-github.com/unwelcome/FrameWorkTask1/backend/shared v0.2.0/go.mod h1:Er9PJwAY44R/h7oiXyr6fCLN4QdyY0ss8XFZEpVD5WI=
+github.com/unwelcome/FrameWorkTask1/backend/shared v0.3.0 h1:TTU1WbMGnSPxxIcpPOdh0q9Gbvm8i3dR+MxXyg9Am9g=
+github.com/unwelcome/FrameWorkTask1/backend/shared v0.3.0/go.mod h1:Krtd2dpjlzhAJKQ892U00GcY6phWk+OT1/hqid6VxaY=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
 go.opentelemetry.io/otel v1.39.0 h1:8yPrr/S0ND9QEfTfdP9V+SiwT4E0G7Y5MO7p85nis48=

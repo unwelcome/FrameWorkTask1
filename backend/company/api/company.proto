@@ -1,7 +1,7 @@
 syntax="proto3";
 
 package company;
-option go_package = "proto/company_proto";
+option go_package = "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated;company_proto";
 
 import "google/protobuf/empty.proto";
 

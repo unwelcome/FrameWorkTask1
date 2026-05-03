@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	pb "github.com/unwelcome/FrameWorkTask1/backend/application/api"
+	pb "github.com/unwelcome/FrameWorkTask1/backend/application/api/generated"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"

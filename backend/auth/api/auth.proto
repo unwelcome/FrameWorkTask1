@@ -1,7 +1,7 @@
 syntax="proto3";
 
 package auth;
-option go_package = "proto/auth_proto";
+option go_package = "github.com/unwelcome/FrameWorkTask1/backend/auth/api/generated;auth_proto";
 
 import "google/protobuf/empty.proto";
 

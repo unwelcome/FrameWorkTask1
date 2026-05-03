@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
-	application_proto "github.com/unwelcome/FrameWorkTask1/backend/application/api"
+	application_proto "github.com/unwelcome/FrameWorkTask1/backend/application/api/generated"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/services"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/config"

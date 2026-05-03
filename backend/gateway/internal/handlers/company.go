@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	company_proto "github.com/unwelcome/FrameWorkTask1/backend/gateway/api/company"
+	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/errors"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"

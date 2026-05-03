@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	pb "github.com/unwelcome/FrameWorkTask1/backend/auth/api"
+	pb "github.com/unwelcome/FrameWorkTask1/backend/auth/api/generated"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"

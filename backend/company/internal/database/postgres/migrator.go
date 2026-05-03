@@ -1,41 +1,25 @@
 package postgresDB
 
-import (
-	"database/sql"
-	"strings"
-
-	"github.com/rs/zerolog/log"
-)
-
-type Migrator struct {
-	db *sql.DB
-}
-
-func NewMigrator(db *sql.DB) *Migrator {
-	return &Migrator{db: db}
-}
-
-func (m *Migrator) Migrate() {
-	var queries []string
-	queries = append(queries,
+func migrationQueries() []string {
+	return []string{
 		`DO $$ BEGIN
-    	CREATE TYPE statuses AS ENUM (
+			CREATE TYPE statuses AS ENUM (
 				'open',
 				'close'
 			);
-			EXCEPTION 
+			EXCEPTION
 				WHEN duplicate_object THEN null;
 		END $$;`,
 
 		`DO $$ BEGIN
-    	CREATE TYPE roles AS ENUM (
+			CREATE TYPE roles AS ENUM (
 				'unemployed',
 				'engineer',
 				'manager',
 				'analytic',
 				'chief'
 			);
-			EXCEPTION 
+			EXCEPTION
 				WHEN duplicate_object THEN null;
 		END $$;`,
 
@@ -50,27 +34,12 @@ func (m *Migrator) Migrate() {
 		`CREATE TABLE IF NOT EXISTS employees (
 			company_uuid VARCHAR(36) NOT NULL,
 			user_uuid VARCHAR(36) NOT NULL,
-			role roles NOT NULL DEFAULT 'unemployed', 
+			role roles NOT NULL DEFAULT 'unemployed',
 			joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			UNIQUE(company_uuid, user_uuid)
 		);`,
 
-		`ALTER TABLE employees 
+		`ALTER TABLE employees
 			ADD CONSTRAINT fk_employees_company FOREIGN KEY (company_uuid) REFERENCES companies(uuid) ON DELETE CASCADE;`,
-	)
-
-	for _, query := range queries {
-		_, err := m.db.Exec(query)
-		if err != nil {
-			// Игнорируем ошибку, если constraint уже существует
-			if strings.Contains(err.Error(), "already exists") ||
-				strings.Contains(err.Error(), "duplicate_object") ||
-				strings.Contains(err.Error(), "constraint") {
-				continue
-			}
-			log.Fatal().Err(err).Msg("migrator failed to execute query")
-		}
 	}
-
-	log.Info().Msg("migration completed successfully")
 }

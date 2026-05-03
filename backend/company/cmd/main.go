@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 
-	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/postgres"

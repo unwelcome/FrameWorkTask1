@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 
-	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/auth/api/generated"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"

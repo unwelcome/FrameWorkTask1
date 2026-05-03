@@ -9,7 +9,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/rs/zerolog v1.35.1
-	github.com/unwelcome/FrameWorkTask1/backend/shared v0.0.0
+	github.com/unwelcome/FrameWorkTask1/backend/shared v0.1.0
 	golang.org/x/crypto v0.50.0
 	golang.org/x/net v0.53.0
 	google.golang.org/grpc v1.80.0

@@ -8,8 +8,8 @@ import (
 	_ "github.com/unwelcome/FrameWorkTask1/backend/gateway/api/docs"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/app"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/config"
-	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/logger"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/routes"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 )
 
 // @title     Framework task 2 API

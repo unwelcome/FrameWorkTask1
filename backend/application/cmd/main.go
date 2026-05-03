@@ -9,8 +9,8 @@ import (
 	application_proto "github.com/unwelcome/FrameWorkTask1/backend/application/api"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
-	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/logger"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/services"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 )
 

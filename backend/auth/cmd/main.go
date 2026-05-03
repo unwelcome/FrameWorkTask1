@@ -10,8 +10,8 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
-	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/logger"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/services"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 )
 

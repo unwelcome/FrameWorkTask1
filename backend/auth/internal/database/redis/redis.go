@@ -1,10 +1,10 @@
 package redisDB
 
 import (
-	"context"
-	"github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog/log"
 	"time"
+
+	"github.com/redis/go-redis/v9"
+	sharedRedis "github.com/unwelcome/FrameWorkTask1/backend/shared/redis"
 )
 
 type CacheRepository struct {
@@ -12,20 +12,9 @@ type CacheRepository struct {
 }
 
 func NewCacheInstance(connectOptions *redis.Options, refreshTokenTTL time.Duration) *CacheRepository {
-	// Подключаемся к Redis
-	rdb := redis.NewClient(connectOptions)
+	rdb := sharedRedis.Connect(connectOptions)
 
-	// Проверка подключения
-	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		log.Fatal().Err(err).Msg("failed to connect to redis")
-		return nil
+	return &CacheRepository{
+		Auth: NewAuthRepository(rdb, refreshTokenTTL),
 	}
-
-	// Создаем структуру redis репозиториев
-	cacheRepository := &CacheRepository{}
-
-	// Создаем репозитории
-	cacheRepository.Auth = NewAuthRepository(rdb, refreshTokenTTL)
-
-	return cacheRepository
 }

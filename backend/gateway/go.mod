@@ -12,7 +12,7 @@ require (
 	github.com/unwelcome/FrameWorkTask1/backend/application v0.1.0
 	github.com/unwelcome/FrameWorkTask1/backend/auth v0.1.0
 	github.com/unwelcome/FrameWorkTask1/backend/company v0.1.0
-	github.com/unwelcome/FrameWorkTask1/backend/shared v0.3.0
+	github.com/unwelcome/FrameWorkTask1/backend/shared v0.4.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.80.0
 )

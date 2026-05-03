@@ -23,13 +23,13 @@ func (m *Migrator) Migrate() {
 			CREATE TYPE STATUSES AS ENUM (
 				'created',
 				'assigned',
-				'in_procgress',
+				'in_progress',
 				'on_hold',
 				'completed',
 				'cancelled',
 				'rejected',
 				'failed',
-				'archived',
+				'archived'
 			);
 			EXCEPTION 
 				WHEN duplicate_object THEN null;

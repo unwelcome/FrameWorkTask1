@@ -14,12 +14,6 @@ type TokenPair struct {
 	RefreshToken string
 }
 
-type TokenPairWithUserUUID struct {
-	UserUUID     string `db:"uuid"`
-	AccessToken  string
-	RefreshToken string
-}
-
 type TokenClaims struct {
 	UserUUID  string
 	TokenType string

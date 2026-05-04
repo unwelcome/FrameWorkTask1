@@ -83,10 +83,14 @@ func (r *companyRepository) GetCompanies(ctx context.Context, offset, count int6
 		company := &entities.GetCompanies{}
 		err = res.Scan(&company.CompanyUUID, &company.Title, &company.Status)
 		if err != nil {
-			return nil, Error.CodeError{Code: 0, Err: nil}
+			return nil, Error.CodeError{Code: 0, Err: err}
 		}
 
 		companies = append(companies, company)
+	}
+
+	if err = res.Err(); err != nil {
+		return nil, Error.CodeError{Code: 0, Err: err}
 	}
 
 	return companies, Error.CodeError{Code: -1, Err: nil}
@@ -228,6 +232,10 @@ func (r *companyRepository) GetCompanyEmployees(ctx context.Context, companyUUID
 		employees = append(employees, employee)
 	}
 
+	if err = rows.Err(); err != nil {
+		return nil, Error.CodeError{Code: 0, Err: err}
+	}
+
 	return employees, Error.CodeError{Code: -1, Err: nil}
 }
 
@@ -259,6 +267,10 @@ func (r *companyRepository) GetCompanyEmployeesByRole(ctx context.Context, compa
 		employees = append(employees, employee)
 	}
 
+	if err = rows.Err(); err != nil {
+		return nil, Error.CodeError{Code: 0, Err: err}
+	}
+
 	return employees, Error.CodeError{Code: -1, Err: nil}
 }
 
@@ -286,9 +298,6 @@ func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, comp
 			&employeeSummary.ChiefCount)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("company not found")}
-		}
 		return nil, Error.CodeError{Code: 0, Err: err}
 	}
 	return employeeSummary, Error.CodeError{Code: -1, Err: nil}

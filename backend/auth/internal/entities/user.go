@@ -19,11 +19,6 @@ type UserCreate struct {
 	Patronymic   string `db:"patronymic"`
 }
 
-type UserLogin struct {
-	Email        string `db:"email"`
-	PasswordHash string `db:"password_hash"`
-}
-
 type UserGet struct {
 	UserUUID   string `db:"uuid"`
 	Email      string `db:"email"`

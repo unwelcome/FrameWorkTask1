@@ -73,9 +73,13 @@ func (r *authRepository) GetAllRefreshTokens(ctx context.Context, userUUID strin
 	for _, hash := range hashedTokens {
 		tokenKey := r.getRefreshTokenKey(hash)
 
-		err = r.redis.Exists(ctx, tokenKey).Err()
-		// Если токен истек, то добавляем его в массив истекших токенов
+		count, err := r.redis.Exists(ctx, tokenKey).Result()
+		// Ошибка соединения с Redis — пропускаем токен
 		if err != nil {
+			continue
+		}
+		// Если токен истек, то добавляем его в массив истекших токенов
+		if count == 0 {
 			expiredTokens = append(expiredTokens, hash)
 			continue
 		}

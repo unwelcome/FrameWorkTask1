@@ -165,7 +165,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 		return nil, err
 	}
 
-	log.Info().Str("id", req.GetOperationId()).Str("method", "change password").Err(err).Msg("success")
+	log.Info().Str("id", req.GetOperationId()).Str("method", "change password").Msg("success")
 	return &emptypb.Empty{}, nil
 }
 
@@ -197,16 +197,18 @@ func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 		return nil, status.Errorf(codes.PermissionDenied, "not enough rights")
 	}
 
-	// Отзываем все токены пользователя
+	// Отзываем все токены пользователя (если они есть)
 	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, req.GetTargetUserUuid())
-	err := Error.HandleError(revokeErr, req.GetOperationId(), "delete user")
-	if err != nil {
-		return nil, err
+	if revokeErr.Code != -1 && revokeErr.Code != int(codes.NotFound) {
+		err := Error.HandleError(revokeErr, req.GetOperationId(), "delete user")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Удаляем пользователя
 	deleteErr := s.db.User.DeleteUser(ctx, req.GetTargetUserUuid())
-	err = Error.HandleError(deleteErr, req.GetOperationId(), "delete user")
+	err := Error.HandleError(deleteErr, req.GetOperationId(), "delete user")
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +242,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	tokenClaims, err := utils.ParseToken(req.GetRefreshToken(), s.jwtSecretKey)
 	if err != nil {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "refresh token").Err(err).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Проверка типа токена
@@ -266,7 +268,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	tokenPair, err := utils.CreateTokens(tokenClaims.UserUUID, s.jwtSecretKey, s.accessTokenTTL, s.refreshTokenTTL)
 	if err != nil {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "refresh token").Err(err).Msg("error")
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	// Замена старого refresh токена на новый
@@ -286,7 +288,7 @@ func (s *AuthService) RevokeToken(ctx context.Context, req *pb.RevokeTokenReques
 	tokenClaims, err := utils.ParseToken(req.GetRefreshToken(), s.jwtSecretKey)
 	if err != nil {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "revoke token").Err(err).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Удаление refresh токена

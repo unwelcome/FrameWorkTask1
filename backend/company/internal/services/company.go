@@ -2,8 +2,9 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"time"
 
 	"github.com/google/uuid"
@@ -107,7 +108,7 @@ func (s *CompanyService) GetCompanies(ctx context.Context, req *pb.GetCompaniesR
 
 	// Валидация count
 	count := req.GetCount()
-	if count < 0 || count > 100 {
+	if count <= 0 || count > 100 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "get companies").Err(fmt.Errorf("invalid count")).Msg("error")
 		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
 	}
@@ -193,52 +194,45 @@ func (s *CompanyService) DeleteCompany(ctx context.Context, req *pb.DeleteCompan
 // CreateCompanyJoinCode Создает код для добавления в компанию
 func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.CreateCompanyJoinCodeRequest) (*pb.CreateCompanyJoinCodeResponse, error) {
 	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "delete company", req.GetCompanyUuid(), req.GetUserUuid(), []string{"chief"})
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "create join code", req.GetCompanyUuid(), req.GetUserUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
 	}
 
 	// Валидация времени жизни кода: мин - 60 сек / макс - 7 дней
 	ttl := req.GetCodeTtl()
-	if ttl < 0 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "create join code").Err(fmt.Errorf("invalid code ttl")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid code ttl")
-	}
 	if ttl < 60 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "create join code").Err(fmt.Errorf("too short code ttl")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid code ttl")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid code ttl (min 60s)")
 	}
 	if ttl > 60*60*24*7 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "create join code").Err(fmt.Errorf("too long code ttl")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid code ttl")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid code ttl (max 7 days)")
 	}
 	joinCodeTTL := time.Second * time.Duration(ttl)
 
-	// Создаем код добавления
+	// Создаем уникальный код добавления (до 10 попыток)
 	var joinCode string
-	loopCount := 0
-	for ; true; loopCount++ {
-		// Генерируем код
-		joinCode = generateJoinCode(JoinCodeLength)
-
-		// Проверяем, что такого кода еще нет
-		getErr := s.cache.Company.CheckJoinCodeExists(ctx, joinCode)
-
-		// Код еще не зарегистрирован -> выходим из цикла
-		if getErr.Code == int(codes.NotFound) {
-			break
+	found := false
+	for i := 0; i < 10; i++ {
+		code, genErr := generateJoinCode(JoinCodeLength)
+		if genErr != nil {
+			log.Error().Str("id", req.GetOperationId()).Str("method", "create join code").Err(genErr).Msg("error")
+			return nil, status.Error(codes.Internal, "internal error")
 		}
 
-		// Защита от бесконечного цикла
-		if loopCount == 10 {
+		// Проверяем, что такого кода ещё нет
+		checkErr := s.cache.Company.CheckJoinCodeExists(ctx, code)
+		if checkErr.Code == int(codes.NotFound) {
+			joinCode = code
+			found = true
 			break
 		}
 	}
 
-	// Если сработала защита, значит код не был подобран -> ошибка
-	if loopCount == 10 {
-		log.Warn().Str("id", req.GetOperationId()).Str("method", "create join code").Err(fmt.Errorf("loop break")).Msg("error")
-		return nil, status.Errorf(codes.Internal, "failed to create join code")
+	if !found {
+		log.Warn().Str("id", req.GetOperationId()).Str("method", "create join code").Msg("failed to generate unique join code")
+		return nil, status.Error(codes.Internal, "failed to create join code")
 	}
 
 	// Сохраняем код добавления
@@ -322,14 +316,16 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 
 	// Проверяем, что пользователь еще не состоит в компании
 	_, getEmployeeErr := s.db.Company.GetCompanyEmployee(ctx, companyUUID, req.GetUserUuid())
-	if getEmployeeErr.Code != int(codes.NotFound) { // Если ошибка не NotFound, то выкидываем ошибку
-		// Если нет ошибки -> Значит пользователь уже в компании -> ошибка
+	if getEmployeeErr.Code != int(codes.NotFound) {
+		// Нет ошибки -> пользователь уже в компании
 		if getEmployeeErr.Code == -1 {
 			return nil, status.Error(codes.AlreadyExists, "user already in company")
 		}
-
-		// Иначе возвращаем существующую ошибку
+		// Внутренняя ошибка репозитория
 		err = Error.HandleError(getEmployeeErr, req.GetOperationId(), "join company")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Получаем информацию о компании (статус должен быть open)
@@ -351,6 +347,7 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 		return nil, err
 	}
 
+	log.Info().Str("id", req.GetOperationId()).Str("method", "join company").Msg("success")
 	return &pb.JoinCompanyResponse{CompanyUuid: companyUUID, Role: "unemployed"}, nil
 }
 
@@ -391,7 +388,7 @@ func (s *CompanyService) GetCompanyEmployees(ctx context.Context, req *pb.GetCom
 
 	// Валидация count
 	count := req.GetCount()
-	if count < 0 || count > 100 {
+	if count <= 0 || count > 100 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid count")).Msg("error")
 		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
 	}
@@ -489,6 +486,12 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 		return nil, err
 	}
 
+	// Нельзя удалить себя из компании
+	if req.GetInitiatorUuid() == req.GetTargetUuid() {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "remove company employee").Err(fmt.Errorf("cannot remove yourself")).Msg("error")
+		return nil, status.Error(codes.InvalidArgument, "cannot remove yourself from company")
+	}
+
 	// Удаление сотрудника
 	deleteErr := s.db.Company.RemoveCompanyEmployee(ctx, req.GetCompanyUuid(), req.GetTargetUuid())
 	err = Error.HandleError(deleteErr, req.GetOperationId(), "remove company employee")
@@ -501,23 +504,27 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 
 // ДОП ФУНКЦИИ
 
-// generateJoinCode Генерирует случайную строку цифр длинной length
-func generateJoinCode(length int) string {
+// generateJoinCode Генерирует криптографически случайную строку цифр длиной length
+func generateJoinCode(length int) (string, error) {
 	digits := make([]byte, length)
 
 	for i := 0; i < length; i++ {
-		digits[i] = byte('0' + rand.Intn(10))
+		n, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			return "", err
+		}
+		digits[i] = byte('0' + n.Int64())
 	}
 
-	return string(digits)
+	return string(digits), nil
 }
 
 // checkEmployeeRole Проверяет роль пользователя
 func (s *CompanyService) checkEmployeeRole(ctx context.Context, operationUUID, methodName, companyUUID, userUUID string, requiredRoles []string) error {
 	// Проверяем существование компании
 	_, getCompanyErr := s.db.Company.GetCompany(ctx, companyUUID)
-	if getCompanyErr.Code == int(codes.NotFound) { // Компания не найдена
-		return status.Error(codes.InvalidArgument, "company not found")
+	if getCompanyErr.Code == int(codes.NotFound) {
+		return status.Error(codes.NotFound, "company not found")
 	}
 	err := Error.HandleError(getCompanyErr, operationUUID, methodName)
 	if err != nil {

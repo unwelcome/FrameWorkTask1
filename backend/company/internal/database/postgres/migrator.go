@@ -14,6 +14,7 @@ func migrationQueries() []string {
 		`DO $$ BEGIN
 			CREATE TYPE roles AS ENUM (
 				'unemployed',
+				'inspector',
 				'engineer',
 				'manager',
 				'analytic',

@@ -55,4 +55,15 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	auth.Delete("/company/:company_uuid", app.CompanyHandler.DeleteCompany)
 	auth.Delete("/company/:company_uuid/code", app.CompanyHandler.DeleteCompanyJoinCode)
 	auth.Delete("/company/:company_uuid/employee/:employee_uuid", app.CompanyHandler.RemoveCompanyEmployee)
+
+	// Application handler
+	auth.Get("/application/:application_uuid", app.ApplicationHandler.GetApplication)
+	auth.Get("/company/:company_uuid/applications/list", app.ApplicationHandler.GetApplications)
+	auth.Get("/company/:company_uuid/applications/statistic", app.ApplicationHandler.GetCompanyApplicationStatistic)
+	auth.Get("/company/:company_uuid/employee/:employee_uuid/applications/statistic", app.ApplicationHandler.GetEmployeeApplicationStatistic)
+	auth.Post("/application/create", app.ApplicationHandler.CreateApplication)
+	auth.Post("/application/:application_uuid/fix-log", app.ApplicationHandler.AddApplicationFixLog)
+	auth.Patch("/application/:application_uuid/status", app.ApplicationHandler.UpdateApplicationStatus)
+	auth.Patch("/application/:application_uuid/assign", app.ApplicationHandler.AssignApplicationToEmployee)
+	auth.Delete("/application/:application_uuid", app.ApplicationHandler.DeleteApplication)
 }

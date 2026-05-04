@@ -41,7 +41,7 @@ func migrationQueries() []string {
 		`CREATE INDEX IF NOT EXISTS idx_applications_executed_by ON applications(executed_by) WHERE deleted_at IS NULL;`,
 
 		`CREATE TABLE IF NOT EXISTS application_fix_logs (
-			id SERIAL PRIMARY KEY,
+			uuid VARCHAR(36) UNIQUE NOT NULL,
 			application_uuid VARCHAR(36) NOT NULL,
 			text TEXT NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

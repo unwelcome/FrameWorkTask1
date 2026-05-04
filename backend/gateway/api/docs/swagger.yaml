@@ -7,12 +7,67 @@ definitions:
       message:
         type: string
     type: object
+  entities.AddApplicationFixLogRequest:
+    properties:
+      log_text:
+        type: string
+    type: object
+  entities.AddApplicationFixLogResponse:
+    type: object
+  entities.ApplicationResponse:
+    properties:
+      application_uuid:
+        type: string
+      closed_at:
+        type: string
+      company_uuid:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      fix_logs:
+        items:
+          $ref: '#/definitions/entities.FixLogResponse'
+        type: array
+      responsible_engineer:
+        type: string
+      responsible_manager:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  entities.AssignApplicationToEmployeeRequest:
+    properties:
+      target_uuid:
+        type: string
+    type: object
+  entities.AssignApplicationToEmployeeResponse:
+    type: object
   entities.ChangePasswordRequest:
     properties:
       password:
         type: string
     type: object
   entities.ChangePasswordResponse:
+    type: object
+  entities.CreateApplicationRequest:
+    properties:
+      company_uuid:
+        type: string
+      description:
+        type: string
+      title:
+        type: string
+    type: object
+  entities.CreateApplicationResponse:
+    properties:
+      application_uuid:
+        type: string
     type: object
   entities.CreateCompanyJoinCodeRequest:
     properties:
@@ -34,6 +89,8 @@ definitions:
       company_uuid:
         type: string
     type: object
+  entities.DeleteApplicationResponse:
+    type: object
   entities.DeleteCompanyJoinCodeRequest:
     properties:
       code:
@@ -50,11 +107,32 @@ definitions:
     type: object
   entities.DeleteUserResponse:
     type: object
+  entities.FixLogResponse:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      text:
+        type: string
+    type: object
   entities.GetAllActiveTokensResponse:
     properties:
       tokens:
         items:
           $ref: '#/definitions/entities.TokenInfo'
+        type: array
+    type: object
+  entities.GetApplicationResponse:
+    properties:
+      application:
+        $ref: '#/definitions/entities.ApplicationResponse'
+    type: object
+  entities.GetApplicationsResponse:
+    properties:
+      applications:
+        items:
+          $ref: '#/definitions/entities.ApplicationResponse'
         type: array
     type: object
   entities.GetCompaniesResponse:
@@ -63,6 +141,27 @@ definitions:
         items:
           $ref: '#/definitions/entities.GetCompanyResponse'
         type: array
+    type: object
+  entities.GetCompanyApplicationStatisticResponse:
+    properties:
+      archived:
+        type: integer
+      assigned:
+        type: integer
+      awaiting_approval:
+        type: integer
+      cancelled:
+        type: integer
+      completed:
+        type: integer
+      created:
+        type: integer
+      failed:
+        type: integer
+      in_progress:
+        type: integer
+      on_hold:
+        type: integer
     type: object
   entities.GetCompanyEmployeeResponse:
     properties:
@@ -108,6 +207,27 @@ definitions:
         type: string
       title:
         type: string
+    type: object
+  entities.GetEmployeeApplicationStatisticResponse:
+    properties:
+      archived:
+        type: integer
+      assigned:
+        type: integer
+      awaiting_approval:
+        type: integer
+      cancelled:
+        type: integer
+      completed:
+        type: integer
+      created:
+        type: integer
+      failed:
+        type: integer
+      in_progress:
+        type: integer
+      on_hold:
+        type: integer
     type: object
   entities.GetUserResponse:
     properties:
@@ -209,6 +329,13 @@ definitions:
       token:
         type: string
     type: object
+  entities.UpdateApplicationStatusRequest:
+    properties:
+      status:
+        type: string
+    type: object
+  entities.UpdateApplicationStatusResponse:
+    type: object
   entities.UpdateCompanyStatusRequest:
     properties:
       status:
@@ -247,6 +374,277 @@ info:
   title: Framework task 2 API
   version: "1.0"
 paths:
+  /auth/application/{application_uuid}:
+    delete:
+      description: Soft-delete an application (inspector only, status must be "created")
+      parameters:
+      - description: Application UUID
+        in: path
+        name: application_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.DeleteApplicationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete application
+      tags:
+      - Application
+    get:
+      description: Get full application info by application uuid (unemployed employees
+        are not allowed)
+      parameters:
+      - description: Application UUID
+        in: path
+        name: application_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetApplicationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get application info
+      tags:
+      - Application
+  /auth/application/{application_uuid}/assign:
+    patch:
+      consumes:
+      - application/json
+      description: Assign application to an engineer (manager only)
+      parameters:
+      - description: Application UUID
+        in: path
+        name: application_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.AssignApplicationToEmployeeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.AssignApplicationToEmployeeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Assign application to employee
+      tags:
+      - Application
+  /auth/application/{application_uuid}/fix-log:
+    post:
+      consumes:
+      - application/json
+      description: Add a fix log entry to the application (responsible engineer only)
+      parameters:
+      - description: Application UUID
+        in: path
+        name: application_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.AddApplicationFixLogRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.AddApplicationFixLogResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Add application fix log
+      tags:
+      - Application
+  /auth/application/{application_uuid}/status:
+    patch:
+      consumes:
+      - application/json
+      description: 'Update application status. Engineer: in_progress, on_hold, awaiting_approval.
+        Manager: completed, cancelled, failed.'
+      parameters:
+      - description: Application UUID
+        in: path
+        name: application_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateApplicationStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateApplicationStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Update application status
+      tags:
+      - Application
+  /auth/application/create:
+    post:
+      consumes:
+      - application/json
+      description: Create new application (only users with role "inspector" can create
+        applications)
+      parameters:
+      - description: Данные заявки
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CreateApplicationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CreateApplicationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Create application
+      tags:
+      - Application
   /auth/company/{company_uuid}:
     delete:
       consumes:
@@ -328,6 +726,92 @@ paths:
       summary: Get company info
       tags:
       - Company
+  /auth/company/{company_uuid}/applications/list:
+    get:
+      description: Get paginated list of company applications (unemployed employees
+        are not allowed)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - default: 10
+        description: Count
+        in: query
+        name: count
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetApplicationsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get applications list
+      tags:
+      - Application
+  /auth/company/{company_uuid}/applications/statistic:
+    get:
+      description: Get application count by status for a company (analytic and chief
+        only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyApplicationStatisticResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get company application statistic
+      tags:
+      - Application
   /auth/company/{company_uuid}/code:
     delete:
       consumes:
@@ -518,6 +1002,53 @@ paths:
       summary: Remove company employee
       tags:
       - Employee
+  /auth/company/{company_uuid}/employee/{employee_uuid}/applications/statistic:
+    get:
+      description: Get application count by status for a specific employee (unemployed
+        employees are not allowed)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Employee UUID
+        in: path
+        name: employee_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetEmployeeApplicationStatisticResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get employee application statistic
+      tags:
+      - Application
   /auth/company/{company_uuid}/employee/{employee_uuid}/info:
     get:
       consumes:

@@ -19,5 +19,4 @@ type GetCompanyApplicationStatisticDTO struct {
 type GetEmployeeApplicationStatisticDTO struct {
 	CompanyUUID string
 	TargetUUID  string
-	TargetRole  string
 }

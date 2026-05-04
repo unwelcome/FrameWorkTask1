@@ -33,12 +33,6 @@ type GetApplicationsDTO struct {
 	Offset      int
 }
 
-type UpdateApplicationDataDTO struct {
-	ApplicationUUID string
-	Title           string
-	Desctiption     string
-}
-
 type UpdateApplicationStatusDTO struct {
 	ApplicationUUID string
 	Status          string

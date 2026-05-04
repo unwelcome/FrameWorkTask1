@@ -183,6 +183,37 @@ func ValidateCompanyJoinCode(code string) error {
 	return nil
 }
 
+// ValidateApplicationTitle Проверяет заголовок заявки
+func ValidateApplicationTitle(title string) error {
+	if title == "" {
+		return fmt.Errorf("title missed")
+	}
+
+	if strings.TrimSpace(title) != title {
+		return fmt.Errorf("title contains useless spaces")
+	}
+
+	if len([]rune(title)) > 250 {
+		return fmt.Errorf("title is too long")
+	}
+
+	pattern := `^[a-zA-Zа-яА-ЯёЁ0-9\s\-_&.,№#()'"°+]+$`
+	if !regexp.MustCompile(pattern).MatchString(title) {
+		return fmt.Errorf("title contains incorrect characters")
+	}
+
+	return nil
+}
+
+// ValidateApplicationDescription Проверяет описание заявки
+func ValidateApplicationDescription(description string) error {
+	if description == "" {
+		return fmt.Errorf("description missed")
+	}
+
+	return nil
+}
+
 func FCapitalize(str string) string {
 	if str == "" {
 		return ""

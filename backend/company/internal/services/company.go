@@ -21,7 +21,7 @@ import (
 
 const JoinCodeLength = 6
 
-var AllRoles = []string{"chief", "analytic", "manager", "engineer", "unemployed"}
+var AllRoles = []string{"chief", "analytic", "manager", "engineer", "unemployed", "inspector"}
 
 type CompanyService struct {
 	db    *postgresDB.DatabaseRepository

@@ -26,7 +26,6 @@ const (
 	ApplicationService_GetApplications_FullMethodName                 = "/application.ApplicationService/GetApplications"
 	ApplicationService_GetCompanyApplicationStatistic_FullMethodName  = "/application.ApplicationService/GetCompanyApplicationStatistic"
 	ApplicationService_GetEmployeeApplicationStatistic_FullMethodName = "/application.ApplicationService/GetEmployeeApplicationStatistic"
-	ApplicationService_UpdateApplicationData_FullMethodName           = "/application.ApplicationService/UpdateApplicationData"
 	ApplicationService_UpdateApplicationStatus_FullMethodName         = "/application.ApplicationService/UpdateApplicationStatus"
 	ApplicationService_AssignApplicationToEmployee_FullMethodName     = "/application.ApplicationService/AssignApplicationToEmployee"
 	ApplicationService_AddApplicationFixLog_FullMethodName            = "/application.ApplicationService/AddApplicationFixLog"
@@ -43,7 +42,6 @@ type ApplicationServiceClient interface {
 	GetApplications(ctx context.Context, in *GetApplicationsRequest, opts ...grpc.CallOption) (*GetApplicationsResponse, error)
 	GetCompanyApplicationStatistic(ctx context.Context, in *GetCompanyApplicationStatisticRequest, opts ...grpc.CallOption) (*GetCompanyApplicationStatisticResponse, error)
 	GetEmployeeApplicationStatistic(ctx context.Context, in *GetEmployeeApplicationStatisticRequest, opts ...grpc.CallOption) (*GetEmployeeApplicationStatisticResponse, error)
-	UpdateApplicationData(ctx context.Context, in *UpdateApplicationDataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateApplicationStatus(ctx context.Context, in *UpdateApplicationStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AssignApplicationToEmployee(ctx context.Context, in *AssignApplicationToEmployeeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AddApplicationFixLog(ctx context.Context, in *AddApplicationFixLogRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -118,16 +116,6 @@ func (c *applicationServiceClient) GetEmployeeApplicationStatistic(ctx context.C
 	return out, nil
 }
 
-func (c *applicationServiceClient) UpdateApplicationData(ctx context.Context, in *UpdateApplicationDataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, ApplicationService_UpdateApplicationData_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *applicationServiceClient) UpdateApplicationStatus(ctx context.Context, in *UpdateApplicationStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -178,7 +166,6 @@ type ApplicationServiceServer interface {
 	GetApplications(context.Context, *GetApplicationsRequest) (*GetApplicationsResponse, error)
 	GetCompanyApplicationStatistic(context.Context, *GetCompanyApplicationStatisticRequest) (*GetCompanyApplicationStatisticResponse, error)
 	GetEmployeeApplicationStatistic(context.Context, *GetEmployeeApplicationStatisticRequest) (*GetEmployeeApplicationStatisticResponse, error)
-	UpdateApplicationData(context.Context, *UpdateApplicationDataRequest) (*emptypb.Empty, error)
 	UpdateApplicationStatus(context.Context, *UpdateApplicationStatusRequest) (*emptypb.Empty, error)
 	AssignApplicationToEmployee(context.Context, *AssignApplicationToEmployeeRequest) (*emptypb.Empty, error)
 	AddApplicationFixLog(context.Context, *AddApplicationFixLogRequest) (*emptypb.Empty, error)
@@ -210,9 +197,6 @@ func (UnimplementedApplicationServiceServer) GetCompanyApplicationStatistic(cont
 }
 func (UnimplementedApplicationServiceServer) GetEmployeeApplicationStatistic(context.Context, *GetEmployeeApplicationStatisticRequest) (*GetEmployeeApplicationStatisticResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEmployeeApplicationStatistic not implemented")
-}
-func (UnimplementedApplicationServiceServer) UpdateApplicationData(context.Context, *UpdateApplicationDataRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateApplicationData not implemented")
 }
 func (UnimplementedApplicationServiceServer) UpdateApplicationStatus(context.Context, *UpdateApplicationStatusRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateApplicationStatus not implemented")
@@ -355,24 +339,6 @@ func _ApplicationService_GetEmployeeApplicationStatistic_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_UpdateApplicationData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateApplicationDataRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).UpdateApplicationData(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ApplicationService_UpdateApplicationData_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).UpdateApplicationData(ctx, req.(*UpdateApplicationDataRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApplicationService_UpdateApplicationStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateApplicationStatusRequest)
 	if err := dec(in); err != nil {
@@ -475,10 +441,6 @@ var ApplicationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEmployeeApplicationStatistic",
 			Handler:    _ApplicationService_GetEmployeeApplicationStatistic_Handler,
-		},
-		{
-			MethodName: "UpdateApplicationData",
-			Handler:    _ApplicationService_UpdateApplicationData_Handler,
 		},
 		{
 			MethodName: "UpdateApplicationStatus",

@@ -1310,7 +1310,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update employee role (chief only); Available roles: \"unemployed\", \"engineer\", \"manager\", \"analytic\", \"chief\"",
+                "description": "Update employee role (chief only); Available roles: \"unemployed\", \"engineer\", \"manager\", \"analytic\", \"inspector\", \"chief\"",
                 "consumes": [
                     "application/json"
                 ],

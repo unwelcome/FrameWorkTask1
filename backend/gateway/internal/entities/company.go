@@ -308,7 +308,7 @@ func (e *UpdateEmployeeRoleRequestFull) Validate() error {
 	}
 
 	// Валидация role
-	if !utils.ValidateIsArrayContain(e.Role, []string{"unemployed", "engineer", "manager", "analytic", "chief"}) {
+	if !utils.ValidateIsArrayContain(e.Role, []string{"unemployed", "engineer", "manager", "analytic", "inspector", "chief"}) {
 		return fmt.Errorf("incorrect employee role")
 	}
 

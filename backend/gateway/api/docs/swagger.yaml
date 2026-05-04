@@ -1102,7 +1102,7 @@ paths:
       consumes:
       - application/json
       description: 'Update employee role (chief only); Available roles: "unemployed",
-        "engineer", "manager", "analytic", "chief"'
+        "engineer", "manager", "analytic", "inspector", "chief"'
       parameters:
       - description: Company UUID
         in: path

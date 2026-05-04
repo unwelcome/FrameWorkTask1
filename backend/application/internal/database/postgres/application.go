@@ -38,7 +38,7 @@ func NewApplicationRepository(db *sql.DB) ApplicationRepository {
 func (r *applicationRepository) CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError {
 	query := `INSERT INTO applications 
 	(uuid, company_uuid, version, title, description, status, created_by) VALUES 
-	($1, 1, $2, $3, 'created', $4);`
+	($1, $2, 1, $3, $4, 'created', $5);`
 
 	_, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.CompanyUUID, dto.Title, dto.Description, dto.CreatedBy)
 	if err != nil {
@@ -69,17 +69,17 @@ func (r *applicationRepository) AddApplicationFixLog(ctx context.Context, dto en
 
 // GetApplication Получение информации по заявке
 func (r *applicationRepository) GetApplication(ctx context.Context, dto entities.GetApplicationDTO) (*entities.Application, Error.CodeError) {
-	query := `SELECT 
+	query := `SELECT
 			company_uuid,
-			title, 
-			description, 
-			status, 
-			created_at, 
-			created_by, 
-			closed_at, 
-			managed_by, 
-			executed_by 
-		FROM applications 
+			title,
+			description,
+			status,
+			created_at,
+			created_by,
+			COALESCE(closed_at::text, ''),
+			COALESCE(managed_by, ''),
+			COALESCE(executed_by, '')
+		FROM applications
 		WHERE uuid = $1;`
 
 	application := &entities.Application{ApplicationUUID: dto.ApplicationUUID}
@@ -141,9 +141,9 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 			description,
 			created_at,
 			created_by,
-			closed_at,
-			managed_by,
-			executed_by
+			COALESCE(closed_at::text, ''),
+			COALESCE(managed_by, ''),
+			COALESCE(executed_by, '')
 		FROM applications
 		WHERE company_uuid = $1 AND ($2 = '' OR status = $2)
 		ORDER BY created_at DESC, uuid

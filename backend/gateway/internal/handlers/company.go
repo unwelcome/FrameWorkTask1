@@ -800,7 +800,7 @@ func (h *companyHandler) GetCompanyEmployeesSummary(c *fiber.Ctx) error {
 // UpdateEmployeeRole
 //
 //	 @Summary			Update employee role
-//		@Description		Update employee role (chief only); Available roles: "unemployed", "engineer", "manager", "analytic", "chief"
+//		@Description		Update employee role (chief only); Available roles: "unemployed", "engineer", "manager", "analytic", "inspector", "chief"
 //		@Tags				Employee
 //		@Accept				json
 //		@Produce			json

@@ -34,8 +34,8 @@ github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0t
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/rs/zerolog v1.35.1 h1:m7xQeoiLIiV0BCEY4Hs+j2NG4Gp2o2KPKmhnnLiazKI=
 github.com/rs/zerolog v1.35.1/go.mod h1:EjML9kdfa/RMA7h/6z6pYmq1ykOuA8/mjWaEvGI+jcw=
-github.com/unwelcome/FrameWorkTask1/backend/company v0.1.0 h1:edt79WNsVJMpqFqkmZ4U3/Wm0rWU61b6Y5TwDVU2YQ4=
-github.com/unwelcome/FrameWorkTask1/backend/company v0.1.0/go.mod h1:eu/SA5uT4cD83WwCSVPPFBusmWoZfmoSt3nWaqrbzvo=
+github.com/unwelcome/FrameWorkTask1/backend/company v0.2.0 h1:05KcDQFsCf8N4O80ql49Xc2gNG/IM5Ey4CwwDnA94UY=
+github.com/unwelcome/FrameWorkTask1/backend/company v0.2.0/go.mod h1:d+UnTDyWc2yuNgnBI8EirNr9f44QubFHyUozmT5pRXQ=
 github.com/unwelcome/FrameWorkTask1/backend/shared v0.5.0 h1:t1+8cdWgVv35loLv2GLC+rEL8Dj0Lunr2bTXAGFB63c=
 github.com/unwelcome/FrameWorkTask1/backend/shared v0.5.0/go.mod h1:jKxA75WSFFGpjLsjFSLn3y4CnK9XNOxSwQQEju07U+c=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=

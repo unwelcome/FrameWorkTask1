@@ -237,8 +237,8 @@ func (s *ApplicationService) GetEmployeeApplicationStatistic(ctx context.Context
 		return nil, status.Error(codes.PermissionDenied, "not allowed to get employee statistic")
 	}
 
-	// Получаем роль таргета (для проверки принадлежности к компании)
-	_, err = s.getEmployeeRole(ctx, req.GetOperationId(), "get employee statistic", req.GetCompanyUuid(), req.GetInitiatorUuid(), req.GetTargetUuid())
+	// Получаем роль таргета (для проверки принадлежности к компании и передачи в репозиторий)
+	targetRole, err := s.getEmployeeRole(ctx, req.GetOperationId(), "get employee statistic", req.GetCompanyUuid(), req.GetInitiatorUuid(), req.GetTargetUuid())
 	if err != nil {
 		return nil, err
 	}
@@ -246,6 +246,7 @@ func (s *ApplicationService) GetEmployeeApplicationStatistic(ctx context.Context
 	statistic, getErr := s.db.ApplicationRepository.GetEmployeeApplicationStatistic(ctx, entities.GetEmployeeApplicationStatisticDTO{
 		CompanyUUID: req.GetCompanyUuid(),
 		TargetUUID:  req.GetTargetUuid(),
+		TargetRole:  targetRole,
 	})
 	err = Error.HandleError(getErr, req.GetOperationId(), "get employee statistic")
 	if err != nil {
@@ -284,7 +285,7 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *p
 
 	// Получаем заявку
 	application, getErr := s.db.ApplicationRepository.GetApplication(ctx, entities.GetApplicationDTO{
-		ApplicationUUID: req.GetOperationId(),
+		ApplicationUUID: req.GetApplicationUuid(),
 	})
 	err := Error.HandleError(getErr, req.GetOperationId(), "update application status")
 	if err != nil {

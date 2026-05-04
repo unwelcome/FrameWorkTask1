@@ -45,6 +45,12 @@ type AssignApplicationToEmployeeDTO struct {
 	TargetUUID      string
 }
 
+type UpdateApplicationDataDTO struct {
+	ApplicationUUID string
+	Title           *string
+	Desctiption     *string // typo preserved from repo
+}
+
 type DeleteApplicationDTO struct {
 	ApplicationUUID string
 }

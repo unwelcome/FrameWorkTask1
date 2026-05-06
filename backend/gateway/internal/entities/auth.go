@@ -156,11 +156,11 @@ func (e *UpdateUserBioRequestFull) Validate() error {
 }
 
 type DeleteUserRequest struct {
-	TargetUUID string `json:"tagret_uuid"`
+	TargetUUID string `json:"target_uuid"`
 }
 type DeleteUserRequestFull struct {
 	InitiatorUUID string `json:"initiator_uuid"`
-	TargetUUID    string `json:"tagret_uuid"`
+	TargetUUID    string `json:"target_uuid"`
 }
 type DeleteUserResponse struct {
 }

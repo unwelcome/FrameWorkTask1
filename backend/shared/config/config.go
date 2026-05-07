@@ -100,9 +100,9 @@ func NewMongoDBConfig() MongoDBConfig {
 		Host:         MustGetEnv("MONGO_HOST"),
 		Port:         MustParseInt("MONGO_PORT"),
 		User:         MustGetEnv("MONGO_USER"),
-		RootUser:     MustGetEnv("MONGO_ROOT_USER"),
+		RootUser:     MustGetEnv("MONGO_INITDB_ROOT_USERNAME"),
 		Password:     MustGetEnv("MONGO_PASSWORD"),
-		RootPassword: MustGetEnv("MONGO_ROOT_PASSWORD"),
+		RootPassword: MustGetEnv("MONGO_INITDB_ROOT_PASSWORD"),
 		DbName:       MustGetEnv("MONGO_DB"),
 	}
 }

@@ -24,19 +24,18 @@ func Setup(logPath string, consoleOut bool) *zerolog.Logger {
 		return fmt.Sprintf("%s:%d", file, line)
 	}
 
-	var writer io.Writer
-	if !consoleOut {
-		if err := os.MkdirAll(filepath.Dir(logPath), 0755); err != nil {
-			log.Fatal().Err(err).Msg("failed to create logger directory")
-		}
+	if err := os.MkdirAll(filepath.Dir(logPath), 0755); err != nil {
+		log.Fatal().Err(err).Msg("failed to create logger directory")
+	}
 
-		logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-		if err != nil {
-			log.Fatal().Err(err).Msg("failed to open logger file")
-		}
-		writer = logFile
-	} else {
-		writer = os.Stdout
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to open logger file")
+	}
+
+	var writer io.Writer = logFile
+	if consoleOut {
+		writer = io.MultiWriter(logFile, os.Stdout)
 	}
 
 	loggerContext := zerolog.New(writer).

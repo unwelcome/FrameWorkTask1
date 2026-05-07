@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
 	github.com/rs/zerolog v1.35.1
-	github.com/unwelcome/FrameWorkTask1/backend/company v0.5.0
+	github.com/unwelcome/FrameWorkTask1/backend/company v0.6.0
 	github.com/unwelcome/FrameWorkTask1/backend/shared v0.10.0
 	go.mongodb.org/mongo-driver/v2 v2.6.0
 	google.golang.org/grpc v1.80.0

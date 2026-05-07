@@ -6,42 +6,33 @@ import (
 
 	"github.com/rs/zerolog/log"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
+	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/services"
-	"github.com/unwelcome/FrameWorkTask1/backend/shared/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 )
 
 func main() {
-	// Инициализация конфига
 	cfg := config.NewConfig()
-	cfg.Print()
 
-	// Инициализация логгера
-	loggerConf := logger.Setup(cfg.CompanyService.LogPath, cfg.App.LogConsoleOut)
+	loggerConf := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
 	log.Logger = *loggerConf
 
-	// Подключение к Postgresql
-	db := postgresDB.NewDatabaseInstance(cfg.GetDBConnectionString(cfg.CompanyService.ServiceConfig))
+	db := postgresDB.NewDatabaseInstance(cfg.Postgres.ConnectionString())
+	cache := redisDB.NewCacheInstance(cfg.Redis.Options())
 
-	// Подключение к Redis
-	cache := redisDB.NewCacheInstance(cfg.GetCacheConnectionOptions(cfg.CompanyService.ServiceConfig))
-
-	// Создание сервера
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.CompanyService.Port))
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to start tcp server")
+		log.Fatal().Err(err).Msg("failed to start tcp server")
 	}
 
-	// Подключение grpc
 	grpcServer := grpc.NewServer()
 	company_proto.RegisterCompanyServiceServer(grpcServer, services.NewCompanyService(db, cache))
 
-	// Запуск сервиса
-	log.Info().Int("port", cfg.CompanyService.Port).Msg("Company service started")
+	log.Info().Int("port", cfg.Port).Msg("company service started")
 	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatal().Err(err).Msg("Failed to start grpc server")
+		log.Fatal().Err(err).Msg("failed to serve grpc")
 	}
 }

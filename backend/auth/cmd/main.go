@@ -6,42 +6,38 @@ import (
 
 	"github.com/rs/zerolog/log"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/auth/api/generated"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/services"
-	"github.com/unwelcome/FrameWorkTask1/backend/shared/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 )
 
 func main() {
-	// Инициализация конфига
 	cfg := config.NewConfig()
-	cfg.Print()
 
-	// Инициализация логгера
-	loggerConf := logger.Setup(cfg.AuthService.LogPath, cfg.App.LogConsoleOut)
+	loggerConf := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
 	log.Logger = *loggerConf
 
-	// Подключение к Postgresql
-	db := postgresDB.NewDatabaseInstance(cfg.GetDBConnectionString(cfg.AuthService.ServiceConfig))
+	db := postgresDB.NewDatabaseInstance(cfg.Postgres.ConnectionString())
+	cache := redisDB.NewCacheInstance(cfg.Redis.Options(), cfg.JWT.RefreshTokenLifetime)
 
-	// Подключение к Redis
-	cache := redisDB.NewCacheInstance(cfg.GetCacheConnectionOptions(cfg.AuthService.ServiceConfig), cfg.App.RefreshTokenLifetime)
-
-	// Создание сервера
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.AuthService.Port))
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to start tcp server")
+		log.Fatal().Err(err).Msg("failed to start tcp server")
 	}
 
-	// Подключение grpc
 	grpcServer := grpc.NewServer()
-	auth_proto.RegisterAuthServiceServer(grpcServer, services.NewAuthService(db, cache, cfg.App.JWTSecret, cfg.App.AccessTokenLifetime, cfg.App.RefreshTokenLifetime))
+	auth_proto.RegisterAuthServiceServer(grpcServer, services.NewAuthService(
+		db, cache,
+		cfg.JWT.Secret,
+		cfg.JWT.AccessTokenLifetime,
+		cfg.JWT.RefreshTokenLifetime,
+	))
 
-	// Запуск сервиса
-	log.Info().Int("port", cfg.AuthService.Port).Msg("Auth service started")
+	log.Info().Int("port", cfg.Port).Msg("auth service started")
 	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatal().Err(err).Msg("Failed to start grpc server")
+		log.Fatal().Err(err).Msg("failed to serve grpc")
 	}
 }

@@ -3,218 +3,126 @@ package config
 import (
 	"fmt"
 	"os"
-	"strings"
+	"strconv"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
-	"gopkg.in/yaml.v3"
 )
 
-type Config struct {
-	App                AppConfig                `yaml:"app"`
-	Gateway            GatewayConfig            `yaml:"gateway"`
-	AuthService        AuthServiceConfig        `yaml:"auth_service"`
-	CompanyService     CompanyServiceConfig     `yaml:"company_service"`
-	ApplicationService ApplicationServiceConfig `yaml:"application_service"`
-	Db                 Database                 `yaml:"database"`
-	Cache              Cache                    `yaml:"cache"`
-	S3                 S3                       `yaml:"s3"`
+// ─── Postgres ─────────────────────────────────────────────────────────────────
+
+type PostgresConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DB       string
 }
 
-type AppConfig struct {
-	ProductionType          string `env:"PRODUCTION_TYPE"`
-	JWTSecret               string `yaml:"jwt_secret"`
-	LogConsoleOut           bool   `yaml:"log_console_out"`
-	AccessTokenLifetimeStr  string `yaml:"access_token_lifetime"`
-	AccessTokenLifetime     time.Duration
-	RefreshTokenLifetimeStr string `yaml:"refresh_token_lifetime"`
-	RefreshTokenLifetime    time.Duration
-}
-
-type GatewayConfig struct {
-	Host    string `yaml:"host"`
-	Port    int    `yaml:"port"`
-	LogPath string `yaml:"log_path"`
-}
-
-// ServiceConfig содержит общие поля для всех микросервисов.
-// Встраивается в конкретные конфиги сервисов через yaml:",inline".
-type ServiceConfig struct {
-	Host       string `yaml:"host"`
-	Port       int    `yaml:"port"`
-	LogPath    string `yaml:"log_path"`
-	DBUser     string `yaml:"db_user"`
-	DBPassword string `yaml:"db_password"`
-	DBName     string `yaml:"db_name"`
-	CacheDB    int    `yaml:"cache_db"`
-	S3Bucket   string `yaml:"s3_bucket"`
-}
-
-type AuthServiceConfig struct {
-	ServiceConfig `yaml:",inline"`
-}
-
-type CompanyServiceConfig struct {
-	ServiceConfig `yaml:",inline"`
-}
-
-type ApplicationServiceConfig struct {
-	ServiceConfig `yaml:",inline"`
-}
-
-type Database struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
-}
-
-type Cache struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Password string `yaml:"password"`
-}
-
-type S3 struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
-}
-
-func NewConfig() *Config {
-	config := &Config{}
-
-	// Определяем среду запуска
-	prodType := os.Getenv("PRODUCTION_TYPE")
-
-	// Если пусто - загружаем .env файл
-	if prodType == "" {
-		if err := godotenv.Load("../../.env"); err != nil {
-			panic(fmt.Errorf(".env file not found"))
-		}
-		prodType = os.Getenv("PRODUCTION_TYPE")
+func NewPostgresConfig() PostgresConfig {
+	return PostgresConfig{
+		Host:     MustGetEnv("POSTGRES_HOST"),
+		Port:     MustParseInt("POSTGRES_PORT"),
+		User:     MustGetEnv("POSTGRES_USER"),
+		Password: MustGetEnv("POSTGRES_PASSWORD"),
+		DB:       MustGetEnv("POSTGRES_DB"),
 	}
-
-	// Задаем путь к файлу конфигурации
-	configPath := "config/config.yaml" // PRODUCTION_TYPE=prod
-	if prodType == "dev" {
-		configPath = "../config.yaml" // PRODUCTION_TYPE=dev
-	}
-
-	fmt.Printf("ProductionType: %s\n", prodType)
-	fmt.Printf("ConfigPath: %s\n", configPath)
-
-	// Загружаем конфиг
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		panic(fmt.Errorf("failed read config file: %w", err))
-	}
-
-	// Инициализируем конфиг
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		panic(fmt.Errorf("failed parse config file: %w", err))
-	}
-
-	// Устанавливаем ProductionType
-	config.App.ProductionType = prodType
-
-	// Переводим время из string в time.Duration
-	err = config.parseDurations()
-	if err != nil {
-		panic(fmt.Errorf("failed parse duration: %w", err))
-	}
-
-	return config
 }
 
-func (config *Config) parseDurations() error {
-	var err error
-
-	// Парсим время жизни access токена
-	config.App.AccessTokenLifetime, err = time.ParseDuration(config.App.AccessTokenLifetimeStr)
-	if err != nil {
-		return fmt.Errorf("invalid access token lifetime: %w", err)
-	}
-
-	// Парсим время жизни refresh токена
-	config.App.RefreshTokenLifetime, err = time.ParseDuration(config.App.RefreshTokenLifetimeStr)
-	if err != nil {
-		return fmt.Errorf("invalid refresh token lifetime: %w", err)
-	}
-
-	return nil
+func (c PostgresConfig) ConnectionString() string {
+	return fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		c.Host, c.Port, c.User, c.Password, c.DB,
+	)
 }
 
-func (config *Config) Print() {
-	hideCredentials := func(credential string) string {
-		return strings.Repeat("*", len(credential))
+// ─── Redis ────────────────────────────────────────────────────────────────────
+
+type RedisConfig struct {
+	Host     string
+	Port     int
+	Password string
+	Prefix   string
+}
+
+func NewRedisConfig() RedisConfig {
+	return RedisConfig{
+		Host:     MustGetEnv("REDIS_HOST"),
+		Port:     MustParseInt("REDIS_PORT"),
+		Password: MustGetEnv("REDIS_PASSWORD"),
+		Prefix:   GetEnvOrDefault("REDIS_PREFIX", ""),
 	}
-
-	fmt.Printf("=== CONFIG ===\n")
-
-	fmt.Printf("=== App ===\n")
-	fmt.Printf("ProductionType: %s\n", config.App.ProductionType)
-	fmt.Printf("JWTSecret: %s\n", hideCredentials(config.App.JWTSecret))
-	fmt.Printf("LogConsoleOut: %v\n", config.App.LogConsoleOut)
-	fmt.Printf("AccessTokenLifetime: %v\n", config.App.AccessTokenLifetime)
-	fmt.Printf("RefreshTokenLifetime: %v\n", config.App.RefreshTokenLifetime)
-
-	fmt.Printf("=== Gateway ===\n")
-	fmt.Printf("Host: %s\n", config.Gateway.Host)
-	fmt.Printf("Port: %d\n", config.Gateway.Port)
-	fmt.Printf("LogPath: %s\n", config.Gateway.LogPath)
-
-	fmt.Printf("=== Auth service ===\n")
-	fmt.Printf("Port: %d\n", config.AuthService.Port)
-	fmt.Printf("LogPath: %s\n", config.AuthService.LogPath)
-	fmt.Printf("DBUser: %s\n", config.AuthService.DBUser)
-	fmt.Printf("DBPassword: %s\n", hideCredentials(config.AuthService.DBPassword))
-	fmt.Printf("DBName: %s\n", config.AuthService.DBName)
-	fmt.Printf("CacheDB: %d\n", config.AuthService.CacheDB)
-	fmt.Printf("S3Bucket: %s\n", config.AuthService.S3Bucket)
-
-	fmt.Printf("=== Company service ===\n")
-	fmt.Printf("Port: %d\n", config.CompanyService.Port)
-	fmt.Printf("LogPath: %s\n", config.CompanyService.LogPath)
-	fmt.Printf("DBUser: %s\n", config.CompanyService.DBUser)
-	fmt.Printf("DBPassword: %s\n", hideCredentials(config.CompanyService.DBPassword))
-	fmt.Printf("DBName: %s\n", config.CompanyService.DBName)
-	fmt.Printf("CacheDB: %d\n", config.CompanyService.CacheDB)
-	fmt.Printf("S3Bucket: %s\n", config.CompanyService.S3Bucket)
-
-	fmt.Printf("=== Application service ===\n")
-	fmt.Printf("Port: %d\n", config.ApplicationService.Port)
-	fmt.Printf("LogPath: %s\n", config.ApplicationService.LogPath)
-	fmt.Printf("DBUser: %s\n", config.ApplicationService.DBUser)
-	fmt.Printf("DBPassword: %s\n", hideCredentials(config.ApplicationService.DBPassword))
-	fmt.Printf("DBName: %s\n", config.ApplicationService.DBName)
-	fmt.Printf("CacheDB: %d\n", config.ApplicationService.CacheDB)
-	fmt.Printf("S3Bucket: %s\n", config.ApplicationService.S3Bucket)
-
-	fmt.Printf("=== Database ===\n")
-	fmt.Printf("Host: %s\n", config.Db.Host)
-	fmt.Printf("Port: %d\n", config.Db.Port)
-
-	fmt.Printf("=== Cache ===\n")
-	fmt.Printf("Host: %s\n", config.Cache.Host)
-	fmt.Printf("Port: %d\n", config.Cache.Port)
-	fmt.Printf("Password: %s\n", hideCredentials(config.Cache.Password))
-
-	fmt.Printf("=== S3 ===\n")
-	fmt.Printf("Host: %s\n", config.S3.Host)
-	fmt.Printf("Port: %d\n", config.S3.Port)
 }
 
-// GetDBConnectionString возвращает строку подключения к Postgres для указанного сервиса.
-func (config *Config) GetDBConnectionString(svc ServiceConfig) string {
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		config.Db.Host, config.Db.Port, svc.DBUser, svc.DBPassword, svc.DBName)
-}
-
-// GetCacheConnectionOptions возвращает конфиг подключения к Redis для указанного сервиса.
-func (config *Config) GetCacheConnectionOptions(svc ServiceConfig) *redis.Options {
+func (c RedisConfig) Options() *redis.Options {
 	return &redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", config.Cache.Host, config.Cache.Port),
-		Password: config.Cache.Password,
-		DB:       svc.CacheDB,
+		Addr:     fmt.Sprintf("%s:%d", c.Host, c.Port),
+		Password: c.Password,
 	}
+}
+
+// ─── Minio ────────────────────────────────────────────────────────────────────
+
+type MinioConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Bucket   string
+	SSL      bool
+}
+
+func NewMinioConfig() MinioConfig {
+	return MinioConfig{
+		Host:     MustGetEnv("MINIO_HOST"),
+		Port:     MustParseInt("MINIO_PORT"),
+		User:     MustGetEnv("MINIO_ROOT_USER"),
+		Password: MustGetEnv("MINIO_ROOT_PASSWORD"),
+		Bucket:   MustGetEnv("MINIO_BUCKET"),
+		SSL:      MustParseBool("MINIO_SSL"),
+	}
+}
+
+// ─── Утилиты ──────────────────────────────────────────────────────────────────
+
+func MustGetEnv(key string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		panic(fmt.Sprintf("required environment variable %q is not set", key))
+	}
+	return v
+}
+
+func GetEnvOrDefault(key, defaultVal string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return defaultVal
+}
+
+func MustParseInt(key string) int {
+	v := MustGetEnv(key)
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		panic(fmt.Sprintf("environment variable %q must be an integer, got %q", key, v))
+	}
+	return n
+}
+
+func MustParseBool(key string) bool {
+	v := MustGetEnv(key)
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		panic(fmt.Sprintf("environment variable %q must be a boolean (true/false), got %q", key, v))
+	}
+	return b
+}
+
+func MustParseDuration(key string) time.Duration {
+	v := MustGetEnv(key)
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		panic(fmt.Sprintf("environment variable %q must be a duration (e.g. 5m, 720h), got %q", key, v))
+	}
+	return d
 }

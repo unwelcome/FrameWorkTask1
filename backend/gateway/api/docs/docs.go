@@ -2665,13 +2665,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "application_service": {
-                    "type": "string"
+                    "$ref": "#/definitions/entities.ServiceHealth"
                 },
                 "auth_service": {
-                    "type": "string"
+                    "$ref": "#/definitions/entities.ServiceHealth"
                 },
                 "company_service": {
-                    "type": "string"
+                    "$ref": "#/definitions/entities.ServiceHealth"
                 },
                 "gateway": {
                     "type": "string"
@@ -2785,6 +2785,26 @@ const docTemplate = `{
         },
         "entities.RevokeTokenResponse": {
             "type": "object"
+        },
+        "entities.ServiceHealth": {
+            "type": "object",
+            "properties": {
+                "minio": {
+                    "type": "string"
+                },
+                "mongo": {
+                    "type": "string"
+                },
+                "postgres": {
+                    "type": "string"
+                },
+                "redis": {
+                    "type": "string"
+                },
+                "service": {
+                    "type": "string"
+                }
+            }
         },
         "entities.TokenInfo": {
             "type": "object",

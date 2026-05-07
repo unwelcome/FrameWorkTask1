@@ -35,7 +35,13 @@ func NewApplicationService(db *postgresDB.DatabaseRepository, mongoDb *mongoDB.D
 // Health Проверка состояния сервиса
 func (s *ApplicationService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
 	log.Info().Str("id", req.GetOperationId()).Str("method", "health").Msg("success")
-	return &pb.HealthResponse{Health: "healthy"}, nil
+	return &pb.HealthResponse{
+		Service:  "healthy",
+		Postgres: pingStatus(s.db.Ping(ctx)),
+		Redis:    "not implemented",
+		Minio:    "not implemented",
+		Mongo:    pingStatus(s.mongoDb.Ping(ctx)),
+	}, nil
 }
 
 // CreateApplication Создание новой заявки (только inspector)
@@ -488,6 +494,13 @@ func (s *ApplicationService) DeleteApplication(ctx context.Context, req *pb.Dele
 
 	log.Info().Str("id", req.GetOperationId()).Str("method", "delete application").Msg("success")
 	return &emptypb.Empty{}, nil
+}
+
+func pingStatus(err error) string {
+	if err != nil {
+		return "not connected"
+	}
+	return "connected"
 }
 
 // ─── Вспомогательные функции ──────────────────────────────────────────────────

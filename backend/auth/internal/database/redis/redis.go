@@ -1,6 +1,7 @@
 package redisDB
 
 import (
+	"context"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -9,6 +10,11 @@ import (
 
 type CacheRepository struct {
 	Auth AuthRepository
+	rdb  *redis.Client
+}
+
+func (r *CacheRepository) Ping(ctx context.Context) error {
+	return r.rdb.Ping(ctx).Err()
 }
 
 func NewCacheInstance(connectOptions *redis.Options, refreshTokenTTL time.Duration, prefix string) *CacheRepository {
@@ -16,5 +22,6 @@ func NewCacheInstance(connectOptions *redis.Options, refreshTokenTTL time.Durati
 
 	return &CacheRepository{
 		Auth: NewAuthRepository(rdb, refreshTokenTTL, prefix),
+		rdb:  rdb,
 	}
 }

@@ -1,6 +1,8 @@
 package postgresDB
 
 import (
+	"context"
+	"database/sql"
 	"embed"
 	"errors"
 
@@ -16,6 +18,11 @@ var migrationsFS embed.FS
 
 type DatabaseRepository struct {
 	ApplicationRepository ApplicationRepository
+	db                    *sql.DB
+}
+
+func (r *DatabaseRepository) Ping(ctx context.Context) error {
+	return r.db.PingContext(ctx)
 }
 
 func NewDatabaseInstance(connectString string) *DatabaseRepository {
@@ -44,5 +51,6 @@ func NewDatabaseInstance(connectString string) *DatabaseRepository {
 
 	return &DatabaseRepository{
 		ApplicationRepository: NewApplicationRepository(db),
+		db:                    db,
 	}
 }

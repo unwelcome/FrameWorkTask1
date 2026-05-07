@@ -39,7 +39,13 @@ func NewCompanyService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRe
 // Health Проверка состояния сервиса
 func (s *CompanyService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
 	log.Info().Str("id", req.GetOperationId()).Str("method", "health").Msg("success")
-	return &pb.HealthResponse{Health: "healthy"}, nil
+	return &pb.HealthResponse{
+		Service:  "healthy",
+		Postgres: pingStatus(s.db.Ping(ctx)),
+		Redis:    pingStatus(s.cache.Ping(ctx)),
+		Minio:    "not implemented",
+		Mongo:    "not implemented",
+	}, nil
 }
 
 // CreateCompany Создает компанию
@@ -512,6 +518,13 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 
 	log.Info().Str("id", req.GetOperationId()).Str("method", "remove company employee").Msg("success")
 	return &emptypb.Empty{}, nil
+}
+
+func pingStatus(err error) string {
+	if err != nil {
+		return "not connected"
+	}
+	return "connected"
 }
 
 // ДОП ФУНКЦИИ

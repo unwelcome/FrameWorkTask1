@@ -51,16 +51,22 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 	g, ctx := errgroup.WithContext(ctx)
 
 	// Результаты
-	var authHealth, companyHealth, applicationHealth string
+	var authHealth, companyHealth, applicationHealth entities.ServiceHealth
 
 	// Auth health check
 	g.Go(func() error {
 		res, err := h.AuthServiceClient.Health(ctx, &auth_proto.HealthRequest{OperationId: operationID})
 		if err != nil {
-			authHealth = "unhealthy"
+			authHealth = entities.ServiceHealth{Service: "unhealthy"}
 			return fmt.Errorf("auth service: %w", err)
 		}
-		authHealth = res.GetHealth()
+		authHealth = entities.ServiceHealth{
+			Service:  res.GetService(),
+			Postgres: res.GetPostgres(),
+			Redis:    res.GetRedis(),
+			Minio:    res.GetMinio(),
+			Mongo:    res.GetMongo(),
+		}
 		return nil
 	})
 
@@ -68,36 +74,48 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 	g.Go(func() error {
 		res, err := h.CompanyServiceClient.Health(ctx, &company_proto.HealthRequest{OperationId: operationID})
 		if err != nil {
-			companyHealth = "unhealthy"
+			companyHealth = entities.ServiceHealth{Service: "unhealthy"}
 			return fmt.Errorf("company service: %w", err)
 		}
-		companyHealth = res.GetHealth()
+		companyHealth = entities.ServiceHealth{
+			Service:  res.GetService(),
+			Postgres: res.GetPostgres(),
+			Redis:    res.GetRedis(),
+			Minio:    res.GetMinio(),
+			Mongo:    res.GetMongo(),
+		}
 		return nil
 	})
 
-	// Application healt check
+	// Application health check
 	g.Go(func() error {
 		res, err := h.ApplicationServiceClient.Health(ctx, &application_proto.HealthRequest{OperationId: operationID})
 		if err != nil {
-			applicationHealth = "unhealthy"
+			applicationHealth = entities.ServiceHealth{Service: "unhealthy"}
 			return fmt.Errorf("application service: %w", err)
 		}
-		applicationHealth = res.GetHealth()
+		applicationHealth = entities.ServiceHealth{
+			Service:  res.GetService(),
+			Postgres: res.GetPostgres(),
+			Redis:    res.GetRedis(),
+			Minio:    res.GetMinio(),
+			Mongo:    res.GetMongo(),
+		}
 		return nil
 	})
 
 	// Ждем завершения всех горутин
 	_ = g.Wait()
 
-	// Заполняем неизвестные статусы
-	if authHealth == "" {
-		authHealth = "timeout"
+	// Заполняем статус при таймауте
+	if authHealth.Service == "" {
+		authHealth = entities.ServiceHealth{Service: "timeout"}
 	}
-	if companyHealth == "" {
-		companyHealth = "timeout"
+	if companyHealth.Service == "" {
+		companyHealth = entities.ServiceHealth{Service: "timeout"}
 	}
-	if applicationHealth == "" {
-		applicationHealth = "timeout"
+	if applicationHealth.Service == "" {
+		applicationHealth = entities.ServiceHealth{Service: "timeout"}
 	}
 
 	// Сборка ответа

@@ -43,7 +43,13 @@ func NewAuthService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRepos
 // Health Проверка состояния сервиса
 func (s *AuthService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
 	log.Info().Str("id", req.GetOperationId()).Str("method", "health").Msg("success")
-	return &pb.HealthResponse{Health: "healthy"}, nil
+	return &pb.HealthResponse{
+		Service:  "healthy",
+		Postgres: pingStatus(s.db.Ping(ctx)),
+		Redis:    pingStatus(s.cache.Ping(ctx)),
+		Minio:    "not implemented",
+		Mongo:    "not implemented",
+	}, nil
 }
 
 // Register Создание нового пользователя
@@ -313,4 +319,11 @@ func (s *AuthService) RevokeAllTokens(ctx context.Context, req *pb.RevokeAllToke
 
 	log.Info().Str("id", req.GetOperationId()).Str("method", "revoke all tokens").Msg("success")
 	return &emptypb.Empty{}, nil
+}
+
+func pingStatus(err error) string {
+	if err != nil {
+		return "not connected"
+	}
+	return "connected"
 }

@@ -69,7 +69,11 @@ func (x *HealthRequest) GetOperationId() string {
 
 type HealthResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Health        string                 `protobuf:"bytes,1,opt,name=health,proto3" json:"health,omitempty"`
+	Service       string                 `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`
+	Postgres      string                 `protobuf:"bytes,2,opt,name=postgres,proto3" json:"postgres,omitempty"`
+	Redis         string                 `protobuf:"bytes,3,opt,name=redis,proto3" json:"redis,omitempty"`
+	Minio         string                 `protobuf:"bytes,4,opt,name=minio,proto3" json:"minio,omitempty"`
+	Mongo         string                 `protobuf:"bytes,5,opt,name=mongo,proto3" json:"mongo,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -104,9 +108,37 @@ func (*HealthResponse) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *HealthResponse) GetHealth() string {
+func (x *HealthResponse) GetService() string {
 	if x != nil {
-		return x.Health
+		return x.Service
+	}
+	return ""
+}
+
+func (x *HealthResponse) GetPostgres() string {
+	if x != nil {
+		return x.Postgres
+	}
+	return ""
+}
+
+func (x *HealthResponse) GetRedis() string {
+	if x != nil {
+		return x.Redis
+	}
+	return ""
+}
+
+func (x *HealthResponse) GetMinio() string {
+	if x != nil {
+		return x.Minio
+	}
+	return ""
+}
+
+func (x *HealthResponse) GetMongo() string {
+	if x != nil {
+		return x.Mongo
 	}
 	return ""
 }
@@ -1056,9 +1088,13 @@ const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"auth.proto\x12\x04auth\x1a\x1bgoogle/protobuf/empty.proto\"2\n" +
 	"\rHealthRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\"(\n" +
-	"\x0eHealthResponse\x12\x16\n" +
-	"\x06health\x18\x01 \x01(\tR\x06health\"\xc2\x01\n" +
+	"\foperation_id\x18\x01 \x01(\tR\voperationId\"\x88\x01\n" +
+	"\x0eHealthResponse\x12\x18\n" +
+	"\aservice\x18\x01 \x01(\tR\aservice\x12\x1a\n" +
+	"\bpostgres\x18\x02 \x01(\tR\bpostgres\x12\x14\n" +
+	"\x05redis\x18\x03 \x01(\tR\x05redis\x12\x14\n" +
+	"\x05minio\x18\x04 \x01(\tR\x05minio\x12\x14\n" +
+	"\x05mongo\x18\x05 \x01(\tR\x05mongo\"\xc2\x01\n" +
 	"\x0fRegisterRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +

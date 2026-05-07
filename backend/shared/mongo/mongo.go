@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 func Connect(connectString string) *mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connectString))
+	client, err := mongo.Connect(options.Client().ApplyURI(connectString))
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to mongo")
 	}
@@ -33,7 +33,7 @@ func Setup(adminConnString, dbName, username, password string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(adminConnString))
+	client, err := mongo.Connect(options.Client().ApplyURI(adminConnString))
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to mongo as admin")
 	}

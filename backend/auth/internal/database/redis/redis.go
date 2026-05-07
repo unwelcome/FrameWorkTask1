@@ -11,10 +11,10 @@ type CacheRepository struct {
 	Auth AuthRepository
 }
 
-func NewCacheInstance(connectOptions *redis.Options, refreshTokenTTL time.Duration) *CacheRepository {
+func NewCacheInstance(connectOptions *redis.Options, refreshTokenTTL time.Duration, prefix string) *CacheRepository {
 	rdb := sharedRedis.Connect(connectOptions)
 
 	return &CacheRepository{
-		Auth: NewAuthRepository(rdb, refreshTokenTTL),
+		Auth: NewAuthRepository(rdb, refreshTokenTTL, prefix),
 	}
 }

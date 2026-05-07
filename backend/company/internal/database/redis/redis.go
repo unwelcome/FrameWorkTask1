@@ -9,10 +9,10 @@ type CacheRepository struct {
 	Company CompanyRepository
 }
 
-func NewCacheInstance(connectOptions *redis.Options) *CacheRepository {
+func NewCacheInstance(connectOptions *redis.Options, prefix string) *CacheRepository {
 	rdb := sharedRedis.Connect(connectOptions)
 
 	return &CacheRepository{
-		Company: NewCompanyRepository(rdb),
+		Company: NewCompanyRepository(rdb, prefix),
 	}
 }

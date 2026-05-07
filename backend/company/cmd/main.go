@@ -21,7 +21,7 @@ func main() {
 	log.Logger = *loggerConf
 
 	db := postgresDB.NewDatabaseInstance(cfg.Postgres.ConnectionString())
-	cache := redisDB.NewCacheInstance(cfg.Redis.Options())
+	cache := redisDB.NewCacheInstance(cfg.Redis.Options(), cfg.Redis.Prefix)
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {

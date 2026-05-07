@@ -24,10 +24,11 @@ type AuthRepository interface {
 type authRepository struct {
 	redis           *redis.Client
 	refreshTokenTTL time.Duration
+	prefix          string
 }
 
-func NewAuthRepository(redis *redis.Client, refreshTokenTTL time.Duration) AuthRepository {
-	return &authRepository{redis: redis, refreshTokenTTL: refreshTokenTTL}
+func NewAuthRepository(redis *redis.Client, refreshTokenTTL time.Duration, prefix string) AuthRepository {
+	return &authRepository{redis: redis, refreshTokenTTL: refreshTokenTTL, prefix: prefix}
 }
 
 func (r *authRepository) SaveRefreshToken(ctx context.Context, userUUID, rawToken string) Error.CodeError {
@@ -210,9 +211,9 @@ func (r *authRepository) hashToken(rawToken string) string {
 }
 
 func (r *authRepository) getRefreshTokenKey(hash string) string {
-	return fmt.Sprintf("token:%s", hash)
+	return fmt.Sprintf("%s:token:%s", r.prefix, hash)
 }
 
 func (r *authRepository) getUserTokensKey(userUUID string) string {
-	return fmt.Sprintf("user:%s:tokens", userUUID)
+	return fmt.Sprintf("%s:user:%s:tokens", r.prefix, userUUID)
 }

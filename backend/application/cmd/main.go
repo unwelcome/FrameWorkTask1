@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	application_proto "github.com/unwelcome/FrameWorkTask1/backend/application/api/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/config"
+	mongoDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/mongo"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/services"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
@@ -22,6 +23,7 @@ func main() {
 	log.Logger = *loggerConf
 
 	db := postgresDB.NewDatabaseInstance(cfg.Postgres.ConnectionString())
+	mongoDb := mongoDB.NewDatabaseInstance(cfg.Mongo)
 
 	companyConn, err := grpc.NewClient(cfg.CompanyService.Addr(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -37,7 +39,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	application_proto.RegisterApplicationServiceServer(grpcServer, services.NewApplicationService(db, companyClient))
+	application_proto.RegisterApplicationServiceServer(grpcServer, services.NewApplicationService(db, mongoDb, companyClient))
 
 	log.Info().Int("port", cfg.Port).Msg("application service started")
 	if err := grpcServer.Serve(listener); err != nil {

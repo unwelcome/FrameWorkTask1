@@ -83,6 +83,38 @@ func NewMinioConfig() MinioConfig {
 	}
 }
 
+// ─── MongoDB ────────────────────────────────────────────────────────────────────
+
+type MongoDBConfig struct {
+	Host         string
+	Port         int
+	User         string
+	RootUser     string
+	Password     string
+	RootPassword string
+	DbName       string
+}
+
+func NewMongoDBConfig() MongoDBConfig {
+	return MongoDBConfig{
+		Host:         MustGetEnv("MONGO_HOST"),
+		Port:         MustParseInt("MONGO_PORT"),
+		User:         MustGetEnv("MONGO_USER"),
+		RootUser:     MustGetEnv("MONGO_ROOT_USER"),
+		Password:     MustGetEnv("MONGO_PASSWORD"),
+		RootPassword: MustGetEnv("MONGO_ROOT_PASSWORD"),
+		DbName:       MustGetEnv("MONGO_DB"),
+	}
+}
+
+func (c MongoDBConfig) RootConnectionString() string {
+	return fmt.Sprintf("mongodb://%s:%s@%s:%d/admin", c.RootUser, c.RootPassword, c.Host, c.Port)
+}
+
+func (c MongoDBConfig) ConnectionString() string {
+	return fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", c.User, c.Password, c.Host, c.Port, c.DbName)
+}
+
 // ─── Утилиты ──────────────────────────────────────────────────────────────────
 
 func MustGetEnv(key string) string {

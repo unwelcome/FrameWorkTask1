@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	pb "github.com/unwelcome/FrameWorkTask1/backend/application/api/generated"
+	mongoDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/mongo"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
@@ -18,13 +19,15 @@ import (
 
 type ApplicationService struct {
 	db            *postgresDB.DatabaseRepository
+	mongoDb       *mongoDB.DatabaseRepository
 	companyClient company_proto.CompanyServiceClient
 	pb.UnimplementedApplicationServiceServer
 }
 
-func NewApplicationService(db *postgresDB.DatabaseRepository, companyClient company_proto.CompanyServiceClient) *ApplicationService {
+func NewApplicationService(db *postgresDB.DatabaseRepository, mongoDb *mongoDB.DatabaseRepository, companyClient company_proto.CompanyServiceClient) *ApplicationService {
 	return &ApplicationService{
 		db:            db,
+		mongoDb:       mongoDb,
 		companyClient: companyClient,
 	}
 }

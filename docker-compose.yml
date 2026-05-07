@@ -23,7 +23,7 @@ x-postgres-command: &postgres-command
     - "pg_stat_statements.max=10000"
     - "-c"
     - "pg_stat_statements.track=all"
-  restart: always
+  restart: unless-stopped
   healthcheck:
     test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
     interval: 5s
@@ -95,6 +95,8 @@ services:
       - ./logs:/var/log/app
     depends_on:
       application_service_postgres:
+        condition: service_healthy
+      mongodb:
         condition: service_healthy
     networks:
       - app-network
@@ -172,6 +174,24 @@ services:
 #   networks:
 #     - app-network
 
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--username", "$${MONGO_INITDB_ROOT_USERNAME}", "--password", "$${MONGO_INITDB_ROOT_PASSWORD}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
@@ -181,4 +201,5 @@ volumes:
   db_data_company_service:
   db_data_application_service:
   redis_data:
+  mongo_data:
 #  minio_data:

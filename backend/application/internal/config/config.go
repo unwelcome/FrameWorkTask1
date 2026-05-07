@@ -10,6 +10,7 @@ type Config struct {
 	Port           int
 	Log            LogConfig
 	Postgres       sharedConfig.PostgresConfig
+	Mongo          sharedConfig.MongoDBConfig
 	CompanyService ServiceAddress
 }
 
@@ -35,6 +36,7 @@ func NewConfig() *Config {
 			ConsoleOut: sharedConfig.MustParseBool("LOG_CONSOLE_OUT"),
 		},
 		Postgres: sharedConfig.NewPostgresConfig(),
+		Mongo:    sharedConfig.NewMongoDBConfig(),
 		CompanyService: ServiceAddress{
 			Host: sharedConfig.MustGetEnv("COMPANY_SERVICE_HOST"),
 			Port: sharedConfig.MustParseInt("COMPANY_SERVICE_PORT"),

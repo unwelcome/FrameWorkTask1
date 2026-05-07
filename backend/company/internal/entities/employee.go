@@ -13,5 +13,6 @@ type EmployeesSummary struct {
 	AnalyticCount   int64
 	ManagerCount    int64
 	EngineerCount   int64
+	InspectorCount  int64
 	UnemployedCount int64
 }

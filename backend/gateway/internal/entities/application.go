@@ -32,6 +32,7 @@ func (e *CreateApplicationRequest) Validate() error {
 
 // FixLogResponse — запись fix log в ответе
 type FixLogResponse struct {
+	UUID      string `json:"uuid"`
 	Text      string `json:"text"`
 	CreatedAt string `json:"created_at"`
 	CreatedBy string `json:"created_by"`

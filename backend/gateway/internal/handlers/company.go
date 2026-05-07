@@ -787,11 +787,12 @@ func (h *companyHandler) GetCompanyEmployeesSummary(c *fiber.Ctx) error {
 
 	// Формируем тело ответа
 	httpRes := &entities.GetCompanyEmployeesSummaryResponse{
-		ChiefCount:     res.GetChiefCount(),
-		AnalyticsCount: res.GetAnalyticsCount(),
-		ManagerCount:   res.GetManagerCount(),
-		EngineerCount:  res.GetEngineerCount(),
-		UnemployedCoun: res.GetUnemployedCount(),
+		ChiefCount:      res.GetChiefCount(),
+		AnalyticsCount:  res.GetAnalyticsCount(),
+		ManagerCount:    res.GetManagerCount(),
+		EngineerCount:   res.GetEngineerCount(),
+		InspectorCount:  res.GetInspectorCount(),
+		UnemployedCount: res.GetUnemployedCount(),
 	}
 
 	return c.Status(fiber.StatusOK).JSON(httpRes)

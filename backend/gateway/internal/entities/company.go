@@ -248,7 +248,7 @@ func (e *GetCompanyEmployeesRequest) Validate() error {
 	}
 
 	// Валидация role
-	if !utils.ValidateIsArrayContain(e.Role, []string{"", "unemployed", "engineer", "manager", "analytic", "chief"}) {
+	if !utils.ValidateIsArrayContain(e.Role, []string{"", "unemployed", "inspector", "engineer", "manager", "analytic", "chief"}) {
 		return fmt.Errorf("incorrect employee role")
 	}
 
@@ -269,11 +269,12 @@ type GetCompanyEmployeesSummaryRequest struct {
 	CompanyUUID string `json:"company_uuid"`
 }
 type GetCompanyEmployeesSummaryResponse struct {
-	ChiefCount     int64 `json:"chief_count"`
-	AnalyticsCount int64 `json:"analytics_count"`
-	ManagerCount   int64 `json:"manager_count"`
-	EngineerCount  int64 `json:"engineer_count"`
-	UnemployedCoun int64 `json:"unemployed_count"`
+	ChiefCount      int64 `json:"chief_count"`
+	AnalyticsCount  int64 `json:"analytics_count"`
+	ManagerCount    int64 `json:"manager_count"`
+	EngineerCount   int64 `json:"engineer_count"`
+	InspectorCount  int64 `json:"inspector_count"`
+	UnemployedCount int64 `json:"unemployed_count"`
 }
 
 func (e *GetCompanyEmployeesSummaryRequest) Validate() error {

@@ -1575,7 +1575,8 @@ type GetCompanyEmployeesSummaryResponse struct {
 	AnalyticsCount  int64                  `protobuf:"varint,2,opt,name=analytics_count,json=analyticsCount,proto3" json:"analytics_count,omitempty"`
 	ManagerCount    int64                  `protobuf:"varint,3,opt,name=manager_count,json=managerCount,proto3" json:"manager_count,omitempty"`
 	EngineerCount   int64                  `protobuf:"varint,4,opt,name=engineer_count,json=engineerCount,proto3" json:"engineer_count,omitempty"`
-	UnemployedCount int64                  `protobuf:"varint,5,opt,name=unemployed_count,json=unemployedCount,proto3" json:"unemployed_count,omitempty"`
+	InspectorCount  int64                  `protobuf:"varint,5,opt,name=inspector_count,json=inspectorCount,proto3" json:"inspector_count,omitempty"`
+	UnemployedCount int64                  `protobuf:"varint,6,opt,name=unemployed_count,json=unemployedCount,proto3" json:"unemployed_count,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1634,6 +1635,13 @@ func (x *GetCompanyEmployeesSummaryResponse) GetManagerCount() int64 {
 func (x *GetCompanyEmployeesSummaryResponse) GetEngineerCount() int64 {
 	if x != nil {
 		return x.EngineerCount
+	}
+	return 0
+}
+
+func (x *GetCompanyEmployeesSummaryResponse) GetInspectorCount() int64 {
+	if x != nil {
+		return x.InspectorCount
 	}
 	return 0
 }
@@ -1893,14 +1901,15 @@ const file_company_proto_rawDesc = "" +
 	"!GetCompanyEmployeesSummaryRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x1b\n" +
 	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\"\xe5\x01\n" +
+	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\"\x8e\x02\n" +
 	"\"GetCompanyEmployeesSummaryResponse\x12\x1f\n" +
 	"\vchief_count\x18\x01 \x01(\x03R\n" +
 	"chiefCount\x12'\n" +
 	"\x0fanalytics_count\x18\x02 \x01(\x03R\x0eanalyticsCount\x12#\n" +
 	"\rmanager_count\x18\x03 \x01(\x03R\fmanagerCount\x12%\n" +
-	"\x0eengineer_count\x18\x04 \x01(\x03R\rengineerCount\x12)\n" +
-	"\x10unemployed_count\x18\x05 \x01(\x03R\x0funemployedCount\"\xbd\x01\n" +
+	"\x0eengineer_count\x18\x04 \x01(\x03R\rengineerCount\x12'\n" +
+	"\x0finspector_count\x18\x05 \x01(\x03R\x0einspectorCount\x12)\n" +
+	"\x10unemployed_count\x18\x06 \x01(\x03R\x0funemployedCount\"\xbd\x01\n" +
 	"\x19UpdateEmployeeRoleRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12\x1f\n" +

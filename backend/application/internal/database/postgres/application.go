@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
@@ -50,10 +51,10 @@ func (r *applicationRepository) CreateApplication(ctx context.Context, dto entit
 // AddApplicationFixLog Добавление записи в fix log-и заявки
 func (r *applicationRepository) AddApplicationFixLog(ctx context.Context, dto entities.CreateFixLogDTO) Error.CodeError {
 	query := `INSERT INTO application_fix_logs
-	(application_uuid, text, created_by) VALUES 
-	($1, $2, $3);`
+	(uuid, application_uuid, text, created_by) VALUES
+	($1, $2, $3, $4);`
 
-	_, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.Text, dto.CreatedBy)
+	_, err := r.db.ExecContext(ctx, query, uuid.New().String(), dto.ApplicationUUID, dto.Text, dto.CreatedBy)
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) {
@@ -104,12 +105,12 @@ func (r *applicationRepository) GetApplication(ctx context.Context, dto entities
 
 // GetApplicationFixLogs Получение всех fix log-ов заявки
 func (r *applicationRepository) GetApplicationFixLogs(ctx context.Context, dto entities.GetApplicationFixLogsDTO) ([]*entities.FixLog, Error.CodeError) {
-	query := `SELECT 
-			id, 
-			text, 
-			created_at, 
-			created_by 
-		FROM application_fix_logs 
+	query := `SELECT
+			uuid,
+			text,
+			created_at,
+			created_by
+		FROM application_fix_logs
 		WHERE application_uuid = $1;`
 
 	res, err := r.db.QueryContext(ctx, query, dto.ApplicationUUID)
@@ -121,7 +122,7 @@ func (r *applicationRepository) GetApplicationFixLogs(ctx context.Context, dto e
 	fixLogs := make([]*entities.FixLog, 0)
 	for res.Next() {
 		item := &entities.FixLog{}
-		err = res.Scan(&item.ID, &item.Text, &item.CreatedAt, &item.CreatedBy)
+		err = res.Scan(&item.UUID, &item.Text, &item.CreatedAt, &item.CreatedBy)
 		if err != nil {
 			return nil, Error.CodeError{Code: 0, Err: err}
 		}
@@ -303,7 +304,7 @@ func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context,
 		status = 'assigned',
 		managed_by = $2,
 		executed_by = $3
-	WHERE uuid = $1 AND deleted_at IS NOT NULL;`
+	WHERE uuid = $1 AND deleted_at IS NULL;`
 
 	res, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID, dto.TargetUUID)
 	if err != nil {

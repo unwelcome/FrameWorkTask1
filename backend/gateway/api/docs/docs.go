@@ -2435,7 +2435,7 @@ const docTemplate = `{
         "entities.DeleteUserRequest": {
             "type": "object",
             "properties": {
-                "tagret_uuid": {
+                "target_uuid": {
                     "type": "string"
                 }
             }
@@ -2453,6 +2453,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "text": {
+                    "type": "string"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }
@@ -2565,6 +2568,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "engineer_count": {
+                    "type": "integer"
+                },
+                "inspector_count": {
                     "type": "integer"
                 },
                 "manager_count": {

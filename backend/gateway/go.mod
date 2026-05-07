@@ -9,12 +9,13 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/rs/zerolog v1.35.1
 	github.com/swaggo/swag v1.16.6
-	github.com/unwelcome/FrameWorkTask1/backend/application v0.2.0
-	github.com/unwelcome/FrameWorkTask1/backend/auth v0.2.0
-	github.com/unwelcome/FrameWorkTask1/backend/company v0.2.0
-	github.com/unwelcome/FrameWorkTask1/backend/shared v0.5.0
+	github.com/unwelcome/FrameWorkTask1/backend/application v0.4.0
+	github.com/unwelcome/FrameWorkTask1/backend/auth v0.4.0
+	github.com/unwelcome/FrameWorkTask1/backend/company v0.4.0
+	github.com/unwelcome/FrameWorkTask1/backend/shared v0.7.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.80.0
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -34,7 +35,6 @@ require (
 	github.com/go-openapi/swag/stringutils v0.26.0 // indirect
 	github.com/go-openapi/swag/typeutils v0.26.0 // indirect
 	github.com/go-openapi/swag/yamlutils v0.26.0 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
@@ -52,6 +52,4 @@ require (
 	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

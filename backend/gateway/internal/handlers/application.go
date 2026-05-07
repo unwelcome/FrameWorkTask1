@@ -141,6 +141,7 @@ func (h *applicationHandler) GetApplication(c *fiber.Ctx) error {
 	fixLogs := make([]*entities.FixLogResponse, 0, len(app.GetFixLogs()))
 	for _, fl := range app.GetFixLogs() {
 		fixLogs = append(fixLogs, &entities.FixLogResponse{
+			UUID:      fl.GetUuid(),
 			Text:      fl.GetText(),
 			CreatedAt: fl.GetCreatedAt(),
 			CreatedBy: fl.GetCreatedBy(),

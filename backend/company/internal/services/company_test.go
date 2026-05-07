@@ -817,7 +817,7 @@ func TestGetCompanyEmployeesSummary(t *testing.T) {
 		pg := pgRepoWithChief()
 		pg.getCompanyEmployeesSummary = func(_ context.Context, _ string) (*entities.EmployeesSummary, Error.CodeError) {
 			return &entities.EmployeesSummary{
-				ChiefCount: 1, EngineerCount: 3, ManagerCount: 2, AnalyticCount: 1, UnemployedCount: 5,
+				ChiefCount: 1, EngineerCount: 3, ManagerCount: 2, AnalyticCount: 1, UnemployedCount: 5, InspectorCount: 6,
 			}, ok()
 		}
 

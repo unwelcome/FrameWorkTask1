@@ -104,6 +104,7 @@ func (s *ApplicationService) GetApplication(ctx context.Context, req *pb.GetAppl
 	pbFixLogs := make([]*pb.FixLog, 0, len(fixLogs))
 	for _, fl := range fixLogs {
 		pbFixLogs = append(pbFixLogs, &pb.FixLog{
+			Uuid:      fl.UUID,
 			Text:      fl.Text,
 			CreatedAt: fl.CreatedAt,
 			CreatedBy: fl.CreatedBy,

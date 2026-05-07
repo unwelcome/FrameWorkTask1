@@ -1,7 +1,7 @@
 package entities
 
 type FixLog struct {
-	ID              int    `db:"id"`
+	UUID            string `db:"uuid"`
 	ApplicationUUID string `db:"application_uuid"`
 	Text            string `db:"text"`
 	CreatedAt       string `db:"created_at"`

@@ -276,13 +276,14 @@ func (r *companyRepository) GetCompanyEmployeesByRole(ctx context.Context, compa
 
 // GetCompanyEmployeesSummary Получение кол-ва сотрудников по ролям в компании
 func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, companyUUID string) (*entities.EmployeesSummary, Error.CodeError) {
-	query := `SELECT 
+	query := `SELECT
     	COUNT(CASE WHEN role = 'unemployed' THEN 1 END) as unemployed_count,
+    	COUNT(CASE WHEN role = 'inspector' THEN 1 END) as inspector_count,
     	COUNT(CASE WHEN role = 'engineer' THEN 1 END) as engineer_count,
     	COUNT(CASE WHEN role = 'manager' THEN 1 END) as manager_count,
     	COUNT(CASE WHEN role = 'analytic' THEN 1 END) as analytic_count,
     	COUNT(CASE WHEN role = 'chief' THEN 1 END) as chief_count
-	FROM employees 
+	FROM employees
 	WHERE company_uuid = $1;`
 
 	employeeSummary := &entities.EmployeesSummary{
@@ -292,6 +293,7 @@ func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, comp
 	err := r.db.QueryRowContext(ctx, query, companyUUID).
 		Scan(
 			&employeeSummary.UnemployedCount,
+			&employeeSummary.InspectorCount,
 			&employeeSummary.EngineerCount,
 			&employeeSummary.ManagerCount,
 			&employeeSummary.AnalyticCount,

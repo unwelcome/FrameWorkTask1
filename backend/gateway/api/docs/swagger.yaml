@@ -102,7 +102,7 @@ definitions:
     type: object
   entities.DeleteUserRequest:
     properties:
-      tagret_uuid:
+      target_uuid:
         type: string
     type: object
   entities.DeleteUserResponse:
@@ -114,6 +114,8 @@ definitions:
       created_by:
         type: string
       text:
+        type: string
+      uuid:
         type: string
     type: object
   entities.GetAllActiveTokensResponse:
@@ -186,6 +188,8 @@ definitions:
       chief_count:
         type: integer
       engineer_count:
+        type: integer
+      inspector_count:
         type: integer
       manager_count:
         type: integer

@@ -452,6 +452,7 @@ func (s *CompanyService) GetCompanyEmployeesSummary(ctx context.Context, req *pb
 		AnalyticsCount:  employeesInfo.AnalyticCount,
 		ManagerCount:    employeesInfo.ManagerCount,
 		EngineerCount:   employeesInfo.EngineerCount,
+		InspectorCount:  employeesInfo.InspectorCount,
 		UnemployedCount: employeesInfo.UnemployedCount,
 	}, nil
 }

@@ -206,7 +206,8 @@ message GetCompanyEmployeesSummaryResponse {
   int64 analytics_count = 2;
   int64 manager_count = 3;
   int64 engineer_count = 4;
-  int64 unemployed_count = 5;
+  int64 inspector_count = 5;
+  int64 unemployed_count = 6;
 }
 
 

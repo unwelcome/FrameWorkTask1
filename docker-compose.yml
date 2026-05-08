@@ -96,8 +96,6 @@ services:
     depends_on:
       application_service_postgres:
         condition: service_healthy
-      mongodb:
-        condition: service_healthy
     networks:
       - app-network
 
@@ -174,22 +172,22 @@ services:
 #   networks:
 #     - app-network
 
-  mongodb:
-    image: mongo:7
-    container_name: mongodb
-    restart: unless-stopped
-    env_file:
-      - ./.env
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: [ "CMD-SHELL", "mongosh --username $$MONGO_INITDB_ROOT_USERNAME --password $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval \"db.adminCommand('ping')\"" ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 5s
-    networks:
-      - app-network
+#  mongodb:
+#    image: mongo:7
+#    container_name: mongodb
+#    restart: unless-stopped
+#    env_file:
+#      - ./.env
+#    volumes:
+#      - mongo_data:/data/db
+#    healthcheck:
+#      test: [ "CMD-SHELL", "mongosh --username $$MONGO_INITDB_ROOT_USERNAME --password $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval \"db.adminCommand('ping')\"" ]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 10
+#      start_period: 5s
+#    networks:
+#      - app-network
 
 networks:
   app-network:
@@ -200,5 +198,5 @@ volumes:
   db_data_company_service:
   db_data_application_service:
   redis_data:
-  mongo_data:
+#  mongo_data:
 #  minio_data:

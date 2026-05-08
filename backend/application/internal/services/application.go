@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	pb "github.com/unwelcome/FrameWorkTask1/backend/application/api/generated"
-	mongoDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/mongo"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
@@ -19,15 +18,13 @@ import (
 
 type ApplicationService struct {
 	db            *postgresDB.DatabaseRepository
-	mongoDb       *mongoDB.DatabaseRepository
 	companyClient company_proto.CompanyServiceClient
 	pb.UnimplementedApplicationServiceServer
 }
 
-func NewApplicationService(db *postgresDB.DatabaseRepository, mongoDb *mongoDB.DatabaseRepository, companyClient company_proto.CompanyServiceClient) *ApplicationService {
+func NewApplicationService(db *postgresDB.DatabaseRepository, companyClient company_proto.CompanyServiceClient) *ApplicationService {
 	return &ApplicationService{
 		db:            db,
-		mongoDb:       mongoDb,
 		companyClient: companyClient,
 	}
 }
@@ -40,7 +37,7 @@ func (s *ApplicationService) Health(ctx context.Context, req *pb.HealthRequest) 
 		Postgres: pingStatus(s.db.Ping(ctx)),
 		Redis:    "not implemented",
 		Minio:    "not implemented",
-		Mongo:    pingStatus(s.mongoDb.Ping(ctx)),
+		Mongo:    "not implemented",
 	}, nil
 }
 
@@ -483,9 +480,10 @@ func (s *ApplicationService) DeleteApplication(ctx context.Context, req *pb.Dele
 		return nil, status.Error(codes.PermissionDenied, "only inspectors can delete applications")
 	}
 
-	// Мягкое удаление (deleted_at = now())
+	// Мягкое удаление (deleted_at = now(), deleted_by = initiator)
 	deleteErr := s.db.ApplicationRepository.DeleteApplicationRequest(ctx, entities.DeleteApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
+		DeletedBy:       req.GetInitiatorUuid(),
 	})
 	err = Error.HandleError(deleteErr, req.GetOperationId(), "delete application")
 	if err != nil {

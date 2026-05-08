@@ -3,6 +3,7 @@ package postgresDB
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -35,10 +36,56 @@ func NewApplicationRepository(db *sql.DB) ApplicationRepository {
 	return &applicationRepository{db: db}
 }
 
+// saveVersion сохраняет снапшот текущего состояния заявки в application_versions внутри транзакции.
+// Использует SELECT FOR UPDATE, чтобы заблокировать строку на время транзакции.
+func (r *applicationRepository) saveVersion(ctx context.Context, tx *sql.Tx, applicationUUID string) error {
+	var app entities.Application
+	err := tx.QueryRowContext(ctx, `
+		SELECT
+			uuid, company_uuid, version, title, description, status,
+			created_at::text, created_by,
+			COALESCE(closed_at::text, ''),
+			COALESCE(managed_by::text, ''),
+			COALESCE(executed_by::text, ''),
+			COALESCE(deleted_by::text, '')
+		FROM applications
+		WHERE uuid = $1
+		FOR UPDATE`,
+		applicationUUID,
+	).Scan(
+		&app.ApplicationUUID,
+		&app.CompanyUUID,
+		&app.Version,
+		&app.Title,
+		&app.Description,
+		&app.Status,
+		&app.CreatedAt,
+		&app.CreatedBy,
+		&app.ClosedAt,
+		&app.ResponsibleManager,
+		&app.ResponsibleEngineer,
+		&app.DeletedBy,
+	)
+	if err != nil {
+		return err
+	}
+
+	body, err := json.Marshal(app)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO application_versions (application_uuid, version, body) VALUES ($1, $2, $3)`,
+		app.ApplicationUUID, app.Version, body,
+	)
+	return err
+}
+
 // CreateApplication Создание заявки
 func (r *applicationRepository) CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError {
-	query := `INSERT INTO applications 
-	(uuid, company_uuid, version, title, description, status, created_by) VALUES 
+	query := `INSERT INTO applications
+	(uuid, company_uuid, version, title, description, status, created_by) VALUES
 	($1, $2, 1, $3, $4, 'created', $5);`
 
 	_, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.CompanyUUID, dto.Title, dto.Description, dto.CreatedBy)
@@ -181,7 +228,7 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 
 // GetCompanyApplicationStatistic Получение статистики компании по заявкам
 func (r *applicationRepository) GetCompanyApplicationStatistic(ctx context.Context, dto entities.GetCompanyApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
-	query := `SELECT 
+	query := `SELECT
 		COUNT(*) FILTER (WHERE status = 'created'),
 		COUNT(*) FILTER (WHERE status = 'assigned'),
 		COUNT(*) FILTER (WHERE status = 'in_progress'),
@@ -218,7 +265,7 @@ func (r *applicationRepository) GetCompanyApplicationStatistic(ctx context.Conte
 // GetEmployeeApplicationStatistic Получение статистики работника по заявкам
 func (r *applicationRepository) GetEmployeeApplicationStatistic(ctx context.Context, dto entities.GetEmployeeApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
 	query := `
-		SELECT 
+		SELECT
 			COUNT(*) FILTER (WHERE status = 'created' AND created_by = $2) as created,
 			COUNT(*) FILTER (WHERE status = 'assigned') as assigned,
 			COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress,
@@ -229,7 +276,7 @@ func (r *applicationRepository) GetEmployeeApplicationStatistic(ctx context.Cont
 			COUNT(*) FILTER (WHERE status = 'failed') as failed,
 			COUNT(*) FILTER (WHERE status = 'archived') as archived
 		FROM applications
-		WHERE deleted_at IS NULL 
+		WHERE deleted_at IS NULL
 			AND company_uuid = $1
 			AND (created_by = $2 OR managed_by = $2 OR executed_by = $2);`
 
@@ -255,31 +302,41 @@ func (r *applicationRepository) GetEmployeeApplicationStatistic(ctx context.Cont
 
 // UpdateApplicationStatus Обновление статуса заявки
 func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError {
-	query := `UPDATE applications 
-	SET 
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+	defer tx.Rollback()
+
+	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+		}
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	query := `UPDATE applications
+	SET
 		version = version + 1,
 		status = $2,
-		
-		-- Логика для managed_by
-		managed_by = CASE 
-			WHEN $2 IN ('assigned', 'completed', 'cancelled', 'failed') THEN $3 
-			ELSE managed_by 
+
+		managed_by = CASE
+			WHEN $2 IN ('assigned', 'completed', 'cancelled', 'failed') THEN $3
+			ELSE managed_by
 		END,
-		
-		-- Логика для executed_by
-		executed_by = CASE 
-			WHEN $2 IN ('in_progress', 'on_hold', 'awaiting_approval') THEN $3 
-			ELSE executed_by 
+
+		executed_by = CASE
+			WHEN $2 IN ('in_progress', 'on_hold', 'awaiting_approval') THEN $3
+			ELSE executed_by
 		END,
-		
-		-- Логика для closed_at
-		closed_at = CASE 
-			WHEN $2 IN ('completed', 'cancelled', 'failed') THEN CURRENT_TIMESTAMP 
+
+		closed_at = CASE
+			WHEN $2 IN ('completed', 'cancelled', 'failed') THEN CURRENT_TIMESTAMP
 			ELSE NULL
 		END
 	WHERE uuid = $1 AND deleted_at IS NULL;`
 
-	res, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.Status, dto.InitiatorUUID)
+	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.Status, dto.InitiatorUUID)
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
@@ -288,9 +345,12 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
-
 	if affected == 0 {
 		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return Error.CodeError{Code: 0, Err: err}
 	}
 
 	return Error.CodeError{Code: -1, Err: nil}
@@ -298,15 +358,28 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 
 // AssignApplicationToEmployee Назначение заявки инженеру
 func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context, dto entities.AssignApplicationToEmployeeDTO) Error.CodeError {
-	query := `UPDATE applications 
-	SET 
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+	defer tx.Rollback()
+
+	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+		}
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	query := `UPDATE applications
+	SET
 		version = version + 1,
 		status = 'assigned',
 		managed_by = $2,
 		executed_by = $3
 	WHERE uuid = $1 AND deleted_at IS NULL;`
 
-	res, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID, dto.TargetUUID)
+	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID, dto.TargetUUID)
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
@@ -315,22 +388,38 @@ func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context,
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
-
 	if affected == 0 {
 		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return Error.CodeError{Code: 0, Err: err}
 	}
 
 	return Error.CodeError{Code: -1, Err: nil}
 }
 
-// DeleteApplicationRequest Удаление заявки (заявка помечается удаленной, но не стирается из бд)
+// DeleteApplicationRequest Мягкое удаление заявки
 func (r *applicationRepository) DeleteApplicationRequest(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError {
-	query := `UPDATE applications 
-	SET
-		deleted_at = CURRENT_TIMESTAMP
-	WHERE uuid = $1 AND deleted_at IS NULL;`
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+	defer tx.Rollback()
 
-	res, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID)
+	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+		}
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	res, err := tx.ExecContext(ctx, `
+		UPDATE applications
+		SET deleted_at = CURRENT_TIMESTAMP, deleted_by = $2
+		WHERE uuid = $1 AND deleted_at IS NULL;`,
+		dto.ApplicationUUID, dto.DeletedBy,
+	)
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
@@ -339,9 +428,12 @@ func (r *applicationRepository) DeleteApplicationRequest(ctx context.Context, dt
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
-
 	if affected == 0 {
 		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return Error.CodeError{Code: 0, Err: err}
 	}
 
 	return Error.CodeError{Code: -1, Err: nil}

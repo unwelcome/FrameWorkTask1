@@ -12,6 +12,7 @@ type Application struct {
 	ClosedAt            string `db:"closed_at"`
 	ResponsibleManager  string `db:"managed_by"`
 	ResponsibleEngineer string `db:"executed_by"`
+	DeletedBy           string `db:"deleted_by"`
 }
 
 type CreateApplicationDTO struct {
@@ -53,4 +54,5 @@ type UpdateApplicationDataDTO struct {
 
 type DeleteApplicationDTO struct {
 	ApplicationUUID string
+	DeletedBy       string
 }

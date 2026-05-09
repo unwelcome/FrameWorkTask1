@@ -4,6 +4,7 @@ type ApplicationVersion struct {
 	ApplicationUUID     string `bson:"application_uuid"`
 	Version             int    `bson:"version"`
 	CompanyUUID         string `bson:"company_uuid"`
+	DepartmentUUID      string `bson:"department_uuid"`
 	Title               string `bson:"title"`
 	Description         string `bson:"description"`
 	Status              string `bson:"status"`

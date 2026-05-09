@@ -3,6 +3,8 @@ package entities
 type ApplicationStatistic struct {
 	Created          int `db:"created"`
 	Assigned         int `db:"assigned"`
+	Redirected       int `db:"redirected"`
+	Rejected         int `db:"rejected"`
 	InProgress       int `db:"in_progress"`
 	OnHold           int `db:"on_hold"`
 	AwaitingApproval int `db:"awaiting_approval"`
@@ -14,6 +16,7 @@ type ApplicationStatistic struct {
 
 type GetCompanyApplicationStatisticDTO struct {
 	CompanyUUID string
+	WithDeleted bool
 }
 
 type GetEmployeeApplicationStatisticDTO struct {

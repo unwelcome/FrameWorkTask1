@@ -28,6 +28,7 @@ const (
 	ApplicationService_GetEmployeeApplicationStatistic_FullMethodName = "/application.ApplicationService/GetEmployeeApplicationStatistic"
 	ApplicationService_UpdateApplicationStatus_FullMethodName         = "/application.ApplicationService/UpdateApplicationStatus"
 	ApplicationService_AssignApplicationToEmployee_FullMethodName     = "/application.ApplicationService/AssignApplicationToEmployee"
+	ApplicationService_TransferApplication_FullMethodName             = "/application.ApplicationService/TransferApplication"
 	ApplicationService_AddApplicationFixLog_FullMethodName            = "/application.ApplicationService/AddApplicationFixLog"
 	ApplicationService_DeleteApplication_FullMethodName               = "/application.ApplicationService/DeleteApplication"
 )
@@ -44,6 +45,7 @@ type ApplicationServiceClient interface {
 	GetEmployeeApplicationStatistic(ctx context.Context, in *GetEmployeeApplicationStatisticRequest, opts ...grpc.CallOption) (*GetEmployeeApplicationStatisticResponse, error)
 	UpdateApplicationStatus(ctx context.Context, in *UpdateApplicationStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AssignApplicationToEmployee(ctx context.Context, in *AssignApplicationToEmployeeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	TransferApplication(ctx context.Context, in *TransferApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AddApplicationFixLog(ctx context.Context, in *AddApplicationFixLogRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteApplication(ctx context.Context, in *DeleteApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -136,6 +138,16 @@ func (c *applicationServiceClient) AssignApplicationToEmployee(ctx context.Conte
 	return out, nil
 }
 
+func (c *applicationServiceClient) TransferApplication(ctx context.Context, in *TransferApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ApplicationService_TransferApplication_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *applicationServiceClient) AddApplicationFixLog(ctx context.Context, in *AddApplicationFixLogRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -168,6 +180,7 @@ type ApplicationServiceServer interface {
 	GetEmployeeApplicationStatistic(context.Context, *GetEmployeeApplicationStatisticRequest) (*GetEmployeeApplicationStatisticResponse, error)
 	UpdateApplicationStatus(context.Context, *UpdateApplicationStatusRequest) (*emptypb.Empty, error)
 	AssignApplicationToEmployee(context.Context, *AssignApplicationToEmployeeRequest) (*emptypb.Empty, error)
+	TransferApplication(context.Context, *TransferApplicationRequest) (*emptypb.Empty, error)
 	AddApplicationFixLog(context.Context, *AddApplicationFixLogRequest) (*emptypb.Empty, error)
 	DeleteApplication(context.Context, *DeleteApplicationRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedApplicationServiceServer()
@@ -203,6 +216,9 @@ func (UnimplementedApplicationServiceServer) UpdateApplicationStatus(context.Con
 }
 func (UnimplementedApplicationServiceServer) AssignApplicationToEmployee(context.Context, *AssignApplicationToEmployeeRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AssignApplicationToEmployee not implemented")
+}
+func (UnimplementedApplicationServiceServer) TransferApplication(context.Context, *TransferApplicationRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TransferApplication not implemented")
 }
 func (UnimplementedApplicationServiceServer) AddApplicationFixLog(context.Context, *AddApplicationFixLogRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddApplicationFixLog not implemented")
@@ -375,6 +391,24 @@ func _ApplicationService_AssignApplicationToEmployee_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApplicationService_TransferApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransferApplicationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).TransferApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ApplicationService_TransferApplication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).TransferApplication(ctx, req.(*TransferApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ApplicationService_AddApplicationFixLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddApplicationFixLogRequest)
 	if err := dec(in); err != nil {
@@ -449,6 +483,10 @@ var ApplicationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AssignApplicationToEmployee",
 			Handler:    _ApplicationService_AssignApplicationToEmployee_Handler,
+		},
+		{
+			MethodName: "TransferApplication",
+			Handler:    _ApplicationService_TransferApplication_Handler,
 		},
 		{
 			MethodName: "AddApplicationFixLog",

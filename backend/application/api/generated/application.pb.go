@@ -26,16 +26,17 @@ type Application struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	ApplicationUuid     string                 `protobuf:"bytes,1,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
 	CompanyUuid         string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	Title               string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description         string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Status              string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
-	ResponsibleManager  string                 `protobuf:"bytes,6,opt,name=responsible_manager,json=responsibleManager,proto3" json:"responsible_manager,omitempty"`
-	ResponsibleEngineer string                 `protobuf:"bytes,7,opt,name=responsible_engineer,json=responsibleEngineer,proto3" json:"responsible_engineer,omitempty"`
-	CreatedAt           string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	CreatedBy           string                 `protobuf:"bytes,9,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
-	ClosedAt            string                 `protobuf:"bytes,10,opt,name=closed_at,json=closedAt,proto3" json:"closed_at,omitempty"`
-	DeletedAt           string                 `protobuf:"bytes,11,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
-	FixLogs             []*FixLog              `protobuf:"bytes,12,rep,name=fix_logs,json=fixLogs,proto3" json:"fix_logs,omitempty"`
+	DepartmentUuid      string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	Title               string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	Description         string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	Status              string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+	ResponsibleManager  string                 `protobuf:"bytes,7,opt,name=responsible_manager,json=responsibleManager,proto3" json:"responsible_manager,omitempty"`
+	ResponsibleEngineer string                 `protobuf:"bytes,8,opt,name=responsible_engineer,json=responsibleEngineer,proto3" json:"responsible_engineer,omitempty"`
+	CreatedAt           string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedBy           string                 `protobuf:"bytes,10,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
+	ClosedAt            string                 `protobuf:"bytes,11,opt,name=closed_at,json=closedAt,proto3" json:"closed_at,omitempty"`
+	DeletedAt           string                 `protobuf:"bytes,12,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
+	FixLogs             []*FixLog              `protobuf:"bytes,13,rep,name=fix_logs,json=fixLogs,proto3" json:"fix_logs,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -80,6 +81,13 @@ func (x *Application) GetApplicationUuid() string {
 func (x *Application) GetCompanyUuid() string {
 	if x != nil {
 		return x.CompanyUuid
+	}
+	return ""
+}
+
+func (x *Application) GetDepartmentUuid() string {
+	if x != nil {
+		return x.DepartmentUuid
 	}
 	return ""
 }
@@ -623,14 +631,16 @@ func (x *GetApplicationResponse) GetApplication() *Application {
 
 // GetApplications
 type GetApplicationsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	Count         int64                  `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
-	Offset        int64                  `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	OperationId    string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
+	InitiatorUuid  string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid    string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,4,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	Status         string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
+	Count          int64                  `protobuf:"varint,6,opt,name=count,proto3" json:"count,omitempty"`
+	Offset         int64                  `protobuf:"varint,7,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetApplicationsRequest) Reset() {
@@ -680,6 +690,20 @@ func (x *GetApplicationsRequest) GetInitiatorUuid() string {
 func (x *GetApplicationsRequest) GetCompanyUuid() string {
 	if x != nil {
 		return x.CompanyUuid
+	}
+	return ""
+}
+
+func (x *GetApplicationsRequest) GetDepartmentUuid() string {
+	if x != nil {
+		return x.DepartmentUuid
+	}
+	return ""
+}
+
+func (x *GetApplicationsRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
 	}
 	return ""
 }
@@ -807,13 +831,15 @@ type GetCompanyApplicationStatisticResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Created          int64                  `protobuf:"varint,1,opt,name=created,proto3" json:"created,omitempty"`
 	Assigned         int64                  `protobuf:"varint,2,opt,name=assigned,proto3" json:"assigned,omitempty"`
-	InProgress       int64                  `protobuf:"varint,3,opt,name=in_progress,json=inProgress,proto3" json:"in_progress,omitempty"`
-	OnHold           int64                  `protobuf:"varint,4,opt,name=on_hold,json=onHold,proto3" json:"on_hold,omitempty"`
-	AwaitingApproval int64                  `protobuf:"varint,5,opt,name=awaiting_approval,json=awaitingApproval,proto3" json:"awaiting_approval,omitempty"`
-	Completed        int64                  `protobuf:"varint,6,opt,name=completed,proto3" json:"completed,omitempty"`
-	Cancelled        int64                  `protobuf:"varint,7,opt,name=cancelled,proto3" json:"cancelled,omitempty"`
-	Failed           int64                  `protobuf:"varint,8,opt,name=failed,proto3" json:"failed,omitempty"`
-	Archived         int64                  `protobuf:"varint,9,opt,name=archived,proto3" json:"archived,omitempty"`
+	Redirected       int64                  `protobuf:"varint,3,opt,name=redirected,proto3" json:"redirected,omitempty"`
+	Rejected         int64                  `protobuf:"varint,4,opt,name=rejected,proto3" json:"rejected,omitempty"`
+	InProgress       int64                  `protobuf:"varint,5,opt,name=in_progress,json=inProgress,proto3" json:"in_progress,omitempty"`
+	OnHold           int64                  `protobuf:"varint,6,opt,name=on_hold,json=onHold,proto3" json:"on_hold,omitempty"`
+	AwaitingApproval int64                  `protobuf:"varint,7,opt,name=awaiting_approval,json=awaitingApproval,proto3" json:"awaiting_approval,omitempty"`
+	Completed        int64                  `protobuf:"varint,8,opt,name=completed,proto3" json:"completed,omitempty"`
+	Cancelled        int64                  `protobuf:"varint,9,opt,name=cancelled,proto3" json:"cancelled,omitempty"`
+	Failed           int64                  `protobuf:"varint,10,opt,name=failed,proto3" json:"failed,omitempty"`
+	Archived         int64                  `protobuf:"varint,11,opt,name=archived,proto3" json:"archived,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -858,6 +884,20 @@ func (x *GetCompanyApplicationStatisticResponse) GetCreated() int64 {
 func (x *GetCompanyApplicationStatisticResponse) GetAssigned() int64 {
 	if x != nil {
 		return x.Assigned
+	}
+	return 0
+}
+
+func (x *GetCompanyApplicationStatisticResponse) GetRedirected() int64 {
+	if x != nil {
+		return x.Redirected
+	}
+	return 0
+}
+
+func (x *GetCompanyApplicationStatisticResponse) GetRejected() int64 {
+	if x != nil {
+		return x.Rejected
 	}
 	return 0
 }
@@ -984,13 +1024,15 @@ type GetEmployeeApplicationStatisticResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Created          int64                  `protobuf:"varint,1,opt,name=created,proto3" json:"created,omitempty"`                                           // Сколько пользователь создал задач
 	Assigned         int64                  `protobuf:"varint,2,opt,name=assigned,proto3" json:"assigned,omitempty"`                                         // Сколько у пользователя текущих задач
-	InProgress       int64                  `protobuf:"varint,3,opt,name=in_progress,json=inProgress,proto3" json:"in_progress,omitempty"`                   // Сколько у пользователя задач на выполнении
-	OnHold           int64                  `protobuf:"varint,4,opt,name=on_hold,json=onHold,proto3" json:"on_hold,omitempty"`                               // Сколько у пользователя задач на паузе
-	AwaitingApproval int64                  `protobuf:"varint,5,opt,name=awaiting_approval,json=awaitingApproval,proto3" json:"awaiting_approval,omitempty"` // Сколько у пользователя задач ожидают подтверждения
-	Completed        int64                  `protobuf:"varint,6,opt,name=completed,proto3" json:"completed,omitempty"`                                       // Сколько пользователь завершил задач
-	Cancelled        int64                  `protobuf:"varint,7,opt,name=cancelled,proto3" json:"cancelled,omitempty"`                                       // Сколько пользователь отменил задач
-	Failed           int64                  `protobuf:"varint,8,opt,name=failed,proto3" json:"failed,omitempty"`                                             // Сколько пользователь провалил задач
-	Archived         int64                  `protobuf:"varint,9,opt,name=archived,proto3" json:"archived,omitempty"`                                         // Сколько пользователь заморозил задач
+	Redirected       int64                  `protobuf:"varint,3,opt,name=redirected,proto3" json:"redirected,omitempty"`                                     // Сколько у пользователя переданных в другой департамент задач
+	Rejected         int64                  `protobuf:"varint,4,opt,name=rejected,proto3" json:"rejected,omitempty"`                                         // Сколько у пользователя отклоненных задач
+	InProgress       int64                  `protobuf:"varint,5,opt,name=in_progress,json=inProgress,proto3" json:"in_progress,omitempty"`                   // Сколько у пользователя задач на выполнении
+	OnHold           int64                  `protobuf:"varint,6,opt,name=on_hold,json=onHold,proto3" json:"on_hold,omitempty"`                               // Сколько у пользователя задач на паузе
+	AwaitingApproval int64                  `protobuf:"varint,7,opt,name=awaiting_approval,json=awaitingApproval,proto3" json:"awaiting_approval,omitempty"` // Сколько у пользователя задач ожидают подтверждения
+	Completed        int64                  `protobuf:"varint,8,opt,name=completed,proto3" json:"completed,omitempty"`                                       // Сколько пользователь завершил задач
+	Cancelled        int64                  `protobuf:"varint,9,opt,name=cancelled,proto3" json:"cancelled,omitempty"`                                       // Сколько пользователь отменил задач
+	Failed           int64                  `protobuf:"varint,10,opt,name=failed,proto3" json:"failed,omitempty"`                                            // Сколько пользователь провалил задач
+	Archived         int64                  `protobuf:"varint,11,opt,name=archived,proto3" json:"archived,omitempty"`                                        // Сколько пользователь заморозил задач
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1035,6 +1077,20 @@ func (x *GetEmployeeApplicationStatisticResponse) GetCreated() int64 {
 func (x *GetEmployeeApplicationStatisticResponse) GetAssigned() int64 {
 	if x != nil {
 		return x.Assigned
+	}
+	return 0
+}
+
+func (x *GetEmployeeApplicationStatisticResponse) GetRedirected() int64 {
+	if x != nil {
+		return x.Redirected
+	}
+	return 0
+}
+
+func (x *GetEmployeeApplicationStatisticResponse) GetRejected() int64 {
+	if x != nil {
+		return x.Rejected
 	}
 	return 0
 }
@@ -1226,6 +1282,75 @@ func (x *AssignApplicationToEmployeeRequest) GetApplicationUuid() string {
 	return ""
 }
 
+// TransferApplication
+type TransferApplicationRequest struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	OperationId          string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
+	InitiatorUuid        string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid      string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	TargetDepartmentUuid string                 `protobuf:"bytes,4,opt,name=target_department_uuid,json=targetDepartmentUuid,proto3" json:"target_department_uuid,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *TransferApplicationRequest) Reset() {
+	*x = TransferApplicationRequest{}
+	mi := &file_application_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TransferApplicationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TransferApplicationRequest) ProtoMessage() {}
+
+func (x *TransferApplicationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_application_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TransferApplicationRequest.ProtoReflect.Descriptor instead.
+func (*TransferApplicationRequest) Descriptor() ([]byte, []int) {
+	return file_application_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *TransferApplicationRequest) GetOperationId() string {
+	if x != nil {
+		return x.OperationId
+	}
+	return ""
+}
+
+func (x *TransferApplicationRequest) GetInitiatorUuid() string {
+	if x != nil {
+		return x.InitiatorUuid
+	}
+	return ""
+}
+
+func (x *TransferApplicationRequest) GetApplicationUuid() string {
+	if x != nil {
+		return x.ApplicationUuid
+	}
+	return ""
+}
+
+func (x *TransferApplicationRequest) GetTargetDepartmentUuid() string {
+	if x != nil {
+		return x.TargetDepartmentUuid
+	}
+	return ""
+}
+
 // AddApplicationFixLog
 type AddApplicationFixLogRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
@@ -1239,7 +1364,7 @@ type AddApplicationFixLogRequest struct {
 
 func (x *AddApplicationFixLogRequest) Reset() {
 	*x = AddApplicationFixLogRequest{}
-	mi := &file_application_proto_msgTypes[17]
+	mi := &file_application_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1251,7 +1376,7 @@ func (x *AddApplicationFixLogRequest) String() string {
 func (*AddApplicationFixLogRequest) ProtoMessage() {}
 
 func (x *AddApplicationFixLogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[17]
+	mi := &file_application_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1264,7 +1389,7 @@ func (x *AddApplicationFixLogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddApplicationFixLogRequest.ProtoReflect.Descriptor instead.
 func (*AddApplicationFixLogRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{17}
+	return file_application_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *AddApplicationFixLogRequest) GetOperationId() string {
@@ -1307,7 +1432,7 @@ type DeleteApplicationRequest struct {
 
 func (x *DeleteApplicationRequest) Reset() {
 	*x = DeleteApplicationRequest{}
-	mi := &file_application_proto_msgTypes[18]
+	mi := &file_application_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1319,7 +1444,7 @@ func (x *DeleteApplicationRequest) String() string {
 func (*DeleteApplicationRequest) ProtoMessage() {}
 
 func (x *DeleteApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[18]
+	mi := &file_application_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1332,7 +1457,7 @@ func (x *DeleteApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteApplicationRequest.ProtoReflect.Descriptor instead.
 func (*DeleteApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{18}
+	return file_application_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *DeleteApplicationRequest) GetOperationId() string {
@@ -1360,24 +1485,25 @@ var File_application_proto protoreflect.FileDescriptor
 
 const file_application_proto_rawDesc = "" +
 	"\n" +
-	"\x11application.proto\x12\vapplication\x1a\x1bgoogle/protobuf/empty.proto\"\xb9\x03\n" +
+	"\x11application.proto\x12\vapplication\x1a\x1bgoogle/protobuf/empty.proto\"\xe2\x03\n" +
 	"\vApplication\x12)\n" +
 	"\x10application_uuid\x18\x01 \x01(\tR\x0fapplicationUuid\x12!\n" +
-	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x16\n" +
-	"\x06status\x18\x05 \x01(\tR\x06status\x12/\n" +
-	"\x13responsible_manager\x18\x06 \x01(\tR\x12responsibleManager\x121\n" +
-	"\x14responsible_engineer\x18\a \x01(\tR\x13responsibleEngineer\x12\x1d\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12'\n" +
+	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\x12\x14\n" +
+	"\x05title\x18\x04 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x16\n" +
+	"\x06status\x18\x06 \x01(\tR\x06status\x12/\n" +
+	"\x13responsible_manager\x18\a \x01(\tR\x12responsibleManager\x121\n" +
+	"\x14responsible_engineer\x18\b \x01(\tR\x13responsibleEngineer\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\b \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"created_by\x18\t \x01(\tR\tcreatedBy\x12\x1b\n" +
-	"\tclosed_at\x18\n" +
-	" \x01(\tR\bclosedAt\x12\x1d\n" +
+	"created_by\x18\n" +
+	" \x01(\tR\tcreatedBy\x12\x1b\n" +
+	"\tclosed_at\x18\v \x01(\tR\bclosedAt\x12\x1d\n" +
 	"\n" +
-	"deleted_at\x18\v \x01(\tR\tdeletedAt\x12.\n" +
-	"\bfix_logs\x18\f \x03(\v2\x13.application.FixLogR\afixLogs\"n\n" +
+	"deleted_at\x18\f \x01(\tR\tdeletedAt\x12.\n" +
+	"\bfix_logs\x18\r \x03(\v2\x13.application.FixLogR\afixLogs\"n\n" +
 	"\x06FixLog\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\x12\x1d\n" +
@@ -1409,47 +1535,59 @@ const file_application_proto_rawDesc = "" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
 	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\"T\n" +
 	"\x16GetApplicationResponse\x12:\n" +
-	"\vapplication\x18\x01 \x01(\v2\x18.application.ApplicationR\vapplication\"\xb3\x01\n" +
+	"\vapplication\x18\x01 \x01(\v2\x18.application.ApplicationR\vapplication\"\xf4\x01\n" +
 	"\x16GetApplicationsRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x14\n" +
-	"\x05count\x18\x04 \x01(\x03R\x05count\x12\x16\n" +
-	"\x06offset\x18\x05 \x01(\x03R\x06offset\"W\n" +
+	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12'\n" +
+	"\x0fdepartment_uuid\x18\x04 \x01(\tR\x0edepartmentUuid\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\x12\x14\n" +
+	"\x05count\x18\x06 \x01(\x03R\x05count\x12\x16\n" +
+	"\x06offset\x18\a \x01(\x03R\x06offset\"W\n" +
 	"\x17GetApplicationsResponse\x12<\n" +
 	"\fapplications\x18\x01 \x03(\v2\x18.application.ApplicationR\fapplications\"\x94\x01\n" +
 	"%GetCompanyApplicationStatisticRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\"\xb5\x02\n" +
+	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\"\xf1\x02\n" +
 	"&GetCompanyApplicationStatisticResponse\x12\x18\n" +
 	"\acreated\x18\x01 \x01(\x03R\acreated\x12\x1a\n" +
-	"\bassigned\x18\x02 \x01(\x03R\bassigned\x12\x1f\n" +
-	"\vin_progress\x18\x03 \x01(\x03R\n" +
+	"\bassigned\x18\x02 \x01(\x03R\bassigned\x12\x1e\n" +
+	"\n" +
+	"redirected\x18\x03 \x01(\x03R\n" +
+	"redirected\x12\x1a\n" +
+	"\brejected\x18\x04 \x01(\x03R\brejected\x12\x1f\n" +
+	"\vin_progress\x18\x05 \x01(\x03R\n" +
 	"inProgress\x12\x17\n" +
-	"\aon_hold\x18\x04 \x01(\x03R\x06onHold\x12+\n" +
-	"\x11awaiting_approval\x18\x05 \x01(\x03R\x10awaitingApproval\x12\x1c\n" +
-	"\tcompleted\x18\x06 \x01(\x03R\tcompleted\x12\x1c\n" +
-	"\tcancelled\x18\a \x01(\x03R\tcancelled\x12\x16\n" +
-	"\x06failed\x18\b \x01(\x03R\x06failed\x12\x1a\n" +
-	"\barchived\x18\t \x01(\x03R\barchived\"\xb6\x01\n" +
+	"\aon_hold\x18\x06 \x01(\x03R\x06onHold\x12+\n" +
+	"\x11awaiting_approval\x18\a \x01(\x03R\x10awaitingApproval\x12\x1c\n" +
+	"\tcompleted\x18\b \x01(\x03R\tcompleted\x12\x1c\n" +
+	"\tcancelled\x18\t \x01(\x03R\tcancelled\x12\x16\n" +
+	"\x06failed\x18\n" +
+	" \x01(\x03R\x06failed\x12\x1a\n" +
+	"\barchived\x18\v \x01(\x03R\barchived\"\xb6\x01\n" +
 	"&GetEmployeeApplicationStatisticRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
 	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x1f\n" +
 	"\vtarget_uuid\x18\x04 \x01(\tR\n" +
-	"targetUuid\"\xb6\x02\n" +
+	"targetUuid\"\xf2\x02\n" +
 	"'GetEmployeeApplicationStatisticResponse\x12\x18\n" +
 	"\acreated\x18\x01 \x01(\x03R\acreated\x12\x1a\n" +
-	"\bassigned\x18\x02 \x01(\x03R\bassigned\x12\x1f\n" +
-	"\vin_progress\x18\x03 \x01(\x03R\n" +
+	"\bassigned\x18\x02 \x01(\x03R\bassigned\x12\x1e\n" +
+	"\n" +
+	"redirected\x18\x03 \x01(\x03R\n" +
+	"redirected\x12\x1a\n" +
+	"\brejected\x18\x04 \x01(\x03R\brejected\x12\x1f\n" +
+	"\vin_progress\x18\x05 \x01(\x03R\n" +
 	"inProgress\x12\x17\n" +
-	"\aon_hold\x18\x04 \x01(\x03R\x06onHold\x12+\n" +
-	"\x11awaiting_approval\x18\x05 \x01(\x03R\x10awaitingApproval\x12\x1c\n" +
-	"\tcompleted\x18\x06 \x01(\x03R\tcompleted\x12\x1c\n" +
-	"\tcancelled\x18\a \x01(\x03R\tcancelled\x12\x16\n" +
-	"\x06failed\x18\b \x01(\x03R\x06failed\x12\x1a\n" +
-	"\barchived\x18\t \x01(\x03R\barchived\"\xad\x01\n" +
+	"\aon_hold\x18\x06 \x01(\x03R\x06onHold\x12+\n" +
+	"\x11awaiting_approval\x18\a \x01(\x03R\x10awaitingApproval\x12\x1c\n" +
+	"\tcompleted\x18\b \x01(\x03R\tcompleted\x12\x1c\n" +
+	"\tcancelled\x18\t \x01(\x03R\tcancelled\x12\x16\n" +
+	"\x06failed\x18\n" +
+	" \x01(\x03R\x06failed\x12\x1a\n" +
+	"\barchived\x18\v \x01(\x03R\barchived\"\xad\x01\n" +
 	"\x1eUpdateApplicationStatusRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
@@ -1460,7 +1598,12 @@ const file_application_proto_rawDesc = "" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12\x1f\n" +
 	"\vtarget_uuid\x18\x03 \x01(\tR\n" +
 	"targetUuid\x12)\n" +
-	"\x10application_uuid\x18\x04 \x01(\tR\x0fapplicationUuid\"\xad\x01\n" +
+	"\x10application_uuid\x18\x04 \x01(\tR\x0fapplicationUuid\"\xc7\x01\n" +
+	"\x1aTransferApplicationRequest\x12!\n" +
+	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
+	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x124\n" +
+	"\x16target_department_uuid\x18\x04 \x01(\tR\x14targetDepartmentUuid\"\xad\x01\n" +
 	"\x1bAddApplicationFixLogRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
@@ -1469,7 +1612,7 @@ const file_application_proto_rawDesc = "" +
 	"\x18DeleteApplicationRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
-	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid2\x85\b\n" +
+	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid2\xdd\b\n" +
 	"\x12ApplicationService\x12A\n" +
 	"\x06Health\x12\x1a.application.HealthRequest\x1a\x1b.application.HealthResponse\x12b\n" +
 	"\x11CreateApplication\x12%.application.CreateApplicationRequest\x1a&.application.CreateApplicationResponse\x12Y\n" +
@@ -1478,7 +1621,8 @@ const file_application_proto_rawDesc = "" +
 	"\x1eGetCompanyApplicationStatistic\x122.application.GetCompanyApplicationStatisticRequest\x1a3.application.GetCompanyApplicationStatisticResponse\x12\x8c\x01\n" +
 	"\x1fGetEmployeeApplicationStatistic\x123.application.GetEmployeeApplicationStatisticRequest\x1a4.application.GetEmployeeApplicationStatisticResponse\x12^\n" +
 	"\x17UpdateApplicationStatus\x12+.application.UpdateApplicationStatusRequest\x1a\x16.google.protobuf.Empty\x12f\n" +
-	"\x1bAssignApplicationToEmployee\x12/.application.AssignApplicationToEmployeeRequest\x1a\x16.google.protobuf.Empty\x12X\n" +
+	"\x1bAssignApplicationToEmployee\x12/.application.AssignApplicationToEmployeeRequest\x1a\x16.google.protobuf.Empty\x12V\n" +
+	"\x13TransferApplication\x12'.application.TransferApplicationRequest\x1a\x16.google.protobuf.Empty\x12X\n" +
 	"\x14AddApplicationFixLog\x12(.application.AddApplicationFixLogRequest\x1a\x16.google.protobuf.Empty\x12R\n" +
 	"\x11DeleteApplication\x12%.application.DeleteApplicationRequest\x1a\x16.google.protobuf.EmptyBYZWgithub.com/unwelcome/FrameWorkTask1/backend/application/api/generated;application_protob\x06proto3"
 
@@ -1494,7 +1638,7 @@ func file_application_proto_rawDescGZIP() []byte {
 	return file_application_proto_rawDescData
 }
 
-var file_application_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_application_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_application_proto_goTypes = []any{
 	(*Application)(nil),                             // 0: application.Application
 	(*FixLog)(nil),                                  // 1: application.FixLog
@@ -1513,9 +1657,10 @@ var file_application_proto_goTypes = []any{
 	(*GetEmployeeApplicationStatisticResponse)(nil), // 14: application.GetEmployeeApplicationStatisticResponse
 	(*UpdateApplicationStatusRequest)(nil),          // 15: application.UpdateApplicationStatusRequest
 	(*AssignApplicationToEmployeeRequest)(nil),      // 16: application.AssignApplicationToEmployeeRequest
-	(*AddApplicationFixLogRequest)(nil),             // 17: application.AddApplicationFixLogRequest
-	(*DeleteApplicationRequest)(nil),                // 18: application.DeleteApplicationRequest
-	(*emptypb.Empty)(nil),                           // 19: google.protobuf.Empty
+	(*TransferApplicationRequest)(nil),              // 17: application.TransferApplicationRequest
+	(*AddApplicationFixLogRequest)(nil),             // 18: application.AddApplicationFixLogRequest
+	(*DeleteApplicationRequest)(nil),                // 19: application.DeleteApplicationRequest
+	(*emptypb.Empty)(nil),                           // 20: google.protobuf.Empty
 }
 var file_application_proto_depIdxs = []int32{
 	1,  // 0: application.Application.fix_logs:type_name -> application.FixLog
@@ -1529,20 +1674,22 @@ var file_application_proto_depIdxs = []int32{
 	13, // 8: application.ApplicationService.GetEmployeeApplicationStatistic:input_type -> application.GetEmployeeApplicationStatisticRequest
 	15, // 9: application.ApplicationService.UpdateApplicationStatus:input_type -> application.UpdateApplicationStatusRequest
 	16, // 10: application.ApplicationService.AssignApplicationToEmployee:input_type -> application.AssignApplicationToEmployeeRequest
-	17, // 11: application.ApplicationService.AddApplicationFixLog:input_type -> application.AddApplicationFixLogRequest
-	18, // 12: application.ApplicationService.DeleteApplication:input_type -> application.DeleteApplicationRequest
-	4,  // 13: application.ApplicationService.Health:output_type -> application.HealthResponse
-	6,  // 14: application.ApplicationService.CreateApplication:output_type -> application.CreateApplicationResponse
-	8,  // 15: application.ApplicationService.GetApplication:output_type -> application.GetApplicationResponse
-	10, // 16: application.ApplicationService.GetApplications:output_type -> application.GetApplicationsResponse
-	12, // 17: application.ApplicationService.GetCompanyApplicationStatistic:output_type -> application.GetCompanyApplicationStatisticResponse
-	14, // 18: application.ApplicationService.GetEmployeeApplicationStatistic:output_type -> application.GetEmployeeApplicationStatisticResponse
-	19, // 19: application.ApplicationService.UpdateApplicationStatus:output_type -> google.protobuf.Empty
-	19, // 20: application.ApplicationService.AssignApplicationToEmployee:output_type -> google.protobuf.Empty
-	19, // 21: application.ApplicationService.AddApplicationFixLog:output_type -> google.protobuf.Empty
-	19, // 22: application.ApplicationService.DeleteApplication:output_type -> google.protobuf.Empty
-	13, // [13:23] is the sub-list for method output_type
-	3,  // [3:13] is the sub-list for method input_type
+	17, // 11: application.ApplicationService.TransferApplication:input_type -> application.TransferApplicationRequest
+	18, // 12: application.ApplicationService.AddApplicationFixLog:input_type -> application.AddApplicationFixLogRequest
+	19, // 13: application.ApplicationService.DeleteApplication:input_type -> application.DeleteApplicationRequest
+	4,  // 14: application.ApplicationService.Health:output_type -> application.HealthResponse
+	6,  // 15: application.ApplicationService.CreateApplication:output_type -> application.CreateApplicationResponse
+	8,  // 16: application.ApplicationService.GetApplication:output_type -> application.GetApplicationResponse
+	10, // 17: application.ApplicationService.GetApplications:output_type -> application.GetApplicationsResponse
+	12, // 18: application.ApplicationService.GetCompanyApplicationStatistic:output_type -> application.GetCompanyApplicationStatisticResponse
+	14, // 19: application.ApplicationService.GetEmployeeApplicationStatistic:output_type -> application.GetEmployeeApplicationStatisticResponse
+	20, // 20: application.ApplicationService.UpdateApplicationStatus:output_type -> google.protobuf.Empty
+	20, // 21: application.ApplicationService.AssignApplicationToEmployee:output_type -> google.protobuf.Empty
+	20, // 22: application.ApplicationService.TransferApplication:output_type -> google.protobuf.Empty
+	20, // 23: application.ApplicationService.AddApplicationFixLog:output_type -> google.protobuf.Empty
+	20, // 24: application.ApplicationService.DeleteApplication:output_type -> google.protobuf.Empty
+	14, // [14:25] is the sub-list for method output_type
+	3,  // [3:14] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name
@@ -1559,7 +1706,7 @@ func file_application_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_application_proto_rawDesc), len(file_application_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

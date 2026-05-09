@@ -14,6 +14,7 @@ service ApplicationService {
   rpc GetEmployeeApplicationStatistic(GetEmployeeApplicationStatisticRequest) returns (GetEmployeeApplicationStatisticResponse);
   rpc UpdateApplicationStatus(UpdateApplicationStatusRequest) returns (google.protobuf.Empty);
   rpc AssignApplicationToEmployee(AssignApplicationToEmployeeRequest) returns (google.protobuf.Empty);
+  rpc TransferApplication(TransferApplicationRequest) returns (google.protobuf.Empty);
   rpc AddApplicationFixLog(AddApplicationFixLogRequest) returns (google.protobuf.Empty);
   rpc DeleteApplication(DeleteApplicationRequest) returns (google.protobuf.Empty);
 }
@@ -22,16 +23,17 @@ service ApplicationService {
 message Application {
   string application_uuid = 1;
   string company_uuid = 2;
-  string title = 3;
-  string description = 4;
-  string status = 5;
-  string responsible_manager = 6;
-  string responsible_engineer = 7;
-  string created_at = 8;
-  string created_by = 9;
-  string closed_at = 10;
-  string deleted_at = 11;
-  repeated FixLog fix_logs = 12;
+  string department_uuid = 3;
+  string title = 4;
+  string description = 5;
+  string status = 6;
+  string responsible_manager = 7;
+  string responsible_engineer = 8;
+  string created_at = 9;
+  string created_by = 10;
+  string closed_at = 11;
+  string deleted_at = 12;
+  repeated FixLog fix_logs = 13;
 }
 
 message FixLog {
@@ -89,8 +91,10 @@ message GetApplicationsRequest {
   string operation_id = 1;
   string initiator_uuid = 2;
   string company_uuid = 3;
-  int64 count = 4;
-  int64 offset = 5;
+  string department_uuid = 4;
+  string status = 5;
+  int64 count = 6;
+  int64 offset = 7;
 }
 message GetApplicationsResponse {
   repeated Application applications = 1;
@@ -106,13 +110,15 @@ message GetCompanyApplicationStatisticRequest {
 message GetCompanyApplicationStatisticResponse {
   int64 created = 1;
   int64 assigned = 2;
-  int64 in_progress = 3;
-  int64 on_hold = 4;
-  int64 awaiting_approval = 5;
-  int64 completed = 6;
-  int64 cancelled = 7;
-  int64 failed = 8;
-  int64 archived = 9;
+  int64 redirected = 3;
+  int64 rejected = 4;
+  int64 in_progress = 5;
+  int64 on_hold = 6;
+  int64 awaiting_approval = 7;
+  int64 completed = 8;
+  int64 cancelled = 9;
+  int64 failed = 10;
+  int64 archived = 11;
 }
 
 
@@ -125,14 +131,16 @@ message GetEmployeeApplicationStatisticRequest {
 }
 message GetEmployeeApplicationStatisticResponse {
   int64 created = 1; // Сколько пользователь создал задач 
-  int64 assigned = 2; // Сколько у пользователя текущих задач 
-  int64 in_progress = 3; // Сколько у пользователя задач на выполнении 
-  int64 on_hold = 4; // Сколько у пользователя задач на паузе
-  int64 awaiting_approval = 5; // Сколько у пользователя задач ожидают подтверждения
-  int64 completed = 6; // Сколько пользователь завершил задач
-  int64 cancelled = 7; // Сколько пользователь отменил задач
-  int64 failed = 8; // Сколько пользователь провалил задач
-  int64 archived = 9; // Сколько пользователь заморозил задач
+  int64 assigned = 2; // Сколько у пользователя текущих задач
+  int64 redirected = 3; // Сколько у пользователя переданных в другой департамент задач
+  int64 rejected = 4; // Сколько у пользователя отклоненных задач
+  int64 in_progress = 5; // Сколько у пользователя задач на выполнении
+  int64 on_hold = 6; // Сколько у пользователя задач на паузе
+  int64 awaiting_approval = 7; // Сколько у пользователя задач ожидают подтверждения
+  int64 completed = 8; // Сколько пользователь завершил задач
+  int64 cancelled = 9; // Сколько пользователь отменил задач
+  int64 failed = 10; // Сколько пользователь провалил задач
+  int64 archived = 11; // Сколько пользователь заморозил задач
 }
 
 
@@ -152,6 +160,16 @@ message AssignApplicationToEmployeeRequest {
   string initiator_uuid = 2;
   string target_uuid = 3;
   string application_uuid = 4;
+}
+// Empty response
+
+
+// TransferApplication
+message TransferApplicationRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string application_uuid = 3;
+  string target_department_uuid = 4;
 }
 // Empty response
 

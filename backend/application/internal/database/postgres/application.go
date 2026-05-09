@@ -42,7 +42,7 @@ func (r *applicationRepository) saveVersion(ctx context.Context, tx *sql.Tx, app
 	var app entities.Application
 	err := tx.QueryRowContext(ctx, `
 		SELECT
-			uuid, company_uuid, version, title, description, status,
+			uuid, company_uuid, department_uuid, version, title, description, status,
 			created_at::text, created_by,
 			COALESCE(closed_at::text, ''),
 			COALESCE(managed_by::text, ''),
@@ -55,6 +55,7 @@ func (r *applicationRepository) saveVersion(ctx context.Context, tx *sql.Tx, app
 	).Scan(
 		&app.ApplicationUUID,
 		&app.CompanyUUID,
+		&app.DepartmentUUID,
 		&app.Version,
 		&app.Title,
 		&app.Description,
@@ -85,10 +86,10 @@ func (r *applicationRepository) saveVersion(ctx context.Context, tx *sql.Tx, app
 // CreateApplication Создание заявки
 func (r *applicationRepository) CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError {
 	query := `INSERT INTO applications
-	(uuid, company_uuid, version, title, description, status, created_by) VALUES
+	(uuid, company_uuid, department_uuid, version, title, description, status, created_by) VALUES
 	($1, $2, 1, $3, $4, 'created', $5);`
 
-	_, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.CompanyUUID, dto.Title, dto.Description, dto.CreatedBy)
+	_, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.CompanyUUID, dto.DepartmentUUID, dto.Title, dto.Description, dto.CreatedBy)
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
@@ -119,6 +120,7 @@ func (r *applicationRepository) AddApplicationFixLog(ctx context.Context, dto en
 func (r *applicationRepository) GetApplication(ctx context.Context, dto entities.GetApplicationDTO) (*entities.Application, Error.CodeError) {
 	query := `SELECT
 			company_uuid,
+			department_uuid,
 			title,
 			description,
 			status,
@@ -133,6 +135,7 @@ func (r *applicationRepository) GetApplication(ctx context.Context, dto entities
 	application := &entities.Application{ApplicationUUID: dto.ApplicationUUID}
 	err := r.db.QueryRowContext(ctx, query, dto.ApplicationUUID).Scan(
 		&application.CompanyUUID,
+		&application.DepartmentUUID,
 		&application.Title,
 		&application.Description,
 		&application.Status,
@@ -179,12 +182,13 @@ func (r *applicationRepository) GetApplicationFixLogs(ctx context.Context, dto e
 	return fixLogs, Error.CodeError{Code: -1, Err: nil}
 }
 
-// GetApplications Получение списка заявок по uuid компании и статусу
+// GetApplications Получение списка заявок по uuid компании с сортировкой по статусу и департаменту с offset и count
 func (r *applicationRepository) GetApplications(ctx context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
 	query := `
 		SELECT
 			uuid,
-			version,
+			department_uuid,
+			status,
 			title,
 			description,
 			created_at,
@@ -193,11 +197,11 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 			COALESCE(managed_by, ''),
 			COALESCE(executed_by, '')
 		FROM applications
-		WHERE company_uuid = $1 AND ($2 = '' OR status = $2)
+		WHERE company_uuid = $1 AND ($2 = '' OR status = $2) AND ($3 = '' OR department_uuid = $3)
 		ORDER BY created_at DESC, uuid
-		OFFSET $3 LIMIT $4;`
+		OFFSET $4 LIMIT $5;`
 
-	rows, err := r.db.QueryContext(ctx, query, dto.CompanyUUID, dto.Status, dto.Offset, dto.Count)
+	rows, err := r.db.QueryContext(ctx, query, dto.CompanyUUID, dto.Status, dto.DepartmentUUID, dto.Offset, dto.Count)
 	if err != nil {
 		return nil, Error.CodeError{Code: 0, Err: err}
 	}
@@ -205,22 +209,27 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 
 	applications := make([]*entities.Application, 0)
 	for rows.Next() {
-		item := &entities.Application{CompanyUUID: dto.CompanyUUID, Status: dto.Status}
+		application := &entities.Application{CompanyUUID: dto.CompanyUUID, Status: dto.Status}
 		err = rows.Scan(
-			&item.ApplicationUUID,
-			&item.Version,
-			&item.Title,
-			&item.Description,
-			&item.CreatedAt,
-			&item.CreatedBy,
-			&item.ClosedAt,
-			&item.ResponsibleManager,
-			&item.ResponsibleEngineer)
+			&application.ApplicationUUID,
+			&application.DepartmentUUID,
+			&application.Status,
+			&application.Title,
+			&application.Description,
+			&application.CreatedAt,
+			&application.CreatedBy,
+			&application.ClosedAt,
+			&application.ResponsibleManager,
+			&application.ResponsibleEngineer)
 		if err != nil {
 			return nil, Error.CodeError{Code: 0, Err: err}
 		}
 
-		applications = append(applications, item)
+		applications = append(applications, application)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Error.CodeError{Code: 0, Err: err}
 	}
 
 	return applications, Error.CodeError{Code: -1, Err: nil}
@@ -231,6 +240,8 @@ func (r *applicationRepository) GetCompanyApplicationStatistic(ctx context.Conte
 	query := `SELECT
 		COUNT(*) FILTER (WHERE status = 'created'),
 		COUNT(*) FILTER (WHERE status = 'assigned'),
+		COUNT(*) FILTER (WHERE status = 'redirected'),
+		COUNT(*) FILTER (WHERE status = 'rejected'),
 		COUNT(*) FILTER (WHERE status = 'in_progress'),
 		COUNT(*) FILTER (WHERE status = 'on_hold'),
 		COUNT(*) FILTER (WHERE status = 'awaiting_approval'),
@@ -239,13 +250,15 @@ func (r *applicationRepository) GetCompanyApplicationStatistic(ctx context.Conte
 		COUNT(*) FILTER (WHERE status = 'failed'),
 		COUNT(*) FILTER (WHERE status = 'archived')
 	FROM applications
-	WHERE company_uuid = $1 AND deleted_at IS NULL;`
+	WHERE company_uuid = $1 AND ($2 OR deleted_at IS NULL);`
 
 	statistic := &entities.ApplicationStatistic{}
 
-	err := r.db.QueryRow(query, dto.CompanyUUID).Scan(
+	err := r.db.QueryRowContext(ctx, query, dto.CompanyUUID, dto.WithDeleted).Scan(
 		&statistic.Created,
 		&statistic.Assigned,
+		&statistic.Redirected,
+		&statistic.Rejected,
 		&statistic.InProgress,
 		&statistic.OnHold,
 		&statistic.AwaitingApproval,
@@ -254,7 +267,6 @@ func (r *applicationRepository) GetCompanyApplicationStatistic(ctx context.Conte
 		&statistic.Failed,
 		&statistic.Archived,
 	)
-
 	if err != nil {
 		return nil, Error.CodeError{Code: 0, Err: err}
 	}
@@ -268,6 +280,8 @@ func (r *applicationRepository) GetEmployeeApplicationStatistic(ctx context.Cont
 		SELECT
 			COUNT(*) FILTER (WHERE status = 'created' AND created_by = $2) as created,
 			COUNT(*) FILTER (WHERE status = 'assigned') as assigned,
+			COUNT(*) FILTER (WHERE status = 'redirected') as redirected,
+			COUNT(*) FILTER (WHERE status = 'rejected') as rejected,
 			COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress,
 			COUNT(*) FILTER (WHERE status = 'on_hold') as on_hold,
 			COUNT(*) FILTER (WHERE status = 'awaiting_approval') as awaiting_approval,
@@ -285,6 +299,8 @@ func (r *applicationRepository) GetEmployeeApplicationStatistic(ctx context.Cont
 	err := r.db.QueryRowContext(ctx, query, dto.CompanyUUID, dto.TargetUUID).Scan(
 		&statistic.Created,
 		&statistic.Assigned,
+		&statistic.Redirected,
+		&statistic.Rejected,
 		&statistic.InProgress,
 		&statistic.OnHold,
 		&statistic.AwaitingApproval,
@@ -319,9 +335,14 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 	SET
 		version = version + 1,
 		status = $2,
+		
+		department_uuid = CASE
+			WHEN $2 = 'redirected' THEN $4
+		    ELSE department_uuid
+		END,
 
 		managed_by = CASE
-			WHEN $2 IN ('assigned', 'completed', 'cancelled', 'failed') THEN $3
+			WHEN $2 IN ('assigned', 'redirected', 'rejected', 'completed', 'cancelled', 'failed') THEN $3
 			ELSE managed_by
 		END,
 
@@ -336,7 +357,7 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 		END
 	WHERE uuid = $1 AND deleted_at IS NULL;`
 
-	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.Status, dto.InitiatorUUID)
+	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.Status, dto.InitiatorUUID, dto.TargetDepartmentUUID)
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
@@ -345,11 +366,12 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
+
 	if affected == 0 {
 		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
 
@@ -388,11 +410,12 @@ func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context,
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
+
 	if affected == 0 {
 		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
 
@@ -428,11 +451,12 @@ func (r *applicationRepository) DeleteApplicationRequest(ctx context.Context, dt
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
+
 	if affected == 0 {
 		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
 

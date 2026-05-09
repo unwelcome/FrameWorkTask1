@@ -1,0 +1,1 @@
+ALTER TABLE applications ADD COLUMN department_uuid UUID NOT NULL;

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
+	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -24,7 +24,6 @@ type mockApplicationRepo struct {
 	getApplications                 func(ctx context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError)
 	getCompanyApplicationStatistic  func(ctx context.Context, dto entities.GetCompanyApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError)
 	getEmployeeApplicationStatistic func(ctx context.Context, dto entities.GetEmployeeApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError)
-	updateApplicationData           func(ctx context.Context, dto entities.UpdateApplicationDataDTO) Error.CodeError
 	updateApplicationStatus         func(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError
 	assignApplicationToEmployee     func(ctx context.Context, dto entities.AssignApplicationToEmployeeDTO) Error.CodeError
 	deleteApplicationRequest        func(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError
@@ -50,9 +49,6 @@ func (m *mockApplicationRepo) GetCompanyApplicationStatistic(ctx context.Context
 }
 func (m *mockApplicationRepo) GetEmployeeApplicationStatistic(ctx context.Context, dto entities.GetEmployeeApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
 	return m.getEmployeeApplicationStatistic(ctx, dto)
-}
-func (m *mockApplicationRepo) UpdateApplicationData(ctx context.Context, dto entities.UpdateApplicationDataDTO) Error.CodeError {
-	return m.updateApplicationData(ctx, dto)
 }
 func (m *mockApplicationRepo) UpdateApplicationStatus(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError {
 	return m.updateApplicationStatus(ctx, dto)

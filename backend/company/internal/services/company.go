@@ -52,8 +52,8 @@ func (s *CompanyService) Health(ctx context.Context, req *pb.HealthRequest) (*pb
 // CreateCompany Создает компанию
 func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompanyRequest) (*pb.CreateCompanyResponse, error) {
 	// Проверка title
-	title := req.GetTitle()
-	if strings.TrimSpace(title) == "" || len([]rune(title)) >= 255 {
+	title := strings.TrimSpace(req.GetTitle())
+	if title == "" || len([]rune(title)) >= 255 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "create company").Err(fmt.Errorf("invalid title")).Msg("error")
 		return nil, status.Errorf(codes.InvalidArgument, "invalid title")
 	}
@@ -525,6 +525,13 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 
 // CreateDepartment Создание департамента
 func (s *CompanyService) CreateDepartment(ctx context.Context, req *pb.CreateDepartmentRequest) (*pb.CreateDepartmentResponse, error) {
+	// Проверка title
+	title := strings.TrimSpace(req.GetTitle())
+	if title == "" || len([]rune(title)) >= 255 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create department").Err(fmt.Errorf("invalid title")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid title")
+	}
+
 	// Проверяем роль инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "create department", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {

@@ -23,11 +23,17 @@ type mockPGCompanyRepo struct {
 	deleteCompany              func(ctx context.Context, companyUUID string) Error.CodeError
 	joinCompany                func(ctx context.Context, companyUUID, userUUID string) Error.CodeError
 	getCompanyEmployee         func(ctx context.Context, companyUUID, userUUID string) (*entities.Employee, Error.CodeError)
-	getCompanyEmployees        func(ctx context.Context, companyUUID string, offset, count int64) ([]*entities.Employee, Error.CodeError)
-	getCompanyEmployeesByRole  func(ctx context.Context, companyUUID, role string, offset, count int64) ([]*entities.Employee, Error.CodeError)
-	getCompanyEmployeesSummary func(ctx context.Context, companyUUID string) (*entities.EmployeesSummary, Error.CodeError)
+	getCompanyEmployees        func(ctx context.Context, companyUUID, departmentUUID, role string, offset, count int64) ([]*entities.Employee, Error.CodeError)
+	getCompanyEmployeesSummary func(ctx context.Context, companyUUID, departmentUUID string) (*entities.EmployeesSummary, Error.CodeError)
 	setCompanyEmployeeRole     func(ctx context.Context, companyUUID, userUUID, role string) Error.CodeError
 	removeCompanyEmployee      func(ctx context.Context, companyUUID, userUUID string) Error.CodeError
+	createDepartment           func(ctx context.Context, dto *entities.CreateDepartment) Error.CodeError
+	addEmployeeToDepartment    func(ctx context.Context, departmentUUID, companyUUID, targetUUID string) Error.CodeError
+	getDepartment              func(ctx context.Context, departmentUUID string) (*entities.Department, Error.CodeError)
+	getCompanyDepartments      func(ctx context.Context, companyUUID string, offset, count int64) ([]*entities.Department, Error.CodeError)
+	updateDepartmentTitle      func(ctx context.Context, dto *entities.UpdateDepartment) Error.CodeError
+	deleteDepartment           func(ctx context.Context, departmentUUID string) Error.CodeError
+	removeEmployeeFromDepartment func(ctx context.Context, companyUUID, targetUUID string) Error.CodeError
 }
 
 func (m *mockPGCompanyRepo) CreateCompany(ctx context.Context, dto *entities.CreateCompany) Error.CodeError {
@@ -54,20 +60,38 @@ func (m *mockPGCompanyRepo) JoinCompany(ctx context.Context, companyUUID, userUU
 func (m *mockPGCompanyRepo) GetCompanyEmployee(ctx context.Context, companyUUID, userUUID string) (*entities.Employee, Error.CodeError) {
 	return m.getCompanyEmployee(ctx, companyUUID, userUUID)
 }
-func (m *mockPGCompanyRepo) GetCompanyEmployees(ctx context.Context, companyUUID string, offset, count int64) ([]*entities.Employee, Error.CodeError) {
-	return m.getCompanyEmployees(ctx, companyUUID, offset, count)
+func (m *mockPGCompanyRepo) GetCompanyEmployees(ctx context.Context, companyUUID, departmentUUID, role string, offset, count int64) ([]*entities.Employee, Error.CodeError) {
+	return m.getCompanyEmployees(ctx, companyUUID, departmentUUID, role, offset, count)
 }
-func (m *mockPGCompanyRepo) GetCompanyEmployeesByRole(ctx context.Context, companyUUID, role string, offset, count int64) ([]*entities.Employee, Error.CodeError) {
-	return m.getCompanyEmployeesByRole(ctx, companyUUID, role, offset, count)
-}
-func (m *mockPGCompanyRepo) GetCompanyEmployeesSummary(ctx context.Context, companyUUID string) (*entities.EmployeesSummary, Error.CodeError) {
-	return m.getCompanyEmployeesSummary(ctx, companyUUID)
+func (m *mockPGCompanyRepo) GetCompanyEmployeesSummary(ctx context.Context, companyUUID, departmentUUID string) (*entities.EmployeesSummary, Error.CodeError) {
+	return m.getCompanyEmployeesSummary(ctx, companyUUID, departmentUUID)
 }
 func (m *mockPGCompanyRepo) SetCompanyEmployeeRole(ctx context.Context, companyUUID, userUUID, role string) Error.CodeError {
 	return m.setCompanyEmployeeRole(ctx, companyUUID, userUUID, role)
 }
 func (m *mockPGCompanyRepo) RemoveCompanyEmployee(ctx context.Context, companyUUID, userUUID string) Error.CodeError {
 	return m.removeCompanyEmployee(ctx, companyUUID, userUUID)
+}
+func (m *mockPGCompanyRepo) CreateDepartment(ctx context.Context, dto *entities.CreateDepartment) Error.CodeError {
+	return m.createDepartment(ctx, dto)
+}
+func (m *mockPGCompanyRepo) AddEmployeeToDepartment(ctx context.Context, departmentUUID, companyUUID, targetUUID string) Error.CodeError {
+	return m.addEmployeeToDepartment(ctx, departmentUUID, companyUUID, targetUUID)
+}
+func (m *mockPGCompanyRepo) GetDepartment(ctx context.Context, departmentUUID string) (*entities.Department, Error.CodeError) {
+	return m.getDepartment(ctx, departmentUUID)
+}
+func (m *mockPGCompanyRepo) GetCompanyDepartments(ctx context.Context, companyUUID string, offset, count int64) ([]*entities.Department, Error.CodeError) {
+	return m.getCompanyDepartments(ctx, companyUUID, offset, count)
+}
+func (m *mockPGCompanyRepo) UpdateDepartmentTitle(ctx context.Context, dto *entities.UpdateDepartment) Error.CodeError {
+	return m.updateDepartmentTitle(ctx, dto)
+}
+func (m *mockPGCompanyRepo) DeleteDepartment(ctx context.Context, departmentUUID string) Error.CodeError {
+	return m.deleteDepartment(ctx, departmentUUID)
+}
+func (m *mockPGCompanyRepo) RemoveEmployeeFromDepartment(ctx context.Context, companyUUID, targetUUID string) Error.CodeError {
+	return m.removeEmployeeFromDepartment(ctx, companyUUID, targetUUID)
 }
 
 // ─── Mock: Redis CompanyRepository ───────────────────────────────────────────
@@ -102,40 +126,36 @@ func (m *mockRedisCompanyRepo) DeleteCompanyJoinCode(ctx context.Context, compan
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-// newTestService создаёт CompanyService с подменёнными зависимостями
 func newTestService(pgRepo postgresDB.CompanyRepository, redisRepo redisDB.CompanyRepository) *CompanyService {
 	db := &postgresDB.DatabaseRepository{Company: pgRepo}
 	cache := &redisDB.CacheRepository{Company: redisRepo}
 	return NewCompanyService(db, cache)
 }
 
-// emptyPGRepo — заглушка для тестов, где PostgresRepository не должен вызываться
 func emptyPGRepo() *mockPGCompanyRepo { return &mockPGCompanyRepo{} }
 
-// emptyRedisRepo — заглушка для тестов, где RedisRepository не должен вызываться
 func emptyRedisRepo() *mockRedisCompanyRepo { return &mockRedisCompanyRepo{} }
 
-// ok возвращает CodeError без ошибки (успех)
 func ok() Error.CodeError { return Error.CodeError{Code: -1} }
 
-// notFound возвращает CodeError с кодом NotFound
 func notFound() Error.CodeError {
 	return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("not found")}
 }
 
-// internalErr возвращает CodeError с кодом Internal (0)
 func internalErr() Error.CodeError {
 	return Error.CodeError{Code: 0, Err: fmt.Errorf("db error")}
 }
 
-// companyEntity возвращает тестовую Company со статусом "open"
 func companyEntity() *entities.Company {
 	return &entities.Company{Status: "open", Title: "Test Co"}
 }
 
-// chiefEmployee возвращает тестового Employee с ролью "chief"
 func chiefEmployee() *entities.Employee {
 	return &entities.Employee{Role: "chief"}
+}
+
+func departmentEntity() *entities.Department {
+	return &entities.Department{UUID: deptID, CompanyUUID: companyID, Title: "Test Dept"}
 }
 
 // pgRepoWithChief настраивает pg-мок так, чтобы checkEmployeeRole проходил для роли "chief"
@@ -146,6 +166,16 @@ func pgRepoWithChief() *mockPGCompanyRepo {
 	}
 	pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
 		return chiefEmployee(), ok()
+	}
+	return pg
+}
+
+// pgRepoWithChiefAndDept настраивает pg-мок для методов департаментов:
+// getDepartment возвращает тестовый департамент, а initiator всегда chief
+func pgRepoWithChiefAndDept() *mockPGCompanyRepo {
+	pg := pgRepoWithChief()
+	pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		return departmentEntity(), ok()
 	}
 	return pg
 }

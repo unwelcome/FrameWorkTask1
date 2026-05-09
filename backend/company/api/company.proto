@@ -263,9 +263,8 @@ message CreateDepartmentResponse {
 message AddEmployeeToDepartmentRequest {
   string operation_id = 1;
   string initiator_uuid = 2;
-  string company_uuid = 3;
+  string department_uuid = 3;
   string target_uuid = 4;
-  string department_uuid = 5;
 }
 // Empty response
 

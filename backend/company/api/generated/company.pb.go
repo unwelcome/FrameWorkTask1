@@ -1981,9 +1981,8 @@ type AddEmployeeToDepartmentRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	OperationId    string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
 	InitiatorUuid  string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid    string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
 	TargetUuid     string                 `protobuf:"bytes,4,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
-	DepartmentUuid string                 `protobuf:"bytes,5,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -2032,9 +2031,9 @@ func (x *AddEmployeeToDepartmentRequest) GetInitiatorUuid() string {
 	return ""
 }
 
-func (x *AddEmployeeToDepartmentRequest) GetCompanyUuid() string {
+func (x *AddEmployeeToDepartmentRequest) GetDepartmentUuid() string {
 	if x != nil {
-		return x.CompanyUuid
+		return x.DepartmentUuid
 	}
 	return ""
 }
@@ -2042,13 +2041,6 @@ func (x *AddEmployeeToDepartmentRequest) GetCompanyUuid() string {
 func (x *AddEmployeeToDepartmentRequest) GetTargetUuid() string {
 	if x != nil {
 		return x.TargetUuid
-	}
-	return ""
-}
-
-func (x *AddEmployeeToDepartmentRequest) GetDepartmentUuid() string {
-	if x != nil {
-		return x.DepartmentUuid
 	}
 	return ""
 }
@@ -2700,14 +2692,13 @@ const file_company_proto_rawDesc = "" +
 	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\"C\n" +
 	"\x18CreateDepartmentResponse\x12'\n" +
-	"\x0fdepartment_uuid\x18\x01 \x01(\tR\x0edepartmentUuid\"\xd7\x01\n" +
+	"\x0fdepartment_uuid\x18\x01 \x01(\tR\x0edepartmentUuid\"\xb4\x01\n" +
 	"\x1eAddEmployeeToDepartmentRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x1f\n" +
+	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12'\n" +
+	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\x12\x1f\n" +
 	"\vtarget_uuid\x18\x04 \x01(\tR\n" +
-	"targetUuid\x12'\n" +
-	"\x0fdepartment_uuid\x18\x05 \x01(\tR\x0edepartmentUuid\"\x89\x01\n" +
+	"targetUuid\"\x89\x01\n" +
 	"\x14GetDepartmentRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12'\n" +

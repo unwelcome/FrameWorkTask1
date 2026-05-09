@@ -22,9 +22,8 @@ type CompanyRepository interface {
 	DeleteCompany(ctx context.Context, companyUUID string) Error.CodeError
 	JoinCompany(ctx context.Context, companyUUID, userUUID string) Error.CodeError
 	GetCompanyEmployee(ctx context.Context, companyUUID, userUUID string) (*entities.Employee, Error.CodeError)
-	GetCompanyEmployees(ctx context.Context, companyUUID string, offset, count int64) ([]*entities.Employee, Error.CodeError)
-	GetCompanyEmployeesByRole(ctx context.Context, companyUUID, role string, offset, count int64) ([]*entities.Employee, Error.CodeError)
-	GetCompanyEmployeesSummary(ctx context.Context, companyUUID string) (*entities.EmployeesSummary, Error.CodeError)
+	GetCompanyEmployees(ctx context.Context, companyUUID, departmentUUID, role string, offset, count int64) ([]*entities.Employee, Error.CodeError)
+	GetCompanyEmployeesSummary(ctx context.Context, companyUUID, departmentUUID string) (*entities.EmployeesSummary, Error.CodeError)
 	SetCompanyEmployeeRole(ctx context.Context, companyUUID string, userUUID string, role string) Error.CodeError
 	RemoveCompanyEmployee(ctx context.Context, companyUUID, userUUID string) Error.CodeError
 	CreateDepartment(ctx context.Context, dto *entities.CreateDepartment) Error.CodeError
@@ -211,19 +210,19 @@ func (r *companyRepository) GetCompanyEmployee(ctx context.Context, companyUUID,
 	return employee, Error.CodeError{Code: -1, Err: nil}
 }
 
-// GetCompanyEmployees Возвращает сотрудников компании
-func (r *companyRepository) GetCompanyEmployees(ctx context.Context, companyUUID string, offset, count int64) ([]*entities.Employee, Error.CodeError) {
+// GetCompanyEmployees Возвращает сотрудников компании (сортировка по role, departmentUUID и ограничения через offset и count)
+func (r *companyRepository) GetCompanyEmployees(ctx context.Context, companyUUID, departmentUUID, role string, offset, count int64) ([]*entities.Employee, Error.CodeError) {
 	query := `SELECT 
 		user_uuid, 
 		role, 
 		department_uuid,
 		joined_at 
 	FROM employees 
-	WHERE company_uuid = $1
+	WHERE company_uuid = $1 AND ($2 = '' OR role = $2) AND ($3 = '' OR department_uuid = $3)
 	ORDER BY joined_at DESC 
-	OFFSET $2 LIMIT $3;`
+	OFFSET $4 LIMIT $5;`
 
-	rows, err := r.db.QueryContext(ctx, query, companyUUID, offset, count)
+	rows, err := r.db.QueryContext(ctx, query, companyUUID, role, departmentUUID, offset, count)
 	if err != nil {
 		return nil, Error.CodeError{Code: 0, Err: err}
 	}
@@ -247,43 +246,8 @@ func (r *companyRepository) GetCompanyEmployees(ctx context.Context, companyUUID
 	return employees, Error.CodeError{Code: -1, Err: nil}
 }
 
-// GetCompanyEmployeesByRole Возвращает сотрудников компании с определенной ролью
-func (r *companyRepository) GetCompanyEmployeesByRole(ctx context.Context, companyUUID, role string, offset, count int64) ([]*entities.Employee, Error.CodeError) {
-	query := `SELECT 
-		user_uuid, 
-		role, 
-		joined_at 
-	FROM employees 
-	WHERE company_uuid = $1 AND role = $2 
-	ORDER BY joined_at DESC 
-	OFFSET $3 LIMIT $4;`
-
-	rows, err := r.db.QueryContext(ctx, query, companyUUID, role, offset, count)
-	if err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
-	}
-	defer rows.Close()
-
-	employees := make([]*entities.Employee, 0)
-	for rows.Next() {
-		employee := &entities.Employee{}
-		err = rows.Scan(&employee.UserUUID, &employee.Role, &employee.JoinedAt)
-		if err != nil {
-			return nil, Error.CodeError{Code: 0, Err: err}
-		}
-
-		employees = append(employees, employee)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
-	}
-
-	return employees, Error.CodeError{Code: -1, Err: nil}
-}
-
 // GetCompanyEmployeesSummary Получение кол-ва сотрудников по ролям в компании
-func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, companyUUID string) (*entities.EmployeesSummary, Error.CodeError) {
+func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, companyUUID, departmentUUID string) (*entities.EmployeesSummary, Error.CodeError) {
 	query := `SELECT
     	COUNT(CASE WHEN role = 'unemployed' THEN 1 END) as unemployed_count,
     	COUNT(CASE WHEN role = 'inspector' THEN 1 END) as inspector_count,
@@ -292,13 +256,13 @@ func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, comp
     	COUNT(CASE WHEN role = 'analytic' THEN 1 END) as analytic_count,
     	COUNT(CASE WHEN role = 'chief' THEN 1 END) as chief_count
 	FROM employees
-	WHERE company_uuid = $1;`
+	WHERE company_uuid = $1 AND ($2 = '' OR department_uuid = $2);`
 
 	employeeSummary := &entities.EmployeesSummary{
 		CompanyUUID: companyUUID,
 	}
 
-	err := r.db.QueryRowContext(ctx, query, companyUUID).
+	err := r.db.QueryRowContext(ctx, query, companyUUID, departmentUUID).
 		Scan(
 			&employeeSummary.UnemployedCount,
 			&employeeSummary.InspectorCount,

@@ -418,15 +418,8 @@ func (s *CompanyService) GetCompanyEmployees(ctx context.Context, req *pb.GetCom
 		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
 	}
 
-	var employees []*entities.Employee
-	var getErr Error.CodeError
-
 	// Получаем сотрудников
-	if role == "" { // Без конкретной роли
-		employees, getErr = s.db.Company.GetCompanyEmployees(ctx, req.GetCompanyUuid(), offset, count)
-	} else { // С определенной ролью
-		employees, getErr = s.db.Company.GetCompanyEmployeesByRole(ctx, req.GetCompanyUuid(), role, offset, count)
-	}
+	employees, getErr := s.db.Company.GetCompanyEmployees(ctx, req.GetCompanyUuid(), req.GetDepartmentUuid(), role, offset, count)
 	err = Error.HandleError(getErr, req.GetOperationId(), "get company employees")
 	if err != nil {
 		return nil, err
@@ -436,9 +429,10 @@ func (s *CompanyService) GetCompanyEmployees(ctx context.Context, req *pb.GetCom
 	resEmployees := make([]*pb.Employee, 0)
 	for _, employee := range employees {
 		resEmployees = append(resEmployees, &pb.Employee{
-			UserUuid: employee.UserUUID,
-			Role:     employee.Role,
-			JoinedAt: employee.JoinedAt,
+			UserUuid:       employee.UserUUID,
+			Role:           employee.Role,
+			DepartmentUuid: employee.DepartmentUUID,
+			JoinedAt:       employee.JoinedAt,
 		})
 	}
 
@@ -455,7 +449,7 @@ func (s *CompanyService) GetCompanyEmployeesSummary(ctx context.Context, req *pb
 	}
 
 	// Получаем данные сотрудника
-	employeesInfo, getErr := s.db.Company.GetCompanyEmployeesSummary(ctx, req.GetCompanyUuid())
+	employeesInfo, getErr := s.db.Company.GetCompanyEmployeesSummary(ctx, req.GetCompanyUuid(), req.GetDepartmentUuid())
 	err = Error.HandleError(getErr, req.GetOperationId(), "get company employees summary")
 	if err != nil {
 		return nil, err
@@ -558,20 +552,27 @@ func (s *CompanyService) CreateDepartment(ctx context.Context, req *pb.CreateDep
 
 // AddEmployeeToDepartment Добавление сотрудника в департамент
 func (s *CompanyService) AddEmployeeToDepartment(ctx context.Context, req *pb.AddEmployeeToDepartmentRequest) (*emptypb.Empty, error) {
+	// Получаем данные департамента
+	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
+	err := Error.HandleError(getErr, req.GetOperationId(), "add employee to department")
+	if err != nil {
+		return nil, err
+	}
+
 	// Проверяем роль инициатора
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "add employee to department", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
+	err = s.checkEmployeeRole(ctx, req.GetOperationId(), "add employee to department", department.CompanyUUID, req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
 	}
 
 	// Проверяем принадлежность сотрудника к организации
-	err = s.checkEmployeeRole(ctx, req.GetOperationId(), "add employee to department", req.GetCompanyUuid(), req.GetTargetUuid(), AllRoles)
+	err = s.checkEmployeeRole(ctx, req.GetOperationId(), "add employee to department", department.CompanyUUID, req.GetTargetUuid(), AllRoles)
 	if err != nil {
 		return nil, err
 	}
 
 	// Добавляем сотрудника в департамент
-	addErr := s.db.Company.AddEmployeeToDepartment(ctx, req.GetDepartmentUuid(), req.GetCompanyUuid(), req.GetTargetUuid())
+	addErr := s.db.Company.AddEmployeeToDepartment(ctx, req.GetDepartmentUuid(), department.CompanyUUID, req.GetTargetUuid())
 	err = Error.HandleError(addErr, req.GetOperationId(), "add employee to department")
 	if err != nil {
 		return nil, err
@@ -693,7 +694,7 @@ func (s *CompanyService) DeleteDepartment(ctx context.Context, req *pb.DeleteDep
 	}
 
 	// Получение роли инициатора
-	err = s.checkEmployeeRole(ctx, req.GetInitiatorUuid(), "delete department", department.CompanyUUID, req.GetInitiatorUuid(), []string{"chief"})
+	err = s.checkEmployeeRole(ctx, req.GetOperationId(), "delete department", department.CompanyUUID, req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
 	}

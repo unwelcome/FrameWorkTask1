@@ -26,6 +26,14 @@ service CompanyService {
   rpc GetCompanyEmployeesSummary(GetCompanyEmployeesSummaryRequest) returns (GetCompanyEmployeesSummaryResponse);
   rpc UpdateEmployeeRole(UpdateEmployeeRoleRequest) returns (google.protobuf.Empty);
   rpc RemoveCompanyEmployee(RemoveCompanyEmployeeRequest) returns (google.protobuf.Empty);
+  // Departments
+  rpc CreateDepartment(CreateDepartmentRequest) returns (CreateDepartmentResponse);
+  rpc AddEmployeeToDepartment(AddEmployeeToDepartmentRequest) returns (google.protobuf.Empty);
+  rpc GetDepartment(GetDepartmentRequest) returns (GetDepartmentResponse);
+  rpc GetCompanyDepartments(GetCompanyDepartmentsRequest) returns (GetCompanyDepartmentsResponse);
+  rpc UpdateDepartmentTitle(UpdateDepartmentTitleRequest) returns (google.protobuf.Empty);
+  rpc DeleteDepartment(DeleteDepartmentRequest) returns (google.protobuf.Empty);
+  rpc RemoveEmployeeFromDepartment(RemoveEmployeeFromDepartmentRequest) returns (google.protobuf.Empty);
 }
 
 
@@ -45,7 +53,7 @@ message HealthResponse {
 // CreateCompany
 message CreateCompanyRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string title = 3;
 }
 message CreateCompanyResponse {
@@ -56,7 +64,7 @@ message CreateCompanyResponse {
 // GetCompany
 message GetCompanyRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string company_uuid = 3;
 }
 message GetCompanyResponse {
@@ -85,18 +93,17 @@ message Company {
 // GetUserCompanies
 message GetUserCompaniesRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
 }
 message GetUserCompaniesResponse {
   repeated Company companies = 1;
 }
 
 
-
 // UpdateCompanyTitle
 message UpdateCompanyTitleRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string company_uuid = 3;
   string title = 4;
 }
@@ -106,7 +113,7 @@ message UpdateCompanyTitleRequest {
 //UpdateCompanyStatus
 message UpdateCompanyStatusRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string company_uuid = 3;
   string status = 4;
 }
@@ -116,7 +123,7 @@ message UpdateCompanyStatusRequest {
 // DeleteCompany
 message DeleteCompanyRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string company_uuid = 3;
 }
 // Empty response
@@ -125,7 +132,7 @@ message DeleteCompanyRequest {
 // CreateCompanyJoinCode
 message CreateCompanyJoinCodeRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string company_uuid = 3;
   int64 code_ttl = 4;
 }
@@ -137,7 +144,7 @@ message CreateCompanyJoinCodeResponse {
 // GetCompanyJoinCodes
 message GetCompanyJoinCodesRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string company_uuid = 3;
 }
 message GetCompanyJoinCodesResponse {
@@ -148,7 +155,7 @@ message GetCompanyJoinCodesResponse {
 // DeleteCompanyJoinCodes
 message DeleteCompanyJoinCodeRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string company_uuid = 3;
   string code = 4;
 }
@@ -158,7 +165,7 @@ message DeleteCompanyJoinCodeRequest {
 // JoinCompany
 message JoinCompanyRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string join_code = 3;
 }
 message JoinCompanyResponse {
@@ -176,18 +183,20 @@ message GetCompanyEmployeeRequest {
 }
 message GetCompanyEmployeeResponse {
   string role = 1;
-  string joined_at = 2;
+  string department_uuid = 2;
+  string joined_at = 3;
 }
 
 
 // GetCompanyEmployees
 message GetCompanyEmployeesRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string company_uuid = 3;
   string role = 4;
-  int64 count = 5;
-  int64 offset = 6;
+  string department_uuid = 5;
+  int64 count = 6;
+  int64 offset = 7;
 }
 message GetCompanyEmployeesResponse {
   repeated Employee employees = 1;
@@ -195,15 +204,17 @@ message GetCompanyEmployeesResponse {
 message Employee {
   string user_uuid = 1;
   string role = 2;
-  string joined_at = 3;
+  string department_uuid = 3;
+  string joined_at = 4;
 }
 
 
 // GetCompanyEmployeesSummary
 message GetCompanyEmployeesSummaryRequest {
   string operation_id = 1;
-  string user_uuid = 2;
+  string initiator_uuid = 2;
   string company_uuid = 3;
+  string department_uuid = 4;
 }
 message GetCompanyEmployeesSummaryResponse {
   int64 chief_count = 1;
@@ -231,6 +242,90 @@ message RemoveCompanyEmployeeRequest {
   string operation_id = 1;
   string initiator_uuid = 2;
   string company_uuid = 3;
+  string target_uuid = 4;
+}
+// Empty response
+
+
+// CreateDepartment
+message CreateDepartmentRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string company_uuid = 3;
+  string title = 4;
+}
+message CreateDepartmentResponse {
+  string department_uuid = 1;
+}
+
+
+// AddEmployeeToDepartment
+message AddEmployeeToDepartmentRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string company_uuid = 3;
+  string target_uuid = 4;
+  string department_uuid = 5;
+}
+// Empty response
+
+
+// GetDepartment
+message GetDepartmentRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string department_uuid = 3;
+}
+message GetDepartmentResponse {
+  string department_uuid = 1;
+  string company_uuid = 2;
+  string title = 3;
+  string created_at = 4;
+  string created_by = 5;
+}
+
+
+// GetCompanyDepartments
+message GetCompanyDepartmentsRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string company_uuid = 3;
+  int64 offset = 4;
+  int64 count = 5;
+}
+message Department {
+  string department_uuid = 1;
+  string title = 3;
+}
+message GetCompanyDepartmentsResponse {
+  repeated Department departments = 1;
+}
+
+
+// UpdateDepartmentTitle
+message UpdateDepartmentTitleRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string department_uuid = 3;
+  string title = 4;
+}
+// Empty response
+
+
+// DeleteDepartment
+message DeleteDepartmentRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string department_uuid = 3;
+}
+// Empty response
+
+
+// RemoveEmployeeFromDepartment
+message RemoveEmployeeFromDepartmentRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string department_uuid = 3;
   string target_uuid = 4;
 }
 // Empty response

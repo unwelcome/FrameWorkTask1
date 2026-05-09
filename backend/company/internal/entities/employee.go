@@ -1,10 +1,11 @@
 package entities
 
 type Employee struct {
-	CompanyUUID string `db:"company_uuid"`
-	UserUUID    string `db:"user_uuid"`
-	Role        string `db:"role"`
-	JoinedAt    string `db:"joined_at"`
+	CompanyUUID    string `db:"company_uuid"`
+	UserUUID       string `db:"user_uuid"`
+	DepartmentUUID string `db:"department_uuid"`
+	Role           string `db:"role"`
+	JoinedAt       string `db:"joined_at"`
 }
 
 type EmployeesSummary struct {

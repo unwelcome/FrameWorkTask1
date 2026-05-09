@@ -1,0 +1,1 @@
+ALTER TABLE employees ADD COLUMN department_uuid UUID REFERENCES departments(uuid) ON DELETE SET NULL;

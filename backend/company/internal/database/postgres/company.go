@@ -27,6 +27,13 @@ type CompanyRepository interface {
 	GetCompanyEmployeesSummary(ctx context.Context, companyUUID string) (*entities.EmployeesSummary, Error.CodeError)
 	SetCompanyEmployeeRole(ctx context.Context, companyUUID string, userUUID string, role string) Error.CodeError
 	RemoveCompanyEmployee(ctx context.Context, companyUUID, userUUID string) Error.CodeError
+	CreateDepartment(ctx context.Context, dto *entities.CreateDepartment) Error.CodeError
+	AddEmployeeToDepartment(ctx context.Context, departmentUUID, companyUUID, targetUUID string) Error.CodeError
+	GetDepartment(ctx context.Context, departmentUUID string) (*entities.Department, Error.CodeError)
+	GetCompanyDepartments(ctx context.Context, companyUUID string, offset, count int64) ([]*entities.Department, Error.CodeError)
+	UpdateDepartmentTitle(ctx context.Context, dto *entities.UpdateDepartment) Error.CodeError
+	DeleteDepartment(ctx context.Context, departmentUUID string) Error.CodeError
+	RemoveEmployeeFromDepartment(ctx context.Context, companyUUID, targetUUID string) Error.CodeError
 }
 
 type companyRepository struct {
@@ -187,14 +194,14 @@ func (r *companyRepository) JoinCompany(ctx context.Context, companyUUID, userUU
 
 // GetCompanyEmployee Получение данных о сотруднике в компании (ошибка если сотрудника нет)
 func (r *companyRepository) GetCompanyEmployee(ctx context.Context, companyUUID, userUUID string) (*entities.Employee, Error.CodeError) {
-	query := `SELECT role, joined_at FROM employees WHERE company_uuid = $1 AND user_uuid = $2;`
+	query := `SELECT role, department_uuid, joined_at FROM employees WHERE company_uuid = $1 AND user_uuid = $2;`
 
 	employee := &entities.Employee{
 		CompanyUUID: companyUUID,
 		UserUUID:    userUUID,
 	}
 
-	err := r.db.QueryRowContext(ctx, query, companyUUID, userUUID).Scan(&employee.Role, &employee.JoinedAt)
+	err := r.db.QueryRowContext(ctx, query, companyUUID, userUUID).Scan(&employee.Role, &employee.DepartmentUUID, &employee.JoinedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not in company")}
@@ -209,6 +216,7 @@ func (r *companyRepository) GetCompanyEmployees(ctx context.Context, companyUUID
 	query := `SELECT 
 		user_uuid, 
 		role, 
+		department_uuid,
 		joined_at 
 	FROM employees 
 	WHERE company_uuid = $1
@@ -224,7 +232,7 @@ func (r *companyRepository) GetCompanyEmployees(ctx context.Context, companyUUID
 	employees := make([]*entities.Employee, 0)
 	for rows.Next() {
 		employee := &entities.Employee{}
-		err = rows.Scan(&employee.UserUUID, &employee.Role, &employee.JoinedAt)
+		err = rows.Scan(&employee.UserUUID, &employee.Role, &employee.DepartmentUUID, &employee.JoinedAt)
 		if err != nil {
 			return nil, Error.CodeError{Code: 0, Err: err}
 		}
@@ -350,5 +358,146 @@ func (r *companyRepository) RemoveCompanyEmployee(ctx context.Context, companyUU
 	if rowsAffected == 0 {
 		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not in company")}
 	}
+	return Error.CodeError{Code: -1, Err: nil}
+}
+
+// CreateDepartment - Создание департамента
+func (r *companyRepository) CreateDepartment(ctx context.Context, dto *entities.CreateDepartment) Error.CodeError {
+	query := `INSERT INTO departments (uuid, company_uuid, title, created_by) VALUES ($1, $2, $3, $4);`
+
+	_, err := r.db.ExecContext(ctx, query, dto.UUID, dto.CompanyUUID, dto.Title, dto.CreatedBy)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+	return Error.CodeError{Code: -1, Err: nil}
+}
+
+// AddEmployeeToDepartment - Добавление сотрудника в департамент
+func (r *companyRepository) AddEmployeeToDepartment(ctx context.Context, departmentUUID, companyUUID, targetUUID string) Error.CodeError {
+	query := `UPDATE employees SET department_uuid = $3 WHERE company_uuid = $1 AND user_uuid = $2;`
+
+	res, err := r.db.ExecContext(ctx, query, companyUUID, targetUUID, departmentUUID)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	if rowsAffected == 0 {
+		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("employee not found")}
+	}
+
+	return Error.CodeError{Code: -1, Err: nil}
+}
+
+// GetDepartment - Получение полной информации о департаменте
+func (r *companyRepository) GetDepartment(ctx context.Context, departmentUUID string) (*entities.Department, Error.CodeError) {
+	query := `SELECT company_uuid, title, created_at, created_by FROM departments WHERE uuid = $1;`
+
+	department := &entities.Department{
+		UUID: departmentUUID,
+	}
+
+	err := r.db.QueryRowContext(ctx, query, departmentUUID).Scan(&department.CompanyUUID, &department.Title, &department.CreatedAt, &department.CreatedBy)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("department not found")}
+		}
+		return nil, Error.CodeError{Code: 0, Err: err}
+	}
+	return department, Error.CodeError{Code: -1, Err: nil}
+}
+
+// GetCompanyDepartments - Получение списка департаментов организации с фильтрацией (offset и count)
+func (r *companyRepository) GetCompanyDepartments(ctx context.Context, companyUUID string, offset, count int64) ([]*entities.Department, Error.CodeError) {
+	query := `SELECT uuid, title FROM departments WHERE company_uuid = $1 ORDER BY created_at DESC OFFSET $2 LIMIT $3;`
+
+	rows, err := r.db.QueryContext(ctx, query, companyUUID, offset, count)
+	if err != nil {
+		return nil, Error.CodeError{Code: 0, Err: err}
+	}
+	defer rows.Close()
+
+	departments := make([]*entities.Department, 0)
+	for rows.Next() {
+		department := &entities.Department{}
+		err = rows.Scan(&department.UUID, &department.Title)
+		if err != nil {
+			return nil, Error.CodeError{Code: 0, Err: err}
+		}
+
+		departments = append(departments, department)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Error.CodeError{Code: 0, Err: err}
+	}
+
+	return departments, Error.CodeError{Code: -1, Err: nil}
+}
+
+// UpdateDepartmentTitle - Обновление названия департамента
+func (r *companyRepository) UpdateDepartmentTitle(ctx context.Context, dto *entities.UpdateDepartment) Error.CodeError {
+	query := `UPDATE departments SET title = $1 WHERE uuid = $2;`
+
+	res, err := r.db.ExecContext(ctx, query, dto.Title, dto.UUID)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	if rowsAffected == 0 {
+		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("department not found")}
+	}
+
+	return Error.CodeError{Code: -1, Err: nil}
+}
+
+// DeleteDepartment - Удаление департамента
+func (r *companyRepository) DeleteDepartment(ctx context.Context, departmentUUID string) Error.CodeError {
+	query := `DELETE FROM departments WHERE uuid = $1;`
+
+	res, err := r.db.ExecContext(ctx, query, departmentUUID)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	if rowsAffected == 0 {
+		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("department not found")}
+	}
+
+	return Error.CodeError{Code: -1, Err: nil}
+}
+
+// RemoveEmployeeFromDepartment - Удаление сотрудника из департамента
+func (r *companyRepository) RemoveEmployeeFromDepartment(ctx context.Context, companyUUID, targetUUID string) Error.CodeError {
+	query := `UPDATE employees SET department_uuid = NULL WHERE company_uuid = $1 AND user_uuid = $2;`
+
+	res, err := r.db.ExecContext(ctx, query, companyUUID, targetUUID)
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return Error.CodeError{Code: 0, Err: err}
+	}
+
+	if rowsAffected == 0 {
+		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("employee not found")}
+	}
+
 	return Error.CodeError{Code: -1, Err: nil}
 }

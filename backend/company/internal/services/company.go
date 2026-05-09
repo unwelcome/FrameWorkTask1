@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,7 +22,7 @@ import (
 
 const JoinCodeLength = 6
 
-var AllRoles = []string{"chief", "analytic", "manager", "engineer", "unemployed", "inspector"}
+var AllRoles = []string{"chief", "analytic", "manager", "engineer", "inspector", "unemployed"}
 
 type CompanyService struct {
 	db    *postgresDB.DatabaseRepository
@@ -50,6 +51,13 @@ func (s *CompanyService) Health(ctx context.Context, req *pb.HealthRequest) (*pb
 
 // CreateCompany Создает компанию
 func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompanyRequest) (*pb.CreateCompanyResponse, error) {
+	// Проверка title
+	title := req.GetTitle()
+	if strings.TrimSpace(title) == "" || len([]rune(title)) >= 255 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create company").Err(fmt.Errorf("invalid title")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid title")
+	}
+
 	// Создаем uuid компании
 	companyUUID := uuid.New().String()
 
@@ -57,7 +65,7 @@ func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompan
 	createErr := s.db.Company.CreateCompany(ctx, &entities.CreateCompany{
 		CompanyUUID: companyUUID,
 		Title:       req.GetTitle(),
-		CreatedBy:   req.GetUserUuid(),
+		CreatedBy:   req.GetInitiatorUuid(),
 	})
 	err := Error.HandleError(createErr, req.GetOperationId(), "create company")
 	if err != nil {
@@ -65,7 +73,7 @@ func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompan
 	}
 
 	// Добавляем руководителя в компанию
-	createChiefErr := s.db.Company.JoinCompany(ctx, companyUUID, req.GetUserUuid())
+	createChiefErr := s.db.Company.JoinCompany(ctx, companyUUID, req.GetInitiatorUuid())
 	err = Error.HandleError(createChiefErr, req.GetOperationId(), "create company")
 	if err != nil {
 		// Не удалось добавить руководителя в компанию -> удаляем компанию
@@ -74,7 +82,7 @@ func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompan
 	}
 
 	// Устанавливаем роль руководителя
-	setRoleErr := s.db.Company.SetCompanyEmployeeRole(ctx, companyUUID, req.GetUserUuid(), "chief")
+	setRoleErr := s.db.Company.SetCompanyEmployeeRole(ctx, companyUUID, req.GetInitiatorUuid(), "chief")
 	err = Error.HandleError(setRoleErr, req.GetOperationId(), "create company")
 	if err != nil {
 		// Не удалось установить руководителю роль "chief" -> удаляем компанию
@@ -142,8 +150,8 @@ func (s *CompanyService) GetCompanies(ctx context.Context, req *pb.GetCompaniesR
 
 // UpdateCompanyTitle Обновляет название компании
 func (s *CompanyService) UpdateCompanyTitle(ctx context.Context, req *pb.UpdateCompanyTitleRequest) (*emptypb.Empty, error) {
-	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "update title", req.GetCompanyUuid(), req.GetUserUuid(), []string{"chief"})
+	// Проверка роли инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "update title", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
 	}
@@ -161,8 +169,8 @@ func (s *CompanyService) UpdateCompanyTitle(ctx context.Context, req *pb.UpdateC
 
 // UpdateCompanyStatus Обновляет статус компании (open | close)
 func (s *CompanyService) UpdateCompanyStatus(ctx context.Context, req *pb.UpdateCompanyStatusRequest) (*emptypb.Empty, error) {
-	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "update status", req.GetCompanyUuid(), req.GetUserUuid(), []string{"chief"})
+	// Проверка роли инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "update status", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
 	}
@@ -180,8 +188,8 @@ func (s *CompanyService) UpdateCompanyStatus(ctx context.Context, req *pb.Update
 
 // DeleteCompany Удаляет компанию
 func (s *CompanyService) DeleteCompany(ctx context.Context, req *pb.DeleteCompanyRequest) (*emptypb.Empty, error) {
-	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "delete company", req.GetCompanyUuid(), req.GetUserUuid(), []string{"chief"})
+	// Проверка роли инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "delete company", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
 	}
@@ -199,8 +207,8 @@ func (s *CompanyService) DeleteCompany(ctx context.Context, req *pb.DeleteCompan
 
 // CreateCompanyJoinCode Создает код для добавления в компанию
 func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.CreateCompanyJoinCodeRequest) (*pb.CreateCompanyJoinCodeResponse, error) {
-	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "create join code", req.GetCompanyUuid(), req.GetUserUuid(), []string{"chief"})
+	// Проверка роли инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "create join code", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
 	}
@@ -254,8 +262,8 @@ func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.Crea
 
 // GetCompanyJoinCodes Возвращает все активные коды для добавления к компании
 func (s *CompanyService) GetCompanyJoinCodes(ctx context.Context, req *pb.GetCompanyJoinCodesRequest) (*pb.GetCompanyJoinCodesResponse, error) {
-	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company codes", req.GetCompanyUuid(), req.GetUserUuid(), []string{"chief"})
+	// Проверка роли инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company codes", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
 	}
@@ -273,8 +281,8 @@ func (s *CompanyService) GetCompanyJoinCodes(ctx context.Context, req *pb.GetCom
 
 // DeleteCompanyJoinCode Удаляет код добавления в компанию
 func (s *CompanyService) DeleteCompanyJoinCode(ctx context.Context, req *pb.DeleteCompanyJoinCodeRequest) (*emptypb.Empty, error) {
-	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "delete join code", req.GetCompanyUuid(), req.GetUserUuid(), []string{"chief"})
+	// Проверка роли инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "delete join code", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +329,7 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 	}
 
 	// Проверяем, что пользователь еще не состоит в компании
-	_, getEmployeeErr := s.db.Company.GetCompanyEmployee(ctx, companyUUID, req.GetUserUuid())
+	_, getEmployeeErr := s.db.Company.GetCompanyEmployee(ctx, companyUUID, req.GetInitiatorUuid())
 	if getEmployeeErr.Code != int(codes.NotFound) {
 		// Нет ошибки -> пользователь уже в компании
 		if getEmployeeErr.Code == -1 {
@@ -348,7 +356,7 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 	}
 
 	// Добавление пользователя в компанию
-	addErr := s.db.Company.JoinCompany(ctx, companyUUID, req.GetUserUuid())
+	addErr := s.db.Company.JoinCompany(ctx, companyUUID, req.GetInitiatorUuid())
 	err = Error.HandleError(addErr, req.GetOperationId(), "join company")
 	if err != nil {
 		return nil, err
@@ -360,7 +368,7 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 
 // GetCompanyEmployee Возвращает роль сотрудника в компании, иначе возвращает ошибку
 func (s *CompanyService) GetCompanyEmployee(ctx context.Context, req *pb.GetCompanyEmployeeRequest) (*pb.GetCompanyEmployeeResponse, error) {
-	// Проверка роли пользователя
+	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employee", req.GetCompanyUuid(), req.GetInitiatorUuid(), AllRoles)
 	if err != nil {
 		return nil, err
@@ -375,15 +383,16 @@ func (s *CompanyService) GetCompanyEmployee(ctx context.Context, req *pb.GetComp
 
 	log.Info().Str("id", req.GetOperationId()).Str("method", "get company employee").Msg("success")
 	return &pb.GetCompanyEmployeeResponse{
-		Role:     employeeInfo.Role,
-		JoinedAt: employeeInfo.JoinedAt,
+		Role:           employeeInfo.Role,
+		DepartmentUuid: employeeInfo.DepartmentUUID,
+		JoinedAt:       employeeInfo.JoinedAt,
 	}, nil
 }
 
 // GetCompanyEmployees Возвращает список сотрудников компании с фильтрацией (count, offset, role)
 func (s *CompanyService) GetCompanyEmployees(ctx context.Context, req *pb.GetCompanyEmployeesRequest) (*pb.GetCompanyEmployeesResponse, error) {
-	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employees", req.GetCompanyUuid(), req.GetUserUuid(), AllRoles)
+	// Проверка роли инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employees", req.GetCompanyUuid(), req.GetInitiatorUuid(), AllRoles)
 	if err != nil {
 		return nil, err
 	}
@@ -439,8 +448,8 @@ func (s *CompanyService) GetCompanyEmployees(ctx context.Context, req *pb.GetCom
 
 // GetCompanyEmployeesSummary Возвращает кол-во сотрудников компании по ролям
 func (s *CompanyService) GetCompanyEmployeesSummary(ctx context.Context, req *pb.GetCompanyEmployeesSummaryRequest) (*pb.GetCompanyEmployeesSummaryResponse, error) {
-	// Проверка роли пользователя
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employees summary", req.GetCompanyUuid(), req.GetUserUuid(), AllRoles)
+	// Проверка роли инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employees summary", req.GetCompanyUuid(), req.GetInitiatorUuid(), AllRoles)
 	if err != nil {
 		return nil, err
 	}
@@ -471,7 +480,7 @@ func (s *CompanyService) UpdateEmployeeRole(ctx context.Context, req *pb.UpdateE
 		return nil, status.Error(codes.InvalidArgument, "cannot change your own role")
 	}
 
-	// Проверяем роль пользователя
+	// Проверяем роль инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "update employee role", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
@@ -503,7 +512,7 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 		return nil, status.Error(codes.InvalidArgument, "cannot remove yourself from company")
 	}
 
-	// Проверка роли пользователя
+	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "remove company employee", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
 		return nil, err
@@ -520,14 +529,233 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 	return &emptypb.Empty{}, nil
 }
 
+// CreateDepartment Создание департамента
+func (s *CompanyService) CreateDepartment(ctx context.Context, req *pb.CreateDepartmentRequest) (*pb.CreateDepartmentResponse, error) {
+	// Проверяем роль инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "create department", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Создаем uuid департамента
+	departmentUUID := uuid.New().String()
+
+	// Создаем департамент
+	createErr := s.db.Company.CreateDepartment(ctx, &entities.CreateDepartment{
+		UUID:        departmentUUID,
+		CompanyUUID: req.GetCompanyUuid(),
+		Title:       req.GetTitle(),
+		CreatedBy:   req.GetInitiatorUuid(),
+	})
+	err = Error.HandleError(createErr, req.GetOperationId(), "create department")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "create department").Msg("success")
+	return &pb.CreateDepartmentResponse{DepartmentUuid: departmentUUID}, nil
+}
+
+// AddEmployeeToDepartment Добавление сотрудника в департамент
+func (s *CompanyService) AddEmployeeToDepartment(ctx context.Context, req *pb.AddEmployeeToDepartmentRequest) (*emptypb.Empty, error) {
+	// Проверяем роль инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "add employee to department", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Проверяем принадлежность сотрудника к организации
+	err = s.checkEmployeeRole(ctx, req.GetOperationId(), "add employee to department", req.GetCompanyUuid(), req.GetTargetUuid(), AllRoles)
+	if err != nil {
+		return nil, err
+	}
+
+	// Добавляем сотрудника в департамент
+	addErr := s.db.Company.AddEmployeeToDepartment(ctx, req.GetDepartmentUuid(), req.GetCompanyUuid(), req.GetTargetUuid())
+	err = Error.HandleError(addErr, req.GetOperationId(), "add employee to department")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "add employee to department").Msg("success")
+	return &emptypb.Empty{}, nil
+}
+
+// GetDepartment Получение департамента по uuid
+func (s *CompanyService) GetDepartment(ctx context.Context, req *pb.GetDepartmentRequest) (*pb.GetDepartmentResponse, error) {
+	// Получение департамента
+	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
+	err := Error.HandleError(getErr, req.GetOperationId(), "get department")
+	if err != nil {
+		return nil, err
+	}
+
+	// Получение роли инициатора
+	err = s.checkEmployeeRole(ctx, req.GetOperationId(), "get department", department.CompanyUUID, req.GetInitiatorUuid(), AllRoles)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "get department").Msg("success")
+	return &pb.GetDepartmentResponse{
+		DepartmentUuid: req.GetDepartmentUuid(),
+		CompanyUuid:    department.CompanyUUID,
+		Title:          department.Title,
+		CreatedAt:      department.CreatedAt,
+		CreatedBy:      department.CreatedBy,
+	}, nil
+}
+
+// GetCompanyDepartments Получение списка департаментов компании с фильтрацией (offset, count)
+func (s *CompanyService) GetCompanyDepartments(ctx context.Context, req *pb.GetCompanyDepartmentsRequest) (*pb.GetCompanyDepartmentsResponse, error) {
+	// Проверка роли инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get departments", req.GetCompanyUuid(), req.GetInitiatorUuid(), AllRoles)
+	if err != nil {
+		return nil, err
+	}
+
+	// Валидация offset
+	offset := req.GetOffset()
+	if offset < 0 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get departments").Err(fmt.Errorf("invalid offset")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
+	}
+
+	// Валидация count
+	count := req.GetCount()
+	if count <= 0 || count > 100 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get departments").Err(fmt.Errorf("invalid count")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
+	}
+
+	// Получение списка департаментов компании
+	departments, getErr := s.db.Company.GetCompanyDepartments(ctx, req.GetCompanyUuid(), offset, count)
+	err = Error.HandleError(getErr, req.GetOperationId(), "get departments")
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]*pb.Department, 0)
+	for _, department := range departments {
+		res = append(res, &pb.Department{
+			DepartmentUuid: department.UUID,
+			Title:          department.Title,
+		})
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "get departments").Msg("success")
+	return &pb.GetCompanyDepartmentsResponse{Departments: res}, nil
+}
+
+// UpdateDepartmentTitle Обновление названия департамента
+func (s *CompanyService) UpdateDepartmentTitle(ctx context.Context, req *pb.UpdateDepartmentTitleRequest) (*emptypb.Empty, error) {
+	// Проверка title
+	title := req.GetTitle()
+	if strings.TrimSpace(title) == "" || len([]rune(title)) >= 255 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update department title").Err(fmt.Errorf("invalid title")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid title")
+	}
+
+	// Получение департамента
+	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
+	err := Error.HandleError(getErr, req.GetOperationId(), "update department title")
+	if err != nil {
+		return nil, err
+	}
+
+	// Проверка роли инициатора
+	err = s.checkEmployeeRole(ctx, req.GetOperationId(), "update department title", department.CompanyUUID, req.GetInitiatorUuid(), []string{"chief"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Обновление title
+	updateErr := s.db.Company.UpdateDepartmentTitle(ctx, &entities.UpdateDepartment{
+		UUID:  req.GetDepartmentUuid(),
+		Title: title,
+	})
+	err = Error.HandleError(updateErr, req.GetOperationId(), "update department title")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "update department title").Msg("success")
+	return &emptypb.Empty{}, nil
+}
+
+// DeleteDepartment Удаление департамента
+func (s *CompanyService) DeleteDepartment(ctx context.Context, req *pb.DeleteDepartmentRequest) (*emptypb.Empty, error) {
+	// Получение департамента
+	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
+	err := Error.HandleError(getErr, req.GetOperationId(), "delete department")
+	if err != nil {
+		return nil, err
+	}
+
+	// Получение роли инициатора
+	err = s.checkEmployeeRole(ctx, req.GetInitiatorUuid(), "delete department", department.CompanyUUID, req.GetInitiatorUuid(), []string{"chief"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Удаление департамента
+	deleteErr := s.db.Company.DeleteDepartment(ctx, req.GetDepartmentUuid())
+	err = Error.HandleError(deleteErr, req.GetOperationId(), "delete department")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "delete department").Msg("success")
+	return &emptypb.Empty{}, nil
+}
+
+// RemoveEmployeeFromDepartment Удаление сотрудника из департамента
+func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *pb.RemoveEmployeeFromDepartmentRequest) (*emptypb.Empty, error) {
+	// Получаем данные департамента
+	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
+	err := Error.HandleError(getErr, req.GetOperationId(), "remove employee from department")
+	if err != nil {
+		return nil, err
+	}
+
+	// Получаем роль инициатора
+	err = s.checkEmployeeRole(ctx, req.GetOperationId(), "remove employee from department", department.CompanyUUID, req.GetInitiatorUuid(), []string{"chief"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Получаем данные сотрудника (сравниваем departmentUUID)
+	target, getErr := s.db.Company.GetCompanyEmployee(ctx, department.CompanyUUID, req.GetTargetUuid())
+	err = Error.HandleError(getErr, req.GetOperationId(), "remove employee from department")
+	if err != nil {
+		return nil, err
+	}
+
+	if target.DepartmentUUID != req.GetDepartmentUuid() {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "remove employee from department").Err(fmt.Errorf("user not in this department")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "user not in this department")
+	}
+
+	// Убираем сотрудника из департамента
+	removeErr := s.db.Company.RemoveEmployeeFromDepartment(ctx, department.CompanyUUID, req.GetTargetUuid())
+	err = Error.HandleError(removeErr, req.GetOperationId(), "remove employee from department")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "remove employee from department").Msg("success")
+	return &emptypb.Empty{}, nil
+}
+
+// ДОП ФУНКЦИИ
+
+// pingStatus Обертка для ошибок пинга бд
 func pingStatus(err error) string {
 	if err != nil {
 		return "not connected"
 	}
 	return "connected"
 }
-
-// ДОП ФУНКЦИИ
 
 // generateJoinCode Генерирует криптографически случайную строку цифр длиной length
 func generateJoinCode(length int) (string, error) {

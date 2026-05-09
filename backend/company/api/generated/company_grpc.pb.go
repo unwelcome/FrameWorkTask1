@@ -20,23 +20,30 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CompanyService_Health_FullMethodName                     = "/company.CompanyService/Health"
-	CompanyService_CreateCompany_FullMethodName              = "/company.CompanyService/CreateCompany"
-	CompanyService_GetCompany_FullMethodName                 = "/company.CompanyService/GetCompany"
-	CompanyService_GetCompanies_FullMethodName               = "/company.CompanyService/GetCompanies"
-	CompanyService_GetUserCompanies_FullMethodName           = "/company.CompanyService/GetUserCompanies"
-	CompanyService_UpdateCompanyTitle_FullMethodName         = "/company.CompanyService/UpdateCompanyTitle"
-	CompanyService_UpdateCompanyStatus_FullMethodName        = "/company.CompanyService/UpdateCompanyStatus"
-	CompanyService_DeleteCompany_FullMethodName              = "/company.CompanyService/DeleteCompany"
-	CompanyService_CreateCompanyJoinCode_FullMethodName      = "/company.CompanyService/CreateCompanyJoinCode"
-	CompanyService_GetCompanyJoinCodes_FullMethodName        = "/company.CompanyService/GetCompanyJoinCodes"
-	CompanyService_DeleteCompanyJoinCode_FullMethodName      = "/company.CompanyService/DeleteCompanyJoinCode"
-	CompanyService_JoinCompany_FullMethodName                = "/company.CompanyService/JoinCompany"
-	CompanyService_GetCompanyEmployee_FullMethodName         = "/company.CompanyService/GetCompanyEmployee"
-	CompanyService_GetCompanyEmployees_FullMethodName        = "/company.CompanyService/GetCompanyEmployees"
-	CompanyService_GetCompanyEmployeesSummary_FullMethodName = "/company.CompanyService/GetCompanyEmployeesSummary"
-	CompanyService_UpdateEmployeeRole_FullMethodName         = "/company.CompanyService/UpdateEmployeeRole"
-	CompanyService_RemoveCompanyEmployee_FullMethodName      = "/company.CompanyService/RemoveCompanyEmployee"
+	CompanyService_Health_FullMethodName                       = "/company.CompanyService/Health"
+	CompanyService_CreateCompany_FullMethodName                = "/company.CompanyService/CreateCompany"
+	CompanyService_GetCompany_FullMethodName                   = "/company.CompanyService/GetCompany"
+	CompanyService_GetCompanies_FullMethodName                 = "/company.CompanyService/GetCompanies"
+	CompanyService_GetUserCompanies_FullMethodName             = "/company.CompanyService/GetUserCompanies"
+	CompanyService_UpdateCompanyTitle_FullMethodName           = "/company.CompanyService/UpdateCompanyTitle"
+	CompanyService_UpdateCompanyStatus_FullMethodName          = "/company.CompanyService/UpdateCompanyStatus"
+	CompanyService_DeleteCompany_FullMethodName                = "/company.CompanyService/DeleteCompany"
+	CompanyService_CreateCompanyJoinCode_FullMethodName        = "/company.CompanyService/CreateCompanyJoinCode"
+	CompanyService_GetCompanyJoinCodes_FullMethodName          = "/company.CompanyService/GetCompanyJoinCodes"
+	CompanyService_DeleteCompanyJoinCode_FullMethodName        = "/company.CompanyService/DeleteCompanyJoinCode"
+	CompanyService_JoinCompany_FullMethodName                  = "/company.CompanyService/JoinCompany"
+	CompanyService_GetCompanyEmployee_FullMethodName           = "/company.CompanyService/GetCompanyEmployee"
+	CompanyService_GetCompanyEmployees_FullMethodName          = "/company.CompanyService/GetCompanyEmployees"
+	CompanyService_GetCompanyEmployeesSummary_FullMethodName   = "/company.CompanyService/GetCompanyEmployeesSummary"
+	CompanyService_UpdateEmployeeRole_FullMethodName           = "/company.CompanyService/UpdateEmployeeRole"
+	CompanyService_RemoveCompanyEmployee_FullMethodName        = "/company.CompanyService/RemoveCompanyEmployee"
+	CompanyService_CreateDepartment_FullMethodName             = "/company.CompanyService/CreateDepartment"
+	CompanyService_AddEmployeeToDepartment_FullMethodName      = "/company.CompanyService/AddEmployeeToDepartment"
+	CompanyService_GetDepartment_FullMethodName                = "/company.CompanyService/GetDepartment"
+	CompanyService_GetCompanyDepartments_FullMethodName        = "/company.CompanyService/GetCompanyDepartments"
+	CompanyService_UpdateDepartmentTitle_FullMethodName        = "/company.CompanyService/UpdateDepartmentTitle"
+	CompanyService_DeleteDepartment_FullMethodName             = "/company.CompanyService/DeleteDepartment"
+	CompanyService_RemoveEmployeeFromDepartment_FullMethodName = "/company.CompanyService/RemoveEmployeeFromDepartment"
 )
 
 // CompanyServiceClient is the client API for CompanyService service.
@@ -63,6 +70,14 @@ type CompanyServiceClient interface {
 	GetCompanyEmployeesSummary(ctx context.Context, in *GetCompanyEmployeesSummaryRequest, opts ...grpc.CallOption) (*GetCompanyEmployeesSummaryResponse, error)
 	UpdateEmployeeRole(ctx context.Context, in *UpdateEmployeeRoleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RemoveCompanyEmployee(ctx context.Context, in *RemoveCompanyEmployeeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Departments
+	CreateDepartment(ctx context.Context, in *CreateDepartmentRequest, opts ...grpc.CallOption) (*CreateDepartmentResponse, error)
+	AddEmployeeToDepartment(ctx context.Context, in *AddEmployeeToDepartmentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetDepartment(ctx context.Context, in *GetDepartmentRequest, opts ...grpc.CallOption) (*GetDepartmentResponse, error)
+	GetCompanyDepartments(ctx context.Context, in *GetCompanyDepartmentsRequest, opts ...grpc.CallOption) (*GetCompanyDepartmentsResponse, error)
+	UpdateDepartmentTitle(ctx context.Context, in *UpdateDepartmentTitleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteDepartment(ctx context.Context, in *DeleteDepartmentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RemoveEmployeeFromDepartment(ctx context.Context, in *RemoveEmployeeFromDepartmentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type companyServiceClient struct {
@@ -243,6 +258,76 @@ func (c *companyServiceClient) RemoveCompanyEmployee(ctx context.Context, in *Re
 	return out, nil
 }
 
+func (c *companyServiceClient) CreateDepartment(ctx context.Context, in *CreateDepartmentRequest, opts ...grpc.CallOption) (*CreateDepartmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateDepartmentResponse)
+	err := c.cc.Invoke(ctx, CompanyService_CreateDepartment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *companyServiceClient) AddEmployeeToDepartment(ctx context.Context, in *AddEmployeeToDepartmentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CompanyService_AddEmployeeToDepartment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *companyServiceClient) GetDepartment(ctx context.Context, in *GetDepartmentRequest, opts ...grpc.CallOption) (*GetDepartmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDepartmentResponse)
+	err := c.cc.Invoke(ctx, CompanyService_GetDepartment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *companyServiceClient) GetCompanyDepartments(ctx context.Context, in *GetCompanyDepartmentsRequest, opts ...grpc.CallOption) (*GetCompanyDepartmentsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCompanyDepartmentsResponse)
+	err := c.cc.Invoke(ctx, CompanyService_GetCompanyDepartments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *companyServiceClient) UpdateDepartmentTitle(ctx context.Context, in *UpdateDepartmentTitleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CompanyService_UpdateDepartmentTitle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *companyServiceClient) DeleteDepartment(ctx context.Context, in *DeleteDepartmentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CompanyService_DeleteDepartment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *companyServiceClient) RemoveEmployeeFromDepartment(ctx context.Context, in *RemoveEmployeeFromDepartmentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CompanyService_RemoveEmployeeFromDepartment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CompanyServiceServer is the server API for CompanyService service.
 // All implementations must embed UnimplementedCompanyServiceServer
 // for forward compatibility.
@@ -267,6 +352,14 @@ type CompanyServiceServer interface {
 	GetCompanyEmployeesSummary(context.Context, *GetCompanyEmployeesSummaryRequest) (*GetCompanyEmployeesSummaryResponse, error)
 	UpdateEmployeeRole(context.Context, *UpdateEmployeeRoleRequest) (*emptypb.Empty, error)
 	RemoveCompanyEmployee(context.Context, *RemoveCompanyEmployeeRequest) (*emptypb.Empty, error)
+	// Departments
+	CreateDepartment(context.Context, *CreateDepartmentRequest) (*CreateDepartmentResponse, error)
+	AddEmployeeToDepartment(context.Context, *AddEmployeeToDepartmentRequest) (*emptypb.Empty, error)
+	GetDepartment(context.Context, *GetDepartmentRequest) (*GetDepartmentResponse, error)
+	GetCompanyDepartments(context.Context, *GetCompanyDepartmentsRequest) (*GetCompanyDepartmentsResponse, error)
+	UpdateDepartmentTitle(context.Context, *UpdateDepartmentTitleRequest) (*emptypb.Empty, error)
+	DeleteDepartment(context.Context, *DeleteDepartmentRequest) (*emptypb.Empty, error)
+	RemoveEmployeeFromDepartment(context.Context, *RemoveEmployeeFromDepartmentRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedCompanyServiceServer()
 }
 
@@ -327,6 +420,27 @@ func (UnimplementedCompanyServiceServer) UpdateEmployeeRole(context.Context, *Up
 }
 func (UnimplementedCompanyServiceServer) RemoveCompanyEmployee(context.Context, *RemoveCompanyEmployeeRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveCompanyEmployee not implemented")
+}
+func (UnimplementedCompanyServiceServer) CreateDepartment(context.Context, *CreateDepartmentRequest) (*CreateDepartmentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateDepartment not implemented")
+}
+func (UnimplementedCompanyServiceServer) AddEmployeeToDepartment(context.Context, *AddEmployeeToDepartmentRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddEmployeeToDepartment not implemented")
+}
+func (UnimplementedCompanyServiceServer) GetDepartment(context.Context, *GetDepartmentRequest) (*GetDepartmentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDepartment not implemented")
+}
+func (UnimplementedCompanyServiceServer) GetCompanyDepartments(context.Context, *GetCompanyDepartmentsRequest) (*GetCompanyDepartmentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCompanyDepartments not implemented")
+}
+func (UnimplementedCompanyServiceServer) UpdateDepartmentTitle(context.Context, *UpdateDepartmentTitleRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDepartmentTitle not implemented")
+}
+func (UnimplementedCompanyServiceServer) DeleteDepartment(context.Context, *DeleteDepartmentRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDepartment not implemented")
+}
+func (UnimplementedCompanyServiceServer) RemoveEmployeeFromDepartment(context.Context, *RemoveEmployeeFromDepartmentRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveEmployeeFromDepartment not implemented")
 }
 func (UnimplementedCompanyServiceServer) mustEmbedUnimplementedCompanyServiceServer() {}
 func (UnimplementedCompanyServiceServer) testEmbeddedByValue()                        {}
@@ -655,6 +769,132 @@ func _CompanyService_RemoveCompanyEmployee_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CompanyService_CreateDepartment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateDepartmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompanyServiceServer).CreateDepartment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompanyService_CreateDepartment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompanyServiceServer).CreateDepartment(ctx, req.(*CreateDepartmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CompanyService_AddEmployeeToDepartment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddEmployeeToDepartmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompanyServiceServer).AddEmployeeToDepartment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompanyService_AddEmployeeToDepartment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompanyServiceServer).AddEmployeeToDepartment(ctx, req.(*AddEmployeeToDepartmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CompanyService_GetDepartment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDepartmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompanyServiceServer).GetDepartment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompanyService_GetDepartment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompanyServiceServer).GetDepartment(ctx, req.(*GetDepartmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CompanyService_GetCompanyDepartments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCompanyDepartmentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompanyServiceServer).GetCompanyDepartments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompanyService_GetCompanyDepartments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompanyServiceServer).GetCompanyDepartments(ctx, req.(*GetCompanyDepartmentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CompanyService_UpdateDepartmentTitle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDepartmentTitleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompanyServiceServer).UpdateDepartmentTitle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompanyService_UpdateDepartmentTitle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompanyServiceServer).UpdateDepartmentTitle(ctx, req.(*UpdateDepartmentTitleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CompanyService_DeleteDepartment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteDepartmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompanyServiceServer).DeleteDepartment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompanyService_DeleteDepartment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompanyServiceServer).DeleteDepartment(ctx, req.(*DeleteDepartmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CompanyService_RemoveEmployeeFromDepartment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveEmployeeFromDepartmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompanyServiceServer).RemoveEmployeeFromDepartment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompanyService_RemoveEmployeeFromDepartment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompanyServiceServer).RemoveEmployeeFromDepartment(ctx, req.(*RemoveEmployeeFromDepartmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CompanyService_ServiceDesc is the grpc.ServiceDesc for CompanyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -729,6 +969,34 @@ var CompanyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveCompanyEmployee",
 			Handler:    _CompanyService_RemoveCompanyEmployee_Handler,
+		},
+		{
+			MethodName: "CreateDepartment",
+			Handler:    _CompanyService_CreateDepartment_Handler,
+		},
+		{
+			MethodName: "AddEmployeeToDepartment",
+			Handler:    _CompanyService_AddEmployeeToDepartment_Handler,
+		},
+		{
+			MethodName: "GetDepartment",
+			Handler:    _CompanyService_GetDepartment_Handler,
+		},
+		{
+			MethodName: "GetCompanyDepartments",
+			Handler:    _CompanyService_GetCompanyDepartments_Handler,
+		},
+		{
+			MethodName: "UpdateDepartmentTitle",
+			Handler:    _CompanyService_UpdateDepartmentTitle_Handler,
+		},
+		{
+			MethodName: "DeleteDepartment",
+			Handler:    _CompanyService_DeleteDepartment_Handler,
+		},
+		{
+			MethodName: "RemoveEmployeeFromDepartment",
+			Handler:    _CompanyService_RemoveEmployeeFromDepartment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

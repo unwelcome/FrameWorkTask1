@@ -7,7 +7,6 @@ import (
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
-	"github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,27 +17,24 @@ import (
 // ─── Mock: ApplicationRepository ─────────────────────────────────────────────
 
 type mockApplicationRepo struct {
-	createApplication               func(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError
-	addApplicationFixLog            func(ctx context.Context, dto entities.CreateFixLogDTO) Error.CodeError
-	getApplication                  func(ctx context.Context, dto entities.GetApplicationDTO) (*entities.Application, Error.CodeError)
-	getApplicationFixLogs           func(ctx context.Context, dto entities.GetApplicationFixLogsDTO) ([]*entities.FixLog, Error.CodeError)
-	getApplications                 func(ctx context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError)
-	getCompanyApplicationStatistic  func(ctx context.Context, dto entities.GetCompanyApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError)
-	getEmployeeApplicationStatistic func(ctx context.Context, dto entities.GetEmployeeApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError)
-	updateApplicationStatus         func(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError
-	assignApplicationToEmployee     func(ctx context.Context, dto entities.AssignApplicationToEmployeeDTO) Error.CodeError
-	deleteApplicationRequest        func(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError
-}
-
-func (m *mockApplicationRepo) TransferApplication(ctx context.context.Context, dto entities.entities.TransferApplicationDTO) errors.Error {
-	//TODO implement me
-	panic("implement me")
+	createApplication              func(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError
+	addApplicationFixLog           func(ctx context.Context, dto entities.AddFixLogDTO) Error.CodeError
+	getApplication                 func(ctx context.Context, dto entities.GetApplicationDTO) (*entities.Application, Error.CodeError)
+	getApplicationFixLogs          func(ctx context.Context, dto entities.GetApplicationFixLogsDTO) ([]*entities.FixLog, Error.CodeError)
+	getApplications                func(ctx context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError)
+	updateApplicationStatus        func(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError
+	assignApplicationToEmployee    func(ctx context.Context, dto entities.AssignApplicationDTO) Error.CodeError
+	redirectApplication            func(ctx context.Context, dto entities.RedirectApplicationDTO) Error.CodeError
+	recallApplication              func(ctx context.Context, dto entities.RecallApplicationDTO) Error.CodeError
+	takeApplicationToVerification  func(ctx context.Context, dto entities.TakeApplicationToVerificationDTO) Error.CodeError
+	releaseApplicationVerification func(ctx context.Context, dto entities.ReleaseApplicationVerificationDTO) Error.CodeError
+	deleteApplication              func(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError
 }
 
 func (m *mockApplicationRepo) CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError {
 	return m.createApplication(ctx, dto)
 }
-func (m *mockApplicationRepo) AddApplicationFixLog(ctx context.Context, dto entities.CreateFixLogDTO) Error.CodeError {
+func (m *mockApplicationRepo) AddApplicationFixLog(ctx context.Context, dto entities.AddFixLogDTO) Error.CodeError {
 	return m.addApplicationFixLog(ctx, dto)
 }
 func (m *mockApplicationRepo) GetApplication(ctx context.Context, dto entities.GetApplicationDTO) (*entities.Application, Error.CodeError) {
@@ -50,35 +46,44 @@ func (m *mockApplicationRepo) GetApplicationFixLogs(ctx context.Context, dto ent
 func (m *mockApplicationRepo) GetApplications(ctx context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
 	return m.getApplications(ctx, dto)
 }
-func (m *mockApplicationRepo) GetCompanyApplicationStatistic(ctx context.Context, dto entities.GetCompanyApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
-	return m.getCompanyApplicationStatistic(ctx, dto)
-}
-func (m *mockApplicationRepo) GetEmployeeApplicationStatistic(ctx context.Context, dto entities.GetEmployeeApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
-	return m.getEmployeeApplicationStatistic(ctx, dto)
-}
 func (m *mockApplicationRepo) UpdateApplicationStatus(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError {
 	return m.updateApplicationStatus(ctx, dto)
 }
-func (m *mockApplicationRepo) AssignApplicationToEmployee(ctx context.Context, dto entities.AssignApplicationToEmployeeDTO) Error.CodeError {
+func (m *mockApplicationRepo) AssignApplicationToEmployee(ctx context.Context, dto entities.AssignApplicationDTO) Error.CodeError {
 	return m.assignApplicationToEmployee(ctx, dto)
 }
-func (m *mockApplicationRepo) DeleteApplicationRequest(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError {
-	return m.deleteApplicationRequest(ctx, dto)
+func (m *mockApplicationRepo) RedirectApplication(ctx context.Context, dto entities.RedirectApplicationDTO) Error.CodeError {
+	return m.redirectApplication(ctx, dto)
+}
+func (m *mockApplicationRepo) RecallApplication(ctx context.Context, dto entities.RecallApplicationDTO) Error.CodeError {
+	return m.recallApplication(ctx, dto)
+}
+func (m *mockApplicationRepo) TakeApplicationToVerification(ctx context.Context, dto entities.TakeApplicationToVerificationDTO) Error.CodeError {
+	return m.takeApplicationToVerification(ctx, dto)
+}
+func (m *mockApplicationRepo) ReleaseApplicationVerification(ctx context.Context, dto entities.ReleaseApplicationVerificationDTO) Error.CodeError {
+	return m.releaseApplicationVerification(ctx, dto)
+}
+func (m *mockApplicationRepo) DeleteApplication(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError {
+	return m.deleteApplication(ctx, dto)
 }
 
 // ─── Mock: CompanyServiceClient ───────────────────────────────────────────────
 
-// mockCompanyClient реализует company_proto.CompanyServiceClient.
-// Только GetCompanyEmployee настраивается через функциональное поле —
-// остальные методы в application сервисе не вызываются.
 type mockCompanyClient struct {
 	getCompanyEmployee func(ctx context.Context, in *company_proto.GetCompanyEmployeeRequest, opts ...grpc.CallOption) (*company_proto.GetCompanyEmployeeResponse, error)
+	getDepartment      func(ctx context.Context, in *company_proto.GetDepartmentRequest, opts ...grpc.CallOption) (*company_proto.GetDepartmentResponse, error)
 }
 
 func (m *mockCompanyClient) GetCompanyEmployee(ctx context.Context, in *company_proto.GetCompanyEmployeeRequest, opts ...grpc.CallOption) (*company_proto.GetCompanyEmployeeResponse, error) {
 	return m.getCompanyEmployee(ctx, in, opts...)
 }
-
+func (m *mockCompanyClient) GetDepartment(ctx context.Context, in *company_proto.GetDepartmentRequest, opts ...grpc.CallOption) (*company_proto.GetDepartmentResponse, error) {
+	if m.getDepartment != nil {
+		return m.getDepartment(ctx, in, opts...)
+	}
+	panic("unexpected call to GetDepartment")
+}
 func (m *mockCompanyClient) Health(_ context.Context, _ *company_proto.HealthRequest, _ ...grpc.CallOption) (*company_proto.HealthResponse, error) {
 	panic("unexpected call to Health")
 }
@@ -127,10 +132,28 @@ func (m *mockCompanyClient) UpdateEmployeeRole(_ context.Context, _ *company_pro
 func (m *mockCompanyClient) RemoveCompanyEmployee(_ context.Context, _ *company_proto.RemoveCompanyEmployeeRequest, _ ...grpc.CallOption) (*emptypb.Empty, error) {
 	panic("unexpected call to RemoveCompanyEmployee")
 }
+func (m *mockCompanyClient) CreateDepartment(_ context.Context, _ *company_proto.CreateDepartmentRequest, _ ...grpc.CallOption) (*company_proto.CreateDepartmentResponse, error) {
+	panic("unexpected call to CreateDepartment")
+}
+func (m *mockCompanyClient) AddEmployeeToDepartment(_ context.Context, _ *company_proto.AddEmployeeToDepartmentRequest, _ ...grpc.CallOption) (*emptypb.Empty, error) {
+	panic("unexpected call to AddEmployeeToDepartment")
+}
+func (m *mockCompanyClient) GetCompanyDepartments(_ context.Context, _ *company_proto.GetCompanyDepartmentsRequest, _ ...grpc.CallOption) (*company_proto.GetCompanyDepartmentsResponse, error) {
+	panic("unexpected call to GetCompanyDepartments")
+}
+func (m *mockCompanyClient) UpdateDepartmentTitle(_ context.Context, _ *company_proto.UpdateDepartmentTitleRequest, _ ...grpc.CallOption) (*emptypb.Empty, error) {
+	panic("unexpected call to UpdateDepartmentTitle")
+}
+func (m *mockCompanyClient) DeleteDepartment(_ context.Context, _ *company_proto.DeleteDepartmentRequest, _ ...grpc.CallOption) (*emptypb.Empty, error) {
+	panic("unexpected call to DeleteDepartment")
+}
+func (m *mockCompanyClient) RemoveEmployeeFromDepartment(_ context.Context, _ *company_proto.RemoveEmployeeFromDepartmentRequest, _ ...grpc.CallOption) (*emptypb.Empty, error) {
+	panic("unexpected call to RemoveEmployeeFromDepartment")
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// emptyRepo — пустая заглушка репозитория (поля не инициализированы — паника при вызове)
+// emptyRepo — пустая заглушка репозитория (паника при любом вызове)
 func emptyRepo() *mockApplicationRepo { return &mockApplicationRepo{} }
 
 // newAppTestService создаёт ApplicationService с подменёнными зависимостями
@@ -139,7 +162,7 @@ func newAppTestService(repo postgresDB.ApplicationRepository, client company_pro
 	return NewApplicationService(db, client)
 }
 
-// ok — успешный CodeError
+// ok — успешный CodeError (Code == -1 означает «нет ошибки» в HandleError)
 func ok() Error.CodeError { return Error.CodeError{Code: -1} }
 
 // notFound — CodeError с кодом NotFound
@@ -152,16 +175,16 @@ func internalErr() Error.CodeError {
 	return Error.CodeError{Code: 0, Err: fmt.Errorf("db error")}
 }
 
-// roleClient возвращает мок company-клиента, всегда отдающий заданную роль
+// roleClient — мок company-клиента, всегда возвращающий заданную роль и deptID
 func roleClient(role string) *mockCompanyClient {
 	return &mockCompanyClient{
 		getCompanyEmployee: func(_ context.Context, _ *company_proto.GetCompanyEmployeeRequest, _ ...grpc.CallOption) (*company_proto.GetCompanyEmployeeResponse, error) {
-			return &company_proto.GetCompanyEmployeeResponse{Role: role}, nil
+			return &company_proto.GetCompanyEmployeeResponse{Role: role, DepartmentUuid: deptID}, nil
 		},
 	}
 }
 
-// errCompanyClient возвращает мок company-клиента, всегда возвращающий Internal ошибку
+// errCompanyClient — мок company-клиента, всегда возвращающий Internal-ошибку
 func errCompanyClient() *mockCompanyClient {
 	return &mockCompanyClient{
 		getCompanyEmployee: func(_ context.Context, _ *company_proto.GetCompanyEmployeeRequest, _ ...grpc.CallOption) (*company_proto.GetCompanyEmployeeResponse, error) {
@@ -170,8 +193,7 @@ func errCompanyClient() *mockCompanyClient {
 	}
 }
 
-// roleByTargetClient возвращает мок, отдающий разные роли в зависимости от TargetUuid в запросе.
-// Если TargetUuid нет в карте — возвращается NotFound.
+// roleByTargetClient — мок, возвращающий разные роли в зависимости от TargetUuid
 func roleByTargetClient(roles map[string]string) *mockCompanyClient {
 	return &mockCompanyClient{
 		getCompanyEmployee: func(_ context.Context, in *company_proto.GetCompanyEmployeeRequest, _ ...grpc.CallOption) (*company_proto.GetCompanyEmployeeResponse, error) {
@@ -179,45 +201,24 @@ func roleByTargetClient(roles map[string]string) *mockCompanyClient {
 			if !found {
 				return nil, status.Error(codes.NotFound, "employee not found in company")
 			}
-			return &company_proto.GetCompanyEmployeeResponse{Role: role}, nil
+			return &company_proto.GetCompanyEmployeeResponse{Role: role, DepartmentUuid: deptID}, nil
 		},
 	}
 }
 
-// ─── Тестовые сущности ────────────────────────────────────────────────────────
-
-// testApp возвращает базовый объект заявки со статусом "created"
-func testApp() *entities.Application {
-	return &entities.Application{
-		ApplicationUUID: appID,
-		CompanyUUID:     companyID,
-		Title:           "Test Application",
-		Description:     "Test description",
-		Status:          "created",
-		CreatedAt:       "2024-01-01 00:00:00",
-		CreatedBy:       initiatorID,
+// redirectClient — мок, поддерживающий и GetCompanyEmployee, и GetDepartment
+func redirectClient(role, deptCompanyUUID string) *mockCompanyClient {
+	return &mockCompanyClient{
+		getCompanyEmployee: func(_ context.Context, _ *company_proto.GetCompanyEmployeeRequest, _ ...grpc.CallOption) (*company_proto.GetCompanyEmployeeResponse, error) {
+			return &company_proto.GetCompanyEmployeeResponse{Role: role, DepartmentUuid: deptID}, nil
+		},
+		getDepartment: func(_ context.Context, _ *company_proto.GetDepartmentRequest, _ ...grpc.CallOption) (*company_proto.GetDepartmentResponse, error) {
+			return &company_proto.GetDepartmentResponse{CompanyUuid: deptCompanyUUID}, nil
+		},
 	}
 }
 
-// assignedApp возвращает заявку со статусом "assigned" и назначенными ответственными
-func assignedApp() *entities.Application {
-	app := testApp()
-	app.Status = "assigned"
-	app.ResponsibleManager = initiatorID
-	app.ResponsibleEngineer = targetID
-	return app
-}
-
-// awaitingApprovalApp возвращает заявку со статусом "awaiting_approval"
-func awaitingApprovalApp() *entities.Application {
-	app := testApp()
-	app.Status = "awaiting_approval"
-	app.ResponsibleManager = initiatorID
-	app.ResponsibleEngineer = targetID
-	return app
-}
-
-// repoWithApp настраивает мок репозитория так, чтобы GetApplication возвращал заданную заявку
+// repoWithApp — мок репозитория, возвращающий заданную заявку через GetApplication
 func repoWithApp(app *entities.Application) *mockApplicationRepo {
 	repo := emptyRepo()
 	repo.getApplication = func(_ context.Context, _ entities.GetApplicationDTO) (*entities.Application, Error.CodeError) {
@@ -226,12 +227,68 @@ func repoWithApp(app *entities.Application) *mockApplicationRepo {
 	return repo
 }
 
-// testStatistic возвращает тестовую статистику по заявкам
-func testStatistic() *entities.ApplicationStatistic {
-	return &entities.ApplicationStatistic{
-		Created:    2,
-		Assigned:   1,
-		InProgress: 3,
-		Completed:  5,
+// ─── Тестовые сущности ────────────────────────────────────────────────────────
+
+func testApp() *entities.Application {
+	return &entities.Application{
+		ApplicationUUID: appID,
+		CompanyUUID:     companyID,
+		DepartmentUUID:  deptID,
+		Title:           "Test Application",
+		Description:     "Test description",
+		Status:          "created",
+		RevisionCount:   0,
+		CreatedAt:       "2024-01-01 00:00:00",
+		CreatedBy:       initiatorID,
 	}
 }
+
+func assignedApp() *entities.Application {
+	app := testApp()
+	app.Status = "assigned"
+	app.ManagedBy = initiatorID
+	app.ExecutedBy = targetID
+	return app
+}
+
+func inProgressApp() *entities.Application {
+	app := testApp()
+	app.Status = "in_progress"
+	app.ManagedBy = initiatorID
+	app.ExecutedBy = initiatorID
+	return app
+}
+
+func pendingVerificationApp() *entities.Application {
+	app := testApp()
+	app.Status = "pending_verification"
+	app.ManagedBy = initiatorID
+	app.ExecutedBy = targetID
+	return app
+}
+
+func onVerificationApp() *entities.Application {
+	app := testApp()
+	app.Status = "on_verification"
+	app.ManagedBy = initiatorID
+	app.ExecutedBy = targetID
+	app.InspectedBy = initiatorID
+	return app
+}
+
+func onRevisionApp() *entities.Application {
+	app := testApp()
+	app.Status = "on_revision"
+	app.ManagedBy = initiatorID
+	app.ExecutedBy = initiatorID
+	app.RevisionCount = 3
+	return app
+}
+
+func escalatedOnRevisionApp() *entities.Application {
+	app := testApp()
+	app.Status = "on_revision"
+	app.RevisionCount = 5 // кратно 5 — заявка в пуле менеджеров (executed_by NULL)
+	return app
+}
+

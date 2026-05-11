@@ -2,610 +2,1227 @@ package services
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	pb "github.com/unwelcome/FrameWorkTask1/backend/application/api/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
+	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-// ─── Тестовые константы ───────────────────────────────────────────────────────
-
 const (
 	opID        = "op-test-1"
-	companyID   = "company-uuid-1"
-	initiatorID = "user-uuid-1"
-	targetID    = "user-uuid-2"
+	initiatorID = "initiator-uuid-1"
+	targetID    = "target-uuid-1"
 	appID       = "app-uuid-1"
+	companyID   = "company-uuid-1"
+	deptID      = "dept-uuid-1"
+	otherDeptID = "dept-uuid-2"
 )
-
-// ─── Утилиты утверждений ──────────────────────────────────────────────────────
-
-func assertGRPCCode(t *testing.T, err error, expected codes.Code) {
-	t.Helper()
-	if err == nil {
-		t.Fatalf("expected error with code %v, got nil", expected)
-	}
-	st, ok := status.FromError(err)
-	if !ok {
-		t.Fatalf("error is not a gRPC status error: %v", err)
-	}
-	if st.Code() != expected {
-		t.Errorf("expected gRPC code %v, got %v (message: %q)", expected, st.Code(), st.Message())
-	}
-}
-
-func assertNoError(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatalf("expected no error, got: %v", err)
-	}
-}
-
-// ─── Health ───────────────────────────────────────────────────────────────────
-
-func TestHealth(t *testing.T) {
-	svc := newAppTestService(emptyRepo(), roleClient("inspector"))
-	res, err := svc.Health(context.Background(), &pb.HealthRequest{OperationId: opID})
-	assertNoError(t, err)
-	if res.GetHealth() != "healthy" {
-		t.Errorf("expected %q, got %q", "healthy", res.GetHealth())
-	}
-}
 
 // ─── CreateApplication ────────────────────────────────────────────────────────
 
 func TestCreateApplication(t *testing.T) {
-	ctx := context.Background()
-	req := &pb.CreateApplicationRequest{
-		OperationId:   opID,
-		InitiatorUuid: initiatorID,
-		CompanyUuid:   companyID,
-		Title:         "Fix pipeline",
-		Description:   "Pipeline is broken",
-	}
-
 	t.Run("success", func(t *testing.T) {
 		repo := emptyRepo()
-		repo.createApplication = func(_ context.Context, _ entities.CreateApplicationDTO) Error.CodeError {
-			return ok()
-		}
+		repo.createApplication = func(_ context.Context, _ entities.CreateApplicationDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))
-		res, err := svc.CreateApplication(ctx, req)
-		assertNoError(t, err)
-		if res.GetApplicationUuid() == "" {
-			t.Error("expected non-empty application uuid in response")
+		res, err := svc.CreateApplication(context.Background(), &pb.CreateApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			CompanyUuid:     companyID,
+			ApplicationData: &pb.ApplicationData{Title: "Valid Title", Description: "Some description"},
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
+		if res.GetApplicationUuid() == "" {
+			t.Error("expected non-empty application uuid")
+		}
+	})
+
+	t.Run("wrong role", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("manager"))
+		_, err := svc.CreateApplication(context.Background(), &pb.CreateApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			CompanyUuid:     companyID,
+			ApplicationData: &pb.ApplicationData{Title: "Title"},
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("empty title", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.CreateApplication(context.Background(), &pb.CreateApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			CompanyUuid:     companyID,
+			ApplicationData: &pb.ApplicationData{Title: "   "},
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("title too long", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.CreateApplication(context.Background(), &pb.CreateApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			CompanyUuid:     companyID,
+			ApplicationData: &pb.ApplicationData{Title: strings.Repeat("x", 256)},
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("company service error", func(t *testing.T) {
 		svc := newAppTestService(emptyRepo(), errCompanyClient())
-		_, err := svc.CreateApplication(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
-	})
-
-	t.Run("wrong role - only inspector can create", func(t *testing.T) {
-		svc := newAppTestService(emptyRepo(), roleClient("engineer"))
-		_, err := svc.CreateApplication(ctx, req)
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("db create error", func(t *testing.T) {
-		repo := emptyRepo()
-		repo.createApplication = func(_ context.Context, _ entities.CreateApplicationDTO) Error.CodeError {
-			return internalErr()
+		_, err := svc.CreateApplication(context.Background(), &pb.CreateApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			CompanyUuid:     companyID,
+			ApplicationData: &pb.ApplicationData{Title: "Title"},
+		})
+		if err == nil {
+			t.Fatal("expected error from company service, got nil")
 		}
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		repo := emptyRepo()
+		repo.createApplication = func(_ context.Context, _ entities.CreateApplicationDTO) Error.CodeError { return internalErr() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))
-		_, err := svc.CreateApplication(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
+		_, err := svc.CreateApplication(context.Background(), &pb.CreateApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			CompanyUuid:     companyID,
+			ApplicationData: &pb.ApplicationData{Title: "Title"},
+		})
+		assertCode(t, err, codes.Internal)
 	})
 }
 
 // ─── GetApplication ───────────────────────────────────────────────────────────
 
 func TestGetApplication(t *testing.T) {
-	ctx := context.Background()
-	req := &pb.GetApplicationRequest{
-		OperationId:     opID,
-		InitiatorUuid:   initiatorID,
-		ApplicationUuid: appID,
-	}
-
-	t.Run("success", func(t *testing.T) {
+	t.Run("success as creator", func(t *testing.T) {
 		repo := repoWithApp(testApp())
 		repo.getApplicationFixLogs = func(_ context.Context, _ entities.GetApplicationFixLogsDTO) ([]*entities.FixLog, Error.CodeError) {
-			return []*entities.FixLog{
-				{Text: "Fixed pipe A", CreatedAt: "2024-01-02", CreatedBy: targetID},
-			}, ok()
+			return []*entities.FixLog{}, ok()
 		}
 
-		svc := newAppTestService(repo, roleClient("engineer"))
-		res, err := svc.GetApplication(ctx, req)
-		assertNoError(t, err)
-		if res.GetApplication().GetTitle() != "Test Application" {
-			t.Errorf("unexpected title: %q", res.GetApplication().GetTitle())
+		svc := newAppTestService(repo, roleClient("inspector"))
+		res, err := svc.GetApplication(context.Background(), &pb.GetApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID, // matches CreatedBy
+			ApplicationUuid: appID,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
-		if len(res.GetApplication().GetFixLogs()) != 1 {
-			t.Errorf("expected 1 fix log, got %d", len(res.GetApplication().GetFixLogs()))
+		if res.GetApplication().GetApplicationUuid() != appID {
+			t.Errorf("expected uuid %q, got %q", appID, res.GetApplication().GetApplicationUuid())
 		}
 	})
 
-	t.Run("application not found", func(t *testing.T) {
+	t.Run("success as chief (unrestricted access)", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+		repo.getApplicationFixLogs = func(_ context.Context, _ entities.GetApplicationFixLogsDTO) ([]*entities.FixLog, Error.CodeError) {
+			return nil, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("chief"))
+		_, err := svc.GetApplication(context.Background(), &pb.GetApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "some-other-uuid",
+			ApplicationUuid: appID,
+		})
+		if err != nil {
+			t.Fatalf("chief should access any application, got: %v", err)
+		}
+	})
+
+	t.Run("permission denied (stranger)", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, roleClient("engineer"))
+		_, err := svc.GetApplication(context.Background(), &pb.GetApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "stranger-uuid",
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("not found", func(t *testing.T) {
 		repo := emptyRepo()
 		repo.getApplication = func(_ context.Context, _ entities.GetApplicationDTO) (*entities.Application, Error.CodeError) {
 			return nil, notFound()
 		}
 
-		svc := newAppTestService(repo, roleClient("engineer"))
-		_, err := svc.GetApplication(ctx, req)
-		assertGRPCCode(t, err, codes.NotFound)
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.GetApplication(context.Background(), &pb.GetApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.NotFound)
 	})
 
 	t.Run("company service error", func(t *testing.T) {
-		svc := newAppTestService(repoWithApp(testApp()), errCompanyClient())
-		_, err := svc.GetApplication(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, errCompanyClient())
+		_, err := svc.GetApplication(context.Background(), &pb.GetApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
 	})
 
-	t.Run("unemployed not allowed", func(t *testing.T) {
-		svc := newAppTestService(repoWithApp(testApp()), roleClient("unemployed"))
-		_, err := svc.GetApplication(ctx, req)
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("get fix logs db error", func(t *testing.T) {
+	t.Run("fix logs db error", func(t *testing.T) {
 		repo := repoWithApp(testApp())
 		repo.getApplicationFixLogs = func(_ context.Context, _ entities.GetApplicationFixLogsDTO) ([]*entities.FixLog, Error.CodeError) {
 			return nil, internalErr()
 		}
 
-		svc := newAppTestService(repo, roleClient("manager"))
-		_, err := svc.GetApplication(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.GetApplication(context.Background(), &pb.GetApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.Internal)
 	})
 }
 
 // ─── GetApplications ──────────────────────────────────────────────────────────
 
 func TestGetApplications(t *testing.T) {
-	ctx := context.Background()
-
-	makeReq := func(count, offset int64) *pb.GetApplicationsRequest {
-		return &pb.GetApplicationsRequest{
+	t.Run("invalid count", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("chief"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
 			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   companyID,
-			Count:         count,
-			Offset:        offset,
-		}
-	}
+			Count:         0,
+			Offset:        0,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("invalid offset", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("chief"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        -1,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("chief success", func(t *testing.T) {
 		repo := emptyRepo()
 		repo.getApplications = func(_ context.Context, _ entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
-			return []*entities.Application{testApp(), testApp()}, ok()
-		}
-
-		svc := newAppTestService(repo, roleClient("manager"))
-		res, err := svc.GetApplications(ctx, makeReq(10, 0))
-		assertNoError(t, err)
-		if len(res.GetApplications()) != 2 {
-			t.Errorf("expected 2 applications, got %d", len(res.GetApplications()))
-		}
-	})
-
-	t.Run("company service error", func(t *testing.T) {
-		svc := newAppTestService(emptyRepo(), errCompanyClient())
-		_, err := svc.GetApplications(ctx, makeReq(10, 0))
-		assertGRPCCode(t, err, codes.Internal)
-	})
-
-	t.Run("unemployed not allowed", func(t *testing.T) {
-		svc := newAppTestService(emptyRepo(), roleClient("unemployed"))
-		_, err := svc.GetApplications(ctx, makeReq(10, 0))
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("count zero", func(t *testing.T) {
-		svc := newAppTestService(emptyRepo(), roleClient("engineer"))
-		_, err := svc.GetApplications(ctx, makeReq(0, 0))
-		assertGRPCCode(t, err, codes.InvalidArgument)
-	})
-
-	t.Run("count too large", func(t *testing.T) {
-		svc := newAppTestService(emptyRepo(), roleClient("engineer"))
-		_, err := svc.GetApplications(ctx, makeReq(101, 0))
-		assertGRPCCode(t, err, codes.InvalidArgument)
-	})
-
-	t.Run("negative offset", func(t *testing.T) {
-		svc := newAppTestService(emptyRepo(), roleClient("engineer"))
-		_, err := svc.GetApplications(ctx, makeReq(10, -1))
-		assertGRPCCode(t, err, codes.InvalidArgument)
-	})
-
-	t.Run("db error", func(t *testing.T) {
-		repo := emptyRepo()
-		repo.getApplications = func(_ context.Context, _ entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
-			return nil, internalErr()
-		}
-
-		svc := newAppTestService(repo, roleClient("manager"))
-		_, err := svc.GetApplications(ctx, makeReq(10, 0))
-		assertGRPCCode(t, err, codes.Internal)
-	})
-}
-
-// ─── GetCompanyApplicationStatistic ──────────────────────────────────────────
-
-func TestGetCompanyApplicationStatistic(t *testing.T) {
-	ctx := context.Background()
-	req := &pb.GetCompanyApplicationStatisticRequest{
-		OperationId:   opID,
-		InitiatorUuid: initiatorID,
-		CompanyUuid:   companyID,
-	}
-
-	t.Run("success as analytic", func(t *testing.T) {
-		repo := emptyRepo()
-		repo.getCompanyApplicationStatistic = func(_ context.Context, _ entities.GetCompanyApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
-			return testStatistic(), ok()
-		}
-
-		svc := newAppTestService(repo, roleClient("analytic"))
-		res, err := svc.GetCompanyApplicationStatistic(ctx, req)
-		assertNoError(t, err)
-		if res.GetCreated() != 2 {
-			t.Errorf("expected created=2, got %d", res.GetCreated())
-		}
-	})
-
-	t.Run("success as chief", func(t *testing.T) {
-		repo := emptyRepo()
-		repo.getCompanyApplicationStatistic = func(_ context.Context, _ entities.GetCompanyApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
-			return testStatistic(), ok()
+			return []*entities.Application{testApp()}, ok()
 		}
 
 		svc := newAppTestService(repo, roleClient("chief"))
-		_, err := svc.GetCompanyApplicationStatistic(ctx, req)
-		assertNoError(t, err)
+		res, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Statuses:      []string{"created"},
+			Count:         10,
+			Offset:        0,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(res.GetApplications()) != 1 {
+			t.Errorf("expected 1 application, got %d", len(res.GetApplications()))
+		}
 	})
 
-	t.Run("company service error", func(t *testing.T) {
-		svc := newAppTestService(emptyRepo(), errCompanyClient())
-		_, err := svc.GetCompanyApplicationStatistic(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
+	t.Run("chief invalid status", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("chief"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Statuses:      []string{"nonexistent_status"},
+			Count:         10,
+			Offset:        0,
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("engineer not allowed", func(t *testing.T) {
+	t.Run("inspector from pool (pending_verification only)", func(t *testing.T) {
+		var capturedDTO entities.GetApplicationsDTO
+		repo := emptyRepo()
+		repo.getApplications = func(_ context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
+			capturedDTO = dto
+			return []*entities.Application{}, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        0,
+			FromPool:      true,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(capturedDTO.Statuses) != 1 || capturedDTO.Statuses[0] != "pending_verification" {
+			t.Errorf("pool inspector should query only pending_verification, got %v", capturedDTO.Statuses)
+		}
+	})
+
+	t.Run("inspector personal: no statuses → created_by filter", func(t *testing.T) {
+		var capturedDTO entities.GetApplicationsDTO
+		repo := emptyRepo()
+		repo.getApplications = func(_ context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
+			capturedDTO = dto
+			return []*entities.Application{}, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        0,
+			Statuses:      []string{},
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if capturedDTO.CreatedBy != initiatorID {
+			t.Errorf("expected CreatedBy=%q, got %q", initiatorID, capturedDTO.CreatedBy)
+		}
+	})
+
+	t.Run("inspector personal: on_verification → inspected_by filter", func(t *testing.T) {
+		var capturedDTO entities.GetApplicationsDTO
+		repo := emptyRepo()
+		repo.getApplications = func(_ context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
+			capturedDTO = dto
+			return []*entities.Application{}, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        0,
+			Statuses:      []string{"on_verification"},
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if capturedDTO.InspectedBy != initiatorID {
+			t.Errorf("expected InspectedBy=%q, got %q", initiatorID, capturedDTO.InspectedBy)
+		}
+	})
+
+	t.Run("inspector personal: invalid status", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        0,
+			Statuses:      []string{"created"}, // only on_verification is valid here
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("manager from pool (executed_by is null)", func(t *testing.T) {
+		var capturedDTO entities.GetApplicationsDTO
+		repo := emptyRepo()
+		repo.getApplications = func(_ context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
+			capturedDTO = dto
+			return []*entities.Application{}, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        0,
+			FromPool:      true,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !capturedDTO.ExecutedByIsNull {
+			t.Error("pool manager query should have ExecutedByIsNull=true")
+		}
+	})
+
+	t.Run("manager personal (managed_by filter)", func(t *testing.T) {
+		var capturedDTO entities.GetApplicationsDTO
+		repo := emptyRepo()
+		repo.getApplications = func(_ context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
+			capturedDTO = dto
+			return []*entities.Application{}, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        0,
+			FromPool:      false,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if capturedDTO.ManagedBy != initiatorID {
+			t.Errorf("expected ManagedBy=%q, got %q", initiatorID, capturedDTO.ManagedBy)
+		}
+	})
+
+	t.Run("engineer success", func(t *testing.T) {
+		repo := emptyRepo()
+		repo.getApplications = func(_ context.Context, _ entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError) {
+			return []*entities.Application{}, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("engineer"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        0,
+			Statuses:      []string{"assigned", "in_progress"},
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("engineer invalid status", func(t *testing.T) {
 		svc := newAppTestService(emptyRepo(), roleClient("engineer"))
-		_, err := svc.GetCompanyApplicationStatistic(ctx, req)
-		assertGRPCCode(t, err, codes.PermissionDenied)
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        0,
+			Statuses:      []string{"completed"},
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("manager not allowed", func(t *testing.T) {
-		svc := newAppTestService(emptyRepo(), roleClient("manager"))
-		_, err := svc.GetCompanyApplicationStatistic(ctx, req)
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("db error", func(t *testing.T) {
-		repo := emptyRepo()
-		repo.getCompanyApplicationStatistic = func(_ context.Context, _ entities.GetCompanyApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
-			return nil, internalErr()
-		}
-
-		svc := newAppTestService(repo, roleClient("analytic"))
-		_, err := svc.GetCompanyApplicationStatistic(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
-	})
-}
-
-// ─── GetEmployeeApplicationStatistic ─────────────────────────────────────────
-
-func TestGetEmployeeApplicationStatistic(t *testing.T) {
-	ctx := context.Background()
-	req := &pb.GetEmployeeApplicationStatisticRequest{
-		OperationId:   opID,
-		InitiatorUuid: initiatorID,
-		CompanyUuid:   companyID,
-		TargetUuid:    targetID,
-	}
-
-	t.Run("success", func(t *testing.T) {
-		repo := emptyRepo()
-		repo.getEmployeeApplicationStatistic = func(_ context.Context, _ entities.GetEmployeeApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
-			return testStatistic(), ok()
-		}
-
-		// Первый вызов (self-check initiator): manager; второй вызов (target): engineer
-		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
-			initiatorID: "manager",
-			targetID:    "engineer",
-		}))
-		res, err := svc.GetEmployeeApplicationStatistic(ctx, req)
-		assertNoError(t, err)
-		if res.GetInProgress() != 3 {
-			t.Errorf("expected in_progress=3, got %d", res.GetInProgress())
-		}
-	})
-
-	t.Run("company service error on initiator check", func(t *testing.T) {
+	t.Run("unemployed denied (company service error)", func(t *testing.T) {
 		svc := newAppTestService(emptyRepo(), errCompanyClient())
-		_, err := svc.GetEmployeeApplicationStatistic(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
-	})
-
-	t.Run("unemployed initiator not allowed", func(t *testing.T) {
-		svc := newAppTestService(emptyRepo(), roleByTargetClient(map[string]string{
-			initiatorID: "unemployed",
-		}))
-		_, err := svc.GetEmployeeApplicationStatistic(ctx, req)
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("target not in company", func(t *testing.T) {
-		// targetID отсутствует в карте → roleByTargetClient вернёт NotFound
-		svc := newAppTestService(emptyRepo(), roleByTargetClient(map[string]string{
-			initiatorID: "manager",
-		}))
-		_, err := svc.GetEmployeeApplicationStatistic(ctx, req)
-		assertGRPCCode(t, err, codes.NotFound)
-	})
-
-	t.Run("db error", func(t *testing.T) {
-		repo := emptyRepo()
-		repo.getEmployeeApplicationStatistic = func(_ context.Context, _ entities.GetEmployeeApplicationStatisticDTO) (*entities.ApplicationStatistic, Error.CodeError) {
-			return nil, internalErr()
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        0,
+		})
+		if err == nil {
+			t.Fatal("expected error for unknown employee, got nil")
 		}
-
-		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
-			initiatorID: "manager",
-			targetID:    "engineer",
-		}))
-		_, err := svc.GetEmployeeApplicationStatistic(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
 	})
 }
 
 // ─── UpdateApplicationStatus ──────────────────────────────────────────────────
 
 func TestUpdateApplicationStatus(t *testing.T) {
-	ctx := context.Background()
+	t.Run("invalid status (not allowed in this method)", func(t *testing.T) {
+		repo := repoWithApp(testApp())
 
-	makeReq := func(newStatus string) *pb.UpdateApplicationStatusRequest {
-		return &pb.UpdateApplicationStatusRequest{
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
 			OperationId:     opID,
 			InitiatorUuid:   initiatorID,
 			ApplicationUuid: appID,
-			Status:          newStatus,
-		}
-	}
-
-	t.Run("success engineer sets in_progress", func(t *testing.T) {
-		app := assignedApp()
-		app.ResponsibleEngineer = initiatorID
-
-		repo := repoWithApp(app)
-		repo.updateApplicationStatus = func(_ context.Context, _ entities.UpdateApplicationStatusDTO) Error.CodeError { return ok() }
-
-		svc := newAppTestService(repo, roleClient("engineer"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("in_progress"))
-		assertNoError(t, err)
+			Status:          "created",
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("success manager sets completed", func(t *testing.T) {
-		app := awaitingApprovalApp()
-		app.ResponsibleManager = initiatorID
+	t.Run("inspector: completed from on_verification", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp())
+		repo.updateApplicationStatus = func(_ context.Context, _ entities.UpdateApplicationStatusDTO) Error.CodeError { return ok() }
 
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "completed",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("inspector: failed from on_verification", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp())
+		repo.updateApplicationStatus = func(_ context.Context, _ entities.UpdateApplicationStatusDTO) Error.CodeError { return ok() }
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "failed",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("inspector: on_revision without escalation (revision_count=0)", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp()) // RevisionCount=0, (0+1)%5 != 0
+		var capturedDTO entities.UpdateApplicationStatusDTO
+		repo.updateApplicationStatus = func(_ context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError {
+			capturedDTO = dto
+			return ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "on_revision",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if capturedDTO.DropManagedBy || capturedDTO.DropExecutedBy {
+			t.Error("should not escalate when (RevisionCount+1)%5 != 0")
+		}
+	})
+
+	t.Run("inspector: on_revision with escalation (revision_count=4)", func(t *testing.T) {
+		app := onVerificationApp()
+		app.RevisionCount = 4 // (4+1)%5 == 0 → escalation
 		repo := repoWithApp(app)
+		var capturedDTO entities.UpdateApplicationStatusDTO
+		repo.updateApplicationStatus = func(_ context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError {
+			capturedDTO = dto
+			return ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "on_revision",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !capturedDTO.DropManagedBy || !capturedDTO.DropExecutedBy {
+			t.Error("should escalate when (RevisionCount+1)%5 == 0")
+		}
+	})
+
+	t.Run("inspector: not responsible (InspectedBy mismatch)", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp())
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "other-inspector",
+			ApplicationUuid: appID,
+			Status:          "completed",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("inspector: wrong current status (not on_verification)", func(t *testing.T) {
+		repo := repoWithApp(assignedApp())
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "completed",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("inspector: target status not allowed (rejected)", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp())
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "rejected",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("manager: rejected from created", func(t *testing.T) {
+		repo := repoWithApp(testApp()) // status=created, DepartmentUUID=deptID
 		repo.updateApplicationStatus = func(_ context.Context, _ entities.UpdateApplicationStatusDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("manager"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("completed"))
-		assertNoError(t, err)
-	})
-
-	t.Run("invalid status", func(t *testing.T) {
-		svc := newAppTestService(emptyRepo(), roleClient("engineer"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("invalid_status"))
-		assertGRPCCode(t, err, codes.InvalidArgument)
-	})
-
-	t.Run("application not found", func(t *testing.T) {
-		repo := emptyRepo()
-		repo.getApplication = func(_ context.Context, _ entities.GetApplicationDTO) (*entities.Application, Error.CodeError) {
-			return nil, notFound()
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "rejected",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
-
-		svc := newAppTestService(repo, roleClient("engineer"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("in_progress"))
-		assertGRPCCode(t, err, codes.NotFound)
 	})
 
-	t.Run("forbidden role - inspector cannot change status", func(t *testing.T) {
-		svc := newAppTestService(repoWithApp(assignedApp()), roleClient("inspector"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("in_progress"))
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("forbidden role - chief cannot change status", func(t *testing.T) {
-		svc := newAppTestService(repoWithApp(assignedApp()), roleClient("chief"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("in_progress"))
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("engineer is not the responsible engineer", func(t *testing.T) {
-		app := assignedApp()
-		app.ResponsibleEngineer = targetID // инициатор != ответственный
-
-		svc := newAppTestService(repoWithApp(app), roleClient("engineer"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("in_progress"))
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("engineer cannot transition from created status", func(t *testing.T) {
-		app := testApp() // status=created — не в validEngineerCurrentStatuses
-		app.ResponsibleEngineer = initiatorID
-
-		svc := newAppTestService(repoWithApp(app), roleClient("engineer"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("in_progress"))
-		assertGRPCCode(t, err, codes.FailedPrecondition)
-	})
-
-	t.Run("engineer cannot set manager statuses", func(t *testing.T) {
-		app := awaitingApprovalApp()
-		app.ResponsibleEngineer = initiatorID
-
-		svc := newAppTestService(repoWithApp(app), roleClient("engineer"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("completed"))
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("manager is not the responsible manager", func(t *testing.T) {
-		app := awaitingApprovalApp()
-		app.ResponsibleManager = targetID // инициатор != ответственный
-
-		svc := newAppTestService(repoWithApp(app), roleClient("manager"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("completed"))
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("manager cannot transition from assigned status", func(t *testing.T) {
-		app := assignedApp() // status=assigned — не в validManagerCurrentStatuses
-		app.ResponsibleManager = initiatorID
-
-		svc := newAppTestService(repoWithApp(app), roleClient("manager"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("completed"))
-		assertGRPCCode(t, err, codes.FailedPrecondition)
-	})
-
-	t.Run("manager cannot set engineer statuses", func(t *testing.T) {
-		app := awaitingApprovalApp()
-		app.ResponsibleManager = initiatorID
-
-		svc := newAppTestService(repoWithApp(app), roleClient("manager"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("in_progress"))
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("db update error", func(t *testing.T) {
-		app := assignedApp()
-		app.ResponsibleEngineer = initiatorID
-
+	t.Run("manager: wrong department", func(t *testing.T) {
+		app := testApp()
+		app.DepartmentUUID = otherDeptID
 		repo := repoWithApp(app)
-		repo.updateApplicationStatus = func(_ context.Context, _ entities.UpdateApplicationStatusDTO) Error.CodeError { return internalErr() }
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "rejected",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("manager: target status not allowed (completed)", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "completed",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("manager: wrong current status (on_verification)", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp())
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "rejected",
+		})
+		assertCode(t, err, codes.FailedPrecondition)
+	})
+
+	t.Run("engineer: in_progress from assigned", func(t *testing.T) {
+		repo := repoWithApp(assignedApp()) // ExecutedBy=targetID
+		repo.updateApplicationStatus = func(_ context.Context, _ entities.UpdateApplicationStatusDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("engineer"))
-		_, err := svc.UpdateApplicationStatus(ctx, makeReq("in_progress"))
-		assertGRPCCode(t, err, codes.Internal)
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   targetID,
+			ApplicationUuid: appID,
+			Status:          "in_progress",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("engineer: not responsible (ExecutedBy mismatch)", func(t *testing.T) {
+		repo := repoWithApp(assignedApp())
+
+		svc := newAppTestService(repo, roleClient("engineer"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "other-engineer",
+			ApplicationUuid: appID,
+			Status:          "in_progress",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("engineer: wrong current status (created)", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, roleClient("engineer"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "in_progress",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("chief: denied", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, roleClient("chief"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Status:          "rejected",
+		})
+		assertCode(t, err, codes.PermissionDenied)
 	})
 }
 
-// ─── AssignApplicationToEmployee ─────────────────────────────────────────────
+// ─── AssignApplication ────────────────────────────────────────────────────────
 
-func TestAssignApplicationToEmployee(t *testing.T) {
-	ctx := context.Background()
-	req := &pb.AssignApplicationToEmployeeRequest{
-		OperationId:     opID,
-		InitiatorUuid:   initiatorID,
-		TargetUuid:      targetID,
-		ApplicationUuid: appID,
-	}
-
+func TestAssignApplication(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := repoWithApp(testApp())
-		repo.assignApplicationToEmployee = func(_ context.Context, _ entities.AssignApplicationToEmployeeDTO) Error.CodeError { return ok() }
+		repo.assignApplicationToEmployee = func(_ context.Context, _ entities.AssignApplicationDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
 			initiatorID: "manager",
 			targetID:    "engineer",
 		}))
-		_, err := svc.AssignApplicationToEmployee(ctx, req)
-		assertNoError(t, err)
-	})
-
-	t.Run("application not found", func(t *testing.T) {
-		repo := emptyRepo()
-		repo.getApplication = func(_ context.Context, _ entities.GetApplicationDTO) (*entities.Application, Error.CodeError) {
-			return nil, notFound()
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			TargetUuid:      targetID,
+			ApplicationUuid: appID,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
-
-		svc := newAppTestService(repo, roleClient("manager"))
-		_, err := svc.AssignApplicationToEmployee(ctx, req)
-		assertGRPCCode(t, err, codes.NotFound)
 	})
 
-	t.Run("company service error on initiator check", func(t *testing.T) {
-		svc := newAppTestService(repoWithApp(testApp()), errCompanyClient())
-		_, err := svc.AssignApplicationToEmployee(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
+	t.Run("wrong status (on_verification)", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp())
+
+		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
+			initiatorID: "manager",
+			targetID:    "engineer",
+		}))
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			TargetUuid:      targetID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("on_revision not escalated (revision_count=3)", func(t *testing.T) {
+		repo := repoWithApp(onRevisionApp()) // RevisionCount=3, not divisible by 5
+
+		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
+			initiatorID: "manager",
+			targetID:    "engineer",
+		}))
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			TargetUuid:      targetID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("on_revision escalated (revision_count=5)", func(t *testing.T) {
+		repo := repoWithApp(escalatedOnRevisionApp()) // RevisionCount=5
+		repo.assignApplicationToEmployee = func(_ context.Context, _ entities.AssignApplicationDTO) Error.CodeError { return ok() }
+
+		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
+			initiatorID: "manager",
+			targetID:    "engineer",
+		}))
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			TargetUuid:      targetID,
+			ApplicationUuid: appID,
+		})
+		if err != nil {
+			t.Fatalf("escalated on_revision should be assignable, got: %v", err)
+		}
 	})
 
 	t.Run("initiator is not manager", func(t *testing.T) {
-		svc := newAppTestService(repoWithApp(testApp()), roleByTargetClient(map[string]string{
-			initiatorID: "engineer",
-		}))
-		_, err := svc.AssignApplicationToEmployee(ctx, req)
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("target is not engineer", func(t *testing.T) {
-		svc := newAppTestService(repoWithApp(testApp()), roleByTargetClient(map[string]string{
-			initiatorID: "manager",
-			targetID:    "manager",
-		}))
-		_, err := svc.AssignApplicationToEmployee(ctx, req)
-		assertGRPCCode(t, err, codes.InvalidArgument)
-	})
-
-	t.Run("target not in company", func(t *testing.T) {
-		// targetID отсутствует в карте → NotFound
-		svc := newAppTestService(repoWithApp(testApp()), roleByTargetClient(map[string]string{
-			initiatorID: "manager",
-		}))
-		_, err := svc.AssignApplicationToEmployee(ctx, req)
-		assertGRPCCode(t, err, codes.NotFound)
-	})
-
-	t.Run("db assign error", func(t *testing.T) {
 		repo := repoWithApp(testApp())
-		repo.assignApplicationToEmployee = func(_ context.Context, _ entities.AssignApplicationToEmployeeDTO) Error.CodeError { return internalErr() }
+
+		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
+			initiatorID: "engineer",
+			targetID:    "engineer",
+		}))
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			TargetUuid:      targetID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("manager department mismatch", func(t *testing.T) {
+		app := testApp()
+		app.DepartmentUUID = otherDeptID // app in otherDeptID, manager in deptID
+		repo := repoWithApp(app)
 
 		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
 			initiatorID: "manager",
 			targetID:    "engineer",
 		}))
-		_, err := svc.AssignApplicationToEmployee(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			TargetUuid:      targetID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("target is not engineer", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
+			initiatorID: "manager",
+			targetID:    "manager",
+		}))
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			TargetUuid:      targetID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+		repo.assignApplicationToEmployee = func(_ context.Context, _ entities.AssignApplicationDTO) Error.CodeError { return internalErr() }
+
+		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
+			initiatorID: "manager",
+			targetID:    "engineer",
+		}))
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			TargetUuid:      targetID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.Internal)
+	})
+}
+
+// ─── RedirectApplication ──────────────────────────────────────────────────────
+
+func TestRedirectApplication(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
+		repo.redirectApplication = func(_ context.Context, _ entities.RedirectApplicationDTO) Error.CodeError { return ok() }
+
+		svc := newAppTestService(repo, redirectClient("manager", companyID))
+		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
+			OperationId:          opID,
+			InitiatorUuid:        initiatorID,
+			ApplicationUuid:      appID,
+			TargetDepartmentUuid: otherDeptID,
+			Message:              "Redirecting to another department",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("empty message", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), redirectClient("manager", companyID))
+		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
+			OperationId:          opID,
+			InitiatorUuid:        initiatorID,
+			ApplicationUuid:      appID,
+			TargetDepartmentUuid: otherDeptID,
+			Message:              "   ",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid status (on_verification)", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp())
+
+		svc := newAppTestService(repo, redirectClient("manager", companyID))
+		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
+			OperationId:          opID,
+			InitiatorUuid:        initiatorID,
+			ApplicationUuid:      appID,
+			TargetDepartmentUuid: otherDeptID,
+			Message:              "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("initiator is not manager", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, redirectClient("engineer", companyID))
+		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
+			OperationId:          opID,
+			InitiatorUuid:        initiatorID,
+			ApplicationUuid:      appID,
+			TargetDepartmentUuid: otherDeptID,
+			Message:              "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("manager department mismatch", func(t *testing.T) {
+		app := testApp()
+		app.DepartmentUUID = otherDeptID // manager is in deptID, app in otherDeptID
+		repo := repoWithApp(app)
+
+		svc := newAppTestService(repo, redirectClient("manager", companyID))
+		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
+			OperationId:          opID,
+			InitiatorUuid:        initiatorID,
+			ApplicationUuid:      appID,
+			TargetDepartmentUuid: "yet-another-dept",
+			Message:              "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("target department belongs to another company", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, redirectClient("manager", "other-company-uuid"))
+		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
+			OperationId:          opID,
+			InitiatorUuid:        initiatorID,
+			ApplicationUuid:      appID,
+			TargetDepartmentUuid: otherDeptID,
+			Message:              "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("db error on fix log", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return internalErr() }
+
+		svc := newAppTestService(repo, redirectClient("manager", companyID))
+		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
+			OperationId:          opID,
+			InitiatorUuid:        initiatorID,
+			ApplicationUuid:      appID,
+			TargetDepartmentUuid: otherDeptID,
+			Message:              "message",
+		})
+		assertCode(t, err, codes.Internal)
+	})
+}
+
+// ─── RecallApplication ────────────────────────────────────────────────────────
+
+func TestRecallApplication(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		repo := repoWithApp(assignedApp()) // ManagedBy=initiatorID
+		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
+		repo.recallApplication = func(_ context.Context, _ entities.RecallApplicationDTO) Error.CodeError { return ok() }
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.RecallApplication(context.Background(), &pb.RecallApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "Recalling for rework",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("empty message", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("manager"))
+		_, err := svc.RecallApplication(context.Background(), &pb.RecallApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid status (created)", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.RecallApplication(context.Background(), &pb.RecallApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("not responsible manager (ManagedBy mismatch)", func(t *testing.T) {
+		repo := repoWithApp(assignedApp()) // ManagedBy=initiatorID
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.RecallApplication(context.Background(), &pb.RecallApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "other-manager",
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("manager role changed", func(t *testing.T) {
+		repo := repoWithApp(assignedApp()) // ManagedBy=initiatorID
+
+		svc := newAppTestService(repo, roleClient("engineer")) // role changed
+		_, err := svc.RecallApplication(context.Background(), &pb.RecallApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		repo := repoWithApp(assignedApp())
+		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
+		repo.recallApplication = func(_ context.Context, _ entities.RecallApplicationDTO) Error.CodeError { return internalErr() }
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.RecallApplication(context.Background(), &pb.RecallApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.Internal)
+	})
+}
+
+// ─── TakeApplicationToVerification ───────────────────────────────────────────
+
+func TestTakeApplicationToVerification(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		repo := repoWithApp(pendingVerificationApp()) // DepartmentUUID=deptID
+		repo.takeApplicationToVerification = func(_ context.Context, _ entities.TakeApplicationToVerificationDTO) Error.CodeError { return ok() }
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.TakeApplicationToVerification(context.Background(), &pb.TakeApplicationToVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("wrong status (not pending_verification)", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.TakeApplicationToVerification(context.Background(), &pb.TakeApplicationToVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("initiator is not inspector", func(t *testing.T) {
+		repo := repoWithApp(pendingVerificationApp())
+
+		svc := newAppTestService(repo, roleClient("engineer"))
+		_, err := svc.TakeApplicationToVerification(context.Background(), &pb.TakeApplicationToVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("department mismatch", func(t *testing.T) {
+		app := pendingVerificationApp()
+		app.DepartmentUUID = otherDeptID // inspector in deptID, app in otherDeptID
+		repo := repoWithApp(app)
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.TakeApplicationToVerification(context.Background(), &pb.TakeApplicationToVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		repo := repoWithApp(pendingVerificationApp())
+		repo.takeApplicationToVerification = func(_ context.Context, _ entities.TakeApplicationToVerificationDTO) Error.CodeError {
+			return internalErr()
+		}
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.TakeApplicationToVerification(context.Background(), &pb.TakeApplicationToVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.Internal)
+	})
+}
+
+// ─── ReleaseApplicationVerification ──────────────────────────────────────────
+
+func TestReleaseApplicationVerification(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp()) // InspectedBy=initiatorID
+		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
+		repo.releaseApplicationVerification = func(_ context.Context, _ entities.ReleaseApplicationVerificationDTO) Error.CodeError { return ok() }
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.ReleaseApplicationVerification(context.Background(), &pb.ReleaseApplicationVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "Releasing verification",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("empty message", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.ReleaseApplicationVerification(context.Background(), &pb.ReleaseApplicationVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "  ",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("wrong status (not on_verification)", func(t *testing.T) {
+		repo := repoWithApp(pendingVerificationApp())
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.ReleaseApplicationVerification(context.Background(), &pb.ReleaseApplicationVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("not responsible inspector (InspectedBy mismatch)", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp()) // InspectedBy=initiatorID
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.ReleaseApplicationVerification(context.Background(), &pb.ReleaseApplicationVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "other-inspector",
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("inspector role changed", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp())
+
+		svc := newAppTestService(repo, roleClient("manager")) // role changed
+		_, err := svc.ReleaseApplicationVerification(context.Background(), &pb.ReleaseApplicationVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp())
+		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
+		repo.releaseApplicationVerification = func(_ context.Context, _ entities.ReleaseApplicationVerificationDTO) Error.CodeError {
+			return internalErr()
+		}
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.ReleaseApplicationVerification(context.Background(), &pb.ReleaseApplicationVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.Internal)
 	})
 }
 
 // ─── AddApplicationFixLog ─────────────────────────────────────────────────────
 
 func TestAddApplicationFixLog(t *testing.T) {
-	ctx := context.Background()
-	req := &pb.AddApplicationFixLogRequest{
-		OperationId:     opID,
-		InitiatorUuid:   initiatorID,
-		ApplicationUuid: appID,
-		LogText:         "Replaced filter unit B7",
-	}
-
 	t.Run("success", func(t *testing.T) {
-		app := assignedApp()
-		app.ResponsibleEngineer = initiatorID
-
-		repo := repoWithApp(app)
-		repo.addApplicationFixLog = func(_ context.Context, _ entities.CreateFixLogDTO) Error.CodeError { return ok() }
+		repo := repoWithApp(inProgressApp()) // ExecutedBy=initiatorID
+		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("engineer"))
-		_, err := svc.AddApplicationFixLog(ctx, req)
-		assertNoError(t, err)
+		_, err := svc.AddApplicationFixLog(context.Background(), &pb.AddApplicationFixLogRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "Fixed the issue",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("empty message", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("engineer"))
+		_, err := svc.AddApplicationFixLog(context.Background(), &pb.AddApplicationFixLogRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "   ",
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("application not found", func(t *testing.T) {
@@ -615,95 +1232,129 @@ func TestAddApplicationFixLog(t *testing.T) {
 		}
 
 		svc := newAppTestService(repo, roleClient("engineer"))
-		_, err := svc.AddApplicationFixLog(ctx, req)
-		assertGRPCCode(t, err, codes.NotFound)
+		_, err := svc.AddApplicationFixLog(context.Background(), &pb.AddApplicationFixLogRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.NotFound)
 	})
 
-	t.Run("initiator is not the responsible engineer", func(t *testing.T) {
-		app := assignedApp()
-		app.ResponsibleEngineer = targetID // initiatorID != targetID
-
-		svc := newAppTestService(repoWithApp(app), roleClient("engineer"))
-		_, err := svc.AddApplicationFixLog(ctx, req)
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("db add error", func(t *testing.T) {
-		app := assignedApp()
-		app.ResponsibleEngineer = initiatorID
-
-		repo := repoWithApp(app)
-		repo.addApplicationFixLog = func(_ context.Context, _ entities.CreateFixLogDTO) Error.CodeError { return internalErr() }
+	t.Run("not responsible engineer (ExecutedBy mismatch)", func(t *testing.T) {
+		repo := repoWithApp(inProgressApp()) // ExecutedBy=initiatorID
 
 		svc := newAppTestService(repo, roleClient("engineer"))
-		_, err := svc.AddApplicationFixLog(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
+		_, err := svc.AddApplicationFixLog(context.Background(), &pb.AddApplicationFixLogRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "other-engineer",
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		repo := repoWithApp(inProgressApp())
+		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return internalErr() }
+
+		svc := newAppTestService(repo, roleClient("engineer"))
+		_, err := svc.AddApplicationFixLog(context.Background(), &pb.AddApplicationFixLogRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.Internal)
 	})
 }
 
 // ─── DeleteApplication ────────────────────────────────────────────────────────
 
 func TestDeleteApplication(t *testing.T) {
-	ctx := context.Background()
-	req := &pb.DeleteApplicationRequest{
-		OperationId:     opID,
-		InitiatorUuid:   initiatorID,
-		ApplicationUuid: appID,
-	}
-
 	t.Run("success", func(t *testing.T) {
-		repo := repoWithApp(testApp()) // status=created
-		repo.deleteApplicationRequest = func(_ context.Context, _ entities.DeleteApplicationDTO) Error.CodeError { return ok() }
+		repo := repoWithApp(testApp()) // CreatedBy=initiatorID, status=created
+		repo.deleteApplication = func(_ context.Context, _ entities.DeleteApplicationDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))
-		_, err := svc.DeleteApplication(ctx, req)
-		assertNoError(t, err)
-	})
-
-	t.Run("application not found", func(t *testing.T) {
-		repo := emptyRepo()
-		repo.getApplication = func(_ context.Context, _ entities.GetApplicationDTO) (*entities.Application, Error.CodeError) {
-			return nil, notFound()
+		_, err := svc.DeleteApplication(context.Background(), &pb.DeleteApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
-
-		svc := newAppTestService(repo, roleClient("inspector"))
-		_, err := svc.DeleteApplication(ctx, req)
-		assertGRPCCode(t, err, codes.NotFound)
 	})
 
-	t.Run("application already assigned - cannot delete", func(t *testing.T) {
-		svc := newAppTestService(repoWithApp(assignedApp()), roleClient("inspector"))
-		_, err := svc.DeleteApplication(ctx, req)
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("application in progress - cannot delete", func(t *testing.T) {
-		app := testApp()
-		app.Status = "in_progress"
-
-		svc := newAppTestService(repoWithApp(app), roleClient("inspector"))
-		_, err := svc.DeleteApplication(ctx, req)
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("company service error", func(t *testing.T) {
-		svc := newAppTestService(repoWithApp(testApp()), errCompanyClient())
-		_, err := svc.DeleteApplication(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
-	})
-
-	t.Run("initiator is not inspector", func(t *testing.T) {
-		svc := newAppTestService(repoWithApp(testApp()), roleClient("manager"))
-		_, err := svc.DeleteApplication(ctx, req)
-		assertGRPCCode(t, err, codes.PermissionDenied)
-	})
-
-	t.Run("db delete error", func(t *testing.T) {
+	t.Run("not creator", func(t *testing.T) {
 		repo := repoWithApp(testApp())
-		repo.deleteApplicationRequest = func(_ context.Context, _ entities.DeleteApplicationDTO) Error.CodeError { return internalErr() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))
-		_, err := svc.DeleteApplication(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
+		_, err := svc.DeleteApplication(context.Background(), &pb.DeleteApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "other-user",
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("status is not created (assigned)", func(t *testing.T) {
+		repo := repoWithApp(assignedApp())
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.DeleteApplication(context.Background(), &pb.DeleteApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("creator is no longer inspector", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+
+		svc := newAppTestService(repo, roleClient("manager")) // role changed
+		_, err := svc.DeleteApplication(context.Background(), &pb.DeleteApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		repo := repoWithApp(testApp())
+		repo.deleteApplication = func(_ context.Context, _ entities.DeleteApplicationDTO) Error.CodeError { return internalErr() }
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.DeleteApplication(context.Background(), &pb.DeleteApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.Internal)
 	})
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+func assertCode(t *testing.T, err error, expected codes.Code) {
+	t.Helper()
+	if err == nil {
+		t.Fatalf("expected gRPC error with code %v, got nil", expected)
+	}
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("expected gRPC status error, got: %v", err)
+	}
+	if st.Code() != expected {
+		t.Errorf("expected code %v, got %v: %s", expected, st.Code(), st.Message())
+	}
+}
+
+// Compile-time check: mockCompanyClient satisfies the interface
+var _ company_proto.CompanyServiceClient = (*mockCompanyClient)(nil)
+
+// Suppress unused import: grpc is used in mock function signatures in mocks_test.go
+var _ grpc.CallOption

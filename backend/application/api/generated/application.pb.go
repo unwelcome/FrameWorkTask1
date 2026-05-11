@@ -1173,7 +1173,7 @@ type ReleaseApplicationVerificationRequest struct {
 	OperationId     string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
 	InitiatorUuid   string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
 	ApplicationUuid string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
-	Message         string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	Message         string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1482,7 +1482,7 @@ const file_application_proto_rawDesc = "" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
 	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x12\x18\n" +
-	"\amessage\x18\x05 \x01(\tR\amessage\"\xac\x01\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\"\xac\x01\n" +
 	"\x1bAddApplicationFixLogRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +

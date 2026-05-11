@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-// 'created', 'assigned', 'in_progress', 'on_hold', 'completed', 'failed', 'archived', 'redirected', 'rejected', 'recalled', 'pending_verification', 'on_verification', 'on_revision'
+// 'created', 'assigned', 'in_progress', 'on_hold', 'completed', 'failed', 'redirected', 'rejected', 'recalled', 'pending_verification', 'on_verification', 'on_revision'
 
 type ApplicationRepository interface {
 	CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError
@@ -464,7 +464,9 @@ func (r *applicationRepository) RedirectApplication(ctx context.Context, dto ent
 	    status = 'redirected',
 	    updated_at = CURRENT_TIMESTAMP,
 	    updated_by = $3,
-	    managed_by = $3
+	    managed_by = $3,
+	    executed_by = NULL,
+	    inspected_by = NULL
 	WHERE uuid = $1 AND deleted_at IS NULL;`
 
 	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.TargetDepartmentUUID, dto.InitiatorUUID)

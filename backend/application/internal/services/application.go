@@ -17,7 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-var AllApplicationStatuses = []string{"created", "assigned", "in_progress", "on_hold", "completed", "failed", "archived", "redirected", "rejected", "recalled", "pending_verification", "on_verification", "on_revision"}
+var AllApplicationStatuses = []string{"created", "assigned", "in_progress", "on_hold", "completed", "failed", "redirected", "rejected", "recalled", "pending_verification", "on_verification", "on_revision"}
 
 type ApplicationService struct {
 	db            *postgresDB.DatabaseRepository
@@ -510,6 +510,13 @@ func (s *ApplicationService) AssignApplication(ctx context.Context, req *pb.Assi
 
 // RedirectApplication Передача заявки в другой департамент
 func (s *ApplicationService) RedirectApplication(ctx context.Context, req *pb.RedirectApplicationRequest) (*emptypb.Empty, error) {
+	// Валидация message
+	message := strings.TrimSpace(req.GetMessage())
+	if message == "" {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "redirect application").Err(fmt.Errorf("invalid message")).Msg("error")
+		return nil, status.Error(codes.InvalidArgument, "message is empty")
+	}
+
 	// Получаем заявку
 	application, gerErr := s.db.ApplicationRepository.GetApplication(ctx, entities.GetApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
@@ -552,7 +559,7 @@ func (s *ApplicationService) RedirectApplication(ctx context.Context, req *pb.Re
 	// Пишем fix log
 	addFixLogErr := s.db.ApplicationRepository.AddApplicationFixLog(ctx, entities.AddFixLogDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
-		Text:            req.GetMessage(),
+		Text:            message,
 		CreatedBy:       req.GetInitiatorUuid(),
 	})
 	err = Error.HandleError(addFixLogErr, req.GetOperationId(), "redirect application")
@@ -577,6 +584,13 @@ func (s *ApplicationService) RedirectApplication(ctx context.Context, req *pb.Re
 
 // RecallApplication Отзыв заявки у инженера
 func (s *ApplicationService) RecallApplication(ctx context.Context, req *pb.RecallApplicationRequest) (*emptypb.Empty, error) {
+	// Валидация message
+	message := strings.TrimSpace(req.GetMessage())
+	if message == "" {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "recall application").Err(fmt.Errorf("invalid message")).Msg("error")
+		return nil, status.Error(codes.InvalidArgument, "message is empty")
+	}
+
 	// Получаем заявку
 	application, getErr := s.db.ApplicationRepository.GetApplication(ctx, entities.GetApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
@@ -609,7 +623,7 @@ func (s *ApplicationService) RecallApplication(ctx context.Context, req *pb.Reca
 	// Пишем fix log
 	addFixLogErr := s.db.ApplicationRepository.AddApplicationFixLog(ctx, entities.AddFixLogDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
-		Text:            req.GetMessage(),
+		Text:            message,
 		CreatedBy:       req.GetInitiatorUuid(),
 	})
 	err = Error.HandleError(addFixLogErr, req.GetOperationId(), "recall application")
@@ -678,6 +692,13 @@ func (s *ApplicationService) TakeApplicationToVerification(ctx context.Context, 
 
 // ReleaseApplicationVerification Отмена взятия заявки на проверку
 func (s *ApplicationService) ReleaseApplicationVerification(ctx context.Context, req *pb.ReleaseApplicationVerificationRequest) (*emptypb.Empty, error) {
+	// Валидация message
+	message := strings.TrimSpace(req.GetMessage())
+	if message == "" {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "release application").Err(fmt.Errorf("invalid message")).Msg("error")
+		return nil, status.Error(codes.InvalidArgument, "message is empty")
+	}
+
 	// Получаем заявку
 	application, getErr := s.db.ApplicationRepository.GetApplication(ctx, entities.GetApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
@@ -712,7 +733,7 @@ func (s *ApplicationService) ReleaseApplicationVerification(ctx context.Context,
 	// Пишем fix log
 	addFixLogErr := s.db.ApplicationRepository.AddApplicationFixLog(ctx, entities.AddFixLogDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
-		Text:            req.GetMessage(),
+		Text:            message,
 		CreatedBy:       req.GetInitiatorUuid(),
 	})
 	err = Error.HandleError(addFixLogErr, req.GetOperationId(), "release application")
@@ -736,6 +757,13 @@ func (s *ApplicationService) ReleaseApplicationVerification(ctx context.Context,
 
 // AddApplicationFixLog Добавление новой записи в fix log заявки
 func (s *ApplicationService) AddApplicationFixLog(ctx context.Context, req *pb.AddApplicationFixLogRequest) (*emptypb.Empty, error) {
+	// Валидация message
+	message := strings.TrimSpace(req.GetMessage())
+	if message == "" {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "add fix log").Err(fmt.Errorf("invalid message")).Msg("error")
+		return nil, status.Error(codes.InvalidArgument, "message is empty")
+	}
+
 	// Получаем заявку — добавлять записи может только ответственный инженер (executed_by)
 	application, getErr := s.db.ApplicationRepository.GetApplication(ctx, entities.GetApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
@@ -753,7 +781,7 @@ func (s *ApplicationService) AddApplicationFixLog(ctx context.Context, req *pb.A
 	// Создаем новую запись в fix log
 	addErr := s.db.ApplicationRepository.AddApplicationFixLog(ctx, entities.AddFixLogDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
-		Text:            req.GetMessage(),
+		Text:            message,
 		CreatedBy:       req.GetInitiatorUuid(),
 	})
 	err = Error.HandleError(addErr, req.GetOperationId(), "add fix log")
@@ -786,6 +814,16 @@ func (s *ApplicationService) DeleteApplication(ctx context.Context, req *pb.Dele
 	if application.Status != "created" {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "delete application").Err(fmt.Errorf("application is already in use")).Msg("error")
 		return nil, status.Error(codes.PermissionDenied, "only applications with status 'created' can be deleted")
+	}
+
+	// Получаем инициатора, чтобы проверить, что он еще состоит в компании
+	initiator, err := s.getEmployeeInfo(ctx, req.GetOperationId(), "delete application", application.CompanyUUID, req.GetInitiatorUuid(), req.GetInitiatorUuid())
+	if err != nil {
+		return nil, err
+	}
+	if initiator.Role != "inspector" {
+		log.Warn().Str("id", req.GetOperationId()).Str("method", "delete application").Err(fmt.Errorf("user is a creator, but is no longer an inspector")).Msg("error")
+		return nil, status.Error(codes.PermissionDenied, "only a creator can delete application")
 	}
 
 	// Мягкое удаление (deleted_at = now(), deleted_by = initiator)

@@ -377,7 +377,7 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *p
 				return nil, status.Error(codes.PermissionDenied, "after \"create\" or \"redirect\" status can be only \"assigned\" or \"rejected\"")
 			}
 		}
-		
+
 		// После "awaiting_approval" можно только "completed", "cancelled", "failed"
 		if currentStatus == "awaiting_approval" {
 			if !checkArrayContain([]string{"completed", "cancelled", "failed"}, req.GetStatus()) {
@@ -407,9 +407,10 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *p
 
 	// Обновляем статус заявки
 	updateErr := s.db.ApplicationRepository.UpdateApplicationStatus(ctx, entities.UpdateApplicationStatusDTO{
-		ApplicationUUID: req.GetApplicationUuid(),
-		Status:          newStatus,
-		InitiatorUUID:   req.GetInitiatorUuid(),
+		ApplicationUUID:      req.GetApplicationUuid(),
+		Status:               newStatus,
+		InitiatorUUID:        req.GetInitiatorUuid(),
+		TargetDepartmentUUID: "",
 	})
 	err = Error.HandleError(updateErr, req.GetOperationId(), "update application status")
 	if err != nil {
@@ -436,7 +437,7 @@ func (s *ApplicationService) AssignApplicationToEmployee(ctx context.Context, re
 		return nil, err
 	}
 
-	// Получаем роль инициатора — назначать заявки могут только manager
+	// Получаем инициатора — назначать заявки могут только manager
 	initiator, err := s.getEmployeeInfo(ctx, req.GetOperationId(), "assign application", application.CompanyUUID, req.GetInitiatorUuid(), req.GetInitiatorUuid())
 	if err != nil {
 		return nil, err
@@ -447,7 +448,7 @@ func (s *ApplicationService) AssignApplicationToEmployee(ctx context.Context, re
 		return nil, status.Error(codes.PermissionDenied, "only managers can assign applications")
 	}
 
-	// Получаем роль целевого сотрудника — назначить можно только для engineer
+	// Получаем целевого сотрудника — назначить можно только для engineer
 	target, err := s.getEmployeeInfo(ctx, req.GetOperationId(), "assign application", application.CompanyUUID, req.GetInitiatorUuid(), req.GetTargetUuid())
 	if err != nil {
 		return nil, err
@@ -515,22 +516,16 @@ func (s *ApplicationService) DeleteApplication(ctx context.Context, req *pb.Dele
 		return nil, err
 	}
 
+	// Удалить заявку может только ее создатель
+	if application.CreatedBy != req.GetInitiatorUuid() {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete application").Err(fmt.Errorf("not a creator")).Msg("error")
+		return nil, status.Error(codes.PermissionDenied, "only creator can delete application")
+	}
+
 	// Если статус заявки не created, то ее уже нельзя удалить
 	if application.Status != "created" {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "delete application").Err(fmt.Errorf("application is already in use")).Msg("error")
 		return nil, status.Error(codes.PermissionDenied, "only applications with status 'created' can be deleted")
-	}
-
-	// Получаем роль инициатора — удалять заявки могут только inspector
-	initiator, err := s.getEmployeeInfo(ctx, req.GetOperationId(), "delete application", application.CompanyUUID, req.GetInitiatorUuid(), req.GetInitiatorUuid())
-	if err != nil {
-		return nil, err
-	}
-
-	if initiator.Role != "inspector" {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "delete application").
-			Err(fmt.Errorf("role is not allowed")).Msg("error")
-		return nil, status.Error(codes.PermissionDenied, "only inspectors can delete applications")
 	}
 
 	// Мягкое удаление (deleted_at = now(), deleted_by = initiator)

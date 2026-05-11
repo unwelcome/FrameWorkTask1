@@ -20,17 +20,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ApplicationService_Health_FullMethodName                          = "/application.ApplicationService/Health"
-	ApplicationService_CreateApplication_FullMethodName               = "/application.ApplicationService/CreateApplication"
-	ApplicationService_GetApplication_FullMethodName                  = "/application.ApplicationService/GetApplication"
-	ApplicationService_GetApplications_FullMethodName                 = "/application.ApplicationService/GetApplications"
-	ApplicationService_GetCompanyApplicationStatistic_FullMethodName  = "/application.ApplicationService/GetCompanyApplicationStatistic"
-	ApplicationService_GetEmployeeApplicationStatistic_FullMethodName = "/application.ApplicationService/GetEmployeeApplicationStatistic"
-	ApplicationService_UpdateApplicationStatus_FullMethodName         = "/application.ApplicationService/UpdateApplicationStatus"
-	ApplicationService_AssignApplicationToEmployee_FullMethodName     = "/application.ApplicationService/AssignApplicationToEmployee"
-	ApplicationService_TransferApplication_FullMethodName             = "/application.ApplicationService/TransferApplication"
-	ApplicationService_AddApplicationFixLog_FullMethodName            = "/application.ApplicationService/AddApplicationFixLog"
-	ApplicationService_DeleteApplication_FullMethodName               = "/application.ApplicationService/DeleteApplication"
+	ApplicationService_Health_FullMethodName                         = "/application.ApplicationService/Health"
+	ApplicationService_CreateApplication_FullMethodName              = "/application.ApplicationService/CreateApplication"
+	ApplicationService_GetApplication_FullMethodName                 = "/application.ApplicationService/GetApplication"
+	ApplicationService_GetApplications_FullMethodName                = "/application.ApplicationService/GetApplications"
+	ApplicationService_UpdateApplicationStatus_FullMethodName        = "/application.ApplicationService/UpdateApplicationStatus"
+	ApplicationService_AssignApplicationToEmployee_FullMethodName    = "/application.ApplicationService/AssignApplicationToEmployee"
+	ApplicationService_TransferApplication_FullMethodName            = "/application.ApplicationService/TransferApplication"
+	ApplicationService_RecallApplication_FullMethodName              = "/application.ApplicationService/RecallApplication"
+	ApplicationService_TakeApplicationToVerification_FullMethodName  = "/application.ApplicationService/TakeApplicationToVerification"
+	ApplicationService_ReleaseApplicationVerification_FullMethodName = "/application.ApplicationService/ReleaseApplicationVerification"
+	ApplicationService_AddApplicationFixLog_FullMethodName           = "/application.ApplicationService/AddApplicationFixLog"
+	ApplicationService_DeleteApplication_FullMethodName              = "/application.ApplicationService/DeleteApplication"
 )
 
 // ApplicationServiceClient is the client API for ApplicationService service.
@@ -41,11 +42,12 @@ type ApplicationServiceClient interface {
 	CreateApplication(ctx context.Context, in *CreateApplicationRequest, opts ...grpc.CallOption) (*CreateApplicationResponse, error)
 	GetApplication(ctx context.Context, in *GetApplicationRequest, opts ...grpc.CallOption) (*GetApplicationResponse, error)
 	GetApplications(ctx context.Context, in *GetApplicationsRequest, opts ...grpc.CallOption) (*GetApplicationsResponse, error)
-	GetCompanyApplicationStatistic(ctx context.Context, in *GetCompanyApplicationStatisticRequest, opts ...grpc.CallOption) (*GetCompanyApplicationStatisticResponse, error)
-	GetEmployeeApplicationStatistic(ctx context.Context, in *GetEmployeeApplicationStatisticRequest, opts ...grpc.CallOption) (*GetEmployeeApplicationStatisticResponse, error)
 	UpdateApplicationStatus(ctx context.Context, in *UpdateApplicationStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AssignApplicationToEmployee(ctx context.Context, in *AssignApplicationToEmployeeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	TransferApplication(ctx context.Context, in *TransferApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RecallApplication(ctx context.Context, in *RecallApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	TakeApplicationToVerification(ctx context.Context, in *TakeApplicationToVerificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReleaseApplicationVerification(ctx context.Context, in *ReleaseApplicationVerificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AddApplicationFixLog(ctx context.Context, in *AddApplicationFixLogRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteApplication(ctx context.Context, in *DeleteApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -98,26 +100,6 @@ func (c *applicationServiceClient) GetApplications(ctx context.Context, in *GetA
 	return out, nil
 }
 
-func (c *applicationServiceClient) GetCompanyApplicationStatistic(ctx context.Context, in *GetCompanyApplicationStatisticRequest, opts ...grpc.CallOption) (*GetCompanyApplicationStatisticResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetCompanyApplicationStatisticResponse)
-	err := c.cc.Invoke(ctx, ApplicationService_GetCompanyApplicationStatistic_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *applicationServiceClient) GetEmployeeApplicationStatistic(ctx context.Context, in *GetEmployeeApplicationStatisticRequest, opts ...grpc.CallOption) (*GetEmployeeApplicationStatisticResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetEmployeeApplicationStatisticResponse)
-	err := c.cc.Invoke(ctx, ApplicationService_GetEmployeeApplicationStatistic_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *applicationServiceClient) UpdateApplicationStatus(ctx context.Context, in *UpdateApplicationStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -142,6 +124,36 @@ func (c *applicationServiceClient) TransferApplication(ctx context.Context, in *
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, ApplicationService_TransferApplication_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) RecallApplication(ctx context.Context, in *RecallApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ApplicationService_RecallApplication_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) TakeApplicationToVerification(ctx context.Context, in *TakeApplicationToVerificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ApplicationService_TakeApplicationToVerification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationServiceClient) ReleaseApplicationVerification(ctx context.Context, in *ReleaseApplicationVerificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ApplicationService_ReleaseApplicationVerification_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -176,11 +188,12 @@ type ApplicationServiceServer interface {
 	CreateApplication(context.Context, *CreateApplicationRequest) (*CreateApplicationResponse, error)
 	GetApplication(context.Context, *GetApplicationRequest) (*GetApplicationResponse, error)
 	GetApplications(context.Context, *GetApplicationsRequest) (*GetApplicationsResponse, error)
-	GetCompanyApplicationStatistic(context.Context, *GetCompanyApplicationStatisticRequest) (*GetCompanyApplicationStatisticResponse, error)
-	GetEmployeeApplicationStatistic(context.Context, *GetEmployeeApplicationStatisticRequest) (*GetEmployeeApplicationStatisticResponse, error)
 	UpdateApplicationStatus(context.Context, *UpdateApplicationStatusRequest) (*emptypb.Empty, error)
 	AssignApplicationToEmployee(context.Context, *AssignApplicationToEmployeeRequest) (*emptypb.Empty, error)
 	TransferApplication(context.Context, *TransferApplicationRequest) (*emptypb.Empty, error)
+	RecallApplication(context.Context, *RecallApplicationRequest) (*emptypb.Empty, error)
+	TakeApplicationToVerification(context.Context, *TakeApplicationToVerificationRequest) (*emptypb.Empty, error)
+	ReleaseApplicationVerification(context.Context, *ReleaseApplicationVerificationRequest) (*emptypb.Empty, error)
 	AddApplicationFixLog(context.Context, *AddApplicationFixLogRequest) (*emptypb.Empty, error)
 	DeleteApplication(context.Context, *DeleteApplicationRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedApplicationServiceServer()
@@ -205,12 +218,6 @@ func (UnimplementedApplicationServiceServer) GetApplication(context.Context, *Ge
 func (UnimplementedApplicationServiceServer) GetApplications(context.Context, *GetApplicationsRequest) (*GetApplicationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetApplications not implemented")
 }
-func (UnimplementedApplicationServiceServer) GetCompanyApplicationStatistic(context.Context, *GetCompanyApplicationStatisticRequest) (*GetCompanyApplicationStatisticResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCompanyApplicationStatistic not implemented")
-}
-func (UnimplementedApplicationServiceServer) GetEmployeeApplicationStatistic(context.Context, *GetEmployeeApplicationStatisticRequest) (*GetEmployeeApplicationStatisticResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetEmployeeApplicationStatistic not implemented")
-}
 func (UnimplementedApplicationServiceServer) UpdateApplicationStatus(context.Context, *UpdateApplicationStatusRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateApplicationStatus not implemented")
 }
@@ -219,6 +226,15 @@ func (UnimplementedApplicationServiceServer) AssignApplicationToEmployee(context
 }
 func (UnimplementedApplicationServiceServer) TransferApplication(context.Context, *TransferApplicationRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TransferApplication not implemented")
+}
+func (UnimplementedApplicationServiceServer) RecallApplication(context.Context, *RecallApplicationRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecallApplication not implemented")
+}
+func (UnimplementedApplicationServiceServer) TakeApplicationToVerification(context.Context, *TakeApplicationToVerificationRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TakeApplicationToVerification not implemented")
+}
+func (UnimplementedApplicationServiceServer) ReleaseApplicationVerification(context.Context, *ReleaseApplicationVerificationRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReleaseApplicationVerification not implemented")
 }
 func (UnimplementedApplicationServiceServer) AddApplicationFixLog(context.Context, *AddApplicationFixLogRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddApplicationFixLog not implemented")
@@ -319,42 +335,6 @@ func _ApplicationService_GetApplications_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_GetCompanyApplicationStatistic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCompanyApplicationStatisticRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).GetCompanyApplicationStatistic(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ApplicationService_GetCompanyApplicationStatistic_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).GetCompanyApplicationStatistic(ctx, req.(*GetCompanyApplicationStatisticRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApplicationService_GetEmployeeApplicationStatistic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetEmployeeApplicationStatisticRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApplicationServiceServer).GetEmployeeApplicationStatistic(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ApplicationService_GetEmployeeApplicationStatistic_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).GetEmployeeApplicationStatistic(ctx, req.(*GetEmployeeApplicationStatisticRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApplicationService_UpdateApplicationStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateApplicationStatusRequest)
 	if err := dec(in); err != nil {
@@ -405,6 +385,60 @@ func _ApplicationService_TransferApplication_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApplicationServiceServer).TransferApplication(ctx, req.(*TransferApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_RecallApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecallApplicationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).RecallApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ApplicationService_RecallApplication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).RecallApplication(ctx, req.(*RecallApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_TakeApplicationToVerification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TakeApplicationToVerificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).TakeApplicationToVerification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ApplicationService_TakeApplicationToVerification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).TakeApplicationToVerification(ctx, req.(*TakeApplicationToVerificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationService_ReleaseApplicationVerification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleaseApplicationVerificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).ReleaseApplicationVerification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ApplicationService_ReleaseApplicationVerification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).ReleaseApplicationVerification(ctx, req.(*ReleaseApplicationVerificationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -469,14 +503,6 @@ var ApplicationService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApplicationService_GetApplications_Handler,
 		},
 		{
-			MethodName: "GetCompanyApplicationStatistic",
-			Handler:    _ApplicationService_GetCompanyApplicationStatistic_Handler,
-		},
-		{
-			MethodName: "GetEmployeeApplicationStatistic",
-			Handler:    _ApplicationService_GetEmployeeApplicationStatistic_Handler,
-		},
-		{
 			MethodName: "UpdateApplicationStatus",
 			Handler:    _ApplicationService_UpdateApplicationStatus_Handler,
 		},
@@ -487,6 +513,18 @@ var ApplicationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TransferApplication",
 			Handler:    _ApplicationService_TransferApplication_Handler,
+		},
+		{
+			MethodName: "RecallApplication",
+			Handler:    _ApplicationService_RecallApplication_Handler,
+		},
+		{
+			MethodName: "TakeApplicationToVerification",
+			Handler:    _ApplicationService_TakeApplicationToVerification_Handler,
+		},
+		{
+			MethodName: "ReleaseApplicationVerification",
+			Handler:    _ApplicationService_ReleaseApplicationVerification_Handler,
 		},
 		{
 			MethodName: "AddApplicationFixLog",

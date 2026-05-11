@@ -10,11 +10,12 @@ service ApplicationService {
   rpc CreateApplication(CreateApplicationRequest) returns (CreateApplicationResponse);
   rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
   rpc GetApplications(GetApplicationsRequest) returns (GetApplicationsResponse);
-  rpc GetCompanyApplicationStatistic(GetCompanyApplicationStatisticRequest) returns (GetCompanyApplicationStatisticResponse);
-  rpc GetEmployeeApplicationStatistic(GetEmployeeApplicationStatisticRequest) returns (GetEmployeeApplicationStatisticResponse);
   rpc UpdateApplicationStatus(UpdateApplicationStatusRequest) returns (google.protobuf.Empty);
   rpc AssignApplicationToEmployee(AssignApplicationToEmployeeRequest) returns (google.protobuf.Empty);
   rpc TransferApplication(TransferApplicationRequest) returns (google.protobuf.Empty);
+  rpc RecallApplication(RecallApplicationRequest) returns (google.protobuf.Empty);
+  rpc TakeApplicationToVerification(TakeApplicationToVerificationRequest) returns (google.protobuf.Empty);
+  rpc ReleaseApplicationVerification(ReleaseApplicationVerificationRequest) returns (google.protobuf.Empty);
   rpc AddApplicationFixLog(AddApplicationFixLogRequest) returns (google.protobuf.Empty);
   rpc DeleteApplication(DeleteApplicationRequest) returns (google.protobuf.Empty);
 }
@@ -24,16 +25,22 @@ message Application {
   string application_uuid = 1;
   string company_uuid = 2;
   string department_uuid = 3;
-  string title = 4;
-  string description = 5;
-  string status = 6;
-  string responsible_manager = 7;
-  string responsible_engineer = 8;
+  int64  version = 4;
+  string title = 5;
+  string description = 6;
+  string status = 7;
+  int64  revision_count = 8;
   string created_at = 9;
   string created_by = 10;
-  string closed_at = 11;
-  string deleted_at = 12;
-  repeated FixLog fix_logs = 13;
+  string updated_at = 11;
+  string updated_by = 12;
+  string managed_by = 13;
+  string executed_by = 14;
+  string inspected_by = 15;
+  string closed_at = 16;
+  string deleted_at = 17;
+  string deleted_by = 18;
+  repeated FixLog fix_logs = 19;
 }
 
 message FixLog {
@@ -67,8 +74,7 @@ message CreateApplicationRequest {
   string operation_id = 1;
   string initiator_uuid = 2;
   string company_uuid = 3;
-  string title = 4;
-  string description = 5;
+  ApplicationData application_data = 4;
 }
 message CreateApplicationResponse {
   string application_uuid = 1;
@@ -101,49 +107,6 @@ message GetApplicationsResponse {
 }
 
 
-// GetCompanyApplicationStatistic
-message GetCompanyApplicationStatisticRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string company_uuid = 3;
-}
-message GetCompanyApplicationStatisticResponse {
-  int64 created = 1;
-  int64 assigned = 2;
-  int64 redirected = 3;
-  int64 rejected = 4;
-  int64 in_progress = 5;
-  int64 on_hold = 6;
-  int64 awaiting_approval = 7;
-  int64 completed = 8;
-  int64 cancelled = 9;
-  int64 failed = 10;
-  int64 archived = 11;
-}
-
-
-// GetEmployeeApplicationStatistic
-message GetEmployeeApplicationStatisticRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string company_uuid = 3;
-  string target_uuid = 4;
-}
-message GetEmployeeApplicationStatisticResponse {
-  int64 created = 1; // Сколько пользователь создал задач 
-  int64 assigned = 2; // Сколько у пользователя текущих задач
-  int64 redirected = 3; // Сколько у пользователя переданных в другой департамент задач
-  int64 rejected = 4; // Сколько у пользователя отклоненных задач
-  int64 in_progress = 5; // Сколько у пользователя задач на выполнении
-  int64 on_hold = 6; // Сколько у пользователя задач на паузе
-  int64 awaiting_approval = 7; // Сколько у пользователя задач ожидают подтверждения
-  int64 completed = 8; // Сколько пользователь завершил задач
-  int64 cancelled = 9; // Сколько пользователь отменил задач
-  int64 failed = 10; // Сколько пользователь провалил задач
-  int64 archived = 11; // Сколько пользователь заморозил задач
-}
-
-
 // UpdateApplicationStatus
 message UpdateApplicationStatusRequest {
   string operation_id = 1;
@@ -158,8 +121,8 @@ message UpdateApplicationStatusRequest {
 message AssignApplicationToEmployeeRequest {
   string operation_id = 1;
   string initiator_uuid = 2;
-  string target_uuid = 3;
-  string application_uuid = 4;
+  string application_uuid = 3;
+  string target_uuid = 4;
 }
 // Empty response
 
@@ -170,6 +133,36 @@ message TransferApplicationRequest {
   string initiator_uuid = 2;
   string application_uuid = 3;
   string target_department_uuid = 4;
+  string message = 5;
+}
+// Empty response
+
+
+// RecallApplication
+message RecallApplicationRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string application_uuid = 3;
+  string message = 4;
+}
+// Empty response
+
+
+// TakeApplicationToVerification
+message TakeApplicationToVerificationRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string application_uuid = 3;
+}
+// Empty response
+
+
+// ReleaseApplicationVerification
+message ReleaseApplicationVerificationRequest {
+  string operation_id = 1;
+  string initiator_uuid = 2;
+  string application_uuid = 3;
+  string message = 5;
 }
 // Empty response
 
@@ -179,7 +172,7 @@ message AddApplicationFixLogRequest {
   string operation_id = 1;
   string initiator_uuid = 2;
   string application_uuid = 3;
-  string log_text = 4;
+  string message = 4;
 }
 // Empty response
 
@@ -189,5 +182,6 @@ message DeleteApplicationRequest {
   string operation_id = 1;
   string initiator_uuid = 2;
   string application_uuid = 3;
+  string message = 4;
 }
 // Empty response

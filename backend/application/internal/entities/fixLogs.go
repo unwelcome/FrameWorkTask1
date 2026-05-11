@@ -8,7 +8,7 @@ type FixLog struct {
 	CreatedBy       string `db:"created_by"`
 }
 
-type CreateFixLogDTO struct {
+type AddFixLogDTO struct {
 	ApplicationUUID string
 	Text            string
 	CreatedBy       string

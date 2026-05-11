@@ -11,7 +11,7 @@ service ApplicationService {
   rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
   rpc GetApplications(GetApplicationsRequest) returns (GetApplicationsResponse);
   rpc UpdateApplicationStatus(UpdateApplicationStatusRequest) returns (google.protobuf.Empty);
-  rpc AssignApplicationToEmployee(AssignApplicationToEmployeeRequest) returns (google.protobuf.Empty);
+  rpc AssignApplication(AssignApplicationRequest) returns (google.protobuf.Empty);
   rpc RedirectApplication(RedirectApplicationRequest) returns (google.protobuf.Empty);
   rpc RecallApplication(RecallApplicationRequest) returns (google.protobuf.Empty);
   rpc TakeApplicationToVerification(TakeApplicationToVerificationRequest) returns (google.protobuf.Empty);
@@ -98,10 +98,11 @@ message GetApplicationsRequest {
   string initiator_uuid = 2;
   string company_uuid = 3;
   string department_uuid = 4;
-  string status = 5;
+  repeated string statuses = 5;
   int64 count = 6;
   int64 offset = 7;
   bool is_deleted = 8;
+  bool from_pool = 9; // true - заявки из пула (для инспекторов, менеджеров) false - (личные заявки)
 }
 message GetApplicationsResponse {
   repeated Application applications = 1;
@@ -118,8 +119,8 @@ message UpdateApplicationStatusRequest {
 // Empty response
 
 
-// AssignApplicationToEmployee
-message AssignApplicationToEmployeeRequest {
+// AssignApplication
+message AssignApplicationRequest {
   string operation_id = 1;
   string initiator_uuid = 2;
   string application_uuid = 3;
@@ -163,7 +164,7 @@ message ReleaseApplicationVerificationRequest {
   string operation_id = 1;
   string initiator_uuid = 2;
   string application_uuid = 3;
-  string message = 5;
+  string message = 4;
 }
 // Empty response
 

@@ -18,12 +18,12 @@ import (
 
 type ApplicationRepository interface {
 	CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError
-	AddApplicationFixLog(ctx context.Context, dto entities.CreateFixLogDTO) Error.CodeError
+	AddApplicationFixLog(ctx context.Context, dto entities.AddFixLogDTO) Error.CodeError
 	GetApplication(ctx context.Context, dto entities.GetApplicationDTO) (*entities.Application, Error.CodeError)
 	GetApplicationFixLogs(ctx context.Context, dto entities.GetApplicationFixLogsDTO) ([]*entities.FixLog, Error.CodeError)
 	GetApplications(ctx context.Context, dto entities.GetApplicationsDTO) ([]*entities.Application, Error.CodeError)
 	UpdateApplicationStatus(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError
-	AssignApplicationToEmployee(ctx context.Context, dto entities.AssignApplicationToEmployeeDTO) Error.CodeError
+	AssignApplicationToEmployee(ctx context.Context, dto entities.AssignApplicationDTO) Error.CodeError
 	RedirectApplication(ctx context.Context, dto entities.RedirectApplicationDTO) Error.CodeError
 	RecallApplication(ctx context.Context, dto entities.RecallApplicationDTO) Error.CodeError
 	TakeApplicationToVerification(ctx context.Context, dto entities.TakeApplicationToVerificationDTO) Error.CodeError
@@ -117,7 +117,7 @@ func (r *applicationRepository) CreateApplication(ctx context.Context, dto entit
 	 revision_count,
 	 created_by
 	 ) VALUES
-	($1, $2, $3, 1, $4, $5, 'created', 1, $6);`
+	($1, $2, $3, 1, $4, $5, 'created', 0, $6);`
 
 	_, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.CompanyUUID, dto.DepartmentUUID, dto.Title, dto.Description, dto.CreatedBy)
 	if err != nil {
@@ -127,7 +127,7 @@ func (r *applicationRepository) CreateApplication(ctx context.Context, dto entit
 }
 
 // AddApplicationFixLog Добавление записи в fix log-и заявки
-func (r *applicationRepository) AddApplicationFixLog(ctx context.Context, dto entities.CreateFixLogDTO) Error.CodeError {
+func (r *applicationRepository) AddApplicationFixLog(ctx context.Context, dto entities.AddFixLogDTO) Error.CodeError {
 	query := `INSERT INTO application_fix_logs
 	(uuid, application_uuid, text, created_by) VALUES
 	($1, $2, $3, $4);`
@@ -156,7 +156,7 @@ func (r *applicationRepository) GetApplication(ctx context.Context, dto entities
 			description,
 			status,
 			revision_count,
-			created_at,
+			created_at::text,
 			created_by,
 			COALESCE(updated_at::text, ''),
 			COALESCE(updated_by, ''),
@@ -165,7 +165,7 @@ func (r *applicationRepository) GetApplication(ctx context.Context, dto entities
 			COALESCE(inspected_by, ''),
 			COALESCE(closed_at::text, ''),
 			COALESCE(deleted_at::text, ''),
-			COALESCE(deleted_by, ''),
+			COALESCE(deleted_by, '')
 		FROM applications
 		WHERE uuid = $1;`
 
@@ -203,7 +203,7 @@ func (r *applicationRepository) GetApplicationFixLogs(ctx context.Context, dto e
 	query := `SELECT
 			uuid,
 			text,
-			created_at,
+			created_at::text,
 			created_by
 		FROM application_fix_logs
 		WHERE application_uuid = $1;`
@@ -242,7 +242,7 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 			description,
 			status,
 			revision_count,
-			created_at,
+			created_at::text,
 			created_by,
 			COALESCE(updated_at::text, ''),
 			COALESCE(updated_by, ''),
@@ -254,13 +254,30 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 			COALESCE(deleted_by, '')
 		FROM applications
 		WHERE company_uuid = $1 
-		  AND ($2 = '' OR status = $2) 
-		  AND ($3 = '' OR department_uuid = $3) 
-		  AND (NOT $4 OR deleted_at IS NOT NULL)
+		  	AND (ARRAY_LENGTH($2::text[], 1) IS NULL OR status = ANY($2::text[])) 
+		  	AND ($3 = '' OR created_by = $3)
+			AND ($4 = '' OR managed_by = $4)
+			AND ($5 = '' OR executed_by = $5)
+			AND ($6 = '' OR inspected_by = $6)
+			AND (NOT $7 OR executed_by IS NULL)
+		  	AND ($8 = '' OR department_uuid = $8) 
+		  	AND ((NOT $9 AND deleted_at IS NULL) OR ($9 AND deleted_at IS NOT NULL))
 		ORDER BY created_at DESC, uuid
-		OFFSET $5 LIMIT $6;`
+		OFFSET $10 LIMIT $11;`
 
-	rows, err := r.db.QueryContext(ctx, query, dto.CompanyUUID, dto.Status, dto.DepartmentUUID, dto.IsDeleted, dto.Offset, dto.Count)
+	rows, err := r.db.QueryContext(ctx, query,
+		dto.CompanyUUID,        // 1
+		pq.Array(dto.Statuses), // 2
+		dto.CreatedBy,          // 3
+		dto.ManagedBy,          // 4
+		dto.ExecutedBy,         // 5
+		dto.InspectedBy,        // 6
+		dto.ExecutedByIsNull,   // 7
+		dto.DepartmentUUID,     // 8
+		dto.IsDeleted,          // 9
+		dto.Offset,             // 10
+		dto.Count,              // 11
+	)
 	if err != nil {
 		return nil, Error.CodeError{Code: 0, Err: err}
 	}
@@ -338,9 +355,15 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 		updated_by = $3,
 
 		managed_by = CASE
+		    WHEN $4 THEN NULL
 			WHEN $2 = 'rejected' THEN $3
 			ELSE managed_by
 		END,
+	    
+	    executed_by = CASE
+	        WHEN $5 THEN NULL
+	        ELSE executed_by
+	    END,
 	    
 	    inspected_by = NULL,
 
@@ -350,7 +373,7 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 		END
 	WHERE uuid = $1 AND deleted_at IS NULL;`
 
-	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.Status, dto.InitiatorUUID)
+	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.Status, dto.InitiatorUUID, dto.DropManagedBy, dto.DropExecutedBy)
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}
@@ -373,7 +396,7 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 
 // AssignApplicationToEmployee Назначение заявки инженеру
 // 'assigned'				- manager
-func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context, dto entities.AssignApplicationToEmployeeDTO) Error.CodeError {
+func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context, dto entities.AssignApplicationDTO) Error.CodeError {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
@@ -444,7 +467,7 @@ func (r *applicationRepository) RedirectApplication(ctx context.Context, dto ent
 	    managed_by = $3
 	WHERE uuid = $1 AND deleted_at IS NULL;`
 
-	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID, dto.TargetDepartmentUUID)
+	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.TargetDepartmentUUID, dto.InitiatorUUID)
 	if err != nil {
 		return Error.CodeError{Code: 0, Err: err}
 	}

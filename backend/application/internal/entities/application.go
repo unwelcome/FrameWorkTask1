@@ -35,21 +35,28 @@ type GetApplicationDTO struct {
 }
 
 type GetApplicationsDTO struct {
-	CompanyUUID    string
-	DepartmentUUID string
-	Status         string
-	Count          int
-	Offset         int
-	IsDeleted      bool
+	CompanyUUID      string
+	DepartmentUUID   string
+	CreatedBy        string // Если указано - созданные заявки инспектора
+	ManagedBy        string // Если указано - личные заявки менеджера
+	ExecutedBy       string // Если указано - личные заявки инженера
+	InspectedBy      string // Если указано - личные заявки инспектора
+	ExecutedByIsNull bool   // При запросе заявок из пула менеджеров включаем заявки с on_revision и executed_by = null
+	Statuses         []string
+	Count            int
+	Offset           int
+	IsDeleted        bool
 }
 
 type UpdateApplicationStatusDTO struct {
 	ApplicationUUID string
 	InitiatorUUID   string
 	Status          string
+	DropManagedBy   bool
+	DropExecutedBy  bool
 }
 
-type AssignApplicationToEmployeeDTO struct {
+type AssignApplicationDTO struct {
 	ApplicationUUID string
 	InitiatorUUID   string
 	TargetUUID      string

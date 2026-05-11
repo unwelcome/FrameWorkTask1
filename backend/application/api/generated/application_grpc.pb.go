@@ -26,7 +26,7 @@ const (
 	ApplicationService_GetApplications_FullMethodName                = "/application.ApplicationService/GetApplications"
 	ApplicationService_UpdateApplicationStatus_FullMethodName        = "/application.ApplicationService/UpdateApplicationStatus"
 	ApplicationService_AssignApplicationToEmployee_FullMethodName    = "/application.ApplicationService/AssignApplicationToEmployee"
-	ApplicationService_TransferApplication_FullMethodName            = "/application.ApplicationService/TransferApplication"
+	ApplicationService_RedirectApplication_FullMethodName            = "/application.ApplicationService/RedirectApplication"
 	ApplicationService_RecallApplication_FullMethodName              = "/application.ApplicationService/RecallApplication"
 	ApplicationService_TakeApplicationToVerification_FullMethodName  = "/application.ApplicationService/TakeApplicationToVerification"
 	ApplicationService_ReleaseApplicationVerification_FullMethodName = "/application.ApplicationService/ReleaseApplicationVerification"
@@ -44,7 +44,7 @@ type ApplicationServiceClient interface {
 	GetApplications(ctx context.Context, in *GetApplicationsRequest, opts ...grpc.CallOption) (*GetApplicationsResponse, error)
 	UpdateApplicationStatus(ctx context.Context, in *UpdateApplicationStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AssignApplicationToEmployee(ctx context.Context, in *AssignApplicationToEmployeeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	TransferApplication(ctx context.Context, in *TransferApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RedirectApplication(ctx context.Context, in *RedirectApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RecallApplication(ctx context.Context, in *RecallApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	TakeApplicationToVerification(ctx context.Context, in *TakeApplicationToVerificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ReleaseApplicationVerification(ctx context.Context, in *ReleaseApplicationVerificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -120,10 +120,10 @@ func (c *applicationServiceClient) AssignApplicationToEmployee(ctx context.Conte
 	return out, nil
 }
 
-func (c *applicationServiceClient) TransferApplication(ctx context.Context, in *TransferApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *applicationServiceClient) RedirectApplication(ctx context.Context, in *RedirectApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, ApplicationService_TransferApplication_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, ApplicationService_RedirectApplication_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ type ApplicationServiceServer interface {
 	GetApplications(context.Context, *GetApplicationsRequest) (*GetApplicationsResponse, error)
 	UpdateApplicationStatus(context.Context, *UpdateApplicationStatusRequest) (*emptypb.Empty, error)
 	AssignApplicationToEmployee(context.Context, *AssignApplicationToEmployeeRequest) (*emptypb.Empty, error)
-	TransferApplication(context.Context, *TransferApplicationRequest) (*emptypb.Empty, error)
+	RedirectApplication(context.Context, *RedirectApplicationRequest) (*emptypb.Empty, error)
 	RecallApplication(context.Context, *RecallApplicationRequest) (*emptypb.Empty, error)
 	TakeApplicationToVerification(context.Context, *TakeApplicationToVerificationRequest) (*emptypb.Empty, error)
 	ReleaseApplicationVerification(context.Context, *ReleaseApplicationVerificationRequest) (*emptypb.Empty, error)
@@ -224,8 +224,8 @@ func (UnimplementedApplicationServiceServer) UpdateApplicationStatus(context.Con
 func (UnimplementedApplicationServiceServer) AssignApplicationToEmployee(context.Context, *AssignApplicationToEmployeeRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AssignApplicationToEmployee not implemented")
 }
-func (UnimplementedApplicationServiceServer) TransferApplication(context.Context, *TransferApplicationRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TransferApplication not implemented")
+func (UnimplementedApplicationServiceServer) RedirectApplication(context.Context, *RedirectApplicationRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RedirectApplication not implemented")
 }
 func (UnimplementedApplicationServiceServer) RecallApplication(context.Context, *RecallApplicationRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RecallApplication not implemented")
@@ -371,20 +371,20 @@ func _ApplicationService_AssignApplicationToEmployee_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationService_TransferApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TransferApplicationRequest)
+func _ApplicationService_RedirectApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RedirectApplicationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServiceServer).TransferApplication(ctx, in)
+		return srv.(ApplicationServiceServer).RedirectApplication(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ApplicationService_TransferApplication_FullMethodName,
+		FullMethod: ApplicationService_RedirectApplication_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServiceServer).TransferApplication(ctx, req.(*TransferApplicationRequest))
+		return srv.(ApplicationServiceServer).RedirectApplication(ctx, req.(*RedirectApplicationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -511,8 +511,8 @@ var ApplicationService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ApplicationService_AssignApplicationToEmployee_Handler,
 		},
 		{
-			MethodName: "TransferApplication",
-			Handler:    _ApplicationService_TransferApplication_Handler,
+			MethodName: "RedirectApplication",
+			Handler:    _ApplicationService_RedirectApplication_Handler,
 		},
 		{
 			MethodName: "RecallApplication",

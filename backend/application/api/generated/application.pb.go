@@ -679,6 +679,7 @@ type GetApplicationsRequest struct {
 	Status         string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	Count          int64                  `protobuf:"varint,6,opt,name=count,proto3" json:"count,omitempty"`
 	Offset         int64                  `protobuf:"varint,7,opt,name=offset,proto3" json:"offset,omitempty"`
+	IsDeleted      bool                   `protobuf:"varint,8,opt,name=is_deleted,json=isDeleted,proto3" json:"is_deleted,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -760,6 +761,13 @@ func (x *GetApplicationsRequest) GetOffset() int64 {
 		return x.Offset
 	}
 	return 0
+}
+
+func (x *GetApplicationsRequest) GetIsDeleted() bool {
+	if x != nil {
+		return x.IsDeleted
+	}
+	return false
 }
 
 type GetApplicationsResponse struct {
@@ -944,8 +952,8 @@ func (x *AssignApplicationToEmployeeRequest) GetTargetUuid() string {
 	return ""
 }
 
-// TransferApplication
-type TransferApplicationRequest struct {
+// RedirectApplication
+type RedirectApplicationRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	OperationId          string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
 	InitiatorUuid        string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
@@ -956,20 +964,20 @@ type TransferApplicationRequest struct {
 	sizeCache            protoimpl.SizeCache
 }
 
-func (x *TransferApplicationRequest) Reset() {
-	*x = TransferApplicationRequest{}
+func (x *RedirectApplicationRequest) Reset() {
+	*x = RedirectApplicationRequest{}
 	mi := &file_application_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TransferApplicationRequest) String() string {
+func (x *RedirectApplicationRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TransferApplicationRequest) ProtoMessage() {}
+func (*RedirectApplicationRequest) ProtoMessage() {}
 
-func (x *TransferApplicationRequest) ProtoReflect() protoreflect.Message {
+func (x *RedirectApplicationRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_application_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -981,40 +989,40 @@ func (x *TransferApplicationRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TransferApplicationRequest.ProtoReflect.Descriptor instead.
-func (*TransferApplicationRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RedirectApplicationRequest.ProtoReflect.Descriptor instead.
+func (*RedirectApplicationRequest) Descriptor() ([]byte, []int) {
 	return file_application_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *TransferApplicationRequest) GetOperationId() string {
+func (x *RedirectApplicationRequest) GetOperationId() string {
 	if x != nil {
 		return x.OperationId
 	}
 	return ""
 }
 
-func (x *TransferApplicationRequest) GetInitiatorUuid() string {
+func (x *RedirectApplicationRequest) GetInitiatorUuid() string {
 	if x != nil {
 		return x.InitiatorUuid
 	}
 	return ""
 }
 
-func (x *TransferApplicationRequest) GetApplicationUuid() string {
+func (x *RedirectApplicationRequest) GetApplicationUuid() string {
 	if x != nil {
 		return x.ApplicationUuid
 	}
 	return ""
 }
 
-func (x *TransferApplicationRequest) GetTargetDepartmentUuid() string {
+func (x *RedirectApplicationRequest) GetTargetDepartmentUuid() string {
 	if x != nil {
 		return x.TargetDepartmentUuid
 	}
 	return ""
 }
 
-func (x *TransferApplicationRequest) GetMessage() string {
+func (x *RedirectApplicationRequest) GetMessage() string {
 	if x != nil {
 		return x.Message
 	}
@@ -1422,7 +1430,7 @@ const file_application_proto_rawDesc = "" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
 	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\"T\n" +
 	"\x16GetApplicationResponse\x12:\n" +
-	"\vapplication\x18\x01 \x01(\v2\x18.application.ApplicationR\vapplication\"\xf4\x01\n" +
+	"\vapplication\x18\x01 \x01(\v2\x18.application.ApplicationR\vapplication\"\x93\x02\n" +
 	"\x16GetApplicationsRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
@@ -1430,7 +1438,9 @@ const file_application_proto_rawDesc = "" +
 	"\x0fdepartment_uuid\x18\x04 \x01(\tR\x0edepartmentUuid\x12\x16\n" +
 	"\x06status\x18\x05 \x01(\tR\x06status\x12\x14\n" +
 	"\x05count\x18\x06 \x01(\x03R\x05count\x12\x16\n" +
-	"\x06offset\x18\a \x01(\x03R\x06offset\"W\n" +
+	"\x06offset\x18\a \x01(\x03R\x06offset\x12\x1d\n" +
+	"\n" +
+	"is_deleted\x18\b \x01(\bR\tisDeleted\"W\n" +
 	"\x17GetApplicationsResponse\x12<\n" +
 	"\fapplications\x18\x01 \x03(\v2\x18.application.ApplicationR\fapplications\"\xad\x01\n" +
 	"\x1eUpdateApplicationStatusRequest\x12!\n" +
@@ -1444,7 +1454,7 @@ const file_application_proto_rawDesc = "" +
 	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x12\x1f\n" +
 	"\vtarget_uuid\x18\x04 \x01(\tR\n" +
 	"targetUuid\"\xe1\x01\n" +
-	"\x1aTransferApplicationRequest\x12!\n" +
+	"\x1aRedirectApplicationRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
 	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
 	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x124\n" +
@@ -1481,7 +1491,7 @@ const file_application_proto_rawDesc = "" +
 	"\x0fGetApplications\x12#.application.GetApplicationsRequest\x1a$.application.GetApplicationsResponse\x12^\n" +
 	"\x17UpdateApplicationStatus\x12+.application.UpdateApplicationStatusRequest\x1a\x16.google.protobuf.Empty\x12f\n" +
 	"\x1bAssignApplicationToEmployee\x12/.application.AssignApplicationToEmployeeRequest\x1a\x16.google.protobuf.Empty\x12V\n" +
-	"\x13TransferApplication\x12'.application.TransferApplicationRequest\x1a\x16.google.protobuf.Empty\x12R\n" +
+	"\x13RedirectApplication\x12'.application.RedirectApplicationRequest\x1a\x16.google.protobuf.Empty\x12R\n" +
 	"\x11RecallApplication\x12%.application.RecallApplicationRequest\x1a\x16.google.protobuf.Empty\x12j\n" +
 	"\x1dTakeApplicationToVerification\x121.application.TakeApplicationToVerificationRequest\x1a\x16.google.protobuf.Empty\x12l\n" +
 	"\x1eReleaseApplicationVerification\x122.application.ReleaseApplicationVerificationRequest\x1a\x16.google.protobuf.Empty\x12X\n" +
@@ -1515,7 +1525,7 @@ var file_application_proto_goTypes = []any{
 	(*GetApplicationsResponse)(nil),               // 10: application.GetApplicationsResponse
 	(*UpdateApplicationStatusRequest)(nil),        // 11: application.UpdateApplicationStatusRequest
 	(*AssignApplicationToEmployeeRequest)(nil),    // 12: application.AssignApplicationToEmployeeRequest
-	(*TransferApplicationRequest)(nil),            // 13: application.TransferApplicationRequest
+	(*RedirectApplicationRequest)(nil),            // 13: application.RedirectApplicationRequest
 	(*RecallApplicationRequest)(nil),              // 14: application.RecallApplicationRequest
 	(*TakeApplicationToVerificationRequest)(nil),  // 15: application.TakeApplicationToVerificationRequest
 	(*ReleaseApplicationVerificationRequest)(nil), // 16: application.ReleaseApplicationVerificationRequest
@@ -1534,7 +1544,7 @@ var file_application_proto_depIdxs = []int32{
 	9,  // 7: application.ApplicationService.GetApplications:input_type -> application.GetApplicationsRequest
 	11, // 8: application.ApplicationService.UpdateApplicationStatus:input_type -> application.UpdateApplicationStatusRequest
 	12, // 9: application.ApplicationService.AssignApplicationToEmployee:input_type -> application.AssignApplicationToEmployeeRequest
-	13, // 10: application.ApplicationService.TransferApplication:input_type -> application.TransferApplicationRequest
+	13, // 10: application.ApplicationService.RedirectApplication:input_type -> application.RedirectApplicationRequest
 	14, // 11: application.ApplicationService.RecallApplication:input_type -> application.RecallApplicationRequest
 	15, // 12: application.ApplicationService.TakeApplicationToVerification:input_type -> application.TakeApplicationToVerificationRequest
 	16, // 13: application.ApplicationService.ReleaseApplicationVerification:input_type -> application.ReleaseApplicationVerificationRequest
@@ -1546,7 +1556,7 @@ var file_application_proto_depIdxs = []int32{
 	10, // 19: application.ApplicationService.GetApplications:output_type -> application.GetApplicationsResponse
 	19, // 20: application.ApplicationService.UpdateApplicationStatus:output_type -> google.protobuf.Empty
 	19, // 21: application.ApplicationService.AssignApplicationToEmployee:output_type -> google.protobuf.Empty
-	19, // 22: application.ApplicationService.TransferApplication:output_type -> google.protobuf.Empty
+	19, // 22: application.ApplicationService.RedirectApplication:output_type -> google.protobuf.Empty
 	19, // 23: application.ApplicationService.RecallApplication:output_type -> google.protobuf.Empty
 	19, // 24: application.ApplicationService.TakeApplicationToVerification:output_type -> google.protobuf.Empty
 	19, // 25: application.ApplicationService.ReleaseApplicationVerification:output_type -> google.protobuf.Empty

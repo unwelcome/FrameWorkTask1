@@ -7,6 +7,7 @@ import (
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -27,6 +28,11 @@ type mockApplicationRepo struct {
 	updateApplicationStatus         func(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError
 	assignApplicationToEmployee     func(ctx context.Context, dto entities.AssignApplicationToEmployeeDTO) Error.CodeError
 	deleteApplicationRequest        func(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError
+}
+
+func (m *mockApplicationRepo) TransferApplication(ctx context.context.Context, dto entities.entities.TransferApplicationDTO) errors.Error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (m *mockApplicationRepo) CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError {

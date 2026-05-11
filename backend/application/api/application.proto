@@ -12,7 +12,7 @@ service ApplicationService {
   rpc GetApplications(GetApplicationsRequest) returns (GetApplicationsResponse);
   rpc UpdateApplicationStatus(UpdateApplicationStatusRequest) returns (google.protobuf.Empty);
   rpc AssignApplicationToEmployee(AssignApplicationToEmployeeRequest) returns (google.protobuf.Empty);
-  rpc TransferApplication(TransferApplicationRequest) returns (google.protobuf.Empty);
+  rpc RedirectApplication(RedirectApplicationRequest) returns (google.protobuf.Empty);
   rpc RecallApplication(RecallApplicationRequest) returns (google.protobuf.Empty);
   rpc TakeApplicationToVerification(TakeApplicationToVerificationRequest) returns (google.protobuf.Empty);
   rpc ReleaseApplicationVerification(ReleaseApplicationVerificationRequest) returns (google.protobuf.Empty);
@@ -101,6 +101,7 @@ message GetApplicationsRequest {
   string status = 5;
   int64 count = 6;
   int64 offset = 7;
+  bool is_deleted = 8;
 }
 message GetApplicationsResponse {
   repeated Application applications = 1;
@@ -127,8 +128,8 @@ message AssignApplicationToEmployeeRequest {
 // Empty response
 
 
-// TransferApplication
-message TransferApplicationRequest {
+// RedirectApplication
+message RedirectApplicationRequest {
   string operation_id = 1;
   string initiator_uuid = 2;
   string application_uuid = 3;

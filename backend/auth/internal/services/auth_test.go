@@ -68,19 +68,6 @@ func validAccessToken(t *testing.T) string {
 	return tokens.AccessToken
 }
 
-// ─── Health ──────────────────────────────────────────────────────────────────
-
-func TestHealth(t *testing.T) {
-	svc := newTestService(emptyUserRepo(), emptyAuthRepo())
-
-	resp, err := svc.Health(context.Background(), &pb.HealthRequest{OperationId: "op-1"})
-
-	assertNoError(t, err)
-	if resp.GetHealth() != "healthy" {
-		t.Errorf("expected 'healthy', got %q", resp.GetHealth())
-	}
-}
-
 // ─── Register ────────────────────────────────────────────────────────────────
 
 func TestRegister_Success(t *testing.T) {

@@ -3,9 +3,11 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
 )
 
 // CreateTokens Генерация пары access и refresh токенов
@@ -51,15 +53,13 @@ func ParseToken(tokenString string, secretKey string) (*entities.TokenClaims, er
 
 // generateToken Создание JWT токена
 func generateToken(userUUID, secretKey, tokenType string, tokenLifetime time.Duration) (string, error) {
-	// Время создания токена
-	now := time.Now()
-
 	// Создаем тело токена
 	claims := &entities.TokenClaims{
+		TokenUUID: uuid.New().String(),
 		UserUUID:  userUUID,
 		TokenType: tokenType,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(now.Add(tokenLifetime)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenLifetime)),
 		},
 	}
 

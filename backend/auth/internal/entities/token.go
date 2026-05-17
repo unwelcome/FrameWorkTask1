@@ -15,6 +15,7 @@ type TokenPair struct {
 }
 
 type TokenClaims struct {
+	TokenUUID string
 	UserUUID  string
 	TokenType string
 	jwt.RegisteredClaims

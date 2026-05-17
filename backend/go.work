@@ -4,6 +4,7 @@ use (
 	./application
 	./auth
 	./company
+	./e2e
 	./gateway
 	./shared
 )

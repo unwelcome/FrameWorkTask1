@@ -1,0 +1,146 @@
+x-postgres-command: &postgres-command
+  command:
+    - "postgres"
+    - "-c"
+    - "max_connections=50"
+    - "-c"
+    - "shared_buffers=128MB"
+    - "-c"
+    - "effective_cache_size=512MB"
+    - "-c"
+    - "work_mem=8MB"
+    - "-c"
+    - "random_page_cost=1.1"
+    - "-c"
+    - "log_min_duration_statement=200ms"
+    - "-c"
+    - "lock_timeout=1s"
+    - "-c"
+    - "statement_timeout=60s"
+    - "-c"
+    - "shared_preload_libraries=pg_stat_statements"
+    - "-c"
+    - "pg_stat_statements.max=10000"
+    - "-c"
+    - "pg_stat_statements.track=all"
+  restart: unless-stopped
+  healthcheck:
+    test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+    interval: 5s
+    timeout: 5s
+    retries: 10
+    start_period: 5s
+
+services:
+  gateway:
+    container_name: gateway_test
+    build:
+      context: backend/gateway
+      dockerfile: Dockerfile
+    ports:
+      - "18080:8080"
+    env_file:
+      - ./.env
+      - ./backend/gateway/.env
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/api/health" ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+    networks:
+      - app-test-network
+
+  auth_service:
+    container_name: auth_service_test
+    build:
+      context: backend/auth
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+      - ./backend/auth/.env
+    depends_on:
+      auth_service_postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-test-network
+
+  company_service:
+    container_name: company_service_test
+    build:
+      context: backend/company
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+      - ./backend/company/.env
+    depends_on:
+      company_service_postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-test-network
+
+  application_service:
+    container_name: application_service_test
+    build:
+      context: backend/application
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+      - ./backend/application/.env
+    depends_on:
+      application_service_postgres:
+        condition: service_healthy
+    networks:
+      - app-test-network
+
+  auth_service_postgres:
+    container_name: auth_postgres_test
+    image: postgres:17
+    env_file:
+      - ./backend/auth/.env
+    <<: *postgres-command
+    networks:
+      - app-test-network
+
+  company_service_postgres:
+    container_name: company_postgres_test
+    image: postgres:17
+    env_file:
+      - ./backend/company/.env
+    <<: *postgres-command
+    networks:
+      - app-test-network
+
+  application_service_postgres:
+    container_name: application_postgres_test
+    image: postgres:17
+    env_file:
+      - ./backend/application/.env
+    <<: *postgres-command
+    networks:
+      - app-test-network
+
+  redis:
+    container_name: redis_test
+    image: redis:8.0-alpine
+    env_file:
+      - ./.env
+    command:
+      - redis-server
+      - --requirepass ${REDIS_PASSWORD}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-test-network
+
+networks:
+  app-test-network:
+    driver: bridge

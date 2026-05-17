@@ -14,6 +14,8 @@ definitions:
     type: object
   entities.AddApplicationFixLogResponse:
     type: object
+  entities.AddEmployeeToDepartmentResponse:
+    type: object
   entities.ApplicationListItem:
     properties:
       application_uuid:
@@ -118,6 +120,16 @@ definitions:
       company_uuid:
         type: string
     type: object
+  entities.CreateDepartmentRequest:
+    properties:
+      title:
+        type: string
+    type: object
+  entities.CreateDepartmentResponse:
+    properties:
+      department_uuid:
+        type: string
+    type: object
   entities.DeleteApplicationRequest:
     properties:
       message:
@@ -134,12 +146,21 @@ definitions:
     type: object
   entities.DeleteCompanyResponse:
     type: object
+  entities.DeleteDepartmentResponse:
+    type: object
   entities.DeleteUserRequest:
     properties:
       target_uuid:
         type: string
     type: object
   entities.DeleteUserResponse:
+    type: object
+  entities.DepartmentListItem:
+    properties:
+      department_uuid:
+        type: string
+      title:
+        type: string
     type: object
   entities.FixLogResponse:
     properties:
@@ -178,8 +199,17 @@ definitions:
           $ref: '#/definitions/entities.GetCompanyResponse'
         type: array
     type: object
+  entities.GetCompanyDepartmentsResponse:
+    properties:
+      departments:
+        items:
+          $ref: '#/definitions/entities.DepartmentListItem'
+        type: array
+    type: object
   entities.GetCompanyEmployeeResponse:
     properties:
+      department_uuid:
+        type: string
       joined_at:
         type: string
       role:
@@ -193,13 +223,6 @@ definitions:
         items:
           $ref: '#/definitions/entities.GetCompanyEmployeeResponse'
         type: array
-    type: object
-  entities.GetCompanyEmployeesSummaryRequest:
-    properties:
-      companyUUID:
-        type: string
-      department_uuid:
-        type: string
     type: object
   entities.GetCompanyEmployeesSummaryResponse:
     properties:
@@ -231,6 +254,26 @@ definitions:
         type: string
       title:
         type: string
+    type: object
+  entities.GetDepartmentResponse:
+    properties:
+      company_uuid:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      department_uuid:
+        type: string
+      title:
+        type: string
+    type: object
+  entities.GetUserCompaniesResponse:
+    properties:
+      companies:
+        items:
+          $ref: '#/definitions/entities.GetCompanyResponse'
+        type: array
     type: object
   entities.GetUserResponse:
     properties:
@@ -341,6 +384,8 @@ definitions:
     type: object
   entities.RemoveCompanyEmployeeResponse:
     type: object
+  entities.RemoveEmployeeFromDepartmentResponse:
+    type: object
   entities.RevokeAllTokensResponse:
     type: object
   entities.RevokeTokenRequest:
@@ -390,6 +435,13 @@ definitions:
         type: string
     type: object
   entities.UpdateCompanyTitleResponse:
+    type: object
+  entities.UpdateDepartmentTitleRequest:
+    properties:
+      title:
+        type: string
+    type: object
+  entities.UpdateDepartmentTitleResponse:
     type: object
   entities.UpdateEmployeeRoleRequest:
     properties:
@@ -885,8 +937,6 @@ paths:
       - Application
   /auth/company/{company_uuid}:
     delete:
-      consumes:
-      - application/json
       description: Delete company by company uuid (chief only)
       parameters:
       - description: Company UUID
@@ -927,8 +977,6 @@ paths:
       tags:
       - Company
     get:
-      consumes:
-      - application/json
       description: Get company info by company uuid
       parameters:
       - description: Company UUID
@@ -1083,9 +1131,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: |-
-        Create code for users to join company and became its employee (chief only);
-        Min value: 60 (sec); Max value: 604800 (1 week)
+      description: 'Create code for users to join company (chief only). Min: 60s,
+        Max: 604800s (1 week)'
       parameters:
       - description: Company UUID
         in: path
@@ -1132,8 +1179,6 @@ paths:
       - Company
   /auth/company/{company_uuid}/codes:
     get:
-      consumes:
-      - application/json
       description: Get all company join codes (chief only)
       parameters:
       - description: Company UUID
@@ -1173,10 +1218,354 @@ paths:
       summary: Get all company join codes
       tags:
       - Company
-  /auth/company/{company_uuid}/employee/{employee_uuid}:
-    delete:
+  /auth/company/{company_uuid}/department:
+    post:
       consumes:
       - application/json
+      description: Create new department in a company (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.CreateDepartmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.CreateDepartmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Create department
+      tags:
+      - Department
+  /auth/company/{company_uuid}/department/{department_uuid}:
+    delete:
+      description: Delete department by uuid (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Department UUID
+        in: path
+        name: department_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.DeleteDepartmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete department
+      tags:
+      - Department
+    get:
+      description: Get department info by uuid
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Department UUID
+        in: path
+        name: department_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetDepartmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get department info
+      tags:
+      - Department
+  /auth/company/{company_uuid}/department/{department_uuid}/employee/{employee_uuid}:
+    delete:
+      description: Remove an employee from a department
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Department UUID
+        in: path
+        name: department_uuid
+        required: true
+        type: string
+      - description: Employee UUID
+        in: path
+        name: employee_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.RemoveEmployeeFromDepartmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove employee from department
+      tags:
+      - Department
+    post:
+      description: Add an employee to a department
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Department UUID
+        in: path
+        name: department_uuid
+        required: true
+        type: string
+      - description: Employee UUID
+        in: path
+        name: employee_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.AddEmployeeToDepartmentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Add employee to department
+      tags:
+      - Department
+  /auth/company/{company_uuid}/department/{department_uuid}/title:
+    patch:
+      consumes:
+      - application/json
+      description: Update department title (chief only)
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - description: Department UUID
+        in: path
+        name: department_uuid
+        required: true
+        type: string
+      - description: Параметры запроса
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateDepartmentTitleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateDepartmentTitleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Update department title
+      tags:
+      - Department
+  /auth/company/{company_uuid}/departments/list:
+    get:
+      description: Get list of all departments in a company
+      parameters:
+      - description: Company UUID
+        in: path
+        name: company_uuid
+        required: true
+        type: string
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      - default: 10
+        description: Count
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetCompanyDepartmentsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get company departments list
+      tags:
+      - Department
+  /auth/company/{company_uuid}/employee/{employee_uuid}:
+    delete:
       description: Remove company employee by his uuid
       parameters:
       - description: Company UUID
@@ -1223,8 +1612,6 @@ paths:
       - Employee
   /auth/company/{company_uuid}/employee/{employee_uuid}/info:
     get:
-      consumes:
-      - application/json
       description: Get employee info by his uuid
       parameters:
       - description: Company UUID
@@ -1273,7 +1660,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: 'Update employee role (chief only); Available roles: "unemployed",
+      description: 'Update employee role (chief only). Available roles: "unemployed",
         "engineer", "manager", "analytic", "inspector", "chief"'
       parameters:
       - description: Company UUID
@@ -1326,18 +1713,18 @@ paths:
       - Employee
   /auth/company/{company_uuid}/employees/list:
     get:
-      consumes:
-      - application/json
-      description: 'Get company employees with sort by role; Available roles: "unemployed",
-        "engineer", "manager", "analytic", "chief"'
+      description: Get company employees filtered by role and/or department
       parameters:
       - description: Company UUID
         in: path
         name: company_uuid
         required: true
         type: string
-      - default: ""
-        description: Role
+      - description: Department UUID
+        in: query
+        name: department_uuid
+        type: string
+      - description: Role
         in: query
         name: role
         type: string
@@ -1385,21 +1772,17 @@ paths:
       - Employee
   /auth/company/{company_uuid}/employees/summary:
     get:
-      consumes:
-      - application/json
-      description: Get company employees summary count by each role
+      description: Get company employees count by each role
       parameters:
       - description: Company UUID
         in: path
         name: company_uuid
         required: true
         type: string
-      - description: Параметры запроса
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/entities.GetCompanyEmployeesSummaryRequest'
+      - description: Department UUID
+        in: query
+        name: department_uuid
+        type: string
       produces:
       - application/json
       responses:
@@ -1609,7 +1992,7 @@ paths:
       - Employee
   /auth/company/list:
     get:
-      description: Get companies list
+      description: Get all companies list
       parameters:
       - default: 0
         description: Offset
@@ -1643,6 +2026,29 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get companies list
+      tags:
+      - Company
+  /auth/company/my:
+    get:
+      description: Get list of companies where the current user is an employee
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetUserCompaniesResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user companies
       tags:
       - Company
   /auth/user/{user_uuid}/info:

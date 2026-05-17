@@ -862,7 +862,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get companies list",
+                "description": "Get all companies list",
                 "produces": [
                     "application/json"
                 ],
@@ -914,6 +914,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/company/my": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get list of companies where the current user is an employee",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Company"
+                ],
+                "summary": "Get user companies",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.GetUserCompaniesResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/company/{company_uuid}": {
             "get": {
                 "security": [
@@ -922,9 +959,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Get company info by company uuid",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -981,9 +1015,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Delete company by company uuid (chief only)",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1147,7 +1178,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create code for users to join company and became its employee (chief only);\nMin value: 60 (sec); Max value: 604800 (1 week)",
+                "description": "Create code for users to join company (chief only). Min: 60s, Max: 604800s (1 week)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1298,9 +1329,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Get all company join codes (chief only)",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1357,6 +1385,537 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/company/{company_uuid}/department": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create new department in a company (chief only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Department"
+                ],
+                "summary": "Create department",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company UUID",
+                        "name": "company_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Параметры запроса",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.CreateDepartmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/entities.CreateDepartmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/company/{company_uuid}/department/{department_uuid}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get department info by uuid",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Department"
+                ],
+                "summary": "Get department info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company UUID",
+                        "name": "company_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Department UUID",
+                        "name": "department_uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.GetDepartmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete department by uuid (chief only)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Department"
+                ],
+                "summary": "Delete department",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company UUID",
+                        "name": "company_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Department UUID",
+                        "name": "department_uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.DeleteDepartmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/company/{company_uuid}/department/{department_uuid}/employee/{employee_uuid}": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Add an employee to a department",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Department"
+                ],
+                "summary": "Add employee to department",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company UUID",
+                        "name": "company_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Department UUID",
+                        "name": "department_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Employee UUID",
+                        "name": "employee_uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.AddEmployeeToDepartmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Remove an employee from a department",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Department"
+                ],
+                "summary": "Remove employee from department",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company UUID",
+                        "name": "company_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Department UUID",
+                        "name": "department_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Employee UUID",
+                        "name": "employee_uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.RemoveEmployeeFromDepartmentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/company/{company_uuid}/department/{department_uuid}/title": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update department title (chief only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Department"
+                ],
+                "summary": "Update department title",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company UUID",
+                        "name": "company_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Department UUID",
+                        "name": "department_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Параметры запроса",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.UpdateDepartmentTitleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.UpdateDepartmentTitleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/company/{company_uuid}/departments/list": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get list of all departments in a company",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Department"
+                ],
+                "summary": "Get company departments list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Company UUID",
+                        "name": "company_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Count",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.GetCompanyDepartmentsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/company/{company_uuid}/employee/{employee_uuid}": {
             "delete": {
                 "security": [
@@ -1365,9 +1924,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Remove company employee by his uuid",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1439,9 +1995,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Get employee info by his uuid",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1512,7 +2065,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update employee role (chief only); Available roles: \"unemployed\", \"engineer\", \"manager\", \"analytic\", \"inspector\", \"chief\"",
+                "description": "Update employee role (chief only). Available roles: \"unemployed\", \"engineer\", \"manager\", \"analytic\", \"inspector\", \"chief\"",
                 "consumes": [
                     "application/json"
                 ],
@@ -1595,10 +2148,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get company employees with sort by role; Available roles: \"unemployed\", \"engineer\", \"manager\", \"analytic\", \"chief\"",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Get company employees filtered by role and/or department",
                 "produces": [
                     "application/json"
                 ],
@@ -1616,7 +2166,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "",
+                        "description": "Department UUID",
+                        "name": "department_uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Role",
                         "name": "role",
                         "in": "query"
@@ -1683,10 +2238,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get company employees summary count by each role",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Get company employees count by each role",
                 "produces": [
                     "application/json"
                 ],
@@ -1703,13 +2255,10 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Параметры запроса",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entities.GetCompanyEmployeesSummaryRequest"
-                        }
+                        "type": "string",
+                        "description": "Department UUID",
+                        "name": "department_uuid",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2509,6 +3058,9 @@ const docTemplate = `{
         "entities.AddApplicationFixLogResponse": {
             "type": "object"
         },
+        "entities.AddEmployeeToDepartmentResponse": {
+            "type": "object"
+        },
         "entities.ApplicationListItem": {
             "type": "object",
             "properties": {
@@ -2670,6 +3222,22 @@ const docTemplate = `{
                 }
             }
         },
+        "entities.CreateDepartmentRequest": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.CreateDepartmentResponse": {
+            "type": "object",
+            "properties": {
+                "department_uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.DeleteApplicationRequest": {
             "type": "object",
             "properties": {
@@ -2695,6 +3263,9 @@ const docTemplate = `{
         "entities.DeleteCompanyResponse": {
             "type": "object"
         },
+        "entities.DeleteDepartmentResponse": {
+            "type": "object"
+        },
         "entities.DeleteUserRequest": {
             "type": "object",
             "properties": {
@@ -2705,6 +3276,17 @@ const docTemplate = `{
         },
         "entities.DeleteUserResponse": {
             "type": "object"
+        },
+        "entities.DepartmentListItem": {
+            "type": "object",
+            "properties": {
+                "department_uuid": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
         },
         "entities.FixLogResponse": {
             "type": "object",
@@ -2764,9 +3346,23 @@ const docTemplate = `{
                 }
             }
         },
+        "entities.GetCompanyDepartmentsResponse": {
+            "type": "object",
+            "properties": {
+                "departments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entities.DepartmentListItem"
+                    }
+                }
+            }
+        },
         "entities.GetCompanyEmployeeResponse": {
             "type": "object",
             "properties": {
+                "department_uuid": {
+                    "type": "string"
+                },
                 "joined_at": {
                     "type": "string"
                 },
@@ -2786,17 +3382,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/entities.GetCompanyEmployeeResponse"
                     }
-                }
-            }
-        },
-        "entities.GetCompanyEmployeesSummaryRequest": {
-            "type": "object",
-            "properties": {
-                "companyUUID": {
-                    "type": "string"
-                },
-                "department_uuid": {
-                    "type": "string"
                 }
             }
         },
@@ -2845,6 +3430,37 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                }
+            }
+        },
+        "entities.GetDepartmentResponse": {
+            "type": "object",
+            "properties": {
+                "company_uuid": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "department_uuid": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.GetUserCompaniesResponse": {
+            "type": "object",
+            "properties": {
+                "companies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entities.GetCompanyResponse"
+                    }
                 }
             }
         },
@@ -3018,6 +3634,9 @@ const docTemplate = `{
         "entities.RemoveCompanyEmployeeResponse": {
             "type": "object"
         },
+        "entities.RemoveEmployeeFromDepartmentResponse": {
+            "type": "object"
+        },
         "entities.RevokeAllTokensResponse": {
             "type": "object"
         },
@@ -3094,6 +3713,17 @@ const docTemplate = `{
             }
         },
         "entities.UpdateCompanyTitleResponse": {
+            "type": "object"
+        },
+        "entities.UpdateDepartmentTitleRequest": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.UpdateDepartmentTitleResponse": {
             "type": "object"
         },
         "entities.UpdateEmployeeRoleRequest": {

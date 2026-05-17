@@ -1,6 +1,10 @@
 package entities
 
-import "github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
+import (
+	"fmt"
+
+	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
+)
 
 type RegisterRequest struct {
 	Email      string `json:"email"`
@@ -216,17 +220,15 @@ func (e *RefreshTokenRequest) Validate() error {
 }
 
 type RevokeTokenRequest struct {
-	RefreshToken string `json:"refresh_token"`
+	TokenHash string `json:"token_hash"`
 }
 type RevokeTokenResponse struct {
 }
 
 func (e *RevokeTokenRequest) Validate() error {
-	// Валидация jwt токена
-	if err := utils.ValidateJWT(e.RefreshToken); err != nil {
-		return err
+	if e.TokenHash == "" {
+		return fmt.Errorf("token_hash is required")
 	}
-
 	return nil
 }
 

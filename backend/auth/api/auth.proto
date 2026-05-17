@@ -121,7 +121,8 @@ message Token {
 // Revoke token
 message RevokeTokenRequest {
   string operation_id = 1;
-  string refresh_token = 2;
+  string user_uuid = 2;
+  string token_hash = 3;
 }
 // Empty response
 

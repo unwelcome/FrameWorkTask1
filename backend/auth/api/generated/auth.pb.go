@@ -979,7 +979,8 @@ func (x *Token) GetToken() string {
 type RevokeTokenRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	UserUuid      string                 `protobuf:"bytes,2,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	TokenHash     string                 `protobuf:"bytes,3,opt,name=token_hash,json=tokenHash,proto3" json:"token_hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1021,9 +1022,16 @@ func (x *RevokeTokenRequest) GetOperationId() string {
 	return ""
 }
 
-func (x *RevokeTokenRequest) GetRefreshToken() string {
+func (x *RevokeTokenRequest) GetUserUuid() string {
 	if x != nil {
-		return x.RefreshToken
+		return x.UserUuid
+	}
+	return ""
+}
+
+func (x *RevokeTokenRequest) GetTokenHash() string {
+	if x != nil {
+		return x.TokenHash
 	}
 	return ""
 }
@@ -1158,10 +1166,12 @@ const file_auth_proto_rawDesc = "" +
 	"\x1aGetAllActiveTokensResponse\x12#\n" +
 	"\x06tokens\x18\x01 \x03(\v2\v.auth.TokenR\x06tokens\"\x1d\n" +
 	"\x05Token\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"\\\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"s\n" +
 	"\x12RevokeTokenRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"X\n" +
+	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x1b\n" +
+	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\x12\x1d\n" +
+	"\n" +
+	"token_hash\x18\x03 \x01(\tR\ttokenHash\"X\n" +
 	"\x16RevokeAllTokensRequest\x12!\n" +
 	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x1b\n" +
 	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid2\xdc\x05\n" +

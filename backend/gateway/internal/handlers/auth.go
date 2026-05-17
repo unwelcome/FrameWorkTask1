@@ -518,10 +518,13 @@ func (h *authHandler) RevokeToken(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
+	userUUID := utils.GetLocal[string](c, h.userUUIDKey)
+
 	// Формируем тело запроса
 	req := &auth_proto.RevokeTokenRequest{
-		OperationId:  operationID,
-		RefreshToken: httpReq.RefreshToken,
+		OperationId: operationID,
+		UserUuid:    userUUID,
+		TokenHash:   httpReq.TokenHash,
 	}
 
 	// Запрос в auth сервис
@@ -555,25 +558,14 @@ func (h *authHandler) RevokeAllTokens(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	// Получаем UserUUID из параметров
-	httpReq := &entities.RevokeAllTokensRequest{
-		UserUUID: utils.GetLocal[string](c, h.userUUIDKey),
-	}
-
-	// Валидация
-	err := httpReq.Validate()
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
-	}
-
 	// Формируем тело запроса
 	req := &auth_proto.RevokeAllTokensRequest{
 		OperationId: operationID,
-		UserUuid:    httpReq.UserUUID,
+		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
 	}
 
 	// Запрос в auth сервис
-	_, err = h.AuthServiceClient.RevokeAllTokens(ctx, req)
+	_, err := h.AuthServiceClient.RevokeAllTokens(ctx, req)
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}

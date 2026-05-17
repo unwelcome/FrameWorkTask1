@@ -61,7 +61,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	bytePassword := []byte(req.GetPassword())
 
 	// Проверяем длину пароля, больше 72 байт библиотека не захеширует
-	if len(bytePassword) >= 70 {
+	if len(bytePassword) > 72 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "register").Err(fmt.Errorf("password too long")).Msg("error")
 		return nil, status.Errorf(codes.InvalidArgument, "password too long")
 	}
@@ -152,7 +152,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 	bytePassword := []byte(req.GetPassword())
 
 	// Проверяем длину пароля, больше 72 байт библиотека не захеширует
-	if len(bytePassword) >= 70 {
+	if len(bytePassword) > 72 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "change password").Err(fmt.Errorf("password too long")).Msg("error")
 		return nil, status.Errorf(codes.InvalidArgument, "password too long")
 	}
@@ -169,6 +169,15 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 	err = Error.HandleError(updateErr, req.GetOperationId(), "change password")
 	if err != nil {
 		return nil, err
+	}
+
+	// Отзываем все токены после смены пароля
+	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, req.GetUserUuid())
+	if revokeErr.Code != -1 && revokeErr.Code != int(codes.NotFound) {
+		err = Error.HandleError(revokeErr, req.GetOperationId(), "change password")
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	log.Info().Str("id", req.GetOperationId()).Str("method", "change password").Msg("success")
@@ -288,18 +297,11 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	return &pb.RefreshTokenResponse{AccessToken: tokenPair.AccessToken, RefreshToken: tokenPair.RefreshToken}, nil
 }
 
-// RevokeToken Отзыв refresh токена пользователя
+// RevokeToken Отзыв refresh токена пользователя по его хешу
 func (s *AuthService) RevokeToken(ctx context.Context, req *pb.RevokeTokenRequest) (*emptypb.Empty, error) {
-	// Парсим refresh токен
-	tokenClaims, err := utils.ParseToken(req.GetRefreshToken(), s.jwtSecretKey)
-	if err != nil {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "revoke token").Err(err).Msg("error")
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	// Удаление refresh токена
-	revokeErr := s.cache.Auth.RevokeRefreshToken(ctx, tokenClaims.UserUUID, req.GetRefreshToken())
-	err = Error.HandleError(revokeErr, req.GetOperationId(), "revoke token")
+	// Удаление refresh токена (метод принимает хеш и проверяет принадлежность пользователю)
+	revokeErr := s.cache.Auth.RevokeRefreshToken(ctx, req.GetUserUuid(), req.GetTokenHash())
+	err := Error.HandleError(revokeErr, req.GetOperationId(), "revoke token")
 	if err != nil {
 		return nil, err
 	}

@@ -1,11 +1,16 @@
 FROM golang:1.25.1-alpine AS builder
 
-WORKDIR /app
+WORKDIR /workspace
 
-COPY go.mod go.sum ./
-RUN go mod download
+COPY contracts/go.mod contracts/go.sum ./contracts/
+COPY gateway/go.mod gateway/go.sum ./gateway/
 
-COPY . .
+RUN cd gateway && go mod download
+
+COPY contracts/ ./contracts/
+COPY gateway/ ./gateway/
+
+WORKDIR /workspace/gateway
 
 RUN go build -o gateway_bin ./cmd/main.go
 
@@ -13,7 +18,7 @@ FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/gateway_bin /app/main/
+COPY --from=builder /workspace/gateway/gateway_bin /app/main/
 
 RUN chmod +x /app/main/gateway_bin
 

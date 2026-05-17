@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	pb "github.com/unwelcome/FrameWorkTask1/backend/application/api/generated"
+	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
-	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
+	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

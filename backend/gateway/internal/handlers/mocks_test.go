@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	application_proto "github.com/unwelcome/FrameWorkTask1/backend/application/api/generated"
-	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/auth/api/generated"
-	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
+	application_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated"
+	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
+	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

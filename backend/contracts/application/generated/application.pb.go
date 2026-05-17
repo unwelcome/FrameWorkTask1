@@ -1505,7 +1505,7 @@ const file_application_proto_rawDesc = "" +
 	"\x1dTakeApplicationToVerification\x121.application.TakeApplicationToVerificationRequest\x1a\x16.google.protobuf.Empty\x12l\n" +
 	"\x1eReleaseApplicationVerification\x122.application.ReleaseApplicationVerificationRequest\x1a\x16.google.protobuf.Empty\x12X\n" +
 	"\x14AddApplicationFixLog\x12(.application.AddApplicationFixLogRequest\x1a\x16.google.protobuf.Empty\x12R\n" +
-	"\x11DeleteApplication\x12%.application.DeleteApplicationRequest\x1a\x16.google.protobuf.EmptyBYZWgithub.com/unwelcome/FrameWorkTask1/backend/application/api/generated;application_protob\x06proto3"
+	"\x11DeleteApplication\x12%.application.DeleteApplicationRequest\x1a\x16.google.protobuf.EmptyB_Z]github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated;application_protob\x06proto3"
 
 var (
 	file_application_proto_rawDescOnce sync.Once

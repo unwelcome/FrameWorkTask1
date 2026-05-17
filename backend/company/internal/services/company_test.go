@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
+	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc/codes"

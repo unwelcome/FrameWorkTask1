@@ -35,8 +35,8 @@ services:
   gateway:
     container_name: gateway
     build:
-      context: backend/gateway
-      dockerfile: Dockerfile
+      context: backend
+      dockerfile: gateway/Dockerfile
     ports:
       - "8080:8080"
     env_file:
@@ -50,8 +50,8 @@ services:
   auth_service:
     container_name: auth_service
     build:
-      context: backend/auth
-      dockerfile: Dockerfile
+      context: backend
+      dockerfile: auth/Dockerfile
     env_file:
       - ./.env
       - ./backend/auth/.env
@@ -68,8 +68,8 @@ services:
   company_service:
     container_name: company_service
     build:
-      context: backend/company
-      dockerfile: Dockerfile
+      context: backend
+      dockerfile: company/Dockerfile
     env_file:
       - ./.env
       - ./backend/company/.env
@@ -86,8 +86,8 @@ services:
   application_service:
     container_name: application_service
     build:
-      context: backend/application
-      dockerfile: Dockerfile
+      context: backend
+      dockerfile: application/Dockerfile
     env_file:
       - ./.env
       - ./backend/application/.env

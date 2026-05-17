@@ -1,11 +1,16 @@
 FROM golang:1.25.1-alpine AS builder
 
-WORKDIR /app
+WORKDIR /workspace
 
-COPY go.mod go.sum ./
-RUN go mod download
+COPY contracts/go.mod contracts/go.sum ./contracts/
+COPY auth/go.mod auth/go.sum ./auth/
 
-COPY . .
+RUN cd auth && go mod download
+
+COPY contracts/ ./contracts/
+COPY auth/ ./auth/
+
+WORKDIR /workspace/auth
 
 RUN go build -o auth_bin ./cmd/main.go
 
@@ -13,8 +18,7 @@ FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/auth_bin /app/main/
-# COPY --from=builder /app/configs /app/configs
+COPY --from=builder /workspace/auth/auth_bin /app/main/
 
 RUN chmod +x /app/main/auth_bin
 

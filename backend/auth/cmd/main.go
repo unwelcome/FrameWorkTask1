@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/rs/zerolog/log"
-	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/auth/api/generated"
+	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"

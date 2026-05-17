@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
+	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/entities"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

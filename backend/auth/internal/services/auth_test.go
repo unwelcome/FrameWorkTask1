@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/unwelcome/FrameWorkTask1/backend/auth/api/generated"
+	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"

@@ -9,6 +9,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/rs/zerolog v1.35.1
+	github.com/unwelcome/FrameWorkTask1/backend/contracts v0.0.0
 	github.com/unwelcome/FrameWorkTask1/backend/shared v0.11.0
 	golang.org/x/crypto v0.50.0
 	golang.org/x/net v0.53.0
@@ -25,3 +26,5 @@ require (
 	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 )
+
+replace github.com/unwelcome/FrameWorkTask1/backend/contracts => ../contracts

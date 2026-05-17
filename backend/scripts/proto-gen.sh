@@ -1,51 +1,50 @@
 #!/bin/bash
 set -e
 
-# Determine backend root directory (parent of this script's folder)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$(dirname "$SCRIPT_DIR")"
+CONTRACTS_DIR="$BACKEND_DIR/contracts"
 cd "$BACKEND_DIR"
 
 echo "Working directory: $BACKEND_DIR"
 echo ""
 
 gen_auth() {
-    echo "→ Generating protobuf code for auth service..."
+    echo "→ Generating protobuf code for auth..."
     protoc \
-      --proto_path=auth/api \
-      --go_out=auth/api/generated \
+      --proto_path="$CONTRACTS_DIR/auth" \
+      --go_out="$CONTRACTS_DIR/auth/generated" \
       --go_opt=paths=source_relative \
-      --go-grpc_out=auth/api/generated \
+      --go-grpc_out="$CONTRACTS_DIR/auth/generated" \
       --go-grpc_opt=paths=source_relative \
-      auth.proto
-    echo "✓ Auth service done"
+      "$CONTRACTS_DIR/auth/auth.proto"
+    echo "✓ Auth done"
 }
 
 gen_company() {
-    echo "→ Generating protobuf code for company service..."
+    echo "→ Generating protobuf code for company..."
     protoc \
-      --proto_path=company/api \
-      --go_out=company/api/generated \
+      --proto_path="$CONTRACTS_DIR/company" \
+      --go_out="$CONTRACTS_DIR/company/generated" \
       --go_opt=paths=source_relative \
-      --go-grpc_out=company/api/generated \
+      --go-grpc_out="$CONTRACTS_DIR/company/generated" \
       --go-grpc_opt=paths=source_relative \
-      company.proto
-    echo "✓ Company service done"
+      "$CONTRACTS_DIR/company/company.proto"
+    echo "✓ Company done"
 }
 
 gen_application() {
-    echo "→ Generating protobuf code for application service..."
+    echo "→ Generating protobuf code for application..."
     protoc \
-      --proto_path=application/api \
-      --go_out=application/api/generated \
+      --proto_path="$CONTRACTS_DIR/application" \
+      --go_out="$CONTRACTS_DIR/application/generated" \
       --go_opt=paths=source_relative \
-      --go-grpc_out=application/api/generated \
+      --go-grpc_out="$CONTRACTS_DIR/application/generated" \
       --go-grpc_opt=paths=source_relative \
-      application.proto
-    echo "✓ Application service done"
+      "$CONTRACTS_DIR/application/application.proto"
+    echo "✓ Application done"
 }
 
-# If argument provided — generate only that service
 case "$1" in
     auth)        gen_auth ;;
     company)     gen_company ;;

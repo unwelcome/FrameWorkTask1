@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/rs/zerolog/log"
-	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
+	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/redis"

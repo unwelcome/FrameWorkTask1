@@ -2763,7 +2763,7 @@ const file_company_proto_rawDesc = "" +
 	"\x15GetCompanyDepartments\x12%.company.GetCompanyDepartmentsRequest\x1a&.company.GetCompanyDepartmentsResponse\x12V\n" +
 	"\x15UpdateDepartmentTitle\x12%.company.UpdateDepartmentTitleRequest\x1a\x16.google.protobuf.Empty\x12L\n" +
 	"\x10DeleteDepartment\x12 .company.DeleteDepartmentRequest\x1a\x16.google.protobuf.Empty\x12d\n" +
-	"\x1cRemoveEmployeeFromDepartment\x12,.company.RemoveEmployeeFromDepartmentRequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/unwelcome/FrameWorkTask1/backend/company/api/generated;company_protob\x06proto3"
+	"\x1cRemoveEmployeeFromDepartment\x12,.company.RemoveEmployeeFromDepartmentRequest\x1a\x16.google.protobuf.EmptyBWZUgithub.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated;company_protob\x06proto3"
 
 var (
 	file_company_proto_rawDescOnce sync.Once

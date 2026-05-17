@@ -9,9 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/rs/zerolog v1.35.1
 	github.com/swaggo/swag v1.16.6
-	github.com/unwelcome/FrameWorkTask1/backend/application v0.7.0
-	github.com/unwelcome/FrameWorkTask1/backend/auth v0.7.0
-	github.com/unwelcome/FrameWorkTask1/backend/company v0.7.0
+	github.com/unwelcome/FrameWorkTask1/backend/contracts v0.0.0
 	github.com/unwelcome/FrameWorkTask1/backend/shared v0.11.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.80.0
@@ -53,3 +51,5 @@ require (
 	golang.org/x/tools v0.44.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 )
+
+replace github.com/unwelcome/FrameWorkTask1/backend/contracts => ../contracts

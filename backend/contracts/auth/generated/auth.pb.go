@@ -1187,7 +1187,7 @@ const file_auth_proto_rawDesc = "" +
 	"\fRefreshToken\x12\x19.auth.RefreshTokenRequest\x1a\x1a.auth.RefreshTokenResponse\x12W\n" +
 	"\x12GetAllActiveTokens\x12\x1f.auth.GetAllActiveTokensRequest\x1a .auth.GetAllActiveTokensResponse\x12?\n" +
 	"\vRevokeToken\x12\x18.auth.RevokeTokenRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
-	"\x0fRevokeAllTokens\x12\x1c.auth.RevokeAllTokensRequest\x1a\x16.google.protobuf.EmptyBKZIgithub.com/unwelcome/FrameWorkTask1/backend/auth/api/generated;auth_protob\x06proto3"
+	"\x0fRevokeAllTokens\x12\x1c.auth.RevokeAllTokensRequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated;auth_protob\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once

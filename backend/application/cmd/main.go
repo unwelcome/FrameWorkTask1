@@ -5,11 +5,11 @@ import (
 	"net"
 
 	"github.com/rs/zerolog/log"
-	application_proto "github.com/unwelcome/FrameWorkTask1/backend/application/api/generated"
+	application_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/services"
-	company_proto "github.com/unwelcome/FrameWorkTask1/backend/company/api/generated"
+	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

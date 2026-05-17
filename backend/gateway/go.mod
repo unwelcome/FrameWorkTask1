@@ -9,9 +9,9 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/rs/zerolog v1.35.1
 	github.com/swaggo/swag v1.16.6
-	github.com/unwelcome/FrameWorkTask1/backend/application v0.6.0
+	github.com/unwelcome/FrameWorkTask1/backend/application v0.7.0
 	github.com/unwelcome/FrameWorkTask1/backend/auth v0.6.0
-	github.com/unwelcome/FrameWorkTask1/backend/company v0.6.0
+	github.com/unwelcome/FrameWorkTask1/backend/company v0.7.0
 	github.com/unwelcome/FrameWorkTask1/backend/shared v0.11.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.80.0

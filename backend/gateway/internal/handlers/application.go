@@ -15,10 +15,12 @@ type ApplicationHandler interface {
 	CreateApplication(c *fiber.Ctx) error
 	GetApplication(c *fiber.Ctx) error
 	GetApplications(c *fiber.Ctx) error
-	GetCompanyApplicationStatistic(c *fiber.Ctx) error
-	GetEmployeeApplicationStatistic(c *fiber.Ctx) error
 	UpdateApplicationStatus(c *fiber.Ctx) error
-	AssignApplicationToEmployee(c *fiber.Ctx) error
+	AssignApplication(c *fiber.Ctx) error
+	RedirectApplication(c *fiber.Ctx) error
+	RecallApplication(c *fiber.Ctx) error
+	TakeApplicationToVerification(c *fiber.Ctx) error
+	ReleaseApplicationVerification(c *fiber.Ctx) error
 	AddApplicationFixLog(c *fiber.Ctx) error
 	DeleteApplication(c *fiber.Ctx) error
 }
@@ -60,13 +62,12 @@ func (h *applicationHandler) CreateApplication(c *fiber.Ctx) error {
 
 	// Парсинг тела запроса
 	httpReq := &entities.CreateApplicationRequest{}
-	if err := c.BodyParser(&httpReq); err != nil {
+	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
 
 	// Валидация
-	err := httpReq.Validate()
-	if err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
@@ -75,21 +76,21 @@ func (h *applicationHandler) CreateApplication(c *fiber.Ctx) error {
 		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
-		Title:         httpReq.Title,
-		Description:   httpReq.Description,
+		ApplicationData: &application_proto.ApplicationData{
+			Title:       httpReq.Title,
+			Description: httpReq.Description,
+		},
 	}
+
 	// Запрос в application сервис
 	res, err := h.ApplicationServiceClient.CreateApplication(ctx, req)
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	// Формируем тело ответа
-	httpRes := &entities.CreateApplicationResponse{
+	return c.Status(fiber.StatusCreated).JSON(&entities.CreateApplicationResponse{
 		ApplicationUUID: res.GetApplicationUuid(),
-	}
-
-	return c.Status(fiber.StatusCreated).JSON(httpRes)
+	})
 }
 
 // GetApplication
@@ -117,21 +118,15 @@ func (h *applicationHandler) GetApplication(c *fiber.Ctx) error {
 		ApplicationUUID: c.Params("application_uuid", ""),
 	}
 
-	// Валидация
-	err := httpReq.Validate()
-	if err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
-	// Формируем тело запроса
-	req := &application_proto.GetApplicationRequest{
+	res, err := h.ApplicationServiceClient.GetApplication(ctx, &application_proto.GetApplicationRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReq.ApplicationUUID,
-	}
-
-	// Запрос в application сервис
-	res, err := h.ApplicationServiceClient.GetApplication(ctx, req)
+	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
@@ -148,24 +143,29 @@ func (h *applicationHandler) GetApplication(c *fiber.Ctx) error {
 		})
 	}
 
-	// Формируем тело ответа
-	httpRes := &entities.GetApplicationResponse{
+	return c.Status(fiber.StatusOK).JSON(&entities.GetApplicationResponse{
 		Application: &entities.ApplicationResponse{
-			ApplicationUUID:     app.GetApplicationUuid(),
-			CompanyUUID:         app.GetCompanyUuid(),
-			Title:               app.GetTitle(),
-			Description:         app.GetDescription(),
-			Status:              app.GetStatus(),
-			ResponsibleManager:  app.GetResponsibleManager(),
-			ResponsibleEngineer: app.GetResponsibleEngineer(),
-			CreatedAt:           app.GetCreatedAt(),
-			CreatedBy:           app.GetCreatedBy(),
-			ClosedAt:            app.GetClosedAt(),
-			FixLogs:             fixLogs,
+			ApplicationUUID: app.GetApplicationUuid(),
+			CompanyUUID:     app.GetCompanyUuid(),
+			DepartmentUUID:  app.GetDepartmentUuid(),
+			Version:         app.GetVersion(),
+			Title:           app.GetTitle(),
+			Description:     app.GetDescription(),
+			Status:          app.GetStatus(),
+			RevisionCount:   app.GetRevisionCount(),
+			CreatedAt:       app.GetCreatedAt(),
+			CreatedBy:       app.GetCreatedBy(),
+			UpdatedAt:       app.GetUpdatedAt(),
+			UpdatedBy:       app.GetUpdatedBy(),
+			ManagedBy:       app.GetManagedBy(),
+			ExecutedBy:      app.GetExecutedBy(),
+			InspectedBy:     app.GetInspectedBy(),
+			ClosedAt:        app.GetClosedAt(),
+			DeletedAt:       app.GetDeletedAt(),
+			DeletedBy:       app.GetDeletedBy(),
+			FixLogs:         fixLogs,
 		},
-	}
-
-	return c.Status(fiber.StatusOK).JSON(httpRes)
+	})
 }
 
 // GetApplications
@@ -175,14 +175,18 @@ func (h *applicationHandler) GetApplication(c *fiber.Ctx) error {
 //	@Tags			Application
 //	@Produce		json
 //	@Security		ApiKeyAuth
-//	@Param			company_uuid	path		string	true	"Company UUID"
-//	@Param			count			query		int		false	"Count"		default(10)
-//	@Param			offset			query		int		false	"Offset"	default(0)
-//	@Success		200				{object}	entities.GetApplicationsResponse
-//	@Failure		400				{object}	Error.HttpError
-//	@Failure		401				{object}	Error.HttpError
-//	@Failure		403				{object}	Error.HttpError
-//	@Failure		500				{object}	Error.HttpError
+//	@Param			company_uuid		path		string		true	"Company UUID"
+//	@Param			department_uuid		query		string		false	"Department UUID (chief/analytic only)"
+//	@Param			statuses			query		[]string	false	"Filter by statuses"
+//	@Param			count				query		int			false	"Count"			default(10)
+//	@Param			offset				query		int			false	"Offset"		default(0)
+//	@Param			is_deleted			query		bool		false	"Include deleted"
+//	@Param			from_pool			query		bool		false	"Pool view (inspector/manager)"
+//	@Success		200					{object}	entities.GetApplicationsResponse
+//	@Failure		400					{object}	Error.HttpError
+//	@Failure		401					{object}	Error.HttpError
+//	@Failure		403					{object}	Error.HttpError
+//	@Failure		500					{object}	Error.HttpError
 //	@Router			/auth/company/{company_uuid}/applications/list [get]
 func (h *applicationHandler) GetApplications(c *fiber.Ctx) error {
 	operationID := utils.GetLocal[string](c, h.operationIDKey)
@@ -190,193 +194,55 @@ func (h *applicationHandler) GetApplications(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	// Парсинг query параметров
 	httpReq := &entities.GetApplicationsRequest{}
 	if err := c.QueryParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
-
-	// Получаем company_uuid из пути
 	httpReq.CompanyUUID = c.Params("company_uuid", "")
 
-	// Валидация
-	err := httpReq.Validate()
-	if err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
-	// Формируем тело запроса
-	req := &application_proto.GetApplicationsRequest{
-		OperationId:   operationID,
-		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid:   httpReq.CompanyUUID,
-		Count:         httpReq.Count,
-		Offset:        httpReq.Offset,
-	}
-
-	// Запрос в application сервис
-	res, err := h.ApplicationServiceClient.GetApplications(ctx, req)
+	res, err := h.ApplicationServiceClient.GetApplications(ctx, &application_proto.GetApplicationsRequest{
+		OperationId:    operationID,
+		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
+		CompanyUuid:    httpReq.CompanyUUID,
+		DepartmentUuid: httpReq.DepartmentUUID,
+		Statuses:       httpReq.Statuses,
+		Count:          httpReq.Count,
+		Offset:         httpReq.Offset,
+		IsDeleted:      httpReq.IsDeleted,
+		FromPool:       httpReq.FromPool,
+	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	// Маппинг ответа
-	applications := make([]*entities.ApplicationResponse, 0, len(res.GetApplications()))
+	items := make([]*entities.ApplicationListItem, 0, len(res.GetApplications()))
 	for _, app := range res.GetApplications() {
-		applications = append(applications, &entities.ApplicationResponse{
-			ApplicationUUID:     app.GetApplicationUuid(),
-			CompanyUUID:         app.GetCompanyUuid(),
-			Title:               app.GetTitle(),
-			Description:         app.GetDescription(),
-			Status:              app.GetStatus(),
-			ResponsibleManager:  app.GetResponsibleManager(),
-			ResponsibleEngineer: app.GetResponsibleEngineer(),
-			CreatedAt:           app.GetCreatedAt(),
-			CreatedBy:           app.GetCreatedBy(),
-			ClosedAt:            app.GetClosedAt(),
+		items = append(items, &entities.ApplicationListItem{
+			ApplicationUUID: app.GetApplicationUuid(),
+			Title:           app.GetTitle(),
+			Status:          app.GetStatus(),
+			CreatedAt:       app.GetCreatedAt(),
+			UpdatedAt:       app.GetUpdatedAt(),
 		})
 	}
 
-	// Формируем тело ответа
-	httpRes := &entities.GetApplicationsResponse{
-		Applications: applications,
-	}
-
-	return c.Status(fiber.StatusOK).JSON(httpRes)
-}
-
-// GetCompanyApplicationStatistic
-//
-//	@Summary		Get company application statistic
-//	@Description	Get application count by status for a company (analytic and chief only)
-//	@Tags			Application
-//	@Produce		json
-//	@Security		ApiKeyAuth
-//	@Param			company_uuid	path		string	true	"Company UUID"
-//	@Success		200				{object}	entities.GetCompanyApplicationStatisticResponse
-//	@Failure		400				{object}	Error.HttpError
-//	@Failure		401				{object}	Error.HttpError
-//	@Failure		403				{object}	Error.HttpError
-//	@Failure		500				{object}	Error.HttpError
-//	@Router			/auth/company/{company_uuid}/applications/statistic [get]
-func (h *applicationHandler) GetCompanyApplicationStatistic(c *fiber.Ctx) error {
-	operationID := utils.GetLocal[string](c, h.operationIDKey)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	httpReq := &entities.GetCompanyApplicationStatisticRequest{
-		CompanyUUID: c.Params("company_uuid", ""),
-	}
-
-	// Валидация
-	err := httpReq.Validate()
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
-	}
-
-	// Формируем тело запроса
-	req := &application_proto.GetCompanyApplicationStatisticRequest{
-		OperationId:   operationID,
-		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid:   httpReq.CompanyUUID,
-	}
-
-	// Запрос в application сервис
-	res, err := h.ApplicationServiceClient.GetCompanyApplicationStatistic(ctx, req)
-	if err != nil {
-		return Error.GRPCErrorToHTTP(err, c)
-	}
-
-	// Формируем тело ответа
-	httpRes := &entities.GetCompanyApplicationStatisticResponse{
-		Created:          res.GetCreated(),
-		Assigned:         res.GetAssigned(),
-		InProgress:       res.GetInProgress(),
-		OnHold:           res.GetOnHold(),
-		AwaitingApproval: res.GetAwaitingApproval(),
-		Completed:        res.GetCompleted(),
-		Cancelled:        res.GetCancelled(),
-		Failed:           res.GetFailed(),
-		Archived:         res.GetArchived(),
-	}
-
-	return c.Status(fiber.StatusOK).JSON(httpRes)
-}
-
-// GetEmployeeApplicationStatistic
-//
-//	@Summary		Get employee application statistic
-//	@Description	Get application count by status for a specific employee (unemployed employees are not allowed)
-//	@Tags			Application
-//	@Produce		json
-//	@Security		ApiKeyAuth
-//	@Param			company_uuid	path		string	true	"Company UUID"
-//	@Param			employee_uuid	path		string	true	"Employee UUID"
-//	@Success		200				{object}	entities.GetEmployeeApplicationStatisticResponse
-//	@Failure		400				{object}	Error.HttpError
-//	@Failure		401				{object}	Error.HttpError
-//	@Failure		403				{object}	Error.HttpError
-//	@Failure		404				{object}	Error.HttpError
-//	@Failure		500				{object}	Error.HttpError
-//	@Router			/auth/company/{company_uuid}/employee/{employee_uuid}/applications/statistic [get]
-func (h *applicationHandler) GetEmployeeApplicationStatistic(c *fiber.Ctx) error {
-	operationID := utils.GetLocal[string](c, h.operationIDKey)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	httpReq := &entities.GetEmployeeApplicationStatisticRequest{
-		CompanyUUID: c.Params("company_uuid", ""),
-		TargetUUID:  c.Params("employee_uuid", ""),
-	}
-
-	// Валидация
-	err := httpReq.Validate()
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
-	}
-
-	// Формируем тело запроса
-	req := &application_proto.GetEmployeeApplicationStatisticRequest{
-		OperationId:   operationID,
-		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid:   httpReq.CompanyUUID,
-		TargetUuid:    httpReq.TargetUUID,
-	}
-
-	// Запрос в application сервис
-	res, err := h.ApplicationServiceClient.GetEmployeeApplicationStatistic(ctx, req)
-	if err != nil {
-		return Error.GRPCErrorToHTTP(err, c)
-	}
-
-	// Формируем тело ответа
-	httpRes := &entities.GetEmployeeApplicationStatisticResponse{
-		Created:          res.GetCreated(),
-		Assigned:         res.GetAssigned(),
-		InProgress:       res.GetInProgress(),
-		OnHold:           res.GetOnHold(),
-		AwaitingApproval: res.GetAwaitingApproval(),
-		Completed:        res.GetCompleted(),
-		Cancelled:        res.GetCancelled(),
-		Failed:           res.GetFailed(),
-		Archived:         res.GetArchived(),
-	}
-
-	return c.Status(fiber.StatusOK).JSON(httpRes)
+	return c.Status(fiber.StatusOK).JSON(&entities.GetApplicationsResponse{Applications: items})
 }
 
 // UpdateApplicationStatus
 //
 //	@Summary		Update application status
-//	@Description	Update application status. Engineer: in_progress, on_hold, awaiting_approval. Manager: completed, cancelled, failed.
+//	@Description	Update application status. Inspector: completed, failed, on_revision. Manager: rejected. Engineer: in_progress, on_hold, pending_verification.
 //	@Tags			Application
 //	@Accept			json
 //	@Produce		json
 //	@Security		ApiKeyAuth
 //	@Param			application_uuid	path		string									true	"Application UUID"
-//	@Param			data				body		entities.UpdateApplicationStatusRequest	true	"Параметры запроса"
+//	@Param			data				body		entities.UpdateApplicationStatusRequest	true	"Новый статус"
 //	@Success		200					{object}	entities.UpdateApplicationStatusResponse
 //	@Failure		400					{object}	Error.HttpError
 //	@Failure		401					{object}	Error.HttpError
@@ -390,7 +256,6 @@ func (h *applicationHandler) UpdateApplicationStatus(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	// Парсинг тела запроса
 	httpReq := &entities.UpdateApplicationStatusRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
@@ -401,33 +266,24 @@ func (h *applicationHandler) UpdateApplicationStatus(c *fiber.Ctx) error {
 		Status:          httpReq.Status,
 	}
 
-	// Валидация
-	err := httpReqFull.Validate()
-	if err != nil {
+	if err := httpReqFull.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
-	// Формируем тело запроса
-	req := &application_proto.UpdateApplicationStatusRequest{
+	_, err := h.ApplicationServiceClient.UpdateApplicationStatus(ctx, &application_proto.UpdateApplicationStatusRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReqFull.ApplicationUUID,
 		Status:          httpReqFull.Status,
-	}
-
-	// Запрос в application сервис
-	_, err = h.ApplicationServiceClient.UpdateApplicationStatus(ctx, req)
+	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	// Формируем тело ответа
-	httpRes := &entities.UpdateApplicationStatusResponse{}
-
-	return c.Status(fiber.StatusOK).JSON(httpRes)
+	return c.Status(fiber.StatusOK).JSON(&entities.UpdateApplicationStatusResponse{})
 }
 
-// AssignApplicationToEmployee
+// AssignApplication
 //
 //	@Summary		Assign application to employee
 //	@Description	Assign application to an engineer (manager only)
@@ -435,56 +291,239 @@ func (h *applicationHandler) UpdateApplicationStatus(c *fiber.Ctx) error {
 //	@Accept			json
 //	@Produce		json
 //	@Security		ApiKeyAuth
-//	@Param			application_uuid	path		string										true	"Application UUID"
-//	@Param			data				body		entities.AssignApplicationToEmployeeRequest	true	"Параметры запроса"
-//	@Success		200					{object}	entities.AssignApplicationToEmployeeResponse
+//	@Param			application_uuid	path		string								true	"Application UUID"
+//	@Param			data				body		entities.AssignApplicationRequest	true	"UUID инженера"
+//	@Success		200					{object}	entities.AssignApplicationResponse
 //	@Failure		400					{object}	Error.HttpError
 //	@Failure		401					{object}	Error.HttpError
 //	@Failure		403					{object}	Error.HttpError
 //	@Failure		404					{object}	Error.HttpError
 //	@Failure		500					{object}	Error.HttpError
 //	@Router			/auth/application/{application_uuid}/assign [patch]
-func (h *applicationHandler) AssignApplicationToEmployee(c *fiber.Ctx) error {
+func (h *applicationHandler) AssignApplication(c *fiber.Ctx) error {
 	operationID := utils.GetLocal[string](c, h.operationIDKey)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	// Парсинг тела запроса
-	httpReq := &entities.AssignApplicationToEmployeeRequest{}
+	httpReq := &entities.AssignApplicationRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
 
-	httpReqFull := &entities.AssignApplicationToEmployeeRequestFull{
+	httpReqFull := &entities.AssignApplicationRequestFull{
 		ApplicationUUID: c.Params("application_uuid", ""),
 		TargetUUID:      httpReq.TargetUUID,
 	}
 
-	// Валидация
-	err := httpReqFull.Validate()
-	if err != nil {
+	if err := httpReqFull.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
-	// Формируем тело запроса
-	req := &application_proto.AssignApplicationToEmployeeRequest{
+	_, err := h.ApplicationServiceClient.AssignApplication(ctx, &application_proto.AssignApplicationRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReqFull.ApplicationUUID,
 		TargetUuid:      httpReqFull.TargetUUID,
-	}
-
-	// Запрос в application сервис
-	_, err = h.ApplicationServiceClient.AssignApplicationToEmployee(ctx, req)
+	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	// Формируем тело ответа
-	httpRes := &entities.AssignApplicationToEmployeeResponse{}
+	return c.Status(fiber.StatusOK).JSON(&entities.AssignApplicationResponse{})
+}
 
-	return c.Status(fiber.StatusOK).JSON(httpRes)
+// RedirectApplication
+//
+//	@Summary		Redirect application to another department
+//	@Description	Transfer application to a different department (manager only)
+//	@Tags			Application
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			application_uuid	path		string									true	"Application UUID"
+//	@Param			data				body		entities.RedirectApplicationRequest		true	"UUID целевого департамента и причина"
+//	@Success		200					{object}	entities.RedirectApplicationResponse
+//	@Failure		400					{object}	Error.HttpError
+//	@Failure		401					{object}	Error.HttpError
+//	@Failure		403					{object}	Error.HttpError
+//	@Failure		404					{object}	Error.HttpError
+//	@Failure		500					{object}	Error.HttpError
+//	@Router			/auth/application/{application_uuid}/redirect [patch]
+func (h *applicationHandler) RedirectApplication(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	httpReq := &entities.RedirectApplicationRequest{}
+	if err := c.BodyParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+
+	httpReqFull := &entities.RedirectApplicationRequestFull{
+		ApplicationUUID:      c.Params("application_uuid", ""),
+		TargetDepartmentUUID: httpReq.TargetDepartmentUUID,
+		Message:              httpReq.Message,
+	}
+
+	if err := httpReqFull.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	_, err := h.ApplicationServiceClient.RedirectApplication(ctx, &application_proto.RedirectApplicationRequest{
+		OperationId:          operationID,
+		InitiatorUuid:        utils.GetLocal[string](c, h.userUUIDKey),
+		ApplicationUuid:      httpReqFull.ApplicationUUID,
+		TargetDepartmentUuid: httpReqFull.TargetDepartmentUUID,
+		Message:              httpReqFull.Message,
+	})
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(&entities.RedirectApplicationResponse{})
+}
+
+// RecallApplication
+//
+//	@Summary		Recall application from engineer
+//	@Description	Return application from engineer back to the pool (responsible manager only)
+//	@Tags			Application
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			application_uuid	path		string								true	"Application UUID"
+//	@Param			data				body		entities.RecallApplicationRequest	true	"Причина отзыва"
+//	@Success		200					{object}	entities.RecallApplicationResponse
+//	@Failure		400					{object}	Error.HttpError
+//	@Failure		401					{object}	Error.HttpError
+//	@Failure		403					{object}	Error.HttpError
+//	@Failure		404					{object}	Error.HttpError
+//	@Failure		500					{object}	Error.HttpError
+//	@Router			/auth/application/{application_uuid}/recall [patch]
+func (h *applicationHandler) RecallApplication(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	httpReq := &entities.RecallApplicationRequest{}
+	if err := c.BodyParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+
+	httpReqFull := &entities.RecallApplicationRequestFull{
+		ApplicationUUID: c.Params("application_uuid", ""),
+		Message:         httpReq.Message,
+	}
+
+	if err := httpReqFull.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	_, err := h.ApplicationServiceClient.RecallApplication(ctx, &application_proto.RecallApplicationRequest{
+		OperationId:     operationID,
+		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
+		ApplicationUuid: httpReqFull.ApplicationUUID,
+		Message:         httpReqFull.Message,
+	})
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(&entities.RecallApplicationResponse{})
+}
+
+// TakeApplicationToVerification
+//
+//	@Summary		Take application to verification
+//	@Description	Inspector takes a pending_verification application for review
+//	@Tags			Application
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			application_uuid	path		string	true	"Application UUID"
+//	@Success		200					{object}	entities.TakeApplicationToVerificationResponse
+//	@Failure		400					{object}	Error.HttpError
+//	@Failure		401					{object}	Error.HttpError
+//	@Failure		403					{object}	Error.HttpError
+//	@Failure		404					{object}	Error.HttpError
+//	@Failure		500					{object}	Error.HttpError
+//	@Router			/auth/application/{application_uuid}/take-verification [patch]
+func (h *applicationHandler) TakeApplicationToVerification(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	httpReq := &entities.TakeApplicationToVerificationRequest{
+		ApplicationUUID: c.Params("application_uuid", ""),
+	}
+
+	if err := httpReq.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	_, err := h.ApplicationServiceClient.TakeApplicationToVerification(ctx, &application_proto.TakeApplicationToVerificationRequest{
+		OperationId:     operationID,
+		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
+		ApplicationUuid: httpReq.ApplicationUUID,
+	})
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(&entities.TakeApplicationToVerificationResponse{})
+}
+
+// ReleaseApplicationVerification
+//
+//	@Summary		Release application verification
+//	@Description	Inspector releases a previously taken application back to pending_verification
+//	@Tags			Application
+//	@Accept			json
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			application_uuid	path		string											true	"Application UUID"
+//	@Param			data				body		entities.ReleaseApplicationVerificationRequest	true	"Причина снятия"
+//	@Success		200					{object}	entities.ReleaseApplicationVerificationResponse
+//	@Failure		400					{object}	Error.HttpError
+//	@Failure		401					{object}	Error.HttpError
+//	@Failure		403					{object}	Error.HttpError
+//	@Failure		404					{object}	Error.HttpError
+//	@Failure		500					{object}	Error.HttpError
+//	@Router			/auth/application/{application_uuid}/release-verification [patch]
+func (h *applicationHandler) ReleaseApplicationVerification(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	httpReq := &entities.ReleaseApplicationVerificationRequest{}
+	if err := c.BodyParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+
+	httpReqFull := &entities.ReleaseApplicationVerificationRequestFull{
+		ApplicationUUID: c.Params("application_uuid", ""),
+		Message:         httpReq.Message,
+	}
+
+	if err := httpReqFull.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	_, err := h.ApplicationServiceClient.ReleaseApplicationVerification(ctx, &application_proto.ReleaseApplicationVerificationRequest{
+		OperationId:     operationID,
+		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
+		ApplicationUuid: httpReqFull.ApplicationUUID,
+		Message:         httpReqFull.Message,
+	})
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(&entities.ReleaseApplicationVerificationResponse{})
 }
 
 // AddApplicationFixLog
@@ -496,7 +535,7 @@ func (h *applicationHandler) AssignApplicationToEmployee(c *fiber.Ctx) error {
 //	@Produce		json
 //	@Security		ApiKeyAuth
 //	@Param			application_uuid	path		string								true	"Application UUID"
-//	@Param			data				body		entities.AddApplicationFixLogRequest	true	"Параметры запроса"
+//	@Param			data				body		entities.AddApplicationFixLogRequest	true	"Текст записи"
 //	@Success		201					{object}	entities.AddApplicationFixLogResponse
 //	@Failure		400					{object}	Error.HttpError
 //	@Failure		401					{object}	Error.HttpError
@@ -510,7 +549,6 @@ func (h *applicationHandler) AddApplicationFixLog(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	// Парсинг тела запроса
 	httpReq := &entities.AddApplicationFixLogRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
@@ -518,43 +556,36 @@ func (h *applicationHandler) AddApplicationFixLog(c *fiber.Ctx) error {
 
 	httpReqFull := &entities.AddApplicationFixLogRequestFull{
 		ApplicationUUID: c.Params("application_uuid", ""),
-		LogText:         httpReq.LogText,
+		Message:         httpReq.Message,
 	}
 
-	// Валидация
-	err := httpReqFull.Validate()
-	if err != nil {
+	if err := httpReqFull.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
-	// Формируем тело запроса
-	req := &application_proto.AddApplicationFixLogRequest{
+	_, err := h.ApplicationServiceClient.AddApplicationFixLog(ctx, &application_proto.AddApplicationFixLogRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReqFull.ApplicationUUID,
-		LogText:         httpReqFull.LogText,
-	}
-
-	// Запрос в application сервис
-	_, err = h.ApplicationServiceClient.AddApplicationFixLog(ctx, req)
+		Message:         httpReqFull.Message,
+	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	// Формируем тело ответа
-	httpRes := &entities.AddApplicationFixLogResponse{}
-
-	return c.Status(fiber.StatusCreated).JSON(httpRes)
+	return c.Status(fiber.StatusCreated).JSON(&entities.AddApplicationFixLogResponse{})
 }
 
 // DeleteApplication
 //
 //	@Summary		Delete application
-//	@Description	Soft-delete an application (inspector only, status must be "created")
+//	@Description	Soft-delete an application (inspector/creator only, status must be "created")
 //	@Tags			Application
+//	@Accept			json
 //	@Produce		json
 //	@Security		ApiKeyAuth
-//	@Param			application_uuid	path		string	true	"Application UUID"
+//	@Param			application_uuid	path		string								true	"Application UUID"
+//	@Param			data				body		entities.DeleteApplicationRequest	false	"Опциональное сообщение"
 //	@Success		200					{object}	entities.DeleteApplicationResponse
 //	@Failure		400					{object}	Error.HttpError
 //	@Failure		401					{object}	Error.HttpError
@@ -568,31 +599,28 @@ func (h *applicationHandler) DeleteApplication(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	httpReq := &entities.DeleteApplicationRequest{
+	httpReq := &entities.DeleteApplicationRequest{}
+	// body необязателен — игнорируем ошибку парсинга
+	_ = c.BodyParser(httpReq)
+
+	httpReqFull := &entities.DeleteApplicationRequestFull{
 		ApplicationUUID: c.Params("application_uuid", ""),
+		Message:         httpReq.Message,
 	}
 
-	// Валидация
-	err := httpReq.Validate()
-	if err != nil {
+	if err := httpReqFull.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
-	// Формируем тело запроса
-	req := &application_proto.DeleteApplicationRequest{
+	_, err := h.ApplicationServiceClient.DeleteApplication(ctx, &application_proto.DeleteApplicationRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
-		ApplicationUuid: httpReq.ApplicationUUID,
-	}
-
-	// Запрос в application сервис
-	_, err = h.ApplicationServiceClient.DeleteApplication(ctx, req)
+		ApplicationUuid: httpReqFull.ApplicationUUID,
+		Message:         httpReqFull.Message,
+	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	// Формируем тело ответа
-	httpRes := &entities.DeleteApplicationResponse{}
-
-	return c.Status(fiber.StatusOK).JSON(httpRes)
+	return c.Status(fiber.StatusOK).JSON(&entities.DeleteApplicationResponse{})
 }

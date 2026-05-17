@@ -73,9 +73,9 @@ func (h *companyHandler) CreateCompany(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.CreateCompanyRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		Title:       httpReq.Title,
+		OperationId:   operationID,
+		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		Title:         httpReq.Title,
 	}
 	// Запрос в company сервис
 	res, err := h.CompanyServiceClient.CreateCompany(ctx, req)
@@ -125,9 +125,9 @@ func (h *companyHandler) GetCompany(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.GetCompanyRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid: httpReq.CompanyUUID,
+		OperationId:   operationID,
+		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		CompanyUuid:   httpReq.CompanyUUID,
 	}
 	// Запрос в company сервис
 	res, err := h.CompanyServiceClient.GetCompany(ctx, req)
@@ -251,10 +251,10 @@ func (h *companyHandler) UpdateCompanyTitle(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.UpdateCompanyTitleRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid: httpReqFull.CompanyUUID,
-		Title:       httpReqFull.Title,
+		OperationId:   operationID,
+		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		CompanyUuid:   httpReqFull.CompanyUUID,
+		Title:         httpReqFull.Title,
 	}
 
 	// Запрос в company сервис
@@ -311,10 +311,10 @@ func (h *companyHandler) UpdateCompanyStatus(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.UpdateCompanyStatusRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid: httpReqFull.CompanyUUID,
-		Status:      httpReqFull.Status,
+		OperationId:   operationID,
+		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		CompanyUuid:   httpReqFull.CompanyUUID,
+		Status:        httpReqFull.Status,
 	}
 
 	// Запрос в company сервис
@@ -363,9 +363,9 @@ func (h *companyHandler) DeleteCompany(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.DeleteCompanyRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid: httpReq.CompanyUUID,
+		OperationId:   operationID,
+		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		CompanyUuid:   httpReq.CompanyUUID,
 	}
 
 	// Запрос в company сервис
@@ -423,10 +423,10 @@ func (h *companyHandler) CreateCompanyJoinCode(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.CreateCompanyJoinCodeRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid: httpReqFull.CompanyUUID,
-		CodeTtl:     httpReqFull.CodeTTL,
+		OperationId:   operationID,
+		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		CompanyUuid:   httpReqFull.CompanyUUID,
+		CodeTtl:       httpReqFull.CodeTTL,
 	}
 
 	// Запрос в company сервис
@@ -477,9 +477,9 @@ func (h *companyHandler) GetCompanyJoinCodes(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.GetCompanyJoinCodesRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid: httpReq.CompanyUUID,
+		OperationId:   operationID,
+		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		CompanyUuid:   httpReq.CompanyUUID,
 	}
 
 	// Запрос в company сервис
@@ -538,10 +538,10 @@ func (h *companyHandler) DeleteCompanyJoinCode(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.DeleteCompanyJoinCodeRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid: httpReqFull.CompanyUUID,
-		Code:        httpReqFull.Code,
+		OperationId:   operationID,
+		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		CompanyUuid:   httpReqFull.CompanyUUID,
+		Code:          httpReqFull.Code,
 	}
 
 	// Запрос в company сервис
@@ -591,9 +591,9 @@ func (h *companyHandler) JoinCompany(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.JoinCompanyRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		JoinCode:    httpReq.Code,
+		OperationId:   operationID,
+		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		JoinCode:      httpReq.Code,
 	}
 
 	// Запрос в company сервис
@@ -711,12 +711,13 @@ func (h *companyHandler) GetCompanyEmployees(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.GetCompanyEmployeesRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid: httpReq.CompanyUUID,
-		Role:        httpReq.Role,
-		Count:       httpReq.Count,
-		Offset:      httpReq.Offset,
+		OperationId:    operationID,
+		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
+		CompanyUuid:    httpReq.CompanyUUID,
+		DepartmentUuid: httpReq.DepartmentUUID,
+		Role:           httpReq.Role,
+		Count:          httpReq.Count,
+		Offset:         httpReq.Offset,
 	}
 
 	// Запрос в company сервис
@@ -749,6 +750,7 @@ func (h *companyHandler) GetCompanyEmployees(c *fiber.Ctx) error {
 //	@Produce			json
 //	@Security			ApiKeyAuth
 //	@Param 				company_uuid path string true "Company UUID"
+//	@Param				data body entities.GetCompanyEmployeesSummaryRequest true "Параметры запроса"
 //	@Success			200  {object}  entities.GetCompanyEmployeesSummaryResponse
 //	@Failure			400  {object}  Error.HttpError
 //	@Failure			401  {object}  Error.HttpError
@@ -762,9 +764,12 @@ func (h *companyHandler) GetCompanyEmployeesSummary(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	httpReq := &entities.GetCompanyEmployeesSummaryRequest{
-		CompanyUUID: c.Params("company_uuid", ""),
+	// Парсинг тела запроса
+	httpReq := &entities.GetCompanyEmployeesSummaryRequest{}
+	if err := c.BodyParser(&httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.CompanyUUID = c.Params("company_uuid", "")
 
 	// Валидация
 	err := httpReq.Validate()
@@ -774,9 +779,10 @@ func (h *companyHandler) GetCompanyEmployeesSummary(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &company_proto.GetCompanyEmployeesSummaryRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid: httpReq.CompanyUUID,
+		OperationId:    operationID,
+		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
+		DepartmentUuid: httpReq.DepartmentUUID,
+		CompanyUuid:    httpReq.CompanyUUID,
 	}
 
 	// Запрос в company сервис

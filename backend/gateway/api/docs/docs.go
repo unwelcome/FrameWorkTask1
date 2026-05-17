@@ -147,7 +147,10 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Soft-delete an application (inspector only, status must be \"created\")",
+                "description": "Soft-delete an application (inspector/creator only, status must be \"created\")",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -162,6 +165,14 @@ const docTemplate = `{
                         "name": "application_uuid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Опциональное сообщение",
+                        "name": "data",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/entities.DeleteApplicationRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -231,12 +242,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Параметры запроса",
+                        "description": "UUID инженера",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entities.AssignApplicationToEmployeeRequest"
+                            "$ref": "#/definitions/entities.AssignApplicationRequest"
                         }
                     }
                 ],
@@ -244,7 +255,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/entities.AssignApplicationToEmployeeResponse"
+                            "$ref": "#/definitions/entities.AssignApplicationResponse"
                         }
                     },
                     "400": {
@@ -307,7 +318,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Параметры запроса",
+                        "description": "Текст записи",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -356,6 +367,234 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/application/{application_uuid}/recall": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Return application from engineer back to the pool (responsible manager only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Application"
+                ],
+                "summary": "Recall application from engineer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application UUID",
+                        "name": "application_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Причина отзыва",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.RecallApplicationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.RecallApplicationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/application/{application_uuid}/redirect": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Transfer application to a different department (manager only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Application"
+                ],
+                "summary": "Redirect application to another department",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application UUID",
+                        "name": "application_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "UUID целевого департамента и причина",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.RedirectApplicationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.RedirectApplicationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/application/{application_uuid}/release-verification": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Inspector releases a previously taken application back to pending_verification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Application"
+                ],
+                "summary": "Release application verification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application UUID",
+                        "name": "application_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Причина снятия",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.ReleaseApplicationVerificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ReleaseApplicationVerificationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/application/{application_uuid}/status": {
             "patch": {
                 "security": [
@@ -363,7 +602,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update application status. Engineer: in_progress, on_hold, awaiting_approval. Manager: completed, cancelled, failed.",
+                "description": "Update application status. Inspector: completed, failed, on_revision. Manager: rejected. Engineer: in_progress, on_hold, pending_verification.",
                 "consumes": [
                     "application/json"
                 ],
@@ -383,7 +622,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Параметры запроса",
+                        "description": "Новый статус",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -397,6 +636,70 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/entities.UpdateApplicationStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/application/{application_uuid}/take-verification": {
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Inspector takes a pending_verification application for review",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Application"
+                ],
+                "summary": "Take application to verification",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Application UUID",
+                        "name": "application_uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.TakeApplicationToVerificationResponse"
                         }
                     },
                     "400": {
@@ -761,6 +1064,22 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "Department UUID (chief/analytic only)",
+                        "name": "department_uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Filter by statuses",
+                        "name": "statuses",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "default": 10,
                         "description": "Count",
@@ -773,6 +1092,18 @@ const docTemplate = `{
                         "description": "Offset",
                         "name": "offset",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include deleted",
+                        "name": "is_deleted",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Pool view (inspector/manager)",
+                        "name": "from_pool",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -780,64 +1111,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/entities.GetApplicationsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/company/{company_uuid}/applications/statistic": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get application count by status for a company (analytic and chief only)",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Application"
-                ],
-                "summary": "Get company application statistic",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Company UUID",
-                        "name": "company_uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/entities.GetCompanyApplicationStatisticResponse"
                         }
                     },
                     "400": {
@@ -1158,77 +1431,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/company/{company_uuid}/employee/{employee_uuid}/applications/statistic": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get application count by status for a specific employee (unemployed employees are not allowed)",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Application"
-                ],
-                "summary": "Get employee application statistic",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Company UUID",
-                        "name": "company_uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Employee UUID",
-                        "name": "employee_uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/entities.GetEmployeeApplicationStatisticResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    }
-                }
-            }
-        },
         "/auth/company/{company_uuid}/employee/{employee_uuid}/info": {
             "get": {
                 "security": [
@@ -1499,6 +1701,15 @@ const docTemplate = `{
                         "name": "company_uuid",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Параметры запроса",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.GetCompanyEmployeesSummaryRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2290,13 +2501,33 @@ const docTemplate = `{
         "entities.AddApplicationFixLogRequest": {
             "type": "object",
             "properties": {
-                "log_text": {
+                "message": {
                     "type": "string"
                 }
             }
         },
         "entities.AddApplicationFixLogResponse": {
             "type": "object"
+        },
+        "entities.ApplicationListItem": {
+            "type": "object",
+            "properties": {
+                "application_uuid": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
         },
         "entities.ApplicationResponse": {
             "type": "object",
@@ -2316,7 +2547,19 @@ const docTemplate = `{
                 "created_by": {
                     "type": "string"
                 },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "deleted_by": {
+                    "type": "string"
+                },
+                "department_uuid": {
+                    "type": "string"
+                },
                 "description": {
+                    "type": "string"
+                },
+                "executed_by": {
                     "type": "string"
                 },
                 "fix_logs": {
@@ -2325,21 +2568,33 @@ const docTemplate = `{
                         "$ref": "#/definitions/entities.FixLogResponse"
                     }
                 },
-                "responsible_engineer": {
+                "inspected_by": {
                     "type": "string"
                 },
-                "responsible_manager": {
+                "managed_by": {
                     "type": "string"
+                },
+                "revision_count": {
+                    "type": "integer"
                 },
                 "status": {
                     "type": "string"
                 },
                 "title": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
                 }
             }
         },
-        "entities.AssignApplicationToEmployeeRequest": {
+        "entities.AssignApplicationRequest": {
             "type": "object",
             "properties": {
                 "target_uuid": {
@@ -2347,7 +2602,7 @@ const docTemplate = `{
                 }
             }
         },
-        "entities.AssignApplicationToEmployeeResponse": {
+        "entities.AssignApplicationResponse": {
             "type": "object"
         },
         "entities.ChangePasswordRequest": {
@@ -2411,6 +2666,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "company_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.DeleteApplicationRequest": {
+            "type": "object",
+            "properties": {
+                "message": {
                     "type": "string"
                 }
             }
@@ -2485,7 +2748,7 @@ const docTemplate = `{
                 "applications": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/entities.ApplicationResponse"
+                        "$ref": "#/definitions/entities.ApplicationListItem"
                     }
                 }
             }
@@ -2498,38 +2761,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/entities.GetCompanyResponse"
                     }
-                }
-            }
-        },
-        "entities.GetCompanyApplicationStatisticResponse": {
-            "type": "object",
-            "properties": {
-                "archived": {
-                    "type": "integer"
-                },
-                "assigned": {
-                    "type": "integer"
-                },
-                "awaiting_approval": {
-                    "type": "integer"
-                },
-                "cancelled": {
-                    "type": "integer"
-                },
-                "completed": {
-                    "type": "integer"
-                },
-                "created": {
-                    "type": "integer"
-                },
-                "failed": {
-                    "type": "integer"
-                },
-                "in_progress": {
-                    "type": "integer"
-                },
-                "on_hold": {
-                    "type": "integer"
                 }
             }
         },
@@ -2555,6 +2786,17 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/entities.GetCompanyEmployeeResponse"
                     }
+                }
+            }
+        },
+        "entities.GetCompanyEmployeesSummaryRequest": {
+            "type": "object",
+            "properties": {
+                "companyUUID": {
+                    "type": "string"
+                },
+                "department_uuid": {
+                    "type": "string"
                 }
             }
         },
@@ -2603,38 +2845,6 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
-                }
-            }
-        },
-        "entities.GetEmployeeApplicationStatisticResponse": {
-            "type": "object",
-            "properties": {
-                "archived": {
-                    "type": "integer"
-                },
-                "assigned": {
-                    "type": "integer"
-                },
-                "awaiting_approval": {
-                    "type": "integer"
-                },
-                "cancelled": {
-                    "type": "integer"
-                },
-                "completed": {
-                    "type": "integer"
-                },
-                "created": {
-                    "type": "integer"
-                },
-                "failed": {
-                    "type": "integer"
-                },
-                "in_progress": {
-                    "type": "integer"
-                },
-                "on_hold": {
-                    "type": "integer"
                 }
             }
         },
@@ -2722,6 +2932,31 @@ const docTemplate = `{
                 }
             }
         },
+        "entities.RecallApplicationRequest": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.RecallApplicationResponse": {
+            "type": "object"
+        },
+        "entities.RedirectApplicationRequest": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "target_department_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.RedirectApplicationResponse": {
+            "type": "object"
+        },
         "entities.RefreshTokenRequest": {
             "type": "object",
             "properties": {
@@ -2769,6 +3004,17 @@ const docTemplate = `{
                 }
             }
         },
+        "entities.ReleaseApplicationVerificationRequest": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.ReleaseApplicationVerificationResponse": {
+            "type": "object"
+        },
         "entities.RemoveCompanyEmployeeResponse": {
             "type": "object"
         },
@@ -2805,6 +3051,9 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "entities.TakeApplicationToVerificationResponse": {
+            "type": "object"
         },
         "entities.TokenInfo": {
             "type": "object",

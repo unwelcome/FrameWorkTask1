@@ -232,10 +232,11 @@ func (e *GetCompanyEmployeeRequest) Validate() error {
 }
 
 type GetCompanyEmployeesRequest struct {
-	CompanyUUID string `json:"company_uuid"`
-	Role        string `query:"role"`
-	Offset      int64  `query:"offset"`
-	Count       int64  `query:"count"`
+	CompanyUUID    string `json:"company_uuid"`
+	DepartmentUUID string `json:"department_uuid"`
+	Role           string `query:"role"`
+	Offset         int64  `query:"offset"`
+	Count          int64  `query:"count"`
 }
 type GetCompanyEmployeesResponse struct {
 	Employees []*GetCompanyEmployeeResponse `json:"employees"`
@@ -244,6 +245,11 @@ type GetCompanyEmployeesResponse struct {
 func (e *GetCompanyEmployeesRequest) Validate() error {
 	// Валидация company_uuid
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
+		return err
+	}
+
+	// Валидация department_uuid
+	if err := utils.ValidateUUID(e.DepartmentUUID); e.DepartmentUUID != "" && err != nil {
 		return err
 	}
 
@@ -266,7 +272,8 @@ func (e *GetCompanyEmployeesRequest) Validate() error {
 }
 
 type GetCompanyEmployeesSummaryRequest struct {
-	CompanyUUID string `json:"company_uuid"`
+	CompanyUUID    string
+	DepartmentUUID string `json:"department_uuid"`
 }
 type GetCompanyEmployeesSummaryResponse struct {
 	ChiefCount      int64 `json:"chief_count"`
@@ -280,6 +287,11 @@ type GetCompanyEmployeesSummaryResponse struct {
 func (e *GetCompanyEmployeesSummaryRequest) Validate() error {
 	// Валидация company_uuid
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
+		return err
+	}
+
+	// Валидация department_uuid
+	if err := utils.ValidateUUID(e.DepartmentUUID); e.DepartmentUUID != "" && err != nil {
 		return err
 	}
 

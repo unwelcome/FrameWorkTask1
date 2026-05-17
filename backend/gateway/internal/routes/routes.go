@@ -59,11 +59,13 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	// Application handler
 	auth.Get("/application/:application_uuid", app.ApplicationHandler.GetApplication)
 	auth.Get("/company/:company_uuid/applications/list", app.ApplicationHandler.GetApplications)
-	auth.Get("/company/:company_uuid/applications/statistic", app.ApplicationHandler.GetCompanyApplicationStatistic)
-	auth.Get("/company/:company_uuid/employee/:employee_uuid/applications/statistic", app.ApplicationHandler.GetEmployeeApplicationStatistic)
 	auth.Post("/application/create", app.ApplicationHandler.CreateApplication)
 	auth.Post("/application/:application_uuid/fix-log", app.ApplicationHandler.AddApplicationFixLog)
 	auth.Patch("/application/:application_uuid/status", app.ApplicationHandler.UpdateApplicationStatus)
-	auth.Patch("/application/:application_uuid/assign", app.ApplicationHandler.AssignApplicationToEmployee)
+	auth.Patch("/application/:application_uuid/assign", app.ApplicationHandler.AssignApplication)
+	auth.Patch("/application/:application_uuid/redirect", app.ApplicationHandler.RedirectApplication)
+	auth.Patch("/application/:application_uuid/recall", app.ApplicationHandler.RecallApplication)
+	auth.Patch("/application/:application_uuid/take-verification", app.ApplicationHandler.TakeApplicationToVerification)
+	auth.Patch("/application/:application_uuid/release-verification", app.ApplicationHandler.ReleaseApplicationVerification)
 	auth.Delete("/application/:application_uuid", app.ApplicationHandler.DeleteApplication)
 }

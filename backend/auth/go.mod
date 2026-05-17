@@ -10,7 +10,7 @@ require (
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/rs/zerolog v1.35.1
 	github.com/unwelcome/FrameWorkTask1/backend/contracts v0.0.0
-	github.com/unwelcome/FrameWorkTask1/backend/shared v0.11.0
+	github.com/unwelcome/FrameWorkTask1/backend/shared v0.0.0
 	golang.org/x/crypto v0.50.0
 	golang.org/x/net v0.53.0
 	google.golang.org/grpc v1.80.0
@@ -22,9 +22,12 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
+	github.com/stretchr/testify v1.11.1 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 )
 
 replace github.com/unwelcome/FrameWorkTask1/backend/contracts => ../contracts
+
+replace github.com/unwelcome/FrameWorkTask1/backend/shared => ../shared

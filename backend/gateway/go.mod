@@ -10,7 +10,7 @@ require (
 	github.com/rs/zerolog v1.35.1
 	github.com/swaggo/swag v1.16.6
 	github.com/unwelcome/FrameWorkTask1/backend/contracts v0.0.0
-	github.com/unwelcome/FrameWorkTask1/backend/shared v0.11.0
+	github.com/unwelcome/FrameWorkTask1/backend/shared v0.0.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
@@ -21,7 +21,6 @@ require (
 	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-openapi/jsonpointer v0.23.1 // indirect
 	github.com/go-openapi/jsonreference v0.21.5 // indirect
@@ -53,3 +52,5 @@ require (
 )
 
 replace github.com/unwelcome/FrameWorkTask1/backend/contracts => ../contracts
+
+replace github.com/unwelcome/FrameWorkTask1/backend/shared => ../shared

@@ -46,7 +46,7 @@ type mockAuthRepo struct {
 	saveRefreshToken        func(ctx context.Context, userUUID, rawToken string) Error.CodeError
 	getAllRefreshTokens     func(ctx context.Context, userUUID string) ([]string, Error.CodeError)
 	checkRefreshTokenExists func(ctx context.Context, userUUID, rawToken string) Error.CodeError
-	revokeRefreshToken      func(ctx context.Context, userUUID, rawToken string) Error.CodeError
+	revokeRefreshToken      func(ctx context.Context, userUUID, tokenHash string) Error.CodeError
 	revokeAllRefreshTokens  func(ctx context.Context, userUUID string) Error.CodeError
 	refreshToken            func(ctx context.Context, userUUID, oldRawToken, newRawToken string) Error.CodeError
 }
@@ -60,8 +60,8 @@ func (m *mockAuthRepo) GetAllRefreshTokens(ctx context.Context, userUUID string)
 func (m *mockAuthRepo) CheckRefreshTokenExists(ctx context.Context, userUUID, rawToken string) Error.CodeError {
 	return m.checkRefreshTokenExists(ctx, userUUID, rawToken)
 }
-func (m *mockAuthRepo) RevokeRefreshToken(ctx context.Context, userUUID, rawToken string) Error.CodeError {
-	return m.revokeRefreshToken(ctx, userUUID, rawToken)
+func (m *mockAuthRepo) RevokeRefreshToken(ctx context.Context, userUUID, tokenHash string) Error.CodeError {
+	return m.revokeRefreshToken(ctx, userUUID, tokenHash)
 }
 func (m *mockAuthRepo) RevokeAllRefreshTokens(ctx context.Context, userUUID string) Error.CodeError {
 	return m.revokeAllRefreshTokens(ctx, userUUID)

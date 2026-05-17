@@ -13,8 +13,8 @@ const (
 )
 
 type TokenClaims struct {
-	UserUUID  string
-	TokenType string
+	UserUUID  string `json:"user_uuid"`
+	TokenType string `json:"token_type"`
 	jwt.RegisteredClaims
 }
 

@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// --- HTTP client ---
+// ─── HTTP client ──────────────────────────────────────────────────────────────
 
 type apiClient struct {
 	base        string
@@ -71,7 +71,7 @@ func (c *apiClient) delete(path string, body any) (int, []byte) {
 	return c.do(http.MethodDelete, path, body)
 }
 
-// --- Response types ---
+// ─── Response types ───────────────────────────────────────────────────────────
 
 type registerResp struct {
 	UserUUID string `json:"user_uuid"`
@@ -108,7 +108,7 @@ type httpErrResp struct {
 	Message string `json:"message"`
 }
 
-// --- Data helpers ---
+// ─── Data helpers ─────────────────────────────────────────────────────────────
 
 func randomEmail() string {
 	return fmt.Sprintf("user_%d@test.com", rand.Int63())
@@ -124,7 +124,7 @@ func defaultUserPayload(email, password string) map[string]string {
 	}
 }
 
-// --- Flow helpers ---
+// ─── Flow helpers ─────────────────────────────────────────────────────────────
 
 // mustRegister registers a user and fails the test immediately if registration fails.
 func mustRegister(t *testing.T, c *apiClient, email, password string) registerResp {

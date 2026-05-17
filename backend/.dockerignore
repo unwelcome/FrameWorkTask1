@@ -1,0 +1,5 @@
+e2e/
+scripts/
+go.work
+go.work.sum
+**/*_test.go

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -121,9 +120,9 @@ func (r *applicationRepository) CreateApplication(ctx context.Context, dto entit
 
 	_, err := r.db.ExecContext(ctx, query, dto.ApplicationUUID, dto.CompanyUUID, dto.DepartmentUUID, dto.Title, dto.Description, dto.CreatedBy)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // AddApplicationFixLog Добавление записи в fix log-и заявки
@@ -137,13 +136,13 @@ func (r *applicationRepository) AddApplicationFixLog(ctx context.Context, dto en
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == "23503" { // foreign_key_violation
-				return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+				return Error.Public(codes.NotFound, "application not found")
 			}
 		}
 
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // GetApplication Получение информации по заявке
@@ -191,11 +190,11 @@ func (r *applicationRepository) GetApplication(ctx context.Context, dto entities
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+			return nil, Error.Public(codes.NotFound, "application not found")
 		}
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
-	return application, Error.CodeError{Code: -1, Err: nil}
+	return application, Error.CodeError{}
 }
 
 // GetApplicationFixLogs Получение всех fix log-ов заявки
@@ -210,7 +209,7 @@ func (r *applicationRepository) GetApplicationFixLogs(ctx context.Context, dto e
 
 	rows, err := r.db.QueryContext(ctx, query, dto.ApplicationUUID)
 	if err != nil {
-		return nil, Error.CodeError{Code: 0, Err: fmt.Errorf("failed get application fix logs")}
+		return nil, Error.Internal(err)
 	}
 	defer rows.Close()
 
@@ -219,16 +218,16 @@ func (r *applicationRepository) GetApplicationFixLogs(ctx context.Context, dto e
 		item := &entities.FixLog{}
 		err = rows.Scan(&item.UUID, &item.Text, &item.CreatedAt, &item.CreatedBy)
 		if err != nil {
-			return nil, Error.CodeError{Code: 0, Err: err}
+			return nil, Error.Internal(err)
 		}
 		fixLogs = append(fixLogs, item)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
 
-	return fixLogs, Error.CodeError{Code: -1, Err: nil}
+	return fixLogs, Error.CodeError{}
 }
 
 // GetApplications Получение списка заявок по uuid компании с сортировкой по статусу и департаменту с offset и count (отдельно удаленные заявки)
@@ -279,7 +278,7 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 		dto.Count,              // 11
 	)
 	if err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
 	defer rows.Close()
 
@@ -306,17 +305,17 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 			&application.DeletedBy,
 		)
 		if err != nil {
-			return nil, Error.CodeError{Code: 0, Err: err}
+			return nil, Error.Internal(err)
 		}
 
 		applications = append(applications, application)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
 
-	return applications, Error.CodeError{Code: -1, Err: nil}
+	return applications, Error.CodeError{}
 }
 
 // UpdateApplicationStatus Обновление статуса заявки
@@ -330,15 +329,15 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 	defer tx.Rollback()
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+			return Error.Public(codes.NotFound, "application not found")
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	query := `UPDATE applications
@@ -375,23 +374,23 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 
 	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.Status, dto.InitiatorUUID, dto.DropManagedBy, dto.DropExecutedBy)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if affected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+		return Error.Public(codes.NotFound, "application not found")
 	}
 
 	if err = tx.Commit(); err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // AssignApplicationToEmployee Назначение заявки инженеру
@@ -399,15 +398,15 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context, dto entities.AssignApplicationDTO) Error.CodeError {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 	defer tx.Rollback()
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+			return Error.Public(codes.NotFound, "application not found")
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	query := `UPDATE applications
@@ -422,23 +421,23 @@ func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context,
 
 	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID, dto.TargetUUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if affected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+		return Error.Public(codes.NotFound, "application not found")
 	}
 
 	if err = tx.Commit(); err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // RedirectApplication Передача заявки в другой департамент
@@ -446,15 +445,15 @@ func (r *applicationRepository) AssignApplicationToEmployee(ctx context.Context,
 func (r *applicationRepository) RedirectApplication(ctx context.Context, dto entities.RedirectApplicationDTO) Error.CodeError {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 	defer tx.Rollback()
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+			return Error.Public(codes.NotFound, "application not found")
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	query := `UPDATE applications
@@ -471,23 +470,23 @@ func (r *applicationRepository) RedirectApplication(ctx context.Context, dto ent
 
 	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.TargetDepartmentUUID, dto.InitiatorUUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if affected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+		return Error.Public(codes.NotFound, "application not found")
 	}
 
 	if err = tx.Commit(); err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // RecallApplication Отзыв заявки у инженера
@@ -495,15 +494,15 @@ func (r *applicationRepository) RedirectApplication(ctx context.Context, dto ent
 func (r *applicationRepository) RecallApplication(ctx context.Context, dto entities.RecallApplicationDTO) Error.CodeError {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 	defer tx.Rollback()
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+			return Error.Public(codes.NotFound, "application not found")
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	query := `UPDATE applications
@@ -518,23 +517,23 @@ func (r *applicationRepository) RecallApplication(ctx context.Context, dto entit
 
 	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if affected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+		return Error.Public(codes.NotFound, "application not found")
 	}
 
 	if err = tx.Commit(); err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // TakeApplicationToVerification Взятие заявки на проверку
@@ -542,15 +541,15 @@ func (r *applicationRepository) RecallApplication(ctx context.Context, dto entit
 func (r *applicationRepository) TakeApplicationToVerification(ctx context.Context, dto entities.TakeApplicationToVerificationDTO) Error.CodeError {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 	defer tx.Rollback()
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+			return Error.Public(codes.NotFound, "application not found")
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	query := `UPDATE applications
@@ -564,23 +563,23 @@ func (r *applicationRepository) TakeApplicationToVerification(ctx context.Contex
 
 	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if affected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+		return Error.Public(codes.NotFound, "application not found")
 	}
 
 	if err = tx.Commit(); err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // ReleaseApplicationVerification Отмена взятия заявки на проверку
@@ -588,15 +587,15 @@ func (r *applicationRepository) TakeApplicationToVerification(ctx context.Contex
 func (r *applicationRepository) ReleaseApplicationVerification(ctx context.Context, dto entities.ReleaseApplicationVerificationDTO) Error.CodeError {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 	defer tx.Rollback()
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+			return Error.Public(codes.NotFound, "application not found")
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	query := `UPDATE applications
@@ -610,38 +609,38 @@ func (r *applicationRepository) ReleaseApplicationVerification(ctx context.Conte
 
 	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if affected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+		return Error.Public(codes.NotFound, "application not found")
 	}
 
 	if err = tx.Commit(); err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // DeleteApplication Мягкое удаление заявки
 func (r *applicationRepository) DeleteApplication(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 	defer tx.Rollback()
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+			return Error.Public(codes.NotFound, "application not found")
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	res, err := tx.ExecContext(ctx, `
@@ -656,21 +655,21 @@ func (r *applicationRepository) DeleteApplication(ctx context.Context, dto entit
 		dto.ApplicationUUID, dto.DeletedBy,
 	)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if affected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("application not found")}
+		return Error.Public(codes.NotFound, "application not found")
 	}
 
 	if err = tx.Commit(); err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }

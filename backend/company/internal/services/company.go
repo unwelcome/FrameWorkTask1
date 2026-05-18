@@ -289,14 +289,14 @@ func (s *CompanyService) DeleteCompanyJoinCode(ctx context.Context, req *pb.Dele
 
 	// Проверяем, что код существует
 	existErr := s.cache.Company.CheckJoinCodeExists(ctx, req.GetCode())
-	if existErr.Code != -1 {
+	if existErr.Code != 0 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "delete join code").Err(fmt.Errorf("join code not found")).Msg("error")
 		return nil, status.Error(codes.NotFound, "join code not found")
 	}
 
 	// Проверяем, что код принадлежит компании
 	belongErr := s.cache.Company.CheckJoinCodeBelongToCompany(ctx, req.GetCompanyUuid(), req.GetCode())
-	if belongErr.Code != -1 {
+	if belongErr.Code != 0 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "delete join code").Err(fmt.Errorf("join code not belong to company")).Msg("error")
 		return nil, status.Error(codes.PermissionDenied, "join code not belong to this company")
 	}
@@ -316,7 +316,7 @@ func (s *CompanyService) DeleteCompanyJoinCode(ctx context.Context, req *pb.Dele
 func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyRequest) (*pb.JoinCompanyResponse, error) {
 	// Проверяем, что код существует
 	existErr := s.cache.Company.CheckJoinCodeExists(ctx, req.GetJoinCode())
-	if existErr.Code != -1 {
+	if existErr.Code != 0 {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "join company").Err(fmt.Errorf("join code not found")).Msg("error")
 		return nil, status.Error(codes.NotFound, "join code not found")
 	}
@@ -332,7 +332,7 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 	_, getEmployeeErr := s.db.Company.GetCompanyEmployee(ctx, companyUUID, req.GetInitiatorUuid())
 	if getEmployeeErr.Code != int(codes.NotFound) {
 		// Нет ошибки -> пользователь уже в компании
-		if getEmployeeErr.Code == -1 {
+		if getEmployeeErr.Code == 0 {
 			log.Info().Str("id", req.GetOperationId()).Str("method", "join company").Err(fmt.Errorf("user already in company")).Msg("error")
 			return nil, status.Error(codes.AlreadyExists, "user already in company")
 		}

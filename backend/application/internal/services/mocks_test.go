@@ -162,17 +162,17 @@ func newAppTestService(repo postgresDB.ApplicationRepository, client company_pro
 	return NewApplicationService(db, client)
 }
 
-// ok — успешный CodeError (Code == -1 означает «нет ошибки» в HandleError)
-func ok() Error.CodeError { return Error.CodeError{Code: -1} }
+// ok — успешный CodeError (Code == 0 означает «нет ошибки» в HandleError)
+func ok() Error.CodeError { return Error.CodeError{} }
 
 // notFound — CodeError с кодом NotFound
 func notFound() Error.CodeError {
-	return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("not found")}
+	return Error.Public(codes.NotFound, "not found")
 }
 
 // internalErr — CodeError с кодом Internal
 func internalErr() Error.CodeError {
-	return Error.CodeError{Code: 0, Err: fmt.Errorf("db error")}
+	return Error.Internal(fmt.Errorf("db error"))
 }
 
 // roleClient — мок company-клиента, всегда возвращающий заданную роль и deptID

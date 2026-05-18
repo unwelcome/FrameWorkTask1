@@ -8,29 +8,42 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Codes -1..16
-// -1 - нет ошибок
-//  0 - шаблонная ошибка "internal error"
-//  1 - CANCELLED
-//  2 - UNKNOWN
-//  3 - INVALID_ARGUMENT
-//  4 - DEADLINE_EXCEEDED
-//  5 - NOT_FOUND
-//  6 - ALREADY_EXISTS
-//  7 - PERMISSION_DENIED
-//  8 - RESOURCE_EXHAUSTED
-//  9 - FAILED_PRECONDITION
-// 10 - ABORTED
-// 11 - OUT_OF_RANGE
-// 12 - UNIMPLEMENTED
-// 13 - INTERNAL
-// 14 - UNAVAILABLE
-// 15 - DATA_LOSS
-// 16 - UNAUTHENTICATED
+// Codes 0..16
+//
+//	 0 - нет ошибок
+//	 1 - CANCELLED
+//	 2 - UNKNOWN
+//	 3 - INVALID_ARGUMENT
+//	 4 - DEADLINE_EXCEEDED
+//	 5 - NOT_FOUND
+//	 6 - ALREADY_EXISTS
+//	 7 - PERMISSION_DENIED
+//	 8 - RESOURCE_EXHAUSTED
+//	 9 - FAILED_PRECONDITION
+//	10 - ABORTED
+//	11 - OUT_OF_RANGE
+//	12 - UNIMPLEMENTED
+//	13 - INTERNAL
+//	14 - UNAVAILABLE
+//	15 - DATA_LOSS
+//	16 - UNAUTHENTICATED
 
 type CodeError struct {
 	Code int
 	Err  error
+	// Msg — публичное сообщение для пользователя.
+	// Если пусто, возвращается "internal error".
+	Msg string
+}
+
+// Public создаёт CodeError с публичным сообщением, видимым пользователю.
+func Public(code codes.Code, msg string) CodeError {
+	return CodeError{Code: int(code), Err: fmt.Errorf(msg), Msg: msg}
+}
+
+// Internal создаёт CodeError для неожиданных ошибок — детали скрыты, пользователь видит "internal error".
+func Internal(err error) CodeError {
+	return CodeError{Code: int(codes.Internal), Err: err}
 }
 
 func (e *CodeError) Error() string {
@@ -42,30 +55,20 @@ func (e *CodeError) Error() string {
 
 // HandleError обрабатывает CodeError, логирует и возвращает готовую gRPC ошибку.
 func HandleError(errorCode CodeError, opID, method string) error {
-
-	// Ошибки нет, но код не -1 — ошибка разработчика
-	if errorCode.Err == nil && errorCode.Code != -1 {
-		log.Error().Str("id", opID).Str("method", method).Err(fmt.Errorf("err is nil but code is not -1")).Msg("error")
+	if errorCode.Code == 0 {
+		return nil
 	}
 
-	switch errorCode.Code {
-	// Нет ошибки
-	case -1:
-		return nil
+	msg := errorCode.Msg
+	if msg == "" {
+		msg = "internal error"
+	}
 
-	// Шаблонная внутренняя ошибка
-	case 0:
-		log.Error().Str("id", opID).Str("method", method).Err(errorCode.Err).Msg("error")
-		return status.Errorf(codes.Internal, "internal error")
-
-	// Публичные ошибки
-	case 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16:
-		log.Error().Str("id", opID).Str("method", method).Err(errorCode.Err).Msg("error")
-		return status.Errorf(codes.Code(errorCode.Code), errorCode.Error())
-
-	// Некорректный код — ошибка разработчика
-	default:
+	if errorCode.Code < 1 || errorCode.Code > 16 {
 		log.Error().Str("id", opID).Str("method", method).Err(fmt.Errorf("CodeError.Code is incorrect: %d", errorCode.Code)).Msg("error")
 		return status.Errorf(codes.Internal, "internal error")
 	}
+
+	log.Error().Str("id", opID).Str("method", method).Err(errorCode.Err).Msg("error")
+	return status.Errorf(codes.Code(errorCode.Code), msg)
 }

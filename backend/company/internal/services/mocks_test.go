@@ -136,14 +136,14 @@ func emptyPGRepo() *mockPGCompanyRepo { return &mockPGCompanyRepo{} }
 
 func emptyRedisRepo() *mockRedisCompanyRepo { return &mockRedisCompanyRepo{} }
 
-func ok() Error.CodeError { return Error.CodeError{Code: -1} }
+func ok() Error.CodeError { return Error.CodeError{} }
 
 func notFound() Error.CodeError {
-	return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("not found")}
+	return Error.Public(codes.NotFound, "not found")
 }
 
 func internalErr() Error.CodeError {
-	return Error.CodeError{Code: 0, Err: fmt.Errorf("db error")}
+	return Error.Internal(fmt.Errorf("db error"))
 }
 
 func companyEntity() *entities.Company {

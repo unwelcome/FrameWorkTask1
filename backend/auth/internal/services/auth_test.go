@@ -72,7 +72,7 @@ func TestRegister(t *testing.T) {
 		userRepo := &mockUserRepo{
 			createUser: func(_ context.Context, dto *entities.UserCreate) Error.CodeError {
 				if dto.Email != "test@example.com" {
-					return Error.CodeError{Code: 0, Err: fmt.Errorf("unexpected email")}
+					return Error.Internal(fmt.Errorf("unexpected email"))
 				}
 				return ok()
 			},
@@ -124,7 +124,7 @@ func TestRegister(t *testing.T) {
 	t.Run("email_already_exists", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			createUser: func(_ context.Context, _ *entities.UserCreate) Error.CodeError {
-				return Error.CodeError{Code: int(codes.AlreadyExists), Err: fmt.Errorf("email already registered")}
+				return Error.Public(codes.AlreadyExists, "email already registered")
 			},
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
@@ -174,7 +174,7 @@ func TestLogin(t *testing.T) {
 	t.Run("user_not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ string) (*entities.UserGetByEmail, Error.CodeError) {
-				return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+				return nil, Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
@@ -215,7 +215,7 @@ func TestLogin(t *testing.T) {
 		}
 		authRepo := &mockAuthRepo{
 			saveRefreshToken: func(_ context.Context, _, _ string) Error.CodeError {
-				return Error.CodeError{Code: int(codes.Internal), Err: fmt.Errorf("redis error")}
+				return Error.Internal(fmt.Errorf("redis error"))
 			},
 		}
 		svc := newTestService(userRepo, authRepo)
@@ -260,7 +260,7 @@ func TestGetUser(t *testing.T) {
 	t.Run("not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			getUser: func(_ context.Context, _ string) (*entities.UserGet, Error.CodeError) {
-				return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+				return nil, Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
@@ -302,7 +302,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		authRepo := &mockAuthRepo{
 			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError {
-				return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("no tokens")}
+				return Error.Public(codes.NotFound, "no tokens")
 			},
 		}
 		svc := newTestService(userRepo, authRepo)
@@ -331,7 +331,7 @@ func TestChangePassword(t *testing.T) {
 	t.Run("user_not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			updateUserPassword: func(_ context.Context, _, _ string) Error.CodeError {
-				return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+				return Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
@@ -351,7 +351,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		authRepo := &mockAuthRepo{
 			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError {
-				return Error.CodeError{Code: int(codes.Internal), Err: fmt.Errorf("redis error")}
+				return Error.Internal(fmt.Errorf("redis error"))
 			},
 		}
 		svc := newTestService(userRepo, authRepo)
@@ -388,7 +388,7 @@ func TestUpdateUserBio(t *testing.T) {
 	t.Run("not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			updateUserBio: func(_ context.Context, _ *entities.UserUpdateBio) Error.CodeError {
-				return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+				return Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
@@ -429,7 +429,7 @@ func TestDeleteUser(t *testing.T) {
 		}
 		authRepo := &mockAuthRepo{
 			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError {
-				return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("no tokens")}
+				return Error.Public(codes.NotFound, "no tokens")
 			},
 		}
 		svc := newTestService(userRepo, authRepo)
@@ -458,7 +458,7 @@ func TestDeleteUser(t *testing.T) {
 	t.Run("user_not_found_in_db", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			deleteUser: func(_ context.Context, _ string) Error.CodeError {
-				return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+				return Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		authRepo := &mockAuthRepo{
@@ -520,7 +520,7 @@ func TestGetAllActiveTokens(t *testing.T) {
 	t.Run("cache_error", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			getAllRefreshTokens: func(_ context.Context, _ string) ([]string, Error.CodeError) {
-				return nil, Error.CodeError{Code: int(codes.Internal), Err: fmt.Errorf("redis error")}
+				return nil, Error.Internal(fmt.Errorf("redis error"))
 			},
 		}
 		svc := newTestService(emptyUserRepo(), authRepo)
@@ -588,7 +588,7 @@ func TestRefreshToken(t *testing.T) {
 		refreshToken := validRefreshToken(t)
 		authRepo := &mockAuthRepo{
 			checkRefreshTokenExists: func(_ context.Context, _, _ string) Error.CodeError {
-				return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("token not found")}
+				return Error.Public(codes.NotFound, "token not found")
 			},
 		}
 		svc := newTestService(emptyUserRepo(), authRepo)
@@ -605,7 +605,7 @@ func TestRefreshToken(t *testing.T) {
 		refreshToken := validRefreshToken(t)
 		userRepo := &mockUserRepo{
 			getUser: func(_ context.Context, _ string) (*entities.UserGet, Error.CodeError) {
-				return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+				return nil, Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		authRepo := &mockAuthRepo{
@@ -643,7 +643,7 @@ func TestRevokeToken(t *testing.T) {
 	t.Run("token_not_found", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			revokeRefreshToken: func(_ context.Context, _, _ string) Error.CodeError {
-				return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("refresh token not found")}
+				return Error.Public(codes.NotFound, "refresh token not found")
 			},
 		}
 		svc := newTestService(emptyUserRepo(), authRepo)
@@ -662,7 +662,7 @@ func TestRevokeToken(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			revokeRefreshToken: func(_ context.Context, userUUID, _ string) Error.CodeError {
 				if userUUID != "owner-uuid" {
-					return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("refresh token not found")}
+					return Error.Public(codes.NotFound, "refresh token not found")
 				}
 				return ok()
 			},
@@ -699,7 +699,7 @@ func TestRevokeAllTokens(t *testing.T) {
 	t.Run("not_found", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError {
-				return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("no tokens")}
+				return Error.Public(codes.NotFound, "no tokens")
 			},
 		}
 		svc := newTestService(emptyUserRepo(), authRepo)

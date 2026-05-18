@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/lib/pq"
 
@@ -49,9 +48,9 @@ func (r *companyRepository) CreateCompany(ctx context.Context, dto *entities.Cre
 
 	_, err := r.db.ExecContext(ctx, query, dto.CompanyUUID, dto.Title, dto.CreatedBy)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // GetCompany Получение данных о компании по uuid
@@ -65,11 +64,11 @@ func (r *companyRepository) GetCompany(ctx context.Context, companyUUID string) 
 	err := r.db.QueryRowContext(ctx, query, companyUUID).Scan(&company.Title, &company.Status, &company.CreatedBy, &company.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("company not found")}
+			return nil, Error.Public(codes.NotFound, "company not found")
 		}
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
-	return company, Error.CodeError{Code: -1, Err: nil}
+	return company, Error.CodeError{}
 }
 
 // GetCompanies Получение списка компаний размера count со сдвигом offset
@@ -79,7 +78,7 @@ func (r *companyRepository) GetCompanies(ctx context.Context, offset, count int6
 	// Получение компаний
 	res, err := r.db.QueryContext(ctx, query, offset, count)
 	if err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
 	defer res.Close()
 
@@ -89,17 +88,17 @@ func (r *companyRepository) GetCompanies(ctx context.Context, offset, count int6
 		company := &entities.GetCompanies{}
 		err = res.Scan(&company.CompanyUUID, &company.Title, &company.Status)
 		if err != nil {
-			return nil, Error.CodeError{Code: 0, Err: err}
+			return nil, Error.Internal(err)
 		}
 
 		companies = append(companies, company)
 	}
 
 	if err = res.Err(); err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
 
-	return companies, Error.CodeError{Code: -1, Err: nil}
+	return companies, Error.CodeError{}
 }
 
 // UpdateCompanyTitle Обновление названия компании
@@ -109,19 +108,19 @@ func (r *companyRepository) UpdateCompanyTitle(ctx context.Context, companyUUID,
 	// Обновление названия компании
 	res, err := r.db.ExecContext(ctx, query, companyUUID, title)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	// Проверка выполнения запроса
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if rowsAffected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("company not found")}
+		return Error.Public(codes.NotFound, "company not found")
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // UpdateCompanyStatus Обновление статуса компании (open | close)
@@ -134,21 +133,21 @@ func (r *companyRepository) UpdateCompanyStatus(ctx context.Context, companyUUID
 		if errors.As(err, &pqErr) {
 			// Неверное значение enum
 			if pqErr.Code == "22P02" {
-				return Error.CodeError{Code: int(codes.InvalidArgument), Err: fmt.Errorf("invalid status value")}
+				return Error.Public(codes.InvalidArgument, "invalid status value")
 			}
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	affectedRows, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if affectedRows == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("company not found")}
+		return Error.Public(codes.NotFound, "company not found")
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // DeleteCompany Удаление компании
@@ -157,18 +156,18 @@ func (r *companyRepository) DeleteCompany(ctx context.Context, companyUUID strin
 
 	res, err := r.db.ExecContext(ctx, query, companyUUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	affectedRows, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if affectedRows == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("company not found")}
+		return Error.Public(codes.NotFound, "company not found")
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // JoinCompany Добавление пользователя в список сотрудников компании
@@ -180,15 +179,15 @@ func (r *companyRepository) JoinCompany(ctx context.Context, companyUUID, userUU
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23505" {
-				return Error.CodeError{Code: int(codes.AlreadyExists), Err: fmt.Errorf("user already in company")}
+				return Error.Public(codes.AlreadyExists, "user already in company")
 			}
 			if pqErr.Code == "23503" { // foreign_key_violation
-				return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("company not found")}
+				return Error.Public(codes.NotFound, "company not found")
 			}
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // GetCompanyEmployee Получение данных о сотруднике в компании (ошибка если сотрудника нет)
@@ -203,11 +202,11 @@ func (r *companyRepository) GetCompanyEmployee(ctx context.Context, companyUUID,
 	err := r.db.QueryRowContext(ctx, query, companyUUID, userUUID).Scan(&employee.Role, &employee.DepartmentUUID, &employee.JoinedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not in company")}
+			return nil, Error.Public(codes.NotFound, "user not in company")
 		}
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
-	return employee, Error.CodeError{Code: -1, Err: nil}
+	return employee, Error.CodeError{}
 }
 
 // GetCompanyEmployees Возвращает сотрудников компании (сортировка по role, departmentUUID и ограничения через offset и count)
@@ -224,7 +223,7 @@ func (r *companyRepository) GetCompanyEmployees(ctx context.Context, companyUUID
 
 	rows, err := r.db.QueryContext(ctx, query, companyUUID, role, departmentUUID, offset, count)
 	if err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
 	defer rows.Close()
 
@@ -233,17 +232,17 @@ func (r *companyRepository) GetCompanyEmployees(ctx context.Context, companyUUID
 		employee := &entities.Employee{}
 		err = rows.Scan(&employee.UserUUID, &employee.Role, &employee.DepartmentUUID, &employee.JoinedAt)
 		if err != nil {
-			return nil, Error.CodeError{Code: 0, Err: err}
+			return nil, Error.Internal(err)
 		}
 
 		employees = append(employees, employee)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
 
-	return employees, Error.CodeError{Code: -1, Err: nil}
+	return employees, Error.CodeError{}
 }
 
 // GetCompanyEmployeesSummary Получение кол-ва сотрудников по ролям в компании
@@ -272,9 +271,9 @@ func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, comp
 			&employeeSummary.ChiefCount)
 
 	if err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
-	return employeeSummary, Error.CodeError{Code: -1, Err: nil}
+	return employeeSummary, Error.CodeError{}
 }
 
 // SetCompanyEmployeeRole Устанавливает новую роль сотруднику компании
@@ -287,22 +286,22 @@ func (r *companyRepository) SetCompanyEmployeeRole(ctx context.Context, companyU
 		if errors.As(err, &pqErr) {
 			// Неверное значение enum
 			if pqErr.Code == "22P02" {
-				return Error.CodeError{Code: int(codes.InvalidArgument), Err: fmt.Errorf("invalid role value")}
+				return Error.Public(codes.InvalidArgument, "invalid role value")
 			}
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if rowsAffected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("employee not found")}
+		return Error.Public(codes.NotFound, "employee not found")
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // RemoveCompanyEmployee Удаление пользователя из списка сотрудников компании
@@ -311,18 +310,18 @@ func (r *companyRepository) RemoveCompanyEmployee(ctx context.Context, companyUU
 
 	res, err := r.db.ExecContext(ctx, query, companyUUID, userUUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if rowsAffected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not in company")}
+		return Error.Public(codes.NotFound, "user not in company")
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // CreateDepartment - Создание департамента
@@ -331,9 +330,9 @@ func (r *companyRepository) CreateDepartment(ctx context.Context, dto *entities.
 
 	_, err := r.db.ExecContext(ctx, query, dto.UUID, dto.CompanyUUID, dto.Title, dto.CreatedBy)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // AddEmployeeToDepartment - Добавление сотрудника в департамент
@@ -342,19 +341,19 @@ func (r *companyRepository) AddEmployeeToDepartment(ctx context.Context, departm
 
 	res, err := r.db.ExecContext(ctx, query, companyUUID, targetUUID, departmentUUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if rowsAffected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("employee not found")}
+		return Error.Public(codes.NotFound, "employee not found")
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // GetDepartment - Получение полной информации о департаменте
@@ -368,11 +367,11 @@ func (r *companyRepository) GetDepartment(ctx context.Context, departmentUUID st
 	err := r.db.QueryRowContext(ctx, query, departmentUUID).Scan(&department.CompanyUUID, &department.Title, &department.CreatedAt, &department.CreatedBy)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("department not found")}
+			return nil, Error.Public(codes.NotFound, "department not found")
 		}
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
-	return department, Error.CodeError{Code: -1, Err: nil}
+	return department, Error.CodeError{}
 }
 
 // GetCompanyDepartments - Получение списка департаментов организации с фильтрацией (offset и count)
@@ -381,7 +380,7 @@ func (r *companyRepository) GetCompanyDepartments(ctx context.Context, companyUU
 
 	rows, err := r.db.QueryContext(ctx, query, companyUUID, offset, count)
 	if err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
 	defer rows.Close()
 
@@ -390,17 +389,17 @@ func (r *companyRepository) GetCompanyDepartments(ctx context.Context, companyUU
 		department := &entities.Department{}
 		err = rows.Scan(&department.UUID, &department.Title)
 		if err != nil {
-			return nil, Error.CodeError{Code: 0, Err: err}
+			return nil, Error.Internal(err)
 		}
 
 		departments = append(departments, department)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
 
-	return departments, Error.CodeError{Code: -1, Err: nil}
+	return departments, Error.CodeError{}
 }
 
 // UpdateDepartmentTitle - Обновление названия департамента
@@ -409,19 +408,19 @@ func (r *companyRepository) UpdateDepartmentTitle(ctx context.Context, dto *enti
 
 	res, err := r.db.ExecContext(ctx, query, dto.Title, dto.UUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if rowsAffected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("department not found")}
+		return Error.Public(codes.NotFound, "department not found")
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // DeleteDepartment - Удаление департамента
@@ -430,19 +429,19 @@ func (r *companyRepository) DeleteDepartment(ctx context.Context, departmentUUID
 
 	res, err := r.db.ExecContext(ctx, query, departmentUUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if rowsAffected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("department not found")}
+		return Error.Public(codes.NotFound, "department not found")
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // RemoveEmployeeFromDepartment - Удаление сотрудника из департамента
@@ -451,17 +450,17 @@ func (r *companyRepository) RemoveEmployeeFromDepartment(ctx context.Context, co
 
 	res, err := r.db.ExecContext(ctx, query, companyUUID, targetUUID)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if rowsAffected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("employee not found")}
+		return Error.Public(codes.NotFound, "employee not found")
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }

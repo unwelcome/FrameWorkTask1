@@ -173,7 +173,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 
 	// Отзываем все токены после смены пароля
 	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, req.GetUserUuid())
-	if revokeErr.Code != -1 && revokeErr.Code != int(codes.NotFound) {
+	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
 		err = Error.HandleError(revokeErr, req.GetOperationId(), "change password")
 		if err != nil {
 			return nil, err
@@ -214,7 +214,7 @@ func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 
 	// Отзываем все токены пользователя (если они есть)
 	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, req.GetTargetUserUuid())
-	if revokeErr.Code != -1 && revokeErr.Code != int(codes.NotFound) {
+	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
 		err := Error.HandleError(revokeErr, req.GetOperationId(), "delete user")
 		if err != nil {
 			return nil, err

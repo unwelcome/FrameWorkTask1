@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -511,7 +510,7 @@ func TestDeleteCompanyJoinCode(t *testing.T) {
 		rdb := emptyRedisRepo()
 		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return ok() }
 		rdb.checkJoinCodeBelongToCompany = func(_ context.Context, _, _ string) Error.CodeError {
-			return Error.CodeError{Code: int(codes.PermissionDenied), Err: fmt.Errorf("not belong")}
+			return Error.Public(codes.PermissionDenied, "not belong")
 		}
 
 		svc := newTestService(pg, rdb)

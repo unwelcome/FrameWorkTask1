@@ -92,4 +92,4 @@ func emptyUserRepo() *mockUserRepo { return &mockUserRepo{} }
 func emptyAuthRepo() *mockAuthRepo { return &mockAuthRepo{} }
 
 // ok возвращает CodeError без ошибки
-func ok() Error.CodeError { return Error.CodeError{Code: -1} }
+func ok() Error.CodeError { return Error.CodeError{} }

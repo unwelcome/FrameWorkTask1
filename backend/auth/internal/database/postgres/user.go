@@ -3,7 +3,6 @@ package postgresDB
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/lib/pq"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
@@ -36,14 +35,13 @@ func (r *userRepository) CreateUser(ctx context.Context, dto *entities.UserCreat
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
-			// Почта занята
 			if pqErr.Code == "23505" && pqErr.Constraint == "users_email_key" {
-				return Error.CodeError{Code: int(codes.AlreadyExists), Err: fmt.Errorf("email already registered")}
+				return Error.Public(codes.AlreadyExists, "email already registered")
 			}
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*entities.UserGetByEmail, Error.CodeError) {
@@ -54,11 +52,11 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*ent
 	err := r.db.QueryRowContext(ctx, query, email).Scan(&userGetByEmail.UserUUID, &userGetByEmail.PasswordHash)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+			return nil, Error.Public(codes.NotFound, "user not found")
 		}
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
-	return userGetByEmail, Error.CodeError{Code: -1, Err: nil}
+	return userGetByEmail, Error.CodeError{}
 }
 
 func (r *userRepository) GetUser(ctx context.Context, uuid string) (*entities.UserGet, Error.CodeError) {
@@ -69,11 +67,11 @@ func (r *userRepository) GetUser(ctx context.Context, uuid string) (*entities.Us
 	err := r.db.QueryRowContext(ctx, query, uuid).Scan(&userGet.Email, &userGet.FirstName, &userGet.LastName, &userGet.Patronymic, &userGet.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+			return nil, Error.Public(codes.NotFound, "user not found")
 		}
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.Internal(err)
 	}
-	return userGet, Error.CodeError{Code: -1, Err: nil}
+	return userGet, Error.CodeError{}
 }
 
 func (r *userRepository) UpdateUserPassword(ctx context.Context, uuid string, passwordHash string) Error.CodeError {
@@ -81,18 +79,18 @@ func (r *userRepository) UpdateUserPassword(ctx context.Context, uuid string, pa
 
 	result, err := r.db.ExecContext(ctx, query, uuid, passwordHash)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if rowsAffected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+		return Error.Public(codes.NotFound, "user not found")
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 func (r *userRepository) UpdateUserBio(ctx context.Context, dto *entities.UserUpdateBio) Error.CodeError {
@@ -100,18 +98,18 @@ func (r *userRepository) UpdateUserBio(ctx context.Context, dto *entities.UserUp
 
 	result, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.FirstName, dto.LastName, dto.Patronymic)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if rowsAffected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+		return Error.Public(codes.NotFound, "user not found")
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 func (r *userRepository) DeleteUser(ctx context.Context, uuid string) Error.CodeError {
@@ -119,17 +117,16 @@ func (r *userRepository) DeleteUser(ctx context.Context, uuid string) Error.Code
 
 	result, err := r.db.ExecContext(ctx, query, uuid)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
-	// Проверяем количество удаленных строк
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if rowsAffected == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("user not found")}
+		return Error.Public(codes.NotFound, "user not found")
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }

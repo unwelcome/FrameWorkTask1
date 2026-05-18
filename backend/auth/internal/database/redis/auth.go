@@ -44,9 +44,9 @@ func (r *authRepository) SaveRefreshToken(ctx context.Context, userUUID, rawToke
 
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 func (r *authRepository) GetAllRefreshTokens(ctx context.Context, userUUID string) ([]string, Error.CodeError) {
@@ -54,7 +54,7 @@ func (r *authRepository) GetAllRefreshTokens(ctx context.Context, userUUID strin
 
 	hashedTokens, err := r.redis.SMembers(ctx, userTokensKey).Result()
 	if err != nil {
-		return nil, Error.CodeError{Code: 0, Err: err}
+		return nil, Error.CodeError{Code: int(codes.Internal), Err: err}
 	}
 
 	actualRefreshTokens := make([]string, 0)
@@ -79,7 +79,7 @@ func (r *authRepository) GetAllRefreshTokens(ctx context.Context, userUUID strin
 		_ = r.redis.SRem(ctx, userTokensKey, expiredTokens).Err()
 	}
 
-	return actualRefreshTokens, Error.CodeError{Code: -1, Err: nil}
+	return actualRefreshTokens, Error.CodeError{}
 }
 
 func (r *authRepository) CheckRefreshTokenExists(ctx context.Context, userUUID, rawToken string) Error.CodeError {
@@ -88,16 +88,16 @@ func (r *authRepository) CheckRefreshTokenExists(ctx context.Context, userUUID, 
 
 	exist, err := r.redis.Exists(ctx, tokenKey).Result()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if exist == 0 {
 		userTokensKey := r.getUserTokensKey(userUUID)
 		_ = r.redis.SRem(ctx, userTokensKey, hash).Err()
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("refresh token not found")}
+		return Error.Public(codes.NotFound, "refresh token not found")
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // RevokeRefreshToken принимает хеш токена (не сам токен) и проверяет принадлежность пользователю.
@@ -105,31 +105,29 @@ func (r *authRepository) RevokeRefreshToken(ctx context.Context, userUUID, token
 	userTokensKey := r.getUserTokensKey(userUUID)
 	tokenKey := r.getRefreshTokenKey(tokenHash)
 
-	// Проверяем принадлежность токена пользователю
 	isMember, err := r.redis.SIsMember(ctx, userTokensKey, tokenHash).Result()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 	if !isMember {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("refresh token not found")}
+		return Error.Public(codes.NotFound, "refresh token not found")
 	}
 
-	// Удаляем ключ токена
 	count, err := r.redis.Del(ctx, tokenKey).Result()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 	if count == 0 {
 		// Токен уже истек, но ещё числится в сете — чистим
 		_ = r.redis.SRem(ctx, userTokensKey, tokenHash).Err()
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("refresh token not found")}
+		return Error.Public(codes.NotFound, "refresh token not found")
 	}
 
 	if err := r.redis.SRem(ctx, userTokensKey, tokenHash).Err(); err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, userUUID string) Error.CodeError {
@@ -137,24 +135,23 @@ func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, userUUID st
 
 	hashedTokens, err := r.redis.SMembers(ctx, userTokensKey).Result()
 	if err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
 	if len(hashedTokens) == 0 {
-		return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("refresh tokens not found")}
+		return Error.Public(codes.NotFound, "refresh tokens not found")
 	}
 
-	// Удаляем все ключи токенов через pipeline
 	pipeline := r.redis.Pipeline()
 	for _, hash := range hashedTokens {
 		pipeline.Del(ctx, r.getRefreshTokenKey(hash))
 	}
 	pipeline.Del(ctx, userTokensKey)
 	if _, err := pipeline.Exec(ctx); err != nil {
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
 
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 // RefreshToken атомарно заменяет старый refresh токен на новый через Watch + TxPipelined.
@@ -187,11 +184,11 @@ func (r *authRepository) RefreshToken(ctx context.Context, userUUID, oldRawToken
 
 	if err != nil {
 		if errors.Is(err, fmt.Errorf("refresh token not found")) {
-			return Error.CodeError{Code: int(codes.NotFound), Err: fmt.Errorf("refresh token not found")}
+			return Error.Public(codes.NotFound, "refresh token not found")
 		}
-		return Error.CodeError{Code: 0, Err: err}
+		return Error.Internal(err)
 	}
-	return Error.CodeError{Code: -1, Err: nil}
+	return Error.CodeError{}
 }
 
 func (r *authRepository) hashToken(rawToken string) string {

@@ -18,34 +18,24 @@ type RegisterResponse struct {
 }
 
 func (e *RegisterRequest) Validate() error {
-	// Валидация email
 	if err := utils.ValidateEmail(e.Email); err != nil {
 		return err
 	}
-
-	// Валидация password
 	if err := utils.ValidatePassword(e.Password, 8, 30); err != nil {
 		return err
 	}
-
-	// Валидация first_name
 	if err := utils.ValidateFirstName(e.FirstName, 2, 30); err != nil {
 		return err
 	}
 	e.FirstName = utils.FCapitalize(e.FirstName)
-
-	// Валидация last_name
 	if err := utils.ValidateLastName(e.LastName, 2, 30); err != nil {
 		return err
 	}
 	e.LastName = utils.FCapitalize(e.LastName)
-
-	// Валидация patronymic
 	if err := utils.ValidatePatronymic(e.Patronymic, 2, 30); err != nil {
 		return err
 	}
 	e.Patronymic = utils.FCapitalize(e.Patronymic)
-
 	return nil
 }
 
@@ -60,21 +50,17 @@ type LoginResponse struct {
 }
 
 func (e *LoginRequest) Validate() error {
-	// Валидация email
 	if err := utils.ValidateEmail(e.Email); err != nil {
 		return err
 	}
-
-	// Валидация password
 	if err := utils.ValidatePassword(e.Password, 8, 30); err != nil {
 		return err
 	}
-
 	return nil
 }
 
 type GetUserRequest struct {
-	UserUUID string `json:"user_uuid"`
+	UserUUID string `json:"-"`
 }
 type GetUserResponse struct {
 	UserUUID   string `json:"user_uuid"`
@@ -86,105 +72,70 @@ type GetUserResponse struct {
 }
 
 func (e *GetUserRequest) Validate() error {
-	// Валидация user_uuid
-	if err := utils.ValidateUUID(e.UserUUID); err != nil {
-		return err
-	}
-
-	return nil
+	return utils.ValidateUUID(e.UserUUID)
 }
 
 type ChangePasswordRequest struct {
+	UserUUID string `json:"-"`
 	Password string `json:"password"`
 }
-type ChangePasswordRequestFull struct {
-	UserUUID string `json:"user_uuid"`
-	Password string `json:"password"`
-}
-type ChangePasswordResponse struct {
-}
+type ChangePasswordResponse struct{}
 
-func (e *ChangePasswordRequestFull) Validate() error {
-	// Валидация user_uuid
+func (e *ChangePasswordRequest) Validate() error {
 	if err := utils.ValidateUUID(e.UserUUID); err != nil {
 		return err
 	}
-
-	// Валидация password
 	if err := utils.ValidatePassword(e.Password, 8, 30); err != nil {
 		return err
 	}
-
 	return nil
 }
 
 type UpdateUserBioRequest struct {
+	UserUUID   string `json:"-"`
 	FirstName  string `json:"first_name"`
 	LastName   string `json:"last_name"`
 	Patronymic string `json:"patronymic"`
 }
-type UpdateUserBioRequestFull struct {
-	UserUUID   string `json:"user_uuid"`
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	Patronymic string `json:"patronymic"`
-}
-type UpdateUserBioResponse struct {
-}
+type UpdateUserBioResponse struct{}
 
-func (e *UpdateUserBioRequestFull) Validate() error {
-	// Валидация user_uuid
+func (e *UpdateUserBioRequest) Validate() error {
 	if err := utils.ValidateUUID(e.UserUUID); err != nil {
 		return err
 	}
-
-	// Валидация first_name
 	if err := utils.ValidateFirstName(e.FirstName, 2, 30); err != nil {
 		return err
 	}
 	e.FirstName = utils.FCapitalize(e.FirstName)
-
-	// Валидация last_name
 	if err := utils.ValidateLastName(e.LastName, 2, 30); err != nil {
 		return err
 	}
 	e.LastName = utils.FCapitalize(e.LastName)
-
-	// Валидация patronymic
 	if err := utils.ValidatePatronymic(e.Patronymic, 2, 30); err != nil {
 		return err
 	}
 	e.Patronymic = utils.FCapitalize(e.Patronymic)
-
 	return nil
 }
 
 type DeleteUserRequest struct {
-	TargetUUID string `json:"target_uuid"`
-}
-type DeleteUserRequestFull struct {
-	InitiatorUUID string `json:"initiator_uuid"`
+	InitiatorUUID string `json:"-"`
 	TargetUUID    string `json:"target_uuid"`
 }
-type DeleteUserResponse struct {
-}
+type DeleteUserResponse struct{}
 
-func (e *DeleteUserRequestFull) Validate() error {
-	// Валидация initiator_uuid
+func (e *DeleteUserRequest) Validate() error {
 	if err := utils.ValidateUUID(e.InitiatorUUID); err != nil {
 		return err
 	}
-
-	// Валидация target_uuid
 	if err := utils.ValidateUUID(e.TargetUUID); err != nil {
 		return err
 	}
-
 	return nil
 }
 
 type GetAllActiveTokensRequest struct {
-	UserUUID string `json:"user_uuid"`
+	UserUUID string `json:"-"`
 }
 type GetAllActiveTokensResponse struct {
 	Tokens []*TokenInfo `json:"tokens"`
@@ -194,12 +145,7 @@ type TokenInfo struct {
 }
 
 func (e *GetAllActiveTokensRequest) Validate() error {
-	// Валидация user_uuid
-	if err := utils.ValidateUUID(e.UserUUID); err != nil {
-		return err
-	}
-
-	return nil
+	return utils.ValidateUUID(e.UserUUID)
 }
 
 type RefreshTokenRequest struct {
@@ -211,19 +157,13 @@ type RefreshTokenResponse struct {
 }
 
 func (e *RefreshTokenRequest) Validate() error {
-	// Валидация jwt токена
-	if err := utils.ValidateJWT(e.RefreshToken); err != nil {
-		return err
-	}
-
-	return nil
+	return utils.ValidateJWT(e.RefreshToken)
 }
 
 type RevokeTokenRequest struct {
 	TokenHash string `json:"token_hash"`
 }
-type RevokeTokenResponse struct {
-}
+type RevokeTokenResponse struct{}
 
 func (e *RevokeTokenRequest) Validate() error {
 	if e.TokenHash == "" {
@@ -233,16 +173,10 @@ func (e *RevokeTokenRequest) Validate() error {
 }
 
 type RevokeAllTokensRequest struct {
-	UserUUID string `json:"user_uuid"`
+	UserUUID string `json:"-"`
 }
-type RevokeAllTokensResponse struct {
-}
+type RevokeAllTokensResponse struct{}
 
 func (e *RevokeAllTokensRequest) Validate() error {
-	// Валидация user_uuid
-	if err := utils.ValidateUUID(e.UserUUID); err != nil {
-		return err
-	}
-
-	return nil
+	return utils.ValidateUUID(e.UserUUID)
 }

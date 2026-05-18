@@ -250,21 +250,17 @@ func (h *companyHandler) UpdateCompanyTitle(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.CompanyUUID = c.Params("company_uuid", "")
 
-	httpReqFull := &entities.UpdateCompanyTitleRequestFull{
-		CompanyUUID: c.Params("company_uuid", ""),
-		Title:       httpReq.Title,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.CompanyServiceClient.UpdateCompanyTitle(ctx, &company_proto.UpdateCompanyTitleRequest{
 		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid:   httpReqFull.CompanyUUID,
-		Title:         httpReqFull.Title,
+		CompanyUuid:   httpReq.CompanyUUID,
+		Title:         httpReq.Title,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -300,21 +296,17 @@ func (h *companyHandler) UpdateCompanyStatus(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.CompanyUUID = c.Params("company_uuid", "")
 
-	httpReqFull := &entities.UpdateCompanyStatusRequestFull{
-		CompanyUUID: c.Params("company_uuid", ""),
-		Status:      httpReq.Status,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.CompanyServiceClient.UpdateCompanyStatus(ctx, &company_proto.UpdateCompanyStatusRequest{
 		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid:   httpReqFull.CompanyUUID,
-		Status:        httpReqFull.Status,
+		CompanyUuid:   httpReq.CompanyUUID,
+		Status:        httpReq.Status,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -391,21 +383,17 @@ func (h *companyHandler) CreateCompanyJoinCode(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.CompanyUUID = c.Params("company_uuid", "")
 
-	httpReqFull := &entities.CreateCompanyJoinCodeRequestFull{
-		CompanyUUID: c.Params("company_uuid", ""),
-		CodeTTL:     httpReq.CodeTTL,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	res, err := h.CompanyServiceClient.CreateCompanyJoinCode(ctx, &company_proto.CreateCompanyJoinCodeRequest{
 		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid:   httpReqFull.CompanyUUID,
-		CodeTtl:       httpReqFull.CodeTTL,
+		CompanyUuid:   httpReq.CompanyUUID,
+		CodeTtl:       httpReq.CodeTTL,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -486,21 +474,17 @@ func (h *companyHandler) DeleteCompanyJoinCode(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.CompanyUUID = c.Params("company_uuid", "")
 
-	httpReqFull := &entities.DeleteCompanyJoinCodeRequestFull{
-		CompanyUUID: c.Params("company_uuid", ""),
-		Code:        httpReq.Code,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.CompanyServiceClient.DeleteCompanyJoinCode(ctx, &company_proto.DeleteCompanyJoinCodeRequest{
 		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid:   httpReqFull.CompanyUUID,
-		Code:          httpReqFull.Code,
+		CompanyUuid:   httpReq.CompanyUUID,
+		Code:          httpReq.Code,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -744,23 +728,19 @@ func (h *companyHandler) UpdateEmployeeRole(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.CompanyUUID = c.Params("company_uuid", "")
+	httpReq.TargetUUID = c.Params("employee_uuid", "")
 
-	httpReqFull := &entities.UpdateEmployeeRoleRequestFull{
-		CompanyUUID: c.Params("company_uuid", ""),
-		TargetUUID:  c.Params("employee_uuid", ""),
-		Role:        httpReq.Role,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.CompanyServiceClient.UpdateEmployeeRole(ctx, &company_proto.UpdateEmployeeRoleRequest{
 		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		TargetUuid:    httpReqFull.TargetUUID,
-		CompanyUuid:   httpReqFull.CompanyUUID,
-		Role:          httpReqFull.Role,
+		TargetUuid:    httpReq.TargetUUID,
+		CompanyUuid:   httpReq.CompanyUUID,
+		Role:          httpReq.Role,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -840,21 +820,17 @@ func (h *companyHandler) CreateDepartment(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.CompanyUUID = c.Params("company_uuid", "")
 
-	httpReqFull := &entities.CreateDepartmentRequestFull{
-		CompanyUUID: c.Params("company_uuid", ""),
-		Title:       httpReq.Title,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	res, err := h.CompanyServiceClient.CreateDepartment(ctx, &company_proto.CreateDepartmentRequest{
 		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		CompanyUuid:   httpReqFull.CompanyUUID,
-		Title:         httpReqFull.Title,
+		CompanyUuid:   httpReq.CompanyUUID,
+		Title:         httpReq.Title,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -997,22 +973,18 @@ func (h *companyHandler) UpdateDepartmentTitle(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.CompanyUUID = c.Params("company_uuid", "")
+	httpReq.DepartmentUUID = c.Params("department_uuid", "")
 
-	httpReqFull := &entities.UpdateDepartmentTitleRequestFull{
-		CompanyUUID:    c.Params("company_uuid", ""),
-		DepartmentUUID: c.Params("department_uuid", ""),
-		Title:          httpReq.Title,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.CompanyServiceClient.UpdateDepartmentTitle(ctx, &company_proto.UpdateDepartmentTitleRequest{
 		OperationId:    operationID,
 		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
-		DepartmentUuid: httpReqFull.DepartmentUUID,
-		Title:          httpReqFull.Title,
+		DepartmentUuid: httpReq.DepartmentUUID,
+		Title:          httpReq.Title,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)

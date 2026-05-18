@@ -225,15 +225,10 @@ func (h *authHandler) ChangePassword(c *fiber.Ctx) error {
 	if err := c.BodyParser(&httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
-
-	// Получаем UserUUID из локал и собираем целиком тело запроса
-	httpReqFull := &entities.ChangePasswordRequestFull{
-		UserUUID: utils.GetLocal[string](c, h.userUUIDKey),
-		Password: httpReq.Password,
-	}
+	httpReq.UserUUID = utils.GetLocal[string](c, h.userUUIDKey)
 
 	// Валидация
-	err := httpReqFull.Validate()
+	err := httpReq.Validate()
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
@@ -241,8 +236,8 @@ func (h *authHandler) ChangePassword(c *fiber.Ctx) error {
 	// Формируем тело запроса
 	req := &auth_proto.ChangePasswordRequest{
 		OperationId: operationID,
-		UserUuid:    httpReqFull.UserUUID,
-		Password:    httpReqFull.Password,
+		UserUuid:    httpReq.UserUUID,
+		Password:    httpReq.Password,
 	}
 
 	// Запрос в auth сервис
@@ -283,17 +278,10 @@ func (h *authHandler) UpdateUserBio(c *fiber.Ctx) error {
 	if err := c.BodyParser(&httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
-
-	// Получаем UserUUID из локал и собираем целиком тело запроса
-	httpReqFull := &entities.UpdateUserBioRequestFull{
-		UserUUID:   utils.GetLocal[string](c, h.userUUIDKey),
-		FirstName:  httpReq.FirstName,
-		LastName:   httpReq.LastName,
-		Patronymic: httpReq.Patronymic,
-	}
+	httpReq.UserUUID = utils.GetLocal[string](c, h.userUUIDKey)
 
 	// Валидация
-	err := httpReqFull.Validate()
+	err := httpReq.Validate()
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
@@ -301,10 +289,10 @@ func (h *authHandler) UpdateUserBio(c *fiber.Ctx) error {
 	// Формируем тело запроса
 	req := &auth_proto.UpdateUserBioRequest{
 		OperationId: operationID,
-		UserUuid:    httpReqFull.UserUUID,
-		FirstName:   httpReqFull.FirstName,
-		LastName:    httpReqFull.LastName,
-		Patronymic:  httpReqFull.Patronymic,
+		UserUuid:    httpReq.UserUUID,
+		FirstName:   httpReq.FirstName,
+		LastName:    httpReq.LastName,
+		Patronymic:  httpReq.Patronymic,
 	}
 
 	// Запрос в auth сервис
@@ -345,15 +333,10 @@ func (h *authHandler) DeleteUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
-
-	// Получаем InitiatorUUID из локал и собираем целиком тело запроса
-	httpReqFull := &entities.DeleteUserRequestFull{
-		InitiatorUUID: utils.GetLocal[string](c, h.userUUIDKey),
-		TargetUUID:    httpReq.TargetUUID,
-	}
+	httpReq.InitiatorUUID = utils.GetLocal[string](c, h.userUUIDKey)
 
 	// Валидация
-	err := httpReqFull.Validate()
+	err := httpReq.Validate()
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
@@ -361,8 +344,8 @@ func (h *authHandler) DeleteUser(c *fiber.Ctx) error {
 	// Формируем тело запроса
 	req := &auth_proto.DeleteUserRequest{
 		OperationId:       operationID,
-		InitiatorUserUuid: httpReqFull.InitiatorUUID,
-		TargetUserUuid:    httpReqFull.TargetUUID,
+		InitiatorUserUuid: httpReq.InitiatorUUID,
+		TargetUserUuid:    httpReq.TargetUUID,
 	}
 
 	// Запрос в auth сервис

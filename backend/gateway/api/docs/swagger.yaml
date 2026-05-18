@@ -390,7 +390,7 @@ definitions:
     type: object
   entities.RevokeTokenRequest:
     properties:
-      refresh_token:
+      token_hash:
         type: string
     type: object
   entities.RevokeTokenResponse:

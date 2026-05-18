@@ -260,21 +260,17 @@ func (h *applicationHandler) UpdateApplicationStatus(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.ApplicationUUID = c.Params("application_uuid", "")
 
-	httpReqFull := &entities.UpdateApplicationStatusRequestFull{
-		ApplicationUUID: c.Params("application_uuid", ""),
-		Status:          httpReq.Status,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.ApplicationServiceClient.UpdateApplicationStatus(ctx, &application_proto.UpdateApplicationStatusRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
-		ApplicationUuid: httpReqFull.ApplicationUUID,
-		Status:          httpReqFull.Status,
+		ApplicationUuid: httpReq.ApplicationUUID,
+		Status:          httpReq.Status,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -310,21 +306,17 @@ func (h *applicationHandler) AssignApplication(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.ApplicationUUID = c.Params("application_uuid", "")
 
-	httpReqFull := &entities.AssignApplicationRequestFull{
-		ApplicationUUID: c.Params("application_uuid", ""),
-		TargetUUID:      httpReq.TargetUUID,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.ApplicationServiceClient.AssignApplication(ctx, &application_proto.AssignApplicationRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
-		ApplicationUuid: httpReqFull.ApplicationUUID,
-		TargetUuid:      httpReqFull.TargetUUID,
+		ApplicationUuid: httpReq.ApplicationUUID,
+		TargetUuid:      httpReq.TargetUUID,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -360,23 +352,18 @@ func (h *applicationHandler) RedirectApplication(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.ApplicationUUID = c.Params("application_uuid", "")
 
-	httpReqFull := &entities.RedirectApplicationRequestFull{
-		ApplicationUUID:      c.Params("application_uuid", ""),
-		TargetDepartmentUUID: httpReq.TargetDepartmentUUID,
-		Message:              httpReq.Message,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.ApplicationServiceClient.RedirectApplication(ctx, &application_proto.RedirectApplicationRequest{
 		OperationId:          operationID,
 		InitiatorUuid:        utils.GetLocal[string](c, h.userUUIDKey),
-		ApplicationUuid:      httpReqFull.ApplicationUUID,
-		TargetDepartmentUuid: httpReqFull.TargetDepartmentUUID,
-		Message:              httpReqFull.Message,
+		ApplicationUuid:      httpReq.ApplicationUUID,
+		TargetDepartmentUuid: httpReq.TargetDepartmentUUID,
+		Message:              httpReq.Message,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -412,21 +399,17 @@ func (h *applicationHandler) RecallApplication(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.ApplicationUUID = c.Params("application_uuid", "")
 
-	httpReqFull := &entities.RecallApplicationRequestFull{
-		ApplicationUUID: c.Params("application_uuid", ""),
-		Message:         httpReq.Message,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.ApplicationServiceClient.RecallApplication(ctx, &application_proto.RecallApplicationRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
-		ApplicationUuid: httpReqFull.ApplicationUUID,
-		Message:         httpReqFull.Message,
+		ApplicationUuid: httpReq.ApplicationUUID,
+		Message:         httpReq.Message,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -503,21 +486,17 @@ func (h *applicationHandler) ReleaseApplicationVerification(c *fiber.Ctx) error 
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.ApplicationUUID = c.Params("application_uuid", "")
 
-	httpReqFull := &entities.ReleaseApplicationVerificationRequestFull{
-		ApplicationUUID: c.Params("application_uuid", ""),
-		Message:         httpReq.Message,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.ApplicationServiceClient.ReleaseApplicationVerification(ctx, &application_proto.ReleaseApplicationVerificationRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
-		ApplicationUuid: httpReqFull.ApplicationUUID,
-		Message:         httpReqFull.Message,
+		ApplicationUuid: httpReq.ApplicationUUID,
+		Message:         httpReq.Message,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -553,21 +532,17 @@ func (h *applicationHandler) AddApplicationFixLog(c *fiber.Ctx) error {
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
+	httpReq.ApplicationUUID = c.Params("application_uuid", "")
 
-	httpReqFull := &entities.AddApplicationFixLogRequestFull{
-		ApplicationUUID: c.Params("application_uuid", ""),
-		Message:         httpReq.Message,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.ApplicationServiceClient.AddApplicationFixLog(ctx, &application_proto.AddApplicationFixLogRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
-		ApplicationUuid: httpReqFull.ApplicationUUID,
-		Message:         httpReqFull.Message,
+		ApplicationUuid: httpReq.ApplicationUUID,
+		Message:         httpReq.Message,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -602,21 +577,17 @@ func (h *applicationHandler) DeleteApplication(c *fiber.Ctx) error {
 	httpReq := &entities.DeleteApplicationRequest{}
 	// body необязателен — игнорируем ошибку парсинга
 	_ = c.BodyParser(httpReq)
+	httpReq.ApplicationUUID = c.Params("application_uuid", "")
 
-	httpReqFull := &entities.DeleteApplicationRequestFull{
-		ApplicationUUID: c.Params("application_uuid", ""),
-		Message:         httpReq.Message,
-	}
-
-	if err := httpReqFull.Validate(); err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
 	_, err := h.ApplicationServiceClient.DeleteApplication(ctx, &application_proto.DeleteApplicationRequest{
 		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
-		ApplicationUuid: httpReqFull.ApplicationUUID,
-		Message:         httpReqFull.Message,
+		ApplicationUuid: httpReq.ApplicationUUID,
+		Message:         httpReq.Message,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)

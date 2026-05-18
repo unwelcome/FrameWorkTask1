@@ -14,14 +14,11 @@ type CreateCompanyResponse struct {
 }
 
 func (e *CreateCompanyRequest) Validate() error {
-	if err := utils.ValidateCompanyTitle(e.Title); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateCompanyTitle(e.Title)
 }
 
 type GetCompanyRequest struct {
-	CompanyUUID string `json:"company_uuid"`
+	CompanyUUID string `json:"-"`
 }
 type GetCompanyResponse struct {
 	CompanyUUID string `json:"company_uuid"`
@@ -30,10 +27,7 @@ type GetCompanyResponse struct {
 }
 
 func (e *GetCompanyRequest) Validate() error {
-	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateUUID(e.CompanyUUID)
 }
 
 type GetCompaniesRequest struct {
@@ -59,34 +53,25 @@ type GetUserCompaniesResponse struct {
 }
 
 type UpdateCompanyTitleRequest struct {
-	Title string `json:"title"`
-}
-type UpdateCompanyTitleRequestFull struct {
-	CompanyUUID string
-	Title       string
+	CompanyUUID string `json:"-"`
+	Title       string `json:"title"`
 }
 type UpdateCompanyTitleResponse struct{}
 
-func (e *UpdateCompanyTitleRequestFull) Validate() error {
+func (e *UpdateCompanyTitleRequest) Validate() error {
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateCompanyTitle(e.Title); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateCompanyTitle(e.Title)
 }
 
 type UpdateCompanyStatusRequest struct {
-	Status string `json:"status"`
-}
-type UpdateCompanyStatusRequestFull struct {
-	CompanyUUID string
-	Status      string
+	CompanyUUID string `json:"-"`
+	Status      string `json:"status"`
 }
 type UpdateCompanyStatusResponse struct{}
 
-func (e *UpdateCompanyStatusRequestFull) Validate() error {
+func (e *UpdateCompanyStatusRequest) Validate() error {
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
 		return err
 	}
@@ -97,69 +82,51 @@ func (e *UpdateCompanyStatusRequestFull) Validate() error {
 }
 
 type DeleteCompanyRequest struct {
-	CompanyUUID string
+	CompanyUUID string `json:"-"`
 }
 type DeleteCompanyResponse struct{}
 
 func (e *DeleteCompanyRequest) Validate() error {
-	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateUUID(e.CompanyUUID)
 }
 
 type CreateCompanyJoinCodeRequest struct {
-	CodeTTL int64 `json:"code_ttl"`
-}
-type CreateCompanyJoinCodeRequestFull struct {
-	CompanyUUID string
-	CodeTTL     int64
+	CompanyUUID string `json:"-"`
+	CodeTTL     int64  `json:"code_ttl"`
 }
 type CreateCompanyJoinCodeResponse struct {
 	Code string `json:"code"`
 }
 
-func (e *CreateCompanyJoinCodeRequestFull) Validate() error {
+func (e *CreateCompanyJoinCodeRequest) Validate() error {
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateNumber(int(e.CodeTTL), 60, 60*60*24*7, "code_ttl"); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateNumber(int(e.CodeTTL), 60, 60*60*24*7, "code_ttl")
 }
 
 type GetCompanyJoinCodesRequest struct {
-	CompanyUUID string
+	CompanyUUID string `json:"-"`
 }
 type GetCompanyJoinCodesResponse struct {
 	Codes []string `json:"codes"`
 }
 
 func (e *GetCompanyJoinCodesRequest) Validate() error {
-	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateUUID(e.CompanyUUID)
 }
 
 type DeleteCompanyJoinCodeRequest struct {
-	Code string `json:"code"`
-}
-type DeleteCompanyJoinCodeRequestFull struct {
-	CompanyUUID string
-	Code        string
+	CompanyUUID string `json:"-"`
+	Code        string `json:"code"`
 }
 type DeleteCompanyJoinCodeResponse struct{}
 
-func (e *DeleteCompanyJoinCodeRequestFull) Validate() error {
+func (e *DeleteCompanyJoinCodeRequest) Validate() error {
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateCompanyJoinCode(e.Code); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateCompanyJoinCode(e.Code)
 }
 
 type JoinCompanyRequest struct {
@@ -171,15 +138,12 @@ type JoinCompanyResponse struct {
 }
 
 func (e *JoinCompanyRequest) Validate() error {
-	if err := utils.ValidateCompanyJoinCode(e.Code); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateCompanyJoinCode(e.Code)
 }
 
 type GetCompanyEmployeeRequest struct {
-	TargetUUID  string
-	CompanyUUID string
+	TargetUUID  string `json:"-"`
+	CompanyUUID string `json:"-"`
 }
 type GetCompanyEmployeeResponse struct {
 	UserUUID       string `json:"user_uuid"`
@@ -192,14 +156,11 @@ func (e *GetCompanyEmployeeRequest) Validate() error {
 	if err := utils.ValidateUUID(e.TargetUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateUUID(e.CompanyUUID)
 }
 
 type GetCompanyEmployeesRequest struct {
-	CompanyUUID    string
+	CompanyUUID    string `json:"-"`
 	DepartmentUUID string `query:"department_uuid"`
 	Role           string `query:"role"`
 	Offset         int64  `query:"offset"`
@@ -224,14 +185,11 @@ func (e *GetCompanyEmployeesRequest) Validate() error {
 	if err := utils.ValidateNumber(int(e.Offset), 0, 0, "offset"); err != nil {
 		return err
 	}
-	if err := utils.ValidateNumber(int(e.Count), 1, 100, "count"); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateNumber(int(e.Count), 1, 100, "count")
 }
 
 type GetCompanyEmployeesSummaryRequest struct {
-	CompanyUUID    string
+	CompanyUUID    string `json:"-"`
 	DepartmentUUID string `query:"department_uuid"`
 }
 type GetCompanyEmployeesSummaryResponse struct {
@@ -256,16 +214,13 @@ func (e *GetCompanyEmployeesSummaryRequest) Validate() error {
 }
 
 type UpdateEmployeeRoleRequest struct {
-	Role string `json:"role"`
-}
-type UpdateEmployeeRoleRequestFull struct {
-	CompanyUUID string
-	TargetUUID  string
-	Role        string
+	CompanyUUID string `json:"-"`
+	TargetUUID  string `json:"-"`
+	Role        string `json:"role"`
 }
 type UpdateEmployeeRoleResponse struct{}
 
-func (e *UpdateEmployeeRoleRequestFull) Validate() error {
+func (e *UpdateEmployeeRoleRequest) Validate() error {
 	if err := utils.ValidateUUID(e.TargetUUID); err != nil {
 		return err
 	}
@@ -279,8 +234,8 @@ func (e *UpdateEmployeeRoleRequestFull) Validate() error {
 }
 
 type RemoveCompanyEmployeeRequest struct {
-	TargetUUID  string
-	CompanyUUID string
+	TargetUUID  string `json:"-"`
+	CompanyUUID string `json:"-"`
 }
 type RemoveCompanyEmployeeResponse struct{}
 
@@ -288,38 +243,29 @@ func (e *RemoveCompanyEmployeeRequest) Validate() error {
 	if err := utils.ValidateUUID(e.TargetUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateUUID(e.CompanyUUID)
 }
 
 // Department
 
 type CreateDepartmentRequest struct {
-	Title string `json:"title"`
-}
-type CreateDepartmentRequestFull struct {
-	CompanyUUID string
-	Title       string
+	CompanyUUID string `json:"-"`
+	Title       string `json:"title"`
 }
 type CreateDepartmentResponse struct {
 	DepartmentUUID string `json:"department_uuid"`
 }
 
-func (e *CreateDepartmentRequestFull) Validate() error {
+func (e *CreateDepartmentRequest) Validate() error {
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateCompanyTitle(e.Title); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateCompanyTitle(e.Title)
 }
 
 type GetDepartmentRequest struct {
-	CompanyUUID    string
-	DepartmentUUID string
+	CompanyUUID    string `json:"-"`
+	DepartmentUUID string `json:"-"`
 }
 type GetDepartmentResponse struct {
 	DepartmentUUID string `json:"department_uuid"`
@@ -333,16 +279,13 @@ func (e *GetDepartmentRequest) Validate() error {
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateUUID(e.DepartmentUUID); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateUUID(e.DepartmentUUID)
 }
 
 type GetCompanyDepartmentsRequest struct {
-	CompanyUUID string
-	Offset      int64 `query:"offset"`
-	Count       int64 `query:"count"`
+	CompanyUUID string `json:"-"`
+	Offset      int64  `query:"offset"`
+	Count       int64  `query:"count"`
 }
 type DepartmentListItem struct {
 	DepartmentUUID string `json:"department_uuid"`
@@ -359,38 +302,29 @@ func (e *GetCompanyDepartmentsRequest) Validate() error {
 	if err := utils.ValidateNumber(int(e.Offset), 0, 0, "offset"); err != nil {
 		return err
 	}
-	if err := utils.ValidateNumber(int(e.Count), 1, 100, "count"); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateNumber(int(e.Count), 1, 100, "count")
 }
 
 type UpdateDepartmentTitleRequest struct {
-	Title string `json:"title"`
-}
-type UpdateDepartmentTitleRequestFull struct {
-	CompanyUUID    string
-	DepartmentUUID string
-	Title          string
+	CompanyUUID    string `json:"-"`
+	DepartmentUUID string `json:"-"`
+	Title          string `json:"title"`
 }
 type UpdateDepartmentTitleResponse struct{}
 
-func (e *UpdateDepartmentTitleRequestFull) Validate() error {
+func (e *UpdateDepartmentTitleRequest) Validate() error {
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
 		return err
 	}
 	if err := utils.ValidateUUID(e.DepartmentUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateCompanyTitle(e.Title); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateCompanyTitle(e.Title)
 }
 
 type DeleteDepartmentRequest struct {
-	CompanyUUID    string
-	DepartmentUUID string
+	CompanyUUID    string `json:"-"`
+	DepartmentUUID string `json:"-"`
 }
 type DeleteDepartmentResponse struct{}
 
@@ -398,16 +332,13 @@ func (e *DeleteDepartmentRequest) Validate() error {
 	if err := utils.ValidateUUID(e.CompanyUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateUUID(e.DepartmentUUID); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateUUID(e.DepartmentUUID)
 }
 
 type AddEmployeeToDepartmentRequest struct {
-	CompanyUUID    string
-	DepartmentUUID string
-	TargetUUID     string
+	CompanyUUID    string `json:"-"`
+	DepartmentUUID string `json:"-"`
+	TargetUUID     string `json:"-"`
 }
 type AddEmployeeToDepartmentResponse struct{}
 
@@ -418,16 +349,13 @@ func (e *AddEmployeeToDepartmentRequest) Validate() error {
 	if err := utils.ValidateUUID(e.DepartmentUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateUUID(e.TargetUUID); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateUUID(e.TargetUUID)
 }
 
 type RemoveEmployeeFromDepartmentRequest struct {
-	CompanyUUID    string
-	DepartmentUUID string
-	TargetUUID     string
+	CompanyUUID    string `json:"-"`
+	DepartmentUUID string `json:"-"`
+	TargetUUID     string `json:"-"`
 }
 type RemoveEmployeeFromDepartmentResponse struct{}
 
@@ -438,8 +366,5 @@ func (e *RemoveEmployeeFromDepartmentRequest) Validate() error {
 	if err := utils.ValidateUUID(e.DepartmentUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateUUID(e.TargetUUID); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateUUID(e.TargetUUID)
 }

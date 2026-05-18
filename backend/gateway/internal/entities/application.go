@@ -8,7 +8,6 @@ import (
 
 // ─── Shared response types ────────────────────────────────────────────────────
 
-// FixLogResponse — запись fix log в ответе
 type FixLogResponse struct {
 	UUID      string `json:"uuid"`
 	Text      string `json:"text"`
@@ -16,7 +15,6 @@ type FixLogResponse struct {
 	CreatedBy string `json:"created_by"`
 }
 
-// ApplicationResponse — полный объект заявки (используется в GetApplication)
 type ApplicationResponse struct {
 	ApplicationUUID string            `json:"application_uuid"`
 	CompanyUUID     string            `json:"company_uuid"`
@@ -39,7 +37,6 @@ type ApplicationResponse struct {
 	FixLogs         []*FixLogResponse `json:"fix_logs,omitempty"`
 }
 
-// ApplicationListItem — краткий объект заявки в списке (используется в GetApplications)
 type ApplicationListItem struct {
 	ApplicationUUID string `json:"application_uuid"`
 	Title           string `json:"title"`
@@ -60,10 +57,7 @@ func (e *CreateApplicationRequest) Validate() error {
 	if err := utils.ValidateApplicationTitle(e.Title); err != nil {
 		return err
 	}
-	if err := utils.ValidateApplicationDescription(e.Description); err != nil {
-		return err
-	}
-	return nil
+	return utils.ValidateApplicationDescription(e.Description)
 }
 
 type CreateApplicationResponse struct {
@@ -73,7 +67,7 @@ type CreateApplicationResponse struct {
 // ─── GetApplication ───────────────────────────────────────────────────────────
 
 type GetApplicationRequest struct {
-	ApplicationUUID string
+	ApplicationUUID string `json:"-"`
 }
 
 func (e *GetApplicationRequest) Validate() error {
@@ -87,7 +81,7 @@ type GetApplicationResponse struct {
 // ─── GetApplications ──────────────────────────────────────────────────────────
 
 type GetApplicationsRequest struct {
-	CompanyUUID    string
+	CompanyUUID    string   `json:"-"`
 	DepartmentUUID string   `query:"department_uuid"`
 	Statuses       []string `query:"statuses"`
 	Count          int64    `query:"count"`
@@ -107,15 +101,11 @@ type GetApplicationsResponse struct {
 // ─── UpdateApplicationStatus ──────────────────────────────────────────────────
 
 type UpdateApplicationStatusRequest struct {
-	Status string `json:"status"`
+	ApplicationUUID string `json:"-"`
+	Status          string `json:"status"`
 }
 
-type UpdateApplicationStatusRequestFull struct {
-	ApplicationUUID string
-	Status          string
-}
-
-func (e *UpdateApplicationStatusRequestFull) Validate() error {
+func (e *UpdateApplicationStatusRequest) Validate() error {
 	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
 		return err
 	}
@@ -130,15 +120,11 @@ type UpdateApplicationStatusResponse struct{}
 // ─── AssignApplication ────────────────────────────────────────────────────────
 
 type AssignApplicationRequest struct {
-	TargetUUID string `json:"target_uuid"`
+	ApplicationUUID string `json:"-"`
+	TargetUUID      string `json:"target_uuid"`
 }
 
-type AssignApplicationRequestFull struct {
-	ApplicationUUID string
-	TargetUUID      string
-}
-
-func (e *AssignApplicationRequestFull) Validate() error {
+func (e *AssignApplicationRequest) Validate() error {
 	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
 		return err
 	}
@@ -150,17 +136,12 @@ type AssignApplicationResponse struct{}
 // ─── RedirectApplication ──────────────────────────────────────────────────────
 
 type RedirectApplicationRequest struct {
+	ApplicationUUID      string `json:"-"`
 	TargetDepartmentUUID string `json:"target_department_uuid"`
 	Message              string `json:"message"`
 }
 
-type RedirectApplicationRequestFull struct {
-	ApplicationUUID      string
-	TargetDepartmentUUID string
-	Message              string
-}
-
-func (e *RedirectApplicationRequestFull) Validate() error {
+func (e *RedirectApplicationRequest) Validate() error {
 	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
 		return err
 	}
@@ -178,15 +159,11 @@ type RedirectApplicationResponse struct{}
 // ─── RecallApplication ────────────────────────────────────────────────────────
 
 type RecallApplicationRequest struct {
-	Message string `json:"message"`
+	ApplicationUUID string `json:"-"`
+	Message         string `json:"message"`
 }
 
-type RecallApplicationRequestFull struct {
-	ApplicationUUID string
-	Message         string
-}
-
-func (e *RecallApplicationRequestFull) Validate() error {
+func (e *RecallApplicationRequest) Validate() error {
 	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
 		return err
 	}
@@ -201,7 +178,7 @@ type RecallApplicationResponse struct{}
 // ─── TakeApplicationToVerification ───────────────────────────────────────────
 
 type TakeApplicationToVerificationRequest struct {
-	ApplicationUUID string
+	ApplicationUUID string `json:"-"`
 }
 
 func (e *TakeApplicationToVerificationRequest) Validate() error {
@@ -213,15 +190,11 @@ type TakeApplicationToVerificationResponse struct{}
 // ─── ReleaseApplicationVerification ──────────────────────────────────────────
 
 type ReleaseApplicationVerificationRequest struct {
-	Message string `json:"message"`
+	ApplicationUUID string `json:"-"`
+	Message         string `json:"message"`
 }
 
-type ReleaseApplicationVerificationRequestFull struct {
-	ApplicationUUID string
-	Message         string
-}
-
-func (e *ReleaseApplicationVerificationRequestFull) Validate() error {
+func (e *ReleaseApplicationVerificationRequest) Validate() error {
 	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
 		return err
 	}
@@ -236,15 +209,11 @@ type ReleaseApplicationVerificationResponse struct{}
 // ─── AddApplicationFixLog ─────────────────────────────────────────────────────
 
 type AddApplicationFixLogRequest struct {
-	Message string `json:"message"`
+	ApplicationUUID string `json:"-"`
+	Message         string `json:"message"`
 }
 
-type AddApplicationFixLogRequestFull struct {
-	ApplicationUUID string
-	Message         string
-}
-
-func (e *AddApplicationFixLogRequestFull) Validate() error {
+func (e *AddApplicationFixLogRequest) Validate() error {
 	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
 		return err
 	}
@@ -259,15 +228,11 @@ type AddApplicationFixLogResponse struct{}
 // ─── DeleteApplication ────────────────────────────────────────────────────────
 
 type DeleteApplicationRequest struct {
-	Message string `json:"message"`
+	ApplicationUUID string `json:"-"`
+	Message         string `json:"message"`
 }
 
-type DeleteApplicationRequestFull struct {
-	ApplicationUUID string
-	Message         string
-}
-
-func (e *DeleteApplicationRequestFull) Validate() error {
+func (e *DeleteApplicationRequest) Validate() error {
 	return utils.ValidateUUID(e.ApplicationUUID)
 }
 

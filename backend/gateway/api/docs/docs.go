@@ -3643,7 +3643,7 @@ const docTemplate = `{
         "entities.RevokeTokenRequest": {
             "type": "object",
             "properties": {
-                "refresh_token": {
+                "token_hash": {
                     "type": "string"
                 }
             }

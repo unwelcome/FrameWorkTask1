@@ -2,6 +2,7 @@ package redisDB
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -101,7 +102,13 @@ func (r *companyRepository) GetCompanyJoinCodes(ctx context.Context, companyUUID
 	}
 
 	// Удаляем истекшие коды
-	_ = r.redis.SRem(ctx, r.getCompanyCodesKey(companyUUID), invalidCodes).Err()
+	if len(invalidCodes) > 0 {
+		members := make([]interface{}, len(invalidCodes))
+		for i, c := range invalidCodes {
+			members[i] = c
+		}
+		_ = r.redis.SRem(ctx, r.getCompanyCodesKey(companyUUID), members...).Err()
+	}
 
 	return validCodes, Error.CodeError{}
 }
@@ -111,6 +118,9 @@ func (r *companyRepository) GetCompanyByJoinCode(ctx context.Context, code strin
 	// Получаем uuid компании по коду
 	companyUUID, err := r.redis.Get(ctx, r.getCodeKey(code)).Result()
 	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", Error.Public(codes.NotFound, "join code not found")
+		}
 		return "", Error.Internal(err)
 	}
 

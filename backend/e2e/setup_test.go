@@ -15,8 +15,6 @@ const (
 	gatewayPort    = "18080"
 	gatewayBaseURL = "http://localhost:" + gatewayPort
 
-	// Path to docker-compose.test.yml relative to this package directory (backend/e2e/).
-	// Two levels up reaches the project root (D:\Projects\FrameWorkTask1\).
 	composeFile = "../../docker-compose.test.yml"
 
 	startupTimeout = 5 * time.Minute
@@ -37,7 +35,14 @@ func TestMain(m *testing.M) {
 		stopCompose()
 		os.Exit(1)
 	}
-	fmt.Println("=== E2E: gateway ready, running tests ===")
+	// Небольшая пауза после того, как все health check'и прошли.
+	// gRPC-серверы сообщают "healthy" сразу после завершения миграций,
+	// но пул соединений к БД ещё не успевает прогреться — первые запросы
+	// к более тяжёлым сервисам (company, application) могут падать с 500.
+	// 3 секунды достаточно, чтобы connection pool устоялся.
+	fmt.Println("=== E2E: warming up services ===")
+	time.Sleep(3 * time.Second)
+	fmt.Println("=== E2E: running tests ===")
 
 	code := m.Run()
 

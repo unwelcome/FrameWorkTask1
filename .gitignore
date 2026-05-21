@@ -4,5 +4,7 @@
 /logs
 /logs/*
 .claude/
+idea.md
+plan.md
 backend/go.work
 backend/go.work.sum

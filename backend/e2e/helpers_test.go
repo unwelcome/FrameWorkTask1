@@ -162,3 +162,80 @@ func mustRegisterAndLogin(t *testing.T, c *apiClient) (string, loginResp) {
 	login := mustLogin(t, c, email, "Password123")
 	return email, login
 }
+
+// ─── Company response types ───────────────────────────────────────────────────
+
+type createCompanyResp struct {
+	CompanyUUID string `json:"company_uuid"`
+}
+
+type companyResp struct {
+	CompanyUUID string `json:"company_uuid"`
+	Title       string `json:"title"`
+	Status      string `json:"status"`
+}
+
+type companiesResp struct {
+	Companies []companyResp `json:"companies"`
+}
+
+type createCodeResp struct {
+	Code string `json:"code"`
+}
+
+type codesResp struct {
+	Codes []string `json:"codes"`
+}
+
+type joinCompanyResp struct {
+	CompanyUUID string `json:"company_uuid"`
+	Role        string `json:"role"`
+}
+
+// ─── Company data helpers ─────────────────────────────────────────────────────
+
+func randomTitle() string {
+	return fmt.Sprintf("TestCompany_%d", rand.Int63())
+}
+
+// ─── Company flow helpers ─────────────────────────────────────────────────────
+
+// mustCreateCompany creates a company with the given title and returns its UUID.
+func mustCreateCompany(t *testing.T, c *apiClient, title string) string {
+	t.Helper()
+	status, body := c.post("/api/auth/company/create", map[string]string{"title": title})
+	require.Equalf(t, http.StatusCreated, status, "create company failed (body: %s)", body)
+	var resp createCompanyResp
+	require.NoError(t, json.Unmarshal(body, &resp))
+	require.NotEmpty(t, resp.CompanyUUID, "create company returned empty company_uuid")
+	return resp.CompanyUUID
+}
+
+// mustCreateCode creates a join code for the given company and returns the 6-digit code string.
+func mustCreateCode(t *testing.T, c *apiClient, companyUUID string, ttl int) string {
+	t.Helper()
+	status, body := c.post("/api/auth/company/"+companyUUID+"/code", map[string]int{"code_ttl": ttl})
+	require.Equalf(t, http.StatusCreated, status, "create join code failed (body: %s)", body)
+	var resp createCodeResp
+	require.NoError(t, json.Unmarshal(body, &resp))
+	require.NotEmpty(t, resp.Code, "create join code returned empty code")
+	return resp.Code
+}
+
+// mustJoinCompany joins a company using the given 6-digit code.
+func mustJoinCompany(t *testing.T, c *apiClient, code string) joinCompanyResp {
+	t.Helper()
+	status, body := c.post("/api/auth/company/join", map[string]string{"code": code})
+	require.Equalf(t, http.StatusOK, status, "join company failed (body: %s)", body)
+	var resp joinCompanyResp
+	require.NoError(t, json.Unmarshal(body, &resp))
+	require.NotEmpty(t, resp.CompanyUUID)
+	return resp
+}
+
+// mustAddMember creates a join code as chief and has the guest client join the company.
+func mustAddMember(t *testing.T, chief *apiClient, guest *apiClient, companyUUID string) {
+	t.Helper()
+	code := mustCreateCode(t, chief, companyUUID, 3600)
+	mustJoinCompany(t, guest, code)
+}

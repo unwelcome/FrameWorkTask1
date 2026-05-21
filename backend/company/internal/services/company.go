@@ -163,6 +163,35 @@ func (s *CompanyService) GetCompanies(ctx context.Context, req *pb.GetCompaniesR
 	return &pb.GetCompaniesResponse{Companies: resCompanies}, nil
 }
 
+// GetUserCompanies Возвращает список компаний, в которых состоит пользователь
+func (s *CompanyService) GetUserCompanies(ctx context.Context, req *pb.GetUserCompaniesRequest) (*pb.GetUserCompaniesResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get user companies").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+
+	// Получаем компании пользователя
+	companies, getErr := s.db.Company.GetUserCompanies(ctx, req.GetInitiatorUuid())
+	err := Error.HandleError(getErr, req.GetOperationId(), "get user companies")
+	if err != nil {
+		return nil, err
+	}
+
+	// Маппинг ответа
+	resCompanies := make([]*pb.Company, 0)
+	for _, company := range companies {
+		resCompanies = append(resCompanies, &pb.Company{
+			CompanyUuid: company.CompanyUUID,
+			Title:       company.Title,
+			Status:      company.Status,
+		})
+	}
+
+	log.Info().Str("id", req.GetOperationId()).Str("method", "get user companies").Msg("success")
+	return &pb.GetUserCompaniesResponse{Companies: resCompanies}, nil
+}
+
 // UpdateCompanyTitle Обновляет название компании
 func (s *CompanyService) UpdateCompanyTitle(ctx context.Context, req *pb.UpdateCompanyTitleRequest) (*emptypb.Empty, error) {
 	// Валидации
@@ -448,7 +477,7 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 
 	if companyInfo.Status != "open" {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "join company").Err(fmt.Errorf("company is closed")).Msg("error")
-		return nil, status.Error(codes.Canceled, "company is closed")
+		return nil, status.Error(codes.PermissionDenied, "company is closed")
 	}
 
 	// Добавляем пользователя в компанию
@@ -617,7 +646,7 @@ func (s *CompanyService) UpdateEmployeeRole(ctx context.Context, req *pb.UpdateE
 	// Нельзя изменять свою роль
 	if req.GetInitiatorUuid() == req.GetTargetUuid() {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "update employee role").Err(fmt.Errorf("cannot change your own role")).Msg("error")
-		return nil, status.Error(codes.InvalidArgument, "cannot change your own role")
+		return nil, status.Error(codes.PermissionDenied, "cannot change your own role")
 	}
 
 	// Проверяем роль инициатора
@@ -663,7 +692,7 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 	// Нельзя удалить себя из компании
 	if req.GetInitiatorUuid() == req.GetTargetUuid() {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "remove company employee").Err(fmt.Errorf("cannot remove yourself")).Msg("error")
-		return nil, status.Error(codes.InvalidArgument, "cannot remove yourself from company")
+		return nil, status.Error(codes.PermissionDenied, "cannot remove yourself from company")
 	}
 
 	// Проверка роли инициатора
@@ -753,10 +782,21 @@ func (s *CompanyService) AddEmployeeToDepartment(ctx context.Context, req *pb.Ad
 		return nil, err
 	}
 
-	// Проверяем принадлежность сотрудника к организации
-	err = s.checkEmployeeRole(ctx, req.GetOperationId(), "add employee to department", department.CompanyUUID, req.GetTargetUuid(), AllRoles)
+	// Проверяем принадлежность сотрудника к организации и получаем его данные
+	target, getTargetErr := s.db.Company.GetCompanyEmployee(ctx, department.CompanyUUID, req.GetTargetUuid())
+	if getTargetErr.Code == int(codes.NotFound) {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "add employee to department").Err(fmt.Errorf("target not in company")).Msg("error")
+		return nil, status.Errorf(codes.NotFound, "employee not found in company")
+	}
+	err = Error.HandleError(getTargetErr, req.GetOperationId(), "add employee to department")
 	if err != nil {
 		return nil, err
+	}
+
+	// Проверяем, не состоит ли сотрудник уже в этом отделе
+	if target.DepartmentUUID == req.GetDepartmentUuid() {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "add employee to department").Err(fmt.Errorf("already in department")).Msg("error")
+		return nil, status.Errorf(codes.AlreadyExists, "employee is already in this department")
 	}
 
 	// Добавляем сотрудника в департамент
@@ -969,7 +1009,7 @@ func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *
 
 	if target.DepartmentUUID != req.GetDepartmentUuid() {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "remove employee from department").Err(fmt.Errorf("user not in this department")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "user not in this department")
+		return nil, status.Errorf(codes.NotFound, "user not in this department")
 	}
 
 	// Убираем сотрудника из департамента
@@ -1011,7 +1051,7 @@ func (s *CompanyService) checkEmployeeRole(ctx context.Context, operationUUID, m
 	// Обработка внутренней ошибки
 	err := Error.HandleError(getCompanyErr, operationUUID, methodName)
 	if err != nil {
-		log.Info().Str("id", operationUUID).Str("method", methodName).Err(fmt.Errorf("failed get company: %w", err)).Msg("error")
+		log.Info().Str("id", operationUUID).Str("method", methodName).Err(getCompanyErr.Err).Msg("error")
 		return status.Error(codes.Internal, "internal error")
 	}
 
@@ -1024,7 +1064,7 @@ func (s *CompanyService) checkEmployeeRole(ctx context.Context, operationUUID, m
 	// Обработка внутренней ошибки
 	err = Error.HandleError(getErr, operationUUID, methodName)
 	if err != nil {
-		log.Info().Str("id", operationUUID).Str("method", methodName).Err(fmt.Errorf("failed get employee role: %w", err)).Msg("error")
+		log.Info().Str("id", operationUUID).Str("method", methodName).Err(getErr.Err).Msg("error")
 		return status.Error(codes.Internal, "internal error")
 	}
 

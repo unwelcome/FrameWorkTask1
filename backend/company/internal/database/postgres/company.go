@@ -16,6 +16,7 @@ type CompanyRepository interface {
 	CreateCompany(ctx context.Context, dto *entities.CreateCompany) Error.CodeError
 	GetCompany(ctx context.Context, companyUUID string) (*entities.Company, Error.CodeError)
 	GetCompanies(ctx context.Context, offset, count int64) ([]*entities.GetCompanies, Error.CodeError)
+	GetUserCompanies(ctx context.Context, userUUID string) ([]*entities.GetCompanies, Error.CodeError)
 	UpdateCompanyTitle(ctx context.Context, companyUUID, title string) Error.CodeError
 	UpdateCompanyStatus(ctx context.Context, companyUUID, status string) Error.CodeError
 	DeleteCompany(ctx context.Context, companyUUID string) Error.CodeError
@@ -91,6 +92,33 @@ func (r *companyRepository) GetCompanies(ctx context.Context, offset, count int6
 			return nil, Error.Internal(err)
 		}
 
+		companies = append(companies, company)
+	}
+
+	if err = res.Err(); err != nil {
+		return nil, Error.Internal(err)
+	}
+
+	return companies, Error.CodeError{}
+}
+
+// GetUserCompanies Получение списка компаний, в которых состоит пользователь
+func (r *companyRepository) GetUserCompanies(ctx context.Context, userUUID string) ([]*entities.GetCompanies, Error.CodeError) {
+	query := `SELECT c.uuid, c.title, c.status FROM companies c JOIN employees e ON c.uuid = e.company_uuid WHERE e.user_uuid = $1 ORDER BY c.created_at DESC;`
+
+	res, err := r.db.QueryContext(ctx, query, userUUID)
+	if err != nil {
+		return nil, Error.Internal(err)
+	}
+	defer res.Close()
+
+	companies := make([]*entities.GetCompanies, 0)
+	for res.Next() {
+		company := &entities.GetCompanies{}
+		err = res.Scan(&company.CompanyUUID, &company.Title, &company.Status)
+		if err != nil {
+			return nil, Error.Internal(err)
+		}
 		companies = append(companies, company)
 	}
 
@@ -192,7 +220,7 @@ func (r *companyRepository) JoinCompany(ctx context.Context, companyUUID, userUU
 
 // GetCompanyEmployee Получение данных о сотруднике в компании (ошибка если сотрудника нет)
 func (r *companyRepository) GetCompanyEmployee(ctx context.Context, companyUUID, userUUID string) (*entities.Employee, Error.CodeError) {
-	query := `SELECT role, department_uuid, joined_at FROM employees WHERE company_uuid = $1 AND user_uuid = $2;`
+	query := `SELECT role, COALESCE(department_uuid::text, ''), joined_at FROM employees WHERE company_uuid = $1 AND user_uuid = $2;`
 
 	employee := &entities.Employee{
 		CompanyUUID: companyUUID,

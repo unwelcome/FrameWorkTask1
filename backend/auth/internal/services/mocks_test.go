@@ -76,6 +76,13 @@ const (
 	testSecret     = "test-secret-key"
 	testAccessTTL  = time.Minute
 	testRefreshTTL = time.Hour
+
+	// Валидные UUID для использования в тестах
+	testUUID1 = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	testUUID2 = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+
+	// Валидный пароль: есть uppercase, lowercase и цифра, длина >= 8
+	testPassword = "Password123"
 )
 
 // newTestService создаёт AuthService с подменёнными зависимостями

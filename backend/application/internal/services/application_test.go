@@ -16,12 +16,13 @@ import (
 
 const (
 	opID        = "op-test-1"
-	initiatorID = "initiator-uuid-1"
-	targetID    = "target-uuid-1"
-	appID       = "app-uuid-1"
-	companyID   = "company-uuid-1"
-	deptID      = "dept-uuid-1"
-	otherDeptID = "dept-uuid-2"
+	initiatorID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	targetID    = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+	appID       = "cccccccc-cccc-cccc-cccc-cccccccccccc"
+	companyID   = "dddddddd-dddd-dddd-dddd-dddddddddddd"
+	deptID      = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+	otherDeptID = "ffffffff-ffff-ffff-ffff-ffffffffffff"
+	otherUserID = "11111111-1111-1111-1111-111111111111"
 )
 
 // ─── CreateApplication ────────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ func TestCreateApplication(t *testing.T) {
 			OperationId:     opID,
 			InitiatorUuid:   initiatorID,
 			CompanyUuid:     companyID,
-			ApplicationData: &pb.ApplicationData{Title: "Title"},
+			ApplicationData: &pb.ApplicationData{Title: "Title", Description: "Some description"},
 		})
 		assertCode(t, err, codes.PermissionDenied)
 	})
@@ -63,7 +64,7 @@ func TestCreateApplication(t *testing.T) {
 			OperationId:     opID,
 			InitiatorUuid:   initiatorID,
 			CompanyUuid:     companyID,
-			ApplicationData: &pb.ApplicationData{Title: "   "},
+			ApplicationData: &pb.ApplicationData{Title: "", Description: "Some description"},
 		})
 		assertCode(t, err, codes.InvalidArgument)
 	})
@@ -74,7 +75,7 @@ func TestCreateApplication(t *testing.T) {
 			OperationId:     opID,
 			InitiatorUuid:   initiatorID,
 			CompanyUuid:     companyID,
-			ApplicationData: &pb.ApplicationData{Title: strings.Repeat("x", 256)},
+			ApplicationData: &pb.ApplicationData{Title: strings.Repeat("x", 256), Description: "Some description"},
 		})
 		assertCode(t, err, codes.InvalidArgument)
 	})
@@ -85,7 +86,7 @@ func TestCreateApplication(t *testing.T) {
 			OperationId:     opID,
 			InitiatorUuid:   initiatorID,
 			CompanyUuid:     companyID,
-			ApplicationData: &pb.ApplicationData{Title: "Title"},
+			ApplicationData: &pb.ApplicationData{Title: "Title", Description: "Some description"},
 		})
 		if err == nil {
 			t.Fatal("expected error from company service, got nil")
@@ -101,9 +102,31 @@ func TestCreateApplication(t *testing.T) {
 			OperationId:     opID,
 			InitiatorUuid:   initiatorID,
 			CompanyUuid:     companyID,
-			ApplicationData: &pb.ApplicationData{Title: "Title"},
+			ApplicationData: &pb.ApplicationData{Title: "Title", Description: "Some description"},
 		})
 		assertCode(t, err, codes.Internal)
+	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.CreateApplication(context.Background(), &pb.CreateApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "not-a-uuid",
+			CompanyUuid:     companyID,
+			ApplicationData: &pb.ApplicationData{Title: "Title", Description: "Desc"},
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_company_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.CreateApplication(context.Background(), &pb.CreateApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			CompanyUuid:     "not-a-uuid",
+			ApplicationData: &pb.ApplicationData{Title: "Title", Description: "Desc"},
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 }
 
@@ -139,7 +162,7 @@ func TestGetApplication(t *testing.T) {
 		svc := newAppTestService(repo, roleClient("chief"))
 		_, err := svc.GetApplication(context.Background(), &pb.GetApplicationRequest{
 			OperationId:     opID,
-			InitiatorUuid:   "some-other-uuid",
+			InitiatorUuid:   otherUserID,
 			ApplicationUuid: appID,
 		})
 		if err != nil {
@@ -153,7 +176,7 @@ func TestGetApplication(t *testing.T) {
 		svc := newAppTestService(repo, roleClient("engineer"))
 		_, err := svc.GetApplication(context.Background(), &pb.GetApplicationRequest{
 			OperationId:     opID,
-			InitiatorUuid:   "stranger-uuid",
+			InitiatorUuid:   otherUserID,
 			ApplicationUuid: appID,
 		})
 		assertCode(t, err, codes.PermissionDenied)
@@ -201,6 +224,26 @@ func TestGetApplication(t *testing.T) {
 			ApplicationUuid: appID,
 		})
 		assertCode(t, err, codes.Internal)
+	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.GetApplication(context.Background(), &pb.GetApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "not-a-uuid",
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_application_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.GetApplication(context.Background(), &pb.GetApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: "not-a-uuid",
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 }
 
@@ -451,6 +494,30 @@ func TestGetApplications(t *testing.T) {
 			t.Fatal("expected error for unknown employee, got nil")
 		}
 	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("chief"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: "not-a-uuid",
+			CompanyUuid:   companyID,
+			Count:         10,
+			Offset:        0,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_company_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("chief"))
+		_, err := svc.GetApplications(context.Background(), &pb.GetApplicationsRequest{
+			OperationId:   opID,
+			InitiatorUuid: initiatorID,
+			CompanyUuid:   "not-a-uuid",
+			Count:         10,
+			Offset:        0,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
 }
 
 // ─── UpdateApplicationStatus ──────────────────────────────────────────────────
@@ -555,7 +622,7 @@ func TestUpdateApplicationStatus(t *testing.T) {
 		svc := newAppTestService(repo, roleClient("inspector"))
 		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
 			OperationId:     opID,
-			InitiatorUuid:   "other-inspector",
+			InitiatorUuid:   otherUserID,
 			ApplicationUuid: appID,
 			Status:          "completed",
 		})
@@ -667,7 +734,7 @@ func TestUpdateApplicationStatus(t *testing.T) {
 		svc := newAppTestService(repo, roleClient("engineer"))
 		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
 			OperationId:     opID,
-			InitiatorUuid:   "other-engineer",
+			InitiatorUuid:   otherUserID,
 			ApplicationUuid: appID,
 			Status:          "in_progress",
 		})
@@ -698,6 +765,28 @@ func TestUpdateApplicationStatus(t *testing.T) {
 			Status:          "rejected",
 		})
 		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("manager"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "not-a-uuid",
+			ApplicationUuid: appID,
+			Status:          "rejected",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_application_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("manager"))
+		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: "not-a-uuid",
+			Status:          "rejected",
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 }
 
@@ -840,6 +929,39 @@ func TestAssignApplication(t *testing.T) {
 		})
 		assertCode(t, err, codes.Internal)
 	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("manager"))
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "not-a-uuid",
+			TargetUuid:      targetID,
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_application_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("manager"))
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			TargetUuid:      targetID,
+			ApplicationUuid: "not-a-uuid",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_target_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("manager"))
+		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			TargetUuid:      "not-a-uuid",
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
 }
 
 // ─── RedirectApplication ──────────────────────────────────────────────────────
@@ -913,7 +1035,7 @@ func TestRedirectApplication(t *testing.T) {
 			OperationId:          opID,
 			InitiatorUuid:        initiatorID,
 			ApplicationUuid:      appID,
-			TargetDepartmentUuid: "yet-another-dept",
+			TargetDepartmentUuid: deptID,
 			Message:              "message",
 		})
 		assertCode(t, err, codes.PermissionDenied)
@@ -922,7 +1044,7 @@ func TestRedirectApplication(t *testing.T) {
 	t.Run("target department belongs to another company", func(t *testing.T) {
 		repo := repoWithApp(testApp())
 
-		svc := newAppTestService(repo, redirectClient("manager", "other-company-uuid"))
+		svc := newAppTestService(repo, redirectClient("manager", "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"))
 		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
 			OperationId:          opID,
 			InitiatorUuid:        initiatorID,
@@ -946,6 +1068,42 @@ func TestRedirectApplication(t *testing.T) {
 			Message:              "message",
 		})
 		assertCode(t, err, codes.Internal)
+	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), redirectClient("manager", companyID))
+		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
+			OperationId:          opID,
+			InitiatorUuid:        "not-a-uuid",
+			ApplicationUuid:      appID,
+			TargetDepartmentUuid: otherDeptID,
+			Message:              "message",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_application_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), redirectClient("manager", companyID))
+		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
+			OperationId:          opID,
+			InitiatorUuid:        initiatorID,
+			ApplicationUuid:      "not-a-uuid",
+			TargetDepartmentUuid: otherDeptID,
+			Message:              "message",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_target_department_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), redirectClient("manager", companyID))
+		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
+			OperationId:          opID,
+			InitiatorUuid:        initiatorID,
+			ApplicationUuid:      appID,
+			TargetDepartmentUuid: "not-a-uuid",
+			Message:              "message",
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 }
 
@@ -999,7 +1157,7 @@ func TestRecallApplication(t *testing.T) {
 		svc := newAppTestService(repo, roleClient("manager"))
 		_, err := svc.RecallApplication(context.Background(), &pb.RecallApplicationRequest{
 			OperationId:     opID,
-			InitiatorUuid:   "other-manager",
+			InitiatorUuid:   otherUserID,
 			ApplicationUuid: appID,
 			Message:         "message",
 		})
@@ -1032,6 +1190,28 @@ func TestRecallApplication(t *testing.T) {
 			Message:         "message",
 		})
 		assertCode(t, err, codes.Internal)
+	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("manager"))
+		_, err := svc.RecallApplication(context.Background(), &pb.RecallApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "not-a-uuid",
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_application_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("manager"))
+		_, err := svc.RecallApplication(context.Background(), &pb.RecallApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: "not-a-uuid",
+			Message:         "message",
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 }
 
@@ -1105,6 +1285,26 @@ func TestTakeApplicationToVerification(t *testing.T) {
 		})
 		assertCode(t, err, codes.Internal)
 	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.TakeApplicationToVerification(context.Background(), &pb.TakeApplicationToVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "not-a-uuid",
+			ApplicationUuid: appID,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_application_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.TakeApplicationToVerification(context.Background(), &pb.TakeApplicationToVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: "not-a-uuid",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
 }
 
 // ─── ReleaseApplicationVerification ──────────────────────────────────────────
@@ -1157,7 +1357,7 @@ func TestReleaseApplicationVerification(t *testing.T) {
 		svc := newAppTestService(repo, roleClient("inspector"))
 		_, err := svc.ReleaseApplicationVerification(context.Background(), &pb.ReleaseApplicationVerificationRequest{
 			OperationId:     opID,
-			InitiatorUuid:   "other-inspector",
+			InitiatorUuid:   otherUserID,
 			ApplicationUuid: appID,
 			Message:         "message",
 		})
@@ -1192,6 +1392,28 @@ func TestReleaseApplicationVerification(t *testing.T) {
 			Message:         "message",
 		})
 		assertCode(t, err, codes.Internal)
+	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.ReleaseApplicationVerification(context.Background(), &pb.ReleaseApplicationVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "not-a-uuid",
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_application_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.ReleaseApplicationVerification(context.Background(), &pb.ReleaseApplicationVerificationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: "not-a-uuid",
+			Message:         "message",
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 }
 
@@ -1247,7 +1469,7 @@ func TestAddApplicationFixLog(t *testing.T) {
 		svc := newAppTestService(repo, roleClient("engineer"))
 		_, err := svc.AddApplicationFixLog(context.Background(), &pb.AddApplicationFixLogRequest{
 			OperationId:     opID,
-			InitiatorUuid:   "other-engineer",
+			InitiatorUuid:   otherUserID,
 			ApplicationUuid: appID,
 			Message:         "message",
 		})
@@ -1267,6 +1489,28 @@ func TestAddApplicationFixLog(t *testing.T) {
 		})
 		assertCode(t, err, codes.Internal)
 	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("engineer"))
+		_, err := svc.AddApplicationFixLog(context.Background(), &pb.AddApplicationFixLogRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "not-a-uuid",
+			ApplicationUuid: appID,
+			Message:         "message",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_application_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("engineer"))
+		_, err := svc.AddApplicationFixLog(context.Background(), &pb.AddApplicationFixLogRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: "not-a-uuid",
+			Message:         "message",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
 }
 
 // ─── DeleteApplication ────────────────────────────────────────────────────────
@@ -1274,6 +1518,7 @@ func TestAddApplicationFixLog(t *testing.T) {
 func TestDeleteApplication(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := repoWithApp(testApp()) // CreatedBy=initiatorID, status=created
+		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
 		repo.deleteApplication = func(_ context.Context, _ entities.DeleteApplicationDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))
@@ -1281,6 +1526,7 @@ func TestDeleteApplication(t *testing.T) {
 			OperationId:     opID,
 			InitiatorUuid:   initiatorID,
 			ApplicationUuid: appID,
+			Message:         "Deleting application",
 		})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -1293,8 +1539,9 @@ func TestDeleteApplication(t *testing.T) {
 		svc := newAppTestService(repo, roleClient("inspector"))
 		_, err := svc.DeleteApplication(context.Background(), &pb.DeleteApplicationRequest{
 			OperationId:     opID,
-			InitiatorUuid:   "other-user",
+			InitiatorUuid:   otherUserID,
 			ApplicationUuid: appID,
+			Message:         "reason",
 		})
 		assertCode(t, err, codes.PermissionDenied)
 	})
@@ -1307,6 +1554,7 @@ func TestDeleteApplication(t *testing.T) {
 			OperationId:     opID,
 			InitiatorUuid:   initiatorID,
 			ApplicationUuid: appID,
+			Message:         "reason",
 		})
 		assertCode(t, err, codes.PermissionDenied)
 	})
@@ -1319,12 +1567,14 @@ func TestDeleteApplication(t *testing.T) {
 			OperationId:     opID,
 			InitiatorUuid:   initiatorID,
 			ApplicationUuid: appID,
+			Message:         "reason",
 		})
 		assertCode(t, err, codes.PermissionDenied)
 	})
 
 	t.Run("db error", func(t *testing.T) {
 		repo := repoWithApp(testApp())
+		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
 		repo.deleteApplication = func(_ context.Context, _ entities.DeleteApplicationDTO) Error.CodeError { return internalErr() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))
@@ -1332,8 +1582,31 @@ func TestDeleteApplication(t *testing.T) {
 			OperationId:     opID,
 			InitiatorUuid:   initiatorID,
 			ApplicationUuid: appID,
+			Message:         "reason",
 		})
 		assertCode(t, err, codes.Internal)
+	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.DeleteApplication(context.Background(), &pb.DeleteApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   "not-a-uuid",
+			ApplicationUuid: appID,
+			Message:         "reason",
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_application_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("inspector"))
+		_, err := svc.DeleteApplication(context.Background(), &pb.DeleteApplicationRequest{
+			OperationId:     opID,
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: "not-a-uuid",
+			Message:         "reason",
+		})
+		assertCode(t, err, codes.InvalidArgument)
 	})
 }
 

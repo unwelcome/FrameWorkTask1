@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"golang.org/x/crypto/bcrypt"
@@ -49,7 +50,7 @@ func hashPassword(t *testing.T, password string) string {
 
 func validRefreshToken(t *testing.T) string {
 	t.Helper()
-	tokens, err := utils.CreateTokens("user-uuid-1", testSecret, testAccessTTL, testRefreshTTL)
+	tokens, err := utils.CreateTokens(testUUID1, testSecret, testAccessTTL, testRefreshTTL)
 	if err != nil {
 		t.Fatalf("failed to create tokens: %v", err)
 	}
@@ -58,11 +59,17 @@ func validRefreshToken(t *testing.T) string {
 
 func validAccessToken(t *testing.T) string {
 	t.Helper()
-	tokens, err := utils.CreateTokens("user-uuid-1", testSecret, testAccessTTL, testRefreshTTL)
+	tokens, err := utils.CreateTokens(testUUID1, testSecret, testAccessTTL, testRefreshTTL)
 	if err != nil {
 		t.Fatalf("failed to create tokens: %v", err)
 	}
 	return tokens.AccessToken
+}
+
+// maxLenPassword возвращает валидный пароль длиной ровно 72 байта.
+// Содержит uppercase, lowercase и цифру — проходит все проверки.
+func maxLenPassword() string {
+	return "Password1" + strings.Repeat("a", 63) // 9 + 63 = 72 байта
 }
 
 // ─── Register ────────────────────────────────────────────────────────────────
@@ -82,7 +89,7 @@ func TestRegister(t *testing.T) {
 		resp, err := svc.Register(context.Background(), &pb.RegisterRequest{
 			OperationId: "op-1",
 			Email:       "test@example.com",
-			Password:    "password123",
+			Password:    testPassword,
 			FirstName:   "Ivan",
 			LastName:    "Ivanov",
 		})
@@ -93,12 +100,39 @@ func TestRegister(t *testing.T) {
 		}
 	})
 
+	t.Run("invalid_email", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
+			OperationId: "op-1",
+			Email:       "not-an-email",
+			Password:    testPassword,
+			FirstName:   "Ivan",
+			LastName:    "Ivanov",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("password_too_short", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
+			OperationId: "op-1",
+			Email:       "test@example.com",
+			Password:    "Ab1",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
 	t.Run("password_too_long", func(t *testing.T) {
 		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
 
 		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
 			OperationId: "op-1",
-			Password:    string(make([]byte, 73)),
+			Email:       "test@example.com",
+			Password:    "Password1" + strings.Repeat("a", 64), // 73 байта
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
@@ -113,12 +147,40 @@ func TestRegister(t *testing.T) {
 		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
 			OperationId: "op-1",
 			Email:       "test@example.com",
-			Password:    string(make([]byte, 72)),
+			Password:    maxLenPassword(),
 			FirstName:   "Ivan",
 			LastName:    "Ivanov",
 		})
 
 		assertNoError(t, err)
+	})
+
+	t.Run("invalid_first_name", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
+			OperationId: "op-1",
+			Email:       "test@example.com",
+			Password:    testPassword,
+			FirstName:   "Ivan123",
+			LastName:    "Ivanov",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_last_name", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
+			OperationId: "op-1",
+			Email:       "test@example.com",
+			Password:    testPassword,
+			FirstName:   "Ivan",
+			LastName:    "Ivanov123",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("email_already_exists", func(t *testing.T) {
@@ -132,7 +194,7 @@ func TestRegister(t *testing.T) {
 		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
 			OperationId: "op-1",
 			Email:       "taken@example.com",
-			Password:    "password123",
+			Password:    testPassword,
 			FirstName:   "Ivan",
 			LastName:    "Ivanov",
 		})
@@ -145,10 +207,10 @@ func TestRegister(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		hashedPwd := hashPassword(t, "correctpassword")
+		hashedPwd := hashPassword(t, testPassword)
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ string) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: "user-uuid-1", PasswordHash: hashedPwd}, ok()
+				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd}, ok()
 			},
 		}
 		authRepo := &mockAuthRepo{
@@ -159,16 +221,40 @@ func TestLogin(t *testing.T) {
 		resp, err := svc.Login(context.Background(), &pb.LoginRequest{
 			OperationId: "op-1",
 			Email:       "test@example.com",
-			Password:    "correctpassword",
+			Password:    testPassword,
 		})
 
 		assertNoError(t, err)
 		if resp.GetAccessToken() == "" || resp.GetRefreshToken() == "" {
 			t.Error("expected non-empty tokens in response")
 		}
-		if resp.GetUserUuid() != "user-uuid-1" {
-			t.Errorf("expected user UUID 'user-uuid-1', got %q", resp.GetUserUuid())
+		if resp.GetUserUuid() != testUUID1 {
+			t.Errorf("expected user UUID %q, got %q", testUUID1, resp.GetUserUuid())
 		}
+	})
+
+	t.Run("invalid_email", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.Login(context.Background(), &pb.LoginRequest{
+			OperationId: "op-1",
+			Email:       "not-an-email",
+			Password:    testPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_password", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.Login(context.Background(), &pb.LoginRequest{
+			OperationId: "op-1",
+			Email:       "test@example.com",
+			Password:    "short",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("user_not_found", func(t *testing.T) {
@@ -182,17 +268,17 @@ func TestLogin(t *testing.T) {
 		_, err := svc.Login(context.Background(), &pb.LoginRequest{
 			OperationId: "op-1",
 			Email:       "notexist@example.com",
-			Password:    "password",
+			Password:    testPassword,
 		})
 
 		assertCode(t, err, codes.NotFound)
 	})
 
 	t.Run("wrong_password", func(t *testing.T) {
-		hashedPwd := hashPassword(t, "correctpassword")
+		hashedPwd := hashPassword(t, testPassword)
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ string) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: "user-uuid-1", PasswordHash: hashedPwd}, ok()
+				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd}, ok()
 			},
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
@@ -200,17 +286,17 @@ func TestLogin(t *testing.T) {
 		_, err := svc.Login(context.Background(), &pb.LoginRequest{
 			OperationId: "op-1",
 			Email:       "test@example.com",
-			Password:    "wrongpassword",
+			Password:    "WrongPassword1",
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("save_token_error", func(t *testing.T) {
-		hashedPwd := hashPassword(t, "correctpassword")
+		hashedPwd := hashPassword(t, testPassword)
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ string) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: "user-uuid-1", PasswordHash: hashedPwd}, ok()
+				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd}, ok()
 			},
 		}
 		authRepo := &mockAuthRepo{
@@ -223,7 +309,7 @@ func TestLogin(t *testing.T) {
 		_, err := svc.Login(context.Background(), &pb.LoginRequest{
 			OperationId: "op-1",
 			Email:       "test@example.com",
-			Password:    "correctpassword",
+			Password:    testPassword,
 		})
 
 		assertCode(t, err, codes.Internal)
@@ -248,13 +334,24 @@ func TestGetUser(t *testing.T) {
 
 		resp, err := svc.GetUser(context.Background(), &pb.GetUserRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
+			UserUuid:    testUUID1,
 		})
 
 		assertNoError(t, err)
 		if resp.GetEmail() != "test@example.com" {
 			t.Errorf("expected email 'test@example.com', got %q", resp.GetEmail())
 		}
+	})
+
+	t.Run("invalid_uuid", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.GetUser(context.Background(), &pb.GetUserRequest{
+			OperationId: "op-1",
+			UserUuid:    "not-a-uuid",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("not_found", func(t *testing.T) {
@@ -267,7 +364,7 @@ func TestGetUser(t *testing.T) {
 
 		_, err := svc.GetUser(context.Background(), &pb.GetUserRequest{
 			OperationId: "op-1",
-			UserUuid:    "nonexistent",
+			UserUuid:    testUUID1,
 		})
 
 		assertCode(t, err, codes.NotFound)
@@ -288,8 +385,8 @@ func TestChangePassword(t *testing.T) {
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
-			Password:    "newpassword123",
+			UserUuid:    testUUID1,
+			Password:    testPassword,
 		})
 
 		assertNoError(t, err)
@@ -309,11 +406,35 @@ func TestChangePassword(t *testing.T) {
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
-			Password:    "newpassword123",
+			UserUuid:    testUUID1,
+			Password:    testPassword,
 		})
 
 		assertNoError(t, err)
+	})
+
+	t.Run("invalid_uuid", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
+			OperationId: "op-1",
+			UserUuid:    "not-a-uuid",
+			Password:    testPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("password_too_short", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
+			OperationId: "op-1",
+			UserUuid:    testUUID1,
+			Password:    "Ab1",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("password_too_long", func(t *testing.T) {
@@ -321,8 +442,8 @@ func TestChangePassword(t *testing.T) {
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
-			Password:    string(make([]byte, 73)),
+			UserUuid:    testUUID1,
+			Password:    "Password1" + strings.Repeat("a", 64), // 73 байта
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
@@ -338,8 +459,8 @@ func TestChangePassword(t *testing.T) {
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
 			OperationId: "op-1",
-			UserUuid:    "nonexistent",
-			Password:    "newpassword123",
+			UserUuid:    testUUID1,
+			Password:    testPassword,
 		})
 
 		assertCode(t, err, codes.NotFound)
@@ -358,8 +479,8 @@ func TestChangePassword(t *testing.T) {
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
-			Password:    "newpassword123",
+			UserUuid:    testUUID1,
+			Password:    testPassword,
 		})
 
 		assertCode(t, err, codes.Internal)
@@ -377,12 +498,38 @@ func TestUpdateUserBio(t *testing.T) {
 
 		_, err := svc.UpdateUserBio(context.Background(), &pb.UpdateUserBioRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
+			UserUuid:    testUUID1,
 			FirstName:   "Petr",
 			LastName:    "Petrov",
 		})
 
 		assertNoError(t, err)
+	})
+
+	t.Run("invalid_uuid", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.UpdateUserBio(context.Background(), &pb.UpdateUserBioRequest{
+			OperationId: "op-1",
+			UserUuid:    "not-a-uuid",
+			FirstName:   "Petr",
+			LastName:    "Petrov",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_first_name", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.UpdateUserBio(context.Background(), &pb.UpdateUserBioRequest{
+			OperationId: "op-1",
+			UserUuid:    testUUID1,
+			FirstName:   "Petr123",
+			LastName:    "Petrov",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("not_found", func(t *testing.T) {
@@ -395,7 +542,9 @@ func TestUpdateUserBio(t *testing.T) {
 
 		_, err := svc.UpdateUserBio(context.Background(), &pb.UpdateUserBioRequest{
 			OperationId: "op-1",
-			UserUuid:    "nonexistent",
+			UserUuid:    testUUID1,
+			FirstName:   "Petr",
+			LastName:    "Petrov",
 		})
 
 		assertCode(t, err, codes.NotFound)
@@ -416,8 +565,8 @@ func TestDeleteUser(t *testing.T) {
 
 		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
 			OperationId:       "op-1",
-			InitiatorUserUuid: "user-uuid-1",
-			TargetUserUuid:    "user-uuid-1",
+			InitiatorUserUuid: testUUID1,
+			TargetUserUuid:    testUUID1,
 		})
 
 		assertNoError(t, err)
@@ -436,11 +585,35 @@ func TestDeleteUser(t *testing.T) {
 
 		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
 			OperationId:       "op-1",
-			InitiatorUserUuid: "user-uuid-1",
-			TargetUserUuid:    "user-uuid-1",
+			InitiatorUserUuid: testUUID1,
+			TargetUserUuid:    testUUID1,
 		})
 
 		assertNoError(t, err)
+	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
+			OperationId:       "op-1",
+			InitiatorUserUuid: "not-a-uuid",
+			TargetUserUuid:    testUUID1,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_target_uuid", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
+			OperationId:       "op-1",
+			InitiatorUserUuid: testUUID1,
+			TargetUserUuid:    "not-a-uuid",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("not_owner", func(t *testing.T) {
@@ -448,8 +621,8 @@ func TestDeleteUser(t *testing.T) {
 
 		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
 			OperationId:       "op-1",
-			InitiatorUserUuid: "user-uuid-1",
-			TargetUserUuid:    "user-uuid-2",
+			InitiatorUserUuid: testUUID1,
+			TargetUserUuid:    testUUID2,
 		})
 
 		assertCode(t, err, codes.PermissionDenied)
@@ -468,8 +641,8 @@ func TestDeleteUser(t *testing.T) {
 
 		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
 			OperationId:       "op-1",
-			InitiatorUserUuid: "user-uuid-1",
-			TargetUserUuid:    "user-uuid-1",
+			InitiatorUserUuid: testUUID1,
+			TargetUserUuid:    testUUID1,
 		})
 
 		assertCode(t, err, codes.NotFound)
@@ -489,7 +662,7 @@ func TestGetAllActiveTokens(t *testing.T) {
 
 		resp, err := svc.GetAllActiveTokens(context.Background(), &pb.GetAllActiveTokensRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
+			UserUuid:    testUUID1,
 		})
 
 		assertNoError(t, err)
@@ -508,13 +681,24 @@ func TestGetAllActiveTokens(t *testing.T) {
 
 		resp, err := svc.GetAllActiveTokens(context.Background(), &pb.GetAllActiveTokensRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
+			UserUuid:    testUUID1,
 		})
 
 		assertNoError(t, err)
 		if len(resp.GetTokens()) != 0 {
 			t.Errorf("expected 0 tokens, got %d", len(resp.GetTokens()))
 		}
+	})
+
+	t.Run("invalid_uuid", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.GetAllActiveTokens(context.Background(), &pb.GetAllActiveTokensRequest{
+			OperationId: "op-1",
+			UserUuid:    "not-a-uuid",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("cache_error", func(t *testing.T) {
@@ -527,7 +711,7 @@ func TestGetAllActiveTokens(t *testing.T) {
 
 		_, err := svc.GetAllActiveTokens(context.Background(), &pb.GetAllActiveTokensRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
+			UserUuid:    testUUID1,
 		})
 
 		assertCode(t, err, codes.Internal)
@@ -541,7 +725,7 @@ func TestRefreshToken(t *testing.T) {
 		refreshToken := validRefreshToken(t)
 		userRepo := &mockUserRepo{
 			getUser: func(_ context.Context, _ string) (*entities.UserGet, Error.CodeError) {
-				return &entities.UserGet{UserUUID: "user-uuid-1"}, ok()
+				return &entities.UserGet{UserUUID: testUUID1}, ok()
 			},
 		}
 		authRepo := &mockAuthRepo{
@@ -633,11 +817,35 @@ func TestRevokeToken(t *testing.T) {
 
 		_, err := svc.RevokeToken(context.Background(), &pb.RevokeTokenRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
+			UserUuid:    testUUID1,
 			TokenHash:   "abc123hash",
 		})
 
 		assertNoError(t, err)
+	})
+
+	t.Run("invalid_uuid", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.RevokeToken(context.Background(), &pb.RevokeTokenRequest{
+			OperationId: "op-1",
+			UserUuid:    "not-a-uuid",
+			TokenHash:   "abc123hash",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("empty_token_hash", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.RevokeToken(context.Background(), &pb.RevokeTokenRequest{
+			OperationId: "op-1",
+			UserUuid:    testUUID1,
+			TokenHash:   "",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("token_not_found", func(t *testing.T) {
@@ -650,7 +858,7 @@ func TestRevokeToken(t *testing.T) {
 
 		_, err := svc.RevokeToken(context.Background(), &pb.RevokeTokenRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
+			UserUuid:    testUUID1,
 			TokenHash:   "abc123hash",
 		})
 
@@ -659,9 +867,10 @@ func TestRevokeToken(t *testing.T) {
 
 	t.Run("token_belongs_to_different_user", func(t *testing.T) {
 		// Слой репозитория проверяет принадлежность и возвращает NotFound
+		const ownerUUID = "cccccccc-cccc-cccc-cccc-cccccccccccc"
 		authRepo := &mockAuthRepo{
 			revokeRefreshToken: func(_ context.Context, userUUID, _ string) Error.CodeError {
-				if userUUID != "owner-uuid" {
+				if userUUID != ownerUUID {
 					return Error.Public(codes.NotFound, "refresh token not found")
 				}
 				return ok()
@@ -671,7 +880,7 @@ func TestRevokeToken(t *testing.T) {
 
 		_, err := svc.RevokeToken(context.Background(), &pb.RevokeTokenRequest{
 			OperationId: "op-1",
-			UserUuid:    "attacker-uuid",
+			UserUuid:    testUUID1, // не владелец токена
 			TokenHash:   "abc123hash",
 		})
 
@@ -690,10 +899,21 @@ func TestRevokeAllTokens(t *testing.T) {
 
 		_, err := svc.RevokeAllTokens(context.Background(), &pb.RevokeAllTokensRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
+			UserUuid:    testUUID1,
 		})
 
 		assertNoError(t, err)
+	})
+
+	t.Run("invalid_uuid", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.RevokeAllTokens(context.Background(), &pb.RevokeAllTokensRequest{
+			OperationId: "op-1",
+			UserUuid:    "not-a-uuid",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("not_found", func(t *testing.T) {
@@ -706,7 +926,7 @@ func TestRevokeAllTokens(t *testing.T) {
 
 		_, err := svc.RevokeAllTokens(context.Background(), &pb.RevokeAllTokensRequest{
 			OperationId: "op-1",
-			UserUuid:    "user-uuid-1",
+			UserUuid:    testUUID1,
 		})
 
 		assertCode(t, err, codes.NotFound)

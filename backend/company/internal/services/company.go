@@ -5,23 +5,26 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/entities"
+	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/helpers"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/validate"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const JoinCodeLength = 6
+const JoinCodeCreateTries = 10
 
+var AllStatuses = []string{"open", "close"}
 var AllRoles = []string{"chief", "analytic", "manager", "engineer", "inspector", "unemployed"}
 
 type CompanyService struct {
@@ -42,8 +45,8 @@ func (s *CompanyService) Health(ctx context.Context, req *pb.HealthRequest) (*pb
 	log.Info().Str("id", req.GetOperationId()).Str("method", "health").Msg("success")
 	return &pb.HealthResponse{
 		Service:  "healthy",
-		Postgres: pingStatus(s.db.Ping(ctx)),
-		Redis:    pingStatus(s.cache.Ping(ctx)),
+		Postgres: helpers.PingStatus(s.db.Ping(ctx)),
+		Redis:    helpers.PingStatus(s.cache.Ping(ctx)),
 		Minio:    "not implemented",
 		Mongo:    "not implemented",
 	}, nil
@@ -51,11 +54,14 @@ func (s *CompanyService) Health(ctx context.Context, req *pb.HealthRequest) (*pb
 
 // CreateCompany Создает компанию
 func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompanyRequest) (*pb.CreateCompanyResponse, error) {
-	// Проверка title
-	title := strings.TrimSpace(req.GetTitle())
-	if title == "" || len([]rune(title)) >= 255 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "create company").Err(fmt.Errorf("invalid title")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid title")
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create company").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.CompanyTitle(req.GetTitle()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create company").Err(fmt.Errorf("invalid company title")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company title")
 	}
 
 	// Создаем uuid компании
@@ -96,6 +102,16 @@ func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompan
 
 // GetCompany Возвращает всю информацию о компании
 func (s *CompanyService) GetCompany(ctx context.Context, req *pb.GetCompanyRequest) (*pb.GetCompanyResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+
 	// Получаем данные о компании
 	companyInfo, getErr := s.db.Company.GetCompany(ctx, req.GetCompanyUuid())
 	err := Error.HandleError(getErr, req.GetOperationId(), "get company")
@@ -119,7 +135,6 @@ func (s *CompanyService) GetCompanies(ctx context.Context, req *pb.GetCompaniesR
 		log.Info().Str("id", req.GetOperationId()).Str("method", "get companies").Err(fmt.Errorf("invalid offset")).Msg("error")
 		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
 	}
-
 	// Валидация count
 	count := req.GetCount()
 	if count <= 0 || count > 100 {
@@ -150,6 +165,20 @@ func (s *CompanyService) GetCompanies(ctx context.Context, req *pb.GetCompaniesR
 
 // UpdateCompanyTitle Обновляет название компании
 func (s *CompanyService) UpdateCompanyTitle(ctx context.Context, req *pb.UpdateCompanyTitleRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update title").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update title").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	if err := validate.CompanyTitle(req.GetTitle()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update title").Err(fmt.Errorf("invalid company title")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company title")
+	}
+
 	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "update title", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
@@ -169,6 +198,20 @@ func (s *CompanyService) UpdateCompanyTitle(ctx context.Context, req *pb.UpdateC
 
 // UpdateCompanyStatus Обновляет статус компании (open | close)
 func (s *CompanyService) UpdateCompanyStatus(ctx context.Context, req *pb.UpdateCompanyStatusRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update status").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update status").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	if !helpers.Contains(AllStatuses, req.GetStatus()) {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update status").Err(fmt.Errorf("invalid company status")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company status")
+	}
+
 	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "update status", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
@@ -188,6 +231,16 @@ func (s *CompanyService) UpdateCompanyStatus(ctx context.Context, req *pb.Update
 
 // DeleteCompany Удаляет компанию
 func (s *CompanyService) DeleteCompany(ctx context.Context, req *pb.DeleteCompanyRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete company").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete company").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+
 	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "delete company", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
@@ -207,12 +260,15 @@ func (s *CompanyService) DeleteCompany(ctx context.Context, req *pb.DeleteCompan
 
 // CreateCompanyJoinCode Создает код для добавления в компанию
 func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.CreateCompanyJoinCodeRequest) (*pb.CreateCompanyJoinCodeResponse, error) {
-	// Проверка роли инициатора
-	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "create join code", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
-	if err != nil {
-		return nil, err
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create join code").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
 	}
-
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create join code").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
 	// Валидация времени жизни кода: мин - 60 сек / макс - 7 дней
 	ttl := req.GetCodeTtl()
 	if ttl < 60 {
@@ -225,11 +281,17 @@ func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.Crea
 	}
 	joinCodeTTL := time.Second * time.Duration(ttl)
 
-	// Создаем уникальный код добавления (до 10 попыток)
+	// Проверка роли инициатора
+	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "create join code", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
+	if err != nil {
+		return nil, err
+	}
+
+	// Создаем уникальный код добавления
 	var joinCode string
 	found := false
-	for i := 0; i < 10; i++ {
-		code, genErr := generateJoinCode(JoinCodeLength)
+	for i := 0; i < JoinCodeCreateTries; i++ {
+		code, genErr := generateJoinCode()
 		if genErr != nil {
 			log.Error().Str("id", req.GetOperationId()).Str("method", "create join code").Err(genErr).Msg("error")
 			return nil, status.Error(codes.Internal, "internal error")
@@ -262,6 +324,16 @@ func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.Crea
 
 // GetCompanyJoinCodes Возвращает все активные коды для добавления к компании
 func (s *CompanyService) GetCompanyJoinCodes(ctx context.Context, req *pb.GetCompanyJoinCodesRequest) (*pb.GetCompanyJoinCodesResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company codes").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company codes").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+
 	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company codes", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
@@ -281,6 +353,20 @@ func (s *CompanyService) GetCompanyJoinCodes(ctx context.Context, req *pb.GetCom
 
 // DeleteCompanyJoinCode Удаляет код добавления в компанию
 func (s *CompanyService) DeleteCompanyJoinCode(ctx context.Context, req *pb.DeleteCompanyJoinCodeRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete join code").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete join code").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	if err := validate.CompanyJoinCode(req.GetCode()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete join code").Err(fmt.Errorf("invalid company join code")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company join code")
+	}
+
 	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "delete join code", req.GetCompanyUuid(), req.GetInitiatorUuid(), []string{"chief"})
 	if err != nil {
@@ -314,6 +400,16 @@ func (s *CompanyService) DeleteCompanyJoinCode(ctx context.Context, req *pb.Dele
 
 // JoinCompany Добавляет пользователя в компанию
 func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyRequest) (*pb.JoinCompanyResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "join company").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.CompanyJoinCode(req.GetJoinCode()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "join company").Err(fmt.Errorf("invalid company join code")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company join code")
+	}
+
 	// Проверяем, что код существует
 	existErr := s.cache.Company.CheckJoinCodeExists(ctx, req.GetJoinCode())
 	if existErr.Code != 0 {
@@ -355,7 +451,7 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 		return nil, status.Error(codes.Canceled, "company is closed")
 	}
 
-	// Добавление пользователя в компанию
+	// Добавляем пользователя в компанию
 	addErr := s.db.Company.JoinCompany(ctx, companyUUID, req.GetInitiatorUuid())
 	err = Error.HandleError(addErr, req.GetOperationId(), "join company")
 	if err != nil {
@@ -368,6 +464,20 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 
 // GetCompanyEmployee Возвращает роль сотрудника в компании, иначе возвращает ошибку
 func (s *CompanyService) GetCompanyEmployee(ctx context.Context, req *pb.GetCompanyEmployeeRequest) (*pb.GetCompanyEmployeeResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employee").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employee").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	if err := validate.UUID(req.GetTargetUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employee").Err(fmt.Errorf("invalid target uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid target uuid")
+	}
+
 	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employee", req.GetCompanyUuid(), req.GetInitiatorUuid(), AllRoles)
 	if err != nil {
@@ -391,35 +501,43 @@ func (s *CompanyService) GetCompanyEmployee(ctx context.Context, req *pb.GetComp
 
 // GetCompanyEmployees Возвращает список сотрудников компании с фильтрацией (count, offset, role)
 func (s *CompanyService) GetCompanyEmployees(ctx context.Context, req *pb.GetCompanyEmployeesRequest) (*pb.GetCompanyEmployeesResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	if err := validate.UUID(req.GetDepartmentUuid()); err != nil && req.GetDepartmentUuid() != "" {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid department uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid department uuid")
+	}
+	// Валидация role
+	if req.GetRole() != "" && !helpers.Contains(AllRoles, req.GetRole()) {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid role")).Msg("error")
+		return nil, status.Error(codes.InvalidArgument, "incorrect role")
+	}
+	// Валидация count
+	if req.GetCount() <= 0 || req.GetCount() > 100 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid count")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
+	}
+	// Валидация offset
+	if req.GetOffset() < 0 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid offset")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
+	}
+
 	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employees", req.GetCompanyUuid(), req.GetInitiatorUuid(), AllRoles)
 	if err != nil {
 		return nil, err
 	}
 
-	// Валидация role
-	role := req.GetRole()
-	if role != "" && !checkArrayContain(AllRoles, role) {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid role")).Msg("error")
-		return nil, status.Error(codes.InvalidArgument, "incorrect role")
-	}
-
-	// Валидация count
-	count := req.GetCount()
-	if count <= 0 || count > 100 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid count")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
-	}
-
-	// Валидация offset
-	offset := req.GetOffset()
-	if offset < 0 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees").Err(fmt.Errorf("invalid offset")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
-	}
-
 	// Получаем сотрудников
-	employees, getErr := s.db.Company.GetCompanyEmployees(ctx, req.GetCompanyUuid(), req.GetDepartmentUuid(), role, offset, count)
+	employees, getErr := s.db.Company.GetCompanyEmployees(ctx, req.GetCompanyUuid(), req.GetDepartmentUuid(), req.GetRole(), req.GetOffset(), req.GetCount())
 	err = Error.HandleError(getErr, req.GetOperationId(), "get company employees")
 	if err != nil {
 		return nil, err
@@ -442,6 +560,20 @@ func (s *CompanyService) GetCompanyEmployees(ctx context.Context, req *pb.GetCom
 
 // GetCompanyEmployeesSummary Возвращает кол-во сотрудников компании по ролям
 func (s *CompanyService) GetCompanyEmployeesSummary(ctx context.Context, req *pb.GetCompanyEmployeesSummaryRequest) (*pb.GetCompanyEmployeesSummaryResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees summary").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees summary").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	if err := validate.UUID(req.GetDepartmentUuid()); err != nil && req.GetDepartmentUuid() != "" {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get company employees summary").Err(fmt.Errorf("invalid department uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid department uuid")
+	}
+
 	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get company employees summary", req.GetCompanyUuid(), req.GetInitiatorUuid(), AllRoles)
 	if err != nil {
@@ -468,6 +600,20 @@ func (s *CompanyService) GetCompanyEmployeesSummary(ctx context.Context, req *pb
 
 // UpdateEmployeeRole Обновляет роль сотрудника компании
 func (s *CompanyService) UpdateEmployeeRole(ctx context.Context, req *pb.UpdateEmployeeRoleRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update employee role").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update employee role").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	if err := validate.UUID(req.GetTargetUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update employee role").Err(fmt.Errorf("invalid target uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid target uuid")
+	}
+
 	// Нельзя изменять свою роль
 	if req.GetInitiatorUuid() == req.GetTargetUuid() {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "update employee role").Err(fmt.Errorf("cannot change your own role")).Msg("error")
@@ -500,6 +646,20 @@ func (s *CompanyService) UpdateEmployeeRole(ctx context.Context, req *pb.UpdateE
 
 // RemoveCompanyEmployee Удаляет сотрудника из компании
 func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.RemoveCompanyEmployeeRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "remove company employee").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "remove company employee").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	if err := validate.UUID(req.GetTargetUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "remove company employee").Err(fmt.Errorf("invalid target uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid target uuid")
+	}
+
 	// Нельзя удалить себя из компании
 	if req.GetInitiatorUuid() == req.GetTargetUuid() {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "remove company employee").Err(fmt.Errorf("cannot remove yourself")).Msg("error")
@@ -525,11 +685,18 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 
 // CreateDepartment Создание департамента
 func (s *CompanyService) CreateDepartment(ctx context.Context, req *pb.CreateDepartmentRequest) (*pb.CreateDepartmentResponse, error) {
-	// Проверка title
-	title := strings.TrimSpace(req.GetTitle())
-	if title == "" || len([]rune(title)) >= 255 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "create department").Err(fmt.Errorf("invalid title")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid title")
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create department").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create department").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	if err := validate.DepartmentTitle(req.GetTitle()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "create department").Err(fmt.Errorf("invalid department title")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid department title")
 	}
 
 	// Проверяем роль инициатора
@@ -559,6 +726,20 @@ func (s *CompanyService) CreateDepartment(ctx context.Context, req *pb.CreateDep
 
 // AddEmployeeToDepartment Добавление сотрудника в департамент
 func (s *CompanyService) AddEmployeeToDepartment(ctx context.Context, req *pb.AddEmployeeToDepartmentRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "add employee to department").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetDepartmentUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "add employee to department").Err(fmt.Errorf("invalid department uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid department uuid")
+	}
+	if err := validate.UUID(req.GetTargetUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "add employee to department").Err(fmt.Errorf("invalid target uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid target uuid")
+	}
+
 	// Получаем данные департамента
 	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
 	err := Error.HandleError(getErr, req.GetOperationId(), "add employee to department")
@@ -591,6 +772,16 @@ func (s *CompanyService) AddEmployeeToDepartment(ctx context.Context, req *pb.Ad
 
 // GetDepartment Получение департамента по uuid
 func (s *CompanyService) GetDepartment(ctx context.Context, req *pb.GetDepartmentRequest) (*pb.GetDepartmentResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get department").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetDepartmentUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get department").Err(fmt.Errorf("invalid department uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid department uuid")
+	}
+
 	// Получение департамента
 	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
 	err := Error.HandleError(getErr, req.GetOperationId(), "get department")
@@ -616,28 +807,34 @@ func (s *CompanyService) GetDepartment(ctx context.Context, req *pb.GetDepartmen
 
 // GetCompanyDepartments Получение списка департаментов компании с фильтрацией (offset, count)
 func (s *CompanyService) GetCompanyDepartments(ctx context.Context, req *pb.GetCompanyDepartmentsRequest) (*pb.GetCompanyDepartmentsResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get departments").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get departments").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	// Валидация offset
+	if req.GetOffset() < 0 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get departments").Err(fmt.Errorf("invalid offset")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
+	}
+	// Валидация count
+	if req.GetCount() <= 0 || req.GetCount() > 100 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get departments").Err(fmt.Errorf("invalid count")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
+	}
+
 	// Проверка роли инициатора
 	err := s.checkEmployeeRole(ctx, req.GetOperationId(), "get departments", req.GetCompanyUuid(), req.GetInitiatorUuid(), AllRoles)
 	if err != nil {
 		return nil, err
 	}
 
-	// Валидация offset
-	offset := req.GetOffset()
-	if offset < 0 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "get departments").Err(fmt.Errorf("invalid offset")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
-	}
-
-	// Валидация count
-	count := req.GetCount()
-	if count <= 0 || count > 100 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "get departments").Err(fmt.Errorf("invalid count")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
-	}
-
 	// Получение списка департаментов компании
-	departments, getErr := s.db.Company.GetCompanyDepartments(ctx, req.GetCompanyUuid(), offset, count)
+	departments, getErr := s.db.Company.GetCompanyDepartments(ctx, req.GetCompanyUuid(), req.GetOffset(), req.GetCount())
 	err = Error.HandleError(getErr, req.GetOperationId(), "get departments")
 	if err != nil {
 		return nil, err
@@ -657,11 +854,18 @@ func (s *CompanyService) GetCompanyDepartments(ctx context.Context, req *pb.GetC
 
 // UpdateDepartmentTitle Обновление названия департамента
 func (s *CompanyService) UpdateDepartmentTitle(ctx context.Context, req *pb.UpdateDepartmentTitleRequest) (*emptypb.Empty, error) {
-	// Проверка title
-	title := req.GetTitle()
-	if strings.TrimSpace(title) == "" || len([]rune(title)) >= 255 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "update department title").Err(fmt.Errorf("invalid title")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid title")
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update department title").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetDepartmentUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update department title").Err(fmt.Errorf("invalid department uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid department uuid")
+	}
+	if err := validate.DepartmentTitle(req.GetTitle()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update department title").Err(fmt.Errorf("invalid department title")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid department title")
 	}
 
 	// Получение департамента
@@ -680,7 +884,7 @@ func (s *CompanyService) UpdateDepartmentTitle(ctx context.Context, req *pb.Upda
 	// Обновление title
 	updateErr := s.db.Company.UpdateDepartmentTitle(ctx, &entities.UpdateDepartment{
 		UUID:  req.GetDepartmentUuid(),
-		Title: title,
+		Title: req.GetTitle(),
 	})
 	err = Error.HandleError(updateErr, req.GetOperationId(), "update department title")
 	if err != nil {
@@ -693,6 +897,16 @@ func (s *CompanyService) UpdateDepartmentTitle(ctx context.Context, req *pb.Upda
 
 // DeleteDepartment Удаление департамента
 func (s *CompanyService) DeleteDepartment(ctx context.Context, req *pb.DeleteDepartmentRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete department").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetDepartmentUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete department").Err(fmt.Errorf("invalid department uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid department uuid")
+	}
+
 	// Получение департамента
 	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
 	err := Error.HandleError(getErr, req.GetOperationId(), "delete department")
@@ -719,6 +933,20 @@ func (s *CompanyService) DeleteDepartment(ctx context.Context, req *pb.DeleteDep
 
 // RemoveEmployeeFromDepartment Удаление сотрудника из департамента
 func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *pb.RemoveEmployeeFromDepartmentRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "remove employee from department").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetDepartmentUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "remove employee from department").Err(fmt.Errorf("invalid department uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid department uuid")
+	}
+	if err := validate.UUID(req.GetTargetUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "remove employee from department").Err(fmt.Errorf("invalid target uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid target uuid")
+	}
+
 	// Получаем данные департамента
 	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
 	err := Error.HandleError(getErr, req.GetOperationId(), "remove employee from department")
@@ -757,19 +985,11 @@ func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *
 
 // ДОП ФУНКЦИИ
 
-// pingStatus Обертка для ошибок пинга бд
-func pingStatus(err error) string {
-	if err != nil {
-		return "not connected"
-	}
-	return "connected"
-}
+// generateJoinCode Генерирует криптографически случайную строку цифр длиной JoinCodeLength
+func generateJoinCode() (string, error) {
+	digits := make([]byte, JoinCodeLength)
 
-// generateJoinCode Генерирует криптографически случайную строку цифр длиной length
-func generateJoinCode(length int) (string, error) {
-	digits := make([]byte, length)
-
-	for i := 0; i < length; i++ {
+	for i := 0; i < JoinCodeLength; i++ {
 		n, err := rand.Int(rand.Reader, big.NewInt(10))
 		if err != nil {
 			return "", err
@@ -809,20 +1029,10 @@ func (s *CompanyService) checkEmployeeRole(ctx context.Context, operationUUID, m
 	}
 
 	// Проверяем роль сотрудника
-	if !checkArrayContain(requiredRoles, employee.Role) {
+	if !helpers.Contains(requiredRoles, employee.Role) {
 		log.Info().Str("id", operationUUID).Str("method", methodName).Err(fmt.Errorf("not enought rights")).Msg("error")
 		return status.Errorf(codes.PermissionDenied, "not enough rights")
 	}
 
 	return nil
-}
-
-// checkArrayContain Проверяет наличие строки в массиве строк
-func checkArrayContain(arr []string, target string) bool {
-	for _, item := range arr {
-		if item == target {
-			return true
-		}
-	}
-	return false
 }

@@ -2,8 +2,9 @@ package entities
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/validate"
 )
 
 // ─── Shared response types ────────────────────────────────────────────────────
@@ -52,16 +53,24 @@ type CreateApplicationRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }
-
-func (e *CreateApplicationRequest) Validate() error {
-	if err := utils.ValidateApplicationTitle(e.Title); err != nil {
-		return err
-	}
-	return utils.ValidateApplicationDescription(e.Description)
-}
-
 type CreateApplicationResponse struct {
 	ApplicationUUID string `json:"application_uuid"`
+}
+
+func (e *CreateApplicationRequest) Validate() error {
+	e.CompanyUUID = strings.TrimSpace(e.CompanyUUID)
+	if err := validate.UUID(e.CompanyUUID); err != nil {
+		return err
+	}
+	e.Title = strings.TrimSpace(e.Title)
+	if err := validate.ApplicationTitle(e.Title); err != nil {
+		return err
+	}
+	e.Description = strings.TrimSpace(e.Description)
+	if err := validate.ApplicationDescription(e.Description); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ─── GetApplication ───────────────────────────────────────────────────────────
@@ -69,13 +78,16 @@ type CreateApplicationResponse struct {
 type GetApplicationRequest struct {
 	ApplicationUUID string `json:"-"`
 }
-
-func (e *GetApplicationRequest) Validate() error {
-	return utils.ValidateUUID(e.ApplicationUUID)
-}
-
 type GetApplicationResponse struct {
 	Application *ApplicationResponse `json:"application"`
+}
+
+func (e *GetApplicationRequest) Validate() error {
+	e.ApplicationUUID = strings.TrimSpace(e.ApplicationUUID)
+	if err := validate.UUID(e.ApplicationUUID); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ─── GetApplications ──────────────────────────────────────────────────────────
@@ -89,13 +101,26 @@ type GetApplicationsRequest struct {
 	IsDeleted      bool     `query:"is_deleted"`
 	FromPool       bool     `query:"from_pool"`
 }
-
-func (e *GetApplicationsRequest) Validate() error {
-	return utils.ValidateUUID(e.CompanyUUID)
-}
-
 type GetApplicationsResponse struct {
 	Applications []*ApplicationListItem `json:"applications"`
+}
+
+func (e *GetApplicationsRequest) Validate() error {
+	e.CompanyUUID = strings.TrimSpace(e.CompanyUUID)
+	if err := validate.UUID(e.CompanyUUID); err != nil {
+		return err
+	}
+	e.DepartmentUUID = strings.TrimSpace(e.DepartmentUUID)
+	if err := validate.UUID(e.DepartmentUUID); err != nil && e.DepartmentUUID != "" {
+		return err
+	}
+	if err := validate.Number(int(e.Count), validate.IntPtr(1), validate.IntPtr(100), "count"); err != nil {
+		return err
+	}
+	if err := validate.Number(int(e.Offset), validate.IntPtr(0), nil, "offset"); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ─── UpdateApplicationStatus ──────────────────────────────────────────────────
@@ -104,18 +129,19 @@ type UpdateApplicationStatusRequest struct {
 	ApplicationUUID string `json:"-"`
 	Status          string `json:"status"`
 }
+type UpdateApplicationStatusResponse struct{}
 
 func (e *UpdateApplicationStatusRequest) Validate() error {
-	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
+	e.ApplicationUUID = strings.TrimSpace(e.ApplicationUUID)
+	if err := validate.UUID(e.ApplicationUUID); err != nil {
 		return err
 	}
+	e.Status = strings.TrimSpace(e.Status)
 	if e.Status == "" {
 		return fmt.Errorf("status missed")
 	}
 	return nil
 }
-
-type UpdateApplicationStatusResponse struct{}
 
 // ─── AssignApplication ────────────────────────────────────────────────────────
 
@@ -123,15 +149,19 @@ type AssignApplicationRequest struct {
 	ApplicationUUID string `json:"-"`
 	TargetUUID      string `json:"target_uuid"`
 }
+type AssignApplicationResponse struct{}
 
 func (e *AssignApplicationRequest) Validate() error {
-	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
+	e.ApplicationUUID = strings.TrimSpace(e.ApplicationUUID)
+	if err := validate.UUID(e.ApplicationUUID); err != nil {
 		return err
 	}
-	return utils.ValidateUUID(e.TargetUUID)
+	e.TargetUUID = strings.TrimSpace(e.TargetUUID)
+	if err := validate.UUID(e.TargetUUID); err != nil {
+		return err
+	}
+	return nil
 }
-
-type AssignApplicationResponse struct{}
 
 // ─── RedirectApplication ──────────────────────────────────────────────────────
 
@@ -140,21 +170,23 @@ type RedirectApplicationRequest struct {
 	TargetDepartmentUUID string `json:"target_department_uuid"`
 	Message              string `json:"message"`
 }
+type RedirectApplicationResponse struct{}
 
 func (e *RedirectApplicationRequest) Validate() error {
-	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
+	e.ApplicationUUID = strings.TrimSpace(e.ApplicationUUID)
+	if err := validate.UUID(e.ApplicationUUID); err != nil {
 		return err
 	}
-	if err := utils.ValidateUUID(e.TargetDepartmentUUID); err != nil {
-		return fmt.Errorf("target_department_uuid: %w", err)
+	e.TargetDepartmentUUID = strings.TrimSpace(e.TargetDepartmentUUID)
+	if err := validate.UUID(e.TargetDepartmentUUID); err != nil {
+		return err
 	}
+	e.Message = strings.TrimSpace(e.Message)
 	if e.Message == "" {
 		return fmt.Errorf("message missed")
 	}
 	return nil
 }
-
-type RedirectApplicationResponse struct{}
 
 // ─── RecallApplication ────────────────────────────────────────────────────────
 
@@ -162,30 +194,34 @@ type RecallApplicationRequest struct {
 	ApplicationUUID string `json:"-"`
 	Message         string `json:"message"`
 }
+type RecallApplicationResponse struct{}
 
 func (e *RecallApplicationRequest) Validate() error {
-	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
+	e.ApplicationUUID = strings.TrimSpace(e.ApplicationUUID)
+	if err := validate.UUID(e.ApplicationUUID); err != nil {
 		return err
 	}
+	e.Message = strings.TrimSpace(e.Message)
 	if e.Message == "" {
 		return fmt.Errorf("message missed")
 	}
 	return nil
 }
 
-type RecallApplicationResponse struct{}
-
 // ─── TakeApplicationToVerification ───────────────────────────────────────────
 
 type TakeApplicationToVerificationRequest struct {
 	ApplicationUUID string `json:"-"`
 }
+type TakeApplicationToVerificationResponse struct{}
 
 func (e *TakeApplicationToVerificationRequest) Validate() error {
-	return utils.ValidateUUID(e.ApplicationUUID)
+	e.ApplicationUUID = strings.TrimSpace(e.ApplicationUUID)
+	if err := validate.UUID(e.ApplicationUUID); err != nil {
+		return err
+	}
+	return nil
 }
-
-type TakeApplicationToVerificationResponse struct{}
 
 // ─── ReleaseApplicationVerification ──────────────────────────────────────────
 
@@ -193,18 +229,19 @@ type ReleaseApplicationVerificationRequest struct {
 	ApplicationUUID string `json:"-"`
 	Message         string `json:"message"`
 }
+type ReleaseApplicationVerificationResponse struct{}
 
 func (e *ReleaseApplicationVerificationRequest) Validate() error {
-	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
+	e.ApplicationUUID = strings.TrimSpace(e.ApplicationUUID)
+	if err := validate.UUID(e.ApplicationUUID); err != nil {
 		return err
 	}
+	e.Message = strings.TrimSpace(e.Message)
 	if e.Message == "" {
 		return fmt.Errorf("message missed")
 	}
 	return nil
 }
-
-type ReleaseApplicationVerificationResponse struct{}
 
 // ─── AddApplicationFixLog ─────────────────────────────────────────────────────
 
@@ -212,18 +249,19 @@ type AddApplicationFixLogRequest struct {
 	ApplicationUUID string `json:"-"`
 	Message         string `json:"message"`
 }
+type AddApplicationFixLogResponse struct{}
 
 func (e *AddApplicationFixLogRequest) Validate() error {
-	if err := utils.ValidateUUID(e.ApplicationUUID); err != nil {
+	e.ApplicationUUID = strings.TrimSpace(e.ApplicationUUID)
+	if err := validate.UUID(e.ApplicationUUID); err != nil {
 		return err
 	}
+	e.Message = strings.TrimSpace(e.Message)
 	if e.Message == "" {
 		return fmt.Errorf("message missed")
 	}
 	return nil
 }
-
-type AddApplicationFixLogResponse struct{}
 
 // ─── DeleteApplication ────────────────────────────────────────────────────────
 
@@ -231,9 +269,16 @@ type DeleteApplicationRequest struct {
 	ApplicationUUID string `json:"-"`
 	Message         string `json:"message"`
 }
+type DeleteApplicationResponse struct{}
 
 func (e *DeleteApplicationRequest) Validate() error {
-	return utils.ValidateUUID(e.ApplicationUUID)
+	e.ApplicationUUID = strings.TrimSpace(e.ApplicationUUID)
+	if err := validate.UUID(e.ApplicationUUID); err != nil {
+		return err
+	}
+	e.Message = strings.TrimSpace(e.Message)
+	if e.Message == "" {
+		return fmt.Errorf("message missed")
+	}
+	return nil
 }
-
-type DeleteApplicationResponse struct{}

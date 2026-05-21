@@ -2,9 +2,19 @@ package entities
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/validate"
 )
+
+// ─── Shared response types ────────────────────────────────────────────────────
+
+type TokenInfo struct {
+	Token string `json:"token"`
+}
+
+// ─── Register ─────────────────────────────────────────────────────────────────
 
 type RegisterRequest struct {
 	Email      string `json:"email"`
@@ -18,26 +28,30 @@ type RegisterResponse struct {
 }
 
 func (e *RegisterRequest) Validate() error {
-	if err := utils.ValidateEmail(e.Email); err != nil {
+	e.Email = strings.TrimSpace(e.Email)
+	if err := validate.Email(e.Email); err != nil {
 		return err
 	}
-	if err := utils.ValidatePassword(e.Password, 8, 30); err != nil {
+	e.Password = strings.TrimSpace(e.Password)
+	if err := validate.Password(e.Password); err != nil {
 		return err
 	}
-	if err := utils.ValidateFirstName(e.FirstName, 2, 30); err != nil {
+	e.FirstName = utils.FCapitalize(strings.TrimSpace(e.FirstName))
+	if err := validate.FirstName(e.FirstName); err != nil {
 		return err
 	}
-	e.FirstName = utils.FCapitalize(e.FirstName)
-	if err := utils.ValidateLastName(e.LastName, 2, 30); err != nil {
+	e.LastName = utils.FCapitalize(strings.TrimSpace(e.LastName))
+	if err := validate.LastName(e.LastName); err != nil {
 		return err
 	}
-	e.LastName = utils.FCapitalize(e.LastName)
-	if err := utils.ValidatePatronymic(e.Patronymic, 2, 30); err != nil {
+	e.Patronymic = utils.FCapitalize(strings.TrimSpace(e.Patronymic))
+	if err := validate.Patronymic(e.Patronymic); err != nil {
 		return err
 	}
-	e.Patronymic = utils.FCapitalize(e.Patronymic)
 	return nil
 }
+
+// ─── Login ────────────────────────────────────────────────────────────────────
 
 type LoginRequest struct {
 	Email    string `json:"email"`
@@ -50,14 +64,18 @@ type LoginResponse struct {
 }
 
 func (e *LoginRequest) Validate() error {
-	if err := utils.ValidateEmail(e.Email); err != nil {
+	e.Email = strings.TrimSpace(e.Email)
+	if err := validate.Email(e.Email); err != nil {
 		return err
 	}
-	if err := utils.ValidatePassword(e.Password, 8, 30); err != nil {
+	e.Password = strings.TrimSpace(e.Password)
+	if err := validate.Password(e.Password); err != nil {
 		return err
 	}
 	return nil
 }
+
+// ─── GetUser ──────────────────────────────────────────────────────────────────
 
 type GetUserRequest struct {
 	UserUUID string `json:"-"`
@@ -72,27 +90,28 @@ type GetUserResponse struct {
 }
 
 func (e *GetUserRequest) Validate() error {
-	return utils.ValidateUUID(e.UserUUID)
+	e.UserUUID = strings.TrimSpace(e.UserUUID)
+	return validate.UUID(e.UserUUID)
 }
 
+// ─── ChangePassword ───────────────────────────────────────────────────────────
+
 type ChangePasswordRequest struct {
-	UserUUID string `json:"-"`
 	Password string `json:"password"`
 }
 type ChangePasswordResponse struct{}
 
 func (e *ChangePasswordRequest) Validate() error {
-	if err := utils.ValidateUUID(e.UserUUID); err != nil {
-		return err
-	}
-	if err := utils.ValidatePassword(e.Password, 8, 30); err != nil {
+	e.Password = strings.TrimSpace(e.Password)
+	if err := validate.Password(e.Password); err != nil {
 		return err
 	}
 	return nil
 }
 
+// ─── UpdateUserBio ────────────────────────────────────────────────────────────
+
 type UpdateUserBioRequest struct {
-	UserUUID   string `json:"-"`
 	FirstName  string `json:"first_name"`
 	LastName   string `json:"last_name"`
 	Patronymic string `json:"patronymic"`
@@ -100,53 +119,44 @@ type UpdateUserBioRequest struct {
 type UpdateUserBioResponse struct{}
 
 func (e *UpdateUserBioRequest) Validate() error {
-	if err := utils.ValidateUUID(e.UserUUID); err != nil {
+	e.FirstName = utils.FCapitalize(strings.TrimSpace(e.FirstName))
+	if err := validate.FirstName(e.FirstName); err != nil {
 		return err
 	}
-	if err := utils.ValidateFirstName(e.FirstName, 2, 30); err != nil {
+	e.LastName = utils.FCapitalize(strings.TrimSpace(e.LastName))
+	if err := validate.LastName(e.LastName); err != nil {
 		return err
 	}
-	e.FirstName = utils.FCapitalize(e.FirstName)
-	if err := utils.ValidateLastName(e.LastName, 2, 30); err != nil {
+	e.Patronymic = utils.FCapitalize(strings.TrimSpace(e.Patronymic))
+	if err := validate.Patronymic(e.Patronymic); err != nil {
 		return err
 	}
-	e.LastName = utils.FCapitalize(e.LastName)
-	if err := utils.ValidatePatronymic(e.Patronymic, 2, 30); err != nil {
-		return err
-	}
-	e.Patronymic = utils.FCapitalize(e.Patronymic)
 	return nil
 }
 
+// ─── DeleteUser ───────────────────────────────────────────────────────────────
+
 type DeleteUserRequest struct {
-	InitiatorUUID string `json:"-"`
-	TargetUUID    string `json:"target_uuid"`
+	TargetUUID string `json:"target_uuid"`
 }
 type DeleteUserResponse struct{}
 
 func (e *DeleteUserRequest) Validate() error {
-	if err := utils.ValidateUUID(e.InitiatorUUID); err != nil {
-		return err
-	}
-	if err := utils.ValidateUUID(e.TargetUUID); err != nil {
+	e.TargetUUID = strings.TrimSpace(e.TargetUUID)
+	if err := validate.UUID(e.TargetUUID); err != nil {
 		return err
 	}
 	return nil
 }
 
-type GetAllActiveTokensRequest struct {
-	UserUUID string `json:"-"`
-}
+// ─── GetAllActiveTokens ───────────────────────────────────────────────────────
+
+type GetAllActiveTokensRequest struct{}
 type GetAllActiveTokensResponse struct {
 	Tokens []*TokenInfo `json:"tokens"`
 }
-type TokenInfo struct {
-	Token string `json:"token"`
-}
 
-func (e *GetAllActiveTokensRequest) Validate() error {
-	return utils.ValidateUUID(e.UserUUID)
-}
+// ─── RefreshToken ─────────────────────────────────────────────────────────────
 
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token"`
@@ -157,8 +167,14 @@ type RefreshTokenResponse struct {
 }
 
 func (e *RefreshTokenRequest) Validate() error {
-	return utils.ValidateJWT(e.RefreshToken)
+	e.RefreshToken = strings.TrimSpace(e.RefreshToken)
+	if err := utils.ValidateJWT(e.RefreshToken); err != nil {
+		return err
+	}
+	return nil
 }
+
+// ─── RevokeToken ──────────────────────────────────────────────────────────────
 
 type RevokeTokenRequest struct {
 	TokenHash string `json:"token_hash"`
@@ -166,17 +182,14 @@ type RevokeTokenRequest struct {
 type RevokeTokenResponse struct{}
 
 func (e *RevokeTokenRequest) Validate() error {
+	e.TokenHash = strings.TrimSpace(e.TokenHash)
 	if e.TokenHash == "" {
 		return fmt.Errorf("token_hash is required")
 	}
 	return nil
 }
 
-type RevokeAllTokensRequest struct {
-	UserUUID string `json:"-"`
-}
-type RevokeAllTokensResponse struct{}
+// ─── RevokeAllTokens ──────────────────────────────────────────────────────────
 
-func (e *RevokeAllTokensRequest) Validate() error {
-	return utils.ValidateUUID(e.UserUUID)
-}
+type RevokeAllTokensRequest struct{}
+type RevokeAllTokensResponse struct{}

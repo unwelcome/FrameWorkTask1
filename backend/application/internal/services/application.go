@@ -7,11 +7,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/entities"
+	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/helpers"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/validate"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -37,7 +39,7 @@ func (s *ApplicationService) Health(ctx context.Context, req *pb.HealthRequest) 
 	log.Info().Str("id", req.GetOperationId()).Str("method", "health").Msg("success")
 	return &pb.HealthResponse{
 		Service:  "healthy",
-		Postgres: pingStatus(s.db.Ping(ctx)),
+		Postgres: helpers.PingStatus(s.db.Ping(ctx)),
 		Redis:    "not implemented",
 		Minio:    "not implemented",
 		Mongo:    "not implemented",
@@ -46,6 +48,24 @@ func (s *ApplicationService) Health(ctx context.Context, req *pb.HealthRequest) 
 
 // CreateApplication Создание новой заявки (только inspector)
 func (s *ApplicationService) CreateApplication(ctx context.Context, req *pb.CreateApplicationRequest) (*pb.CreateApplicationResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get department").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get department").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	if err := validate.ApplicationTitle(req.GetApplicationData().GetTitle()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get department").Err(fmt.Errorf("invalid application title")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application title")
+	}
+	if err := validate.ApplicationDescription(req.GetApplicationData().GetDescription()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get department").Err(fmt.Errorf("invalid application description")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application description")
+	}
+
 	// Получаем инициатора
 	initiator, err := s.getEmployeeInfo(ctx, req.GetOperationId(), "create application", req.GetCompanyUuid(), req.GetInitiatorUuid(), req.GetInitiatorUuid())
 	if err != nil {
@@ -58,13 +78,6 @@ func (s *ApplicationService) CreateApplication(ctx context.Context, req *pb.Crea
 		return nil, status.Error(codes.PermissionDenied, "only inspectors can create applications")
 	}
 
-	// Валидация title
-	title := strings.TrimSpace(req.GetApplicationData().GetTitle())
-	if title == "" || len([]rune(title)) > 255 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "create application").Err(fmt.Errorf("invalid title")).Msg("error")
-		return nil, status.Error(codes.InvalidArgument, "invalid title")
-	}
-
 	// Генерируем uuid для новой заявки
 	applicationUUID := uuid.New().String()
 
@@ -73,8 +86,8 @@ func (s *ApplicationService) CreateApplication(ctx context.Context, req *pb.Crea
 		ApplicationUUID: applicationUUID,
 		CompanyUUID:     req.GetCompanyUuid(),
 		DepartmentUUID:  initiator.DepartmentUUID,
-		Title:           title,
-		Description:     strings.TrimSpace(req.GetApplicationData().GetDescription()),
+		Title:           req.GetApplicationData().GetTitle(),
+		Description:     req.GetApplicationData().GetDescription(),
 		CreatedBy:       req.GetInitiatorUuid(),
 	})
 	err = Error.HandleError(createErr, req.GetOperationId(), "create application")
@@ -88,6 +101,16 @@ func (s *ApplicationService) CreateApplication(ctx context.Context, req *pb.Crea
 
 // GetApplication Получение полной информации о заявке
 func (s *ApplicationService) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.GetApplicationResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get application").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetApplicationUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get application").Err(fmt.Errorf("invalid application uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application uuid")
+	}
+
 	// Получаем заявку
 	application, getErr := s.db.ApplicationRepository.GetApplication(ctx, entities.GetApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
@@ -104,8 +127,8 @@ func (s *ApplicationService) GetApplication(ctx context.Context, req *pb.GetAppl
 	}
 
 	// Работники, чьи uuid не фигурируют в заявке не имеют к ней доступа (исключая chief и analytic)
-	if !checkArrayContain([]string{"chief", "analytic"}, initiator.Role) &&
-		!checkArrayContain([]string{application.CreatedBy, application.ManagedBy, application.ExecutedBy, application.InspectedBy}, req.GetInitiatorUuid()) {
+	if !helpers.Contains([]string{"chief", "analytic"}, initiator.Role) &&
+		!helpers.Contains([]string{application.CreatedBy, application.ManagedBy, application.ExecutedBy, application.InspectedBy}, req.GetInitiatorUuid()) {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "get application").Err(fmt.Errorf("not allowed")).Msg("error")
 		return nil, status.Error(codes.PermissionDenied, "you are not allowed to get application")
 	}
@@ -158,24 +181,30 @@ func (s *ApplicationService) GetApplication(ctx context.Context, req *pb.GetAppl
 
 // GetApplications Получение списка заявок
 func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApplicationsRequest) (*pb.GetApplicationsResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get applications").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetCompanyUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get applications").Err(fmt.Errorf("invalid company uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
+	}
+	// Валидация count
+	if req.GetCount() <= 0 || req.GetCount() > 100 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get applications").Err(fmt.Errorf("invalid count")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
+	}
+	// Валидация offset
+	if req.GetOffset() < 0 {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "get applications").Err(fmt.Errorf("invalid offset")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
+	}
+
 	// Получаем инициатора
 	initiator, err := s.getEmployeeInfo(ctx, req.GetOperationId(), "get applications", req.GetCompanyUuid(), req.GetInitiatorUuid(), req.GetInitiatorUuid())
 	if err != nil {
 		return nil, err
-	}
-
-	// Валидация count
-	count := int(req.GetCount())
-	if count <= 0 || count > 100 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "get applications").Err(fmt.Errorf("invalid count")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
-	}
-
-	// Валидация offset
-	offset := int(req.GetOffset())
-	if offset < 0 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "get applications").Err(fmt.Errorf("invalid offset")).Msg("error")
-		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
 	}
 
 	var applications []*entities.Application
@@ -185,8 +214,12 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 
 	// Если инициатор "chief" или "analytic" - используем department_uuid и status из запроса
 	case "chief", "analytic":
+		if err := validate.UUID(req.GetDepartmentUuid()); err != nil && req.GetDepartmentUuid() != "" {
+			log.Info().Str("id", req.GetOperationId()).Str("method", "get applications").Err(fmt.Errorf("invalid department uuid")).Msg("error")
+			return nil, status.Errorf(codes.InvalidArgument, "invalid department uuid")
+		}
 		// Валидация statuses
-		if !containsAll(AllApplicationStatuses, req.GetStatuses()) {
+		if !helpers.ContainsAll(AllApplicationStatuses, req.GetStatuses()) {
 			log.Info().Str("id", req.GetOperationId()).Str("method", "get applications").Err(fmt.Errorf("invalid statuses")).Msg("error")
 			return nil, status.Errorf(codes.InvalidArgument, "invalid statuses")
 		}
@@ -195,8 +228,8 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 			CompanyUUID:    req.GetCompanyUuid(),
 			DepartmentUUID: req.GetDepartmentUuid(),
 			Statuses:       req.GetStatuses(),
-			Offset:         offset,
-			Count:          count,
+			Offset:         int(req.GetOffset()),
+			Count:          int(req.GetCount()),
 			IsDeleted:      req.GetIsDeleted(),
 		})
 
@@ -207,8 +240,8 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 				CompanyUUID:    req.GetCompanyUuid(),
 				DepartmentUUID: initiator.DepartmentUUID,
 				Statuses:       []string{"pending_verification"},
-				Offset:         offset,
-				Count:          count,
+				Offset:         int(req.GetOffset()),
+				Count:          int(req.GetCount()),
 			})
 		} else {
 			createdBy := req.GetInitiatorUuid()
@@ -221,7 +254,7 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 				createdBy = ""
 
 				// Проверяем статусы в фильтре
-				if !containsAll([]string{"on_verification"}, req.GetStatuses()) {
+				if !helpers.ContainsAll([]string{"on_verification"}, req.GetStatuses()) {
 					log.Info().Str("id", req.GetOperationId()).Str("method", "get applications").Err(fmt.Errorf("invalid statuses")).Msg("error")
 					return nil, status.Errorf(codes.InvalidArgument, "invalid statuses")
 				}
@@ -233,8 +266,8 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 				Statuses:       req.GetStatuses(),
 				CreatedBy:      createdBy,
 				InspectedBy:    inspectedBy,
-				Offset:         offset,
-				Count:          count,
+				Offset:         int(req.GetOffset()),
+				Count:          int(req.GetCount()),
 				IsDeleted:      req.GetIsDeleted(),
 			})
 		}
@@ -247,23 +280,23 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 				DepartmentUUID:   initiator.DepartmentUUID,
 				Statuses:         []string{"created", "redirected", "recalled", "on_revision"},
 				ExecutedByIsNull: true,
-				Offset:           offset,
-				Count:            count,
+				Offset:           int(req.GetOffset()),
+				Count:            int(req.GetCount()),
 			})
 		} else {
 			applications, getErr = s.db.ApplicationRepository.GetApplications(ctx, entities.GetApplicationsDTO{
 				CompanyUUID:    req.GetCompanyUuid(),
 				DepartmentUUID: initiator.DepartmentUUID,
 				ManagedBy:      req.GetInitiatorUuid(),
-				Offset:         offset,
-				Count:          count,
+				Offset:         int(req.GetOffset()),
+				Count:          int(req.GetCount()),
 			})
 		}
 
 	// Если инициатор "engineer" - department_uuid инициатора, statuses: ["assigned", "on_revision", "in_progress", "on_hold"]
 	case "engineer":
 		// Валидация statuses
-		if !containsAll([]string{"assigned", "on_revision", "in_progress", "on_hold"}, req.GetStatuses()) {
+		if !helpers.ContainsAll([]string{"assigned", "on_revision", "in_progress", "on_hold"}, req.GetStatuses()) {
 			log.Info().Str("id", req.GetOperationId()).Str("method", "get applications").Err(fmt.Errorf("invalid statuses")).Msg("error")
 			return nil, status.Errorf(codes.InvalidArgument, "invalid statuses")
 		}
@@ -273,8 +306,8 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 			DepartmentUUID: initiator.DepartmentUUID,
 			Statuses:       req.GetStatuses(),
 			ExecutedBy:     req.GetInitiatorUuid(),
-			Offset:         offset,
-			Count:          count,
+			Offset:         int(req.GetOffset()),
+			Count:          int(req.GetCount()),
 		})
 
 	default:
@@ -318,10 +351,20 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 
 // UpdateApplicationStatus Обновление статуса заявки
 func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *pb.UpdateApplicationStatusRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update application status").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetApplicationUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "update application status").Err(fmt.Errorf("invalid application uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application uuid")
+	}
+
 	newStatus := req.GetStatus()
 
 	// Проверяем, что статус допустим в данном методе
-	if !checkArrayContain([]string{"rejected", "in_progress", "on_hold", "pending_verification", "completed", "failed", "on_revision"}, newStatus) {
+	if !helpers.Contains([]string{"rejected", "in_progress", "on_hold", "pending_verification", "completed", "failed", "on_revision"}, newStatus) {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "update application status").Err(fmt.Errorf("invalid status")).Msg("error")
 		return nil, status.Error(codes.InvalidArgument, "invalid status")
 	}
@@ -356,14 +399,14 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *p
 		}
 
 		// Допустимые статусы для инспектора
-		if !checkArrayContain([]string{"completed", "failed", "on_revision"}, newStatus) {
+		if !helpers.Contains([]string{"completed", "failed", "on_revision"}, newStatus) {
 			log.Info().Str("id", req.GetOperationId()).Str("method", "update application status").
 				Err(fmt.Errorf("invalid inspector status")).Msg("error")
 			return nil, status.Error(codes.PermissionDenied, "inspectors can only set \"completed\", \"failed\" or \"on_revision\"")
 		}
 
 		// Текущий статус должен допускать переход
-		if !checkArrayContain([]string{"on_verification"}, currentStatus) {
+		if !helpers.Contains([]string{"on_verification"}, currentStatus) {
 			log.Info().Str("id", req.GetOperationId()).Str("method", "update application status").
 				Err(fmt.Errorf("invalid status transition")).Msg("error")
 			return nil, status.Error(codes.FailedPrecondition, "invalid status transition")
@@ -384,14 +427,14 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *p
 		}
 
 		// Допустимые статусы для менеджера
-		if !checkArrayContain([]string{"rejected"}, newStatus) {
+		if !helpers.Contains([]string{"rejected"}, newStatus) {
 			log.Info().Str("id", req.GetOperationId()).Str("method", "update application status").
 				Err(fmt.Errorf("invalid manager status")).Msg("error")
 			return nil, status.Error(codes.PermissionDenied, "managers can only set \"rejected\"")
 		}
 
 		// Текущий статус должен допускать переход
-		if !checkArrayContain([]string{"created", "redirected", "recalled", "on_revision"}, currentStatus) {
+		if !helpers.Contains([]string{"created", "redirected", "recalled", "on_revision"}, currentStatus) {
 			log.Info().Str("id", req.GetOperationId()).Str("method", "update application status").
 				Err(fmt.Errorf("invalid status transition")).Msg("error")
 			return nil, status.Error(codes.FailedPrecondition, "invalid status transition")
@@ -406,14 +449,14 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *p
 		}
 
 		// Допустимые статусы для инженера
-		if !checkArrayContain([]string{"in_progress", "on_hold", "pending_verification"}, newStatus) {
+		if !helpers.Contains([]string{"in_progress", "on_hold", "pending_verification"}, newStatus) {
 			log.Info().Str("id", req.GetOperationId()).Str("method", "update application status").
 				Err(fmt.Errorf("invalid engineer status")).Msg("error")
 			return nil, status.Error(codes.PermissionDenied, "engineers can only set \"in_progress\", \"on_hold\" or \"pending_verification\"")
 		}
 
 		// Текущий статус должен допускать переход
-		if !checkArrayContain([]string{"assigned", "in_progress", "on_hold", "on_revision"}, currentStatus) {
+		if !helpers.Contains([]string{"assigned", "in_progress", "on_hold", "on_revision"}, currentStatus) {
 			log.Info().Str("id", req.GetOperationId()).Str("method", "update application status").
 				Err(fmt.Errorf("invalid status transition")).Msg("error")
 			return nil, status.Error(codes.FailedPrecondition, "invalid status transition")
@@ -445,6 +488,20 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *p
 
 // AssignApplication Назначение инженера на выполнение заявки
 func (s *ApplicationService) AssignApplication(ctx context.Context, req *pb.AssignApplicationRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "assign application").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetApplicationUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "assign application").Err(fmt.Errorf("invalid application uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application uuid")
+	}
+	if err := validate.UUID(req.GetTargetUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "assign application").Err(fmt.Errorf("invalid target uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid target uuid")
+	}
+
 	// Получаем заявку
 	application, getErr := s.db.ApplicationRepository.GetApplication(ctx, entities.GetApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
@@ -455,7 +512,7 @@ func (s *ApplicationService) AssignApplication(ctx context.Context, req *pb.Assi
 	}
 
 	// Проверяем статус заявки
-	if !checkArrayContain([]string{"created", "redirected", "recalled", "on_revision"}, application.Status) {
+	if !helpers.Contains([]string{"created", "redirected", "recalled", "on_revision"}, application.Status) {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "assign application").Err(fmt.Errorf("invalid status")).Msg("error")
 		return nil, status.Error(codes.InvalidArgument, "can't assign application with current status")
 	}
@@ -510,6 +567,19 @@ func (s *ApplicationService) AssignApplication(ctx context.Context, req *pb.Assi
 
 // RedirectApplication Передача заявки в другой департамент
 func (s *ApplicationService) RedirectApplication(ctx context.Context, req *pb.RedirectApplicationRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "redirect application").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetApplicationUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "redirect application").Err(fmt.Errorf("invalid application uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application uuid")
+	}
+	if err := validate.UUID(req.GetTargetDepartmentUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "redirect application").Err(fmt.Errorf("invalid target department uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid target depatment uuid")
+	}
 	// Валидация message
 	message := strings.TrimSpace(req.GetMessage())
 	if message == "" {
@@ -527,7 +597,7 @@ func (s *ApplicationService) RedirectApplication(ctx context.Context, req *pb.Re
 	}
 
 	// Проверяем статус заявки
-	if !checkArrayContain([]string{"created", "redirected", "recalled", "on_revision"}, application.Status) {
+	if !helpers.Contains([]string{"created", "redirected", "recalled", "on_revision"}, application.Status) {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "redirect application").Err(fmt.Errorf("invalid status")).Msg("error")
 		return nil, status.Error(codes.PermissionDenied, "invalid application status")
 	}
@@ -584,6 +654,15 @@ func (s *ApplicationService) RedirectApplication(ctx context.Context, req *pb.Re
 
 // RecallApplication Отзыв заявки у инженера
 func (s *ApplicationService) RecallApplication(ctx context.Context, req *pb.RecallApplicationRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "recall application").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetApplicationUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "recall application").Err(fmt.Errorf("invalid application uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application uuid")
+	}
 	// Валидация message
 	message := strings.TrimSpace(req.GetMessage())
 	if message == "" {
@@ -601,7 +680,7 @@ func (s *ApplicationService) RecallApplication(ctx context.Context, req *pb.Reca
 	}
 
 	// Проверяем статус заявки
-	if !checkArrayContain([]string{"assigned", "in_progress", "on_hold", "on_revision"}, application.Status) {
+	if !helpers.Contains([]string{"assigned", "in_progress", "on_hold", "on_revision"}, application.Status) {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "recall application").Err(fmt.Errorf("invalid status")).Msg("error")
 		return nil, status.Error(codes.PermissionDenied, "invalid application status")
 	}
@@ -647,6 +726,16 @@ func (s *ApplicationService) RecallApplication(ctx context.Context, req *pb.Reca
 
 // TakeApplicationToVerification Взятие заявки на проверку
 func (s *ApplicationService) TakeApplicationToVerification(ctx context.Context, req *pb.TakeApplicationToVerificationRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "take application").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetApplicationUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "take application").Err(fmt.Errorf("invalid application uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application uuid")
+	}
+
 	// Получаем заявку
 	application, getErr := s.db.ApplicationRepository.GetApplication(ctx, entities.GetApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
@@ -692,6 +781,15 @@ func (s *ApplicationService) TakeApplicationToVerification(ctx context.Context, 
 
 // ReleaseApplicationVerification Отмена взятия заявки на проверку
 func (s *ApplicationService) ReleaseApplicationVerification(ctx context.Context, req *pb.ReleaseApplicationVerificationRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "release application").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetApplicationUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "release application").Err(fmt.Errorf("invalid application uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application uuid")
+	}
 	// Валидация message
 	message := strings.TrimSpace(req.GetMessage())
 	if message == "" {
@@ -757,6 +855,15 @@ func (s *ApplicationService) ReleaseApplicationVerification(ctx context.Context,
 
 // AddApplicationFixLog Добавление новой записи в fix log заявки
 func (s *ApplicationService) AddApplicationFixLog(ctx context.Context, req *pb.AddApplicationFixLogRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "add fix log").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetApplicationUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "add fix log").Err(fmt.Errorf("invalid application uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application uuid")
+	}
 	// Валидация message
 	message := strings.TrimSpace(req.GetMessage())
 	if message == "" {
@@ -795,6 +902,22 @@ func (s *ApplicationService) AddApplicationFixLog(ctx context.Context, req *pb.A
 
 // DeleteApplication Мягкое удаление заявки
 func (s *ApplicationService) DeleteApplication(ctx context.Context, req *pb.DeleteApplicationRequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete application").Err(fmt.Errorf("invalid initiator uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetApplicationUuid()); err != nil {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete application").Err(fmt.Errorf("invalid application uuid")).Msg("error")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application uuid")
+	}
+	// Валидация message
+	message := strings.TrimSpace(req.GetMessage())
+	if message == "" {
+		log.Info().Str("id", req.GetOperationId()).Str("method", "delete application").Err(fmt.Errorf("invalid message")).Msg("error")
+		return nil, status.Error(codes.InvalidArgument, "message is empty")
+	}
+
 	// Получаем заявку
 	application, getErr := s.db.ApplicationRepository.GetApplication(ctx, entities.GetApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
@@ -826,6 +949,17 @@ func (s *ApplicationService) DeleteApplication(ctx context.Context, req *pb.Dele
 		return nil, status.Error(codes.PermissionDenied, "only a creator can delete application")
 	}
 
+	// Создаем новую запись в fix log
+	addErr := s.db.ApplicationRepository.AddApplicationFixLog(ctx, entities.AddFixLogDTO{
+		ApplicationUUID: req.GetApplicationUuid(),
+		Text:            message,
+		CreatedBy:       req.GetInitiatorUuid(),
+	})
+	err = Error.HandleError(addErr, req.GetOperationId(), "delete application")
+	if err != nil {
+		return nil, err
+	}
+
 	// Мягкое удаление (deleted_at = now(), deleted_by = initiator)
 	deleteErr := s.db.ApplicationRepository.DeleteApplication(ctx, entities.DeleteApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
@@ -842,17 +976,7 @@ func (s *ApplicationService) DeleteApplication(ctx context.Context, req *pb.Dele
 
 // ─── Вспомогательные функции ──────────────────────────────────────────────────
 
-// pingStatus Обертка для ответа пинга бд
-func pingStatus(err error) string {
-	if err != nil {
-		return "not connected"
-	}
-	return "connected"
-}
-
 // getEmployeeInfo - Получает роль сотрудника из company сервиса
-// initiatorUUID — кто делает запрос (нужен для проверки прав в company сервисе),
-// targetUUID — чью роль мы хотим узнать.
 func (s *ApplicationService) getEmployeeInfo(ctx context.Context, opID, method, companyUUID, initiatorUUID, targetUUID string) (*entities.Employee, error) {
 	employeeInfo, err := s.companyClient.GetCompanyEmployee(ctx, &company_proto.GetCompanyEmployeeRequest{
 		OperationId:   opID,
@@ -887,30 +1011,4 @@ func (s *ApplicationService) getDepartmentInfo(ctx context.Context, opID, method
 		DepartmentUUID: departmentUUID,
 		CompanyUUID:    departmentInfo.GetCompanyUuid(),
 	}, nil
-}
-
-// checkArrayContain Проверяет наличие строки в массиве строк
-func checkArrayContain(arr []string, target string) bool {
-	for _, item := range arr {
-		if item == target {
-			return true
-		}
-	}
-	return false
-}
-
-// containsAll Проверяет, что все элементы подмассива находятся в основном массиве
-func containsAll(main []string, sub []string) bool {
-	set := make(map[string]struct{}, len(main))
-	for _, v := range main {
-		set[v] = struct{}{}
-	}
-
-	for _, v := range sub {
-		if _, ok := set[v]; !ok {
-			return false
-		}
-	}
-
-	return true
 }

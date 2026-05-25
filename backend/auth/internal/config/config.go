@@ -20,7 +20,7 @@ type LogConfig struct {
 }
 
 type JWTConfig struct {
-	Secret               string
+	PrivateKeyPath       string
 	AccessTokenLifetime  time.Duration
 	RefreshTokenLifetime time.Duration
 }
@@ -35,7 +35,7 @@ func NewConfig() *Config {
 		Postgres: sharedConfig.NewPostgresConfig(),
 		Redis:    sharedConfig.NewRedisConfig(),
 		JWT: JWTConfig{
-			Secret:               sharedConfig.MustGetEnv("JWT_SECRET"),
+			PrivateKeyPath:       sharedConfig.MustGetEnv("JWT_PRIVATE_KEY_PATH"),
 			AccessTokenLifetime:  sharedConfig.MustParseDuration("ACCESS_TOKEN_LIFETIME"),
 			RefreshTokenLifetime: sharedConfig.MustParseDuration("REFRESH_TOKEN_LIFETIME"),
 		},

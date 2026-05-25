@@ -44,6 +44,7 @@ services:
       - ./backend/gateway/.env
     volumes:
       - ./logs:/var/log/app
+      - ./backend/keys/public.pem:/run/secrets/jwt_public.pem:ro
     networks:
       - app-network
 
@@ -57,6 +58,7 @@ services:
       - ./backend/auth/.env
     volumes:
       - ./logs:/var/log/app
+      - ./backend/keys/private.pem:/run/secrets/jwt_private.pem:ro
     depends_on:
       auth_service_postgres:
         condition: service_healthy

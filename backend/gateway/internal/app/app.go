@@ -9,6 +9,7 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/handlers"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/middlewares"
+	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -34,6 +35,12 @@ type App struct {
 }
 
 func InitApp(cfg *config.Config) *App {
+	// Загружаем публичный ключ из PEM-файла
+	publicKey, err := utils.LoadPublicKey(cfg.JWT.PublicKeyPath)
+	if err != nil {
+		log.Fatal().Err(err).Str("path", cfg.JWT.PublicKeyPath).Msg("failed to load JWT public key")
+	}
+
 	application := &App{}
 
 	application.AuthServiceClient = auth_proto.NewAuthServiceClient(dial(cfg.Auth.Addr()))
@@ -42,7 +49,7 @@ func InitApp(cfg *config.Config) *App {
 
 	application.OperationIDMiddleware = middlewares.NewOperationIDMiddleware(OperationIDKey)
 	application.LoggerMiddleware = middlewares.NewRequestLoggerMiddleware(OperationIDKey)
-	application.AuthMiddleware = middlewares.NewAuthMiddleware(cfg.JWT.Secret, UserUUIDKey)
+	application.AuthMiddleware = middlewares.NewAuthMiddleware(publicKey, UserUUIDKey)
 
 	application.HealthHandler = handlers.NewHealthHandler(application.AuthServiceClient, application.CompanyServiceClient, application.ApplicationServiceClient, OperationIDKey)
 	application.AuthHandler = handlers.NewAuthHandler(application.AuthServiceClient, OperationIDKey, UserUUIDKey)

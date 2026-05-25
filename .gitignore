@@ -8,3 +8,7 @@ idea.md
 plan.md
 backend/go.work
 backend/go.work.sum
+
+# JWT RSA keys (prod) — test keys in backend/keys/test/ are committed
+backend/keys/private.pem
+backend/keys/public.pem

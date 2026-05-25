@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"crypto/ecdsa"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
@@ -8,7 +9,7 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
 )
 
-func NewAuthMiddleware(secretKey string, userUUIDKey string) fiber.Handler {
+func NewAuthMiddleware(publicKey *ecdsa.PublicKey, userUUIDKey string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 
 		// Получаем заголовок авторизации
@@ -26,7 +27,7 @@ func NewAuthMiddleware(secretKey string, userUUIDKey string) fiber.Handler {
 		accessToken := authHeader[7:]
 
 		// Парсим токен
-		tokenClaims, err := utils.ParseToken(accessToken, secretKey)
+		tokenClaims, err := utils.ParseToken(accessToken, publicKey)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(Error.HttpError{Code: 401, Message: fmt.Errorf("parse token error: %w", err).Error()})
 		}

@@ -21,7 +21,7 @@ type LogConfig struct {
 }
 
 type JWTConfig struct {
-	Secret string
+	PublicKeyPath string
 }
 
 type ServiceAddress struct {
@@ -41,7 +41,7 @@ func NewConfig() *Config {
 			ConsoleOut: sharedConfig.MustParseBool("LOG_CONSOLE_OUT"),
 		},
 		JWT: JWTConfig{
-			Secret: sharedConfig.MustGetEnv("JWT_SECRET"),
+			PublicKeyPath: sharedConfig.MustGetEnv("JWT_PUBLIC_KEY_PATH"),
 		},
 		Auth: ServiceAddress{
 			Host: sharedConfig.MustGetEnv("AUTH_SERVICE_HOST"),

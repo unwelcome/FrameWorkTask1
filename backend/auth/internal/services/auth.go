@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"crypto/ecdsa"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
@@ -27,17 +29,17 @@ const bcryptCost = 12
 type AuthService struct {
 	db              *postgresDB.DatabaseRepository
 	cache           *redisDB.CacheRepository
-	jwtSecretKey    string
+	jwtPrivateKey   *ecdsa.PrivateKey
 	accessTokenTTL  time.Duration
 	refreshTokenTTL time.Duration
 	pb.UnimplementedAuthServiceServer
 }
 
-func NewAuthService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRepository, jwtSecretKey string, accessTokenTTL, refreshTokenTTL time.Duration) *AuthService {
+func NewAuthService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRepository, jwtPrivateKey *ecdsa.PrivateKey, accessTokenTTL, refreshTokenTTL time.Duration) *AuthService {
 	return &AuthService{
 		db:              db,
 		cache:           cache,
-		jwtSecretKey:    jwtSecretKey,
+		jwtPrivateKey:   jwtPrivateKey,
 		accessTokenTTL:  accessTokenTTL,
 		refreshTokenTTL: refreshTokenTTL,
 	}
@@ -138,7 +140,7 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	}
 
 	// Генерируем токены
-	tokenPair, err := utils.CreateTokens(user.UserUUID, s.jwtSecretKey, s.accessTokenTTL, s.refreshTokenTTL)
+	tokenPair, err := utils.CreateTokens(user.UserUUID, s.jwtPrivateKey, s.accessTokenTTL, s.refreshTokenTTL)
 	if err != nil {
 		log.Error().Str("id", req.GetOperationId()).Str("method", "login").Err(err).Msg("error")
 		return nil, status.Errorf(codes.Internal, "internal error")
@@ -327,7 +329,7 @@ func (s *AuthService) GetAllActiveTokens(ctx context.Context, req *pb.GetAllActi
 // RefreshToken Обновление токенов
 func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
 	// Парсинг токена
-	tokenClaims, err := utils.ParseToken(req.GetRefreshToken(), s.jwtSecretKey)
+	tokenClaims, err := utils.ParseToken(req.GetRefreshToken(), s.jwtPrivateKey)
 	if err != nil {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "refresh token").Err(err).Msg("error")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -353,7 +355,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	}
 
 	// Создание новых токенов
-	tokenPair, err := utils.CreateTokens(tokenClaims.UserUUID, s.jwtSecretKey, s.accessTokenTTL, s.refreshTokenTTL)
+	tokenPair, err := utils.CreateTokens(tokenClaims.UserUUID, s.jwtPrivateKey, s.accessTokenTTL, s.refreshTokenTTL)
 	if err != nil {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "refresh token").Err(err).Msg("error")
 		return nil, status.Error(codes.Internal, err.Error())

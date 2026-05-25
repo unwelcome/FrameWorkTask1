@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 
@@ -8,22 +9,24 @@ import (
 )
 
 const (
-	AccessTokenType  = "access_token"
-	RefreshTokenType = "refresh_token"
+	AccessTokenType = "access_token"
 )
 
 type TokenClaims struct {
 	UserUUID  string `json:"user_uuid"`
 	TokenType string `json:"token_type"`
+	TokenUUID string `json:"token_uuid"`
 	jwt.RegisteredClaims
 }
 
-// ParseToken Парсинг jwt токена
-func ParseToken(tokenString string, secretKey string) (*TokenClaims, error) {
-
-	// Подтверждаем подлинность токена
+// ParseToken Парсинг и верификация JWT токена по публичному ключу (ES256)
+func ParseToken(tokenString string, publicKey *ecdsa.PublicKey) (*TokenClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (any, error) {
-		return []byte(secretKey), nil
+		// Проверяем алгоритм — защита от подмены alg=none или RS256
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return publicKey, nil
 	})
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
@@ -32,7 +35,6 @@ func ParseToken(tokenString string, secretKey string) (*TokenClaims, error) {
 		return nil, fmt.Errorf("failed verify token")
 	}
 
-	// Парсим тело токена
 	if claims, ok := token.Claims.(*TokenClaims); ok {
 		return claims, nil
 	}

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"time"
@@ -11,30 +12,33 @@ import (
 )
 
 // CreateTokens Генерация пары access и refresh токенов
-func CreateTokens(userUUID string, secretKey string, accessTokenLifetime, refreshTokenLifetime time.Duration) (*entities.TokenPair, error) {
+func CreateTokens(userUUID string, privateKey *ecdsa.PrivateKey, accessTokenLifetime, refreshTokenLifetime time.Duration) (*entities.TokenPair, error) {
 
-	// Генерируем access токен
-	accessToken, err := generateToken(userUUID, secretKey, entities.AccessTokenType, accessTokenLifetime)
+	accessToken, err := generateToken(userUUID, privateKey, entities.AccessTokenType, accessTokenLifetime)
 	if err != nil {
 		return nil, err
 	}
 
-	// Генерируем refresh токен
-	refreshToken, err := generateToken(userUUID, secretKey, entities.RefreshTokenType, refreshTokenLifetime)
+	refreshToken, err := generateToken(userUUID, privateKey, entities.RefreshTokenType, refreshTokenLifetime)
 	if err != nil {
 		return nil, err
 	}
 
-	// Возвращаем оба токена
 	return &entities.TokenPair{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
 
-// ParseToken Парсинг jwt токена
-func ParseToken(tokenString string, secretKey string) (*entities.TokenClaims, error) {
+// ParseToken Парсинг jwt токена (верификация публичным ключом, извлечённым из приватного)
+func ParseToken(tokenString string, privateKey *ecdsa.PrivateKey) (*entities.TokenClaims, error) {
+	return parseTokenWithPublicKey(tokenString, &privateKey.PublicKey)
+}
 
-	// Подтверждаем подлинность токена
+func parseTokenWithPublicKey(tokenString string, publicKey *ecdsa.PublicKey) (*entities.TokenClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &entities.TokenClaims{}, func(token *jwt.Token) (any, error) {
-		return []byte(secretKey), nil
+		// Проверяем алгоритм — защита от подмены alg=none или RS256
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return publicKey, nil
 	})
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
@@ -43,7 +47,6 @@ func ParseToken(tokenString string, secretKey string) (*entities.TokenClaims, er
 		return nil, fmt.Errorf("failed verify token")
 	}
 
-	// Парсим тело токена
 	if claims, ok := token.Claims.(*entities.TokenClaims); ok {
 		return claims, nil
 	}
@@ -51,9 +54,8 @@ func ParseToken(tokenString string, secretKey string) (*entities.TokenClaims, er
 	return nil, fmt.Errorf("invalid token")
 }
 
-// generateToken Создание JWT токена
-func generateToken(userUUID, secretKey, tokenType string, tokenLifetime time.Duration) (string, error) {
-	// Создаем тело токена
+// generateToken Создание JWT токена с ES256
+func generateToken(userUUID string, privateKey *ecdsa.PrivateKey, tokenType string, tokenLifetime time.Duration) (string, error) {
 	claims := &entities.TokenClaims{
 		TokenUUID: uuid.Must(uuid.NewV7()).String(),
 		UserUUID:  userUUID,
@@ -63,9 +65,8 @@ func generateToken(userUUID, secretKey, tokenType string, tokenLifetime time.Dur
 		},
 	}
 
-	// Подписываем токен
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(secretKey))
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	tokenString, err := token.SignedString(privateKey)
 	if err != nil {
 		return "", fmt.Errorf("generate token error: %w", err)
 	}

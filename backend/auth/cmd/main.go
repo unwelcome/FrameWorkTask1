@@ -5,11 +5,12 @@ import (
 	"net"
 
 	"github.com/rs/zerolog/log"
-	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/services"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
+	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 )
@@ -19,6 +20,12 @@ func main() {
 
 	loggerConf := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
 	log.Logger = *loggerConf
+
+	// Загружаем приватный ключ из PEM-файла
+	privateKey, err := utils.LoadPrivateKey(cfg.JWT.PrivateKeyPath)
+	if err != nil {
+		log.Fatal().Err(err).Str("path", cfg.JWT.PrivateKeyPath).Msg("failed to load JWT private key")
+	}
 
 	db := postgresDB.NewDatabaseInstance(cfg.Postgres.ConnectionString())
 	cache := redisDB.NewCacheInstance(cfg.Redis.Options(), cfg.JWT.RefreshTokenLifetime, cfg.Redis.Prefix)
@@ -31,7 +38,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 	auth_proto.RegisterAuthServiceServer(grpcServer, services.NewAuthService(
 		db, cache,
-		cfg.JWT.Secret,
+		privateKey,
 		cfg.JWT.AccessTokenLifetime,
 		cfg.JWT.RefreshTokenLifetime,
 	))

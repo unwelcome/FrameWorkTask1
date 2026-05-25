@@ -96,8 +96,8 @@ func (r *applicationRepository) saveVersion(ctx context.Context, tx *sql.Tx, app
 	}
 
 	_, err = tx.ExecContext(ctx,
-		`INSERT INTO application_versions (application_uuid, version, body) VALUES ($1, $2, $3)`,
-		app.ApplicationUUID, app.Version, body,
+		`INSERT INTO application_versions (uuid, application_uuid, version, body) VALUES ($1, $2, $3, $4)`,
+		uuid.Must(uuid.NewV7()).String(), app.ApplicationUUID, app.Version, body,
 	)
 	return err
 }
@@ -131,7 +131,7 @@ func (r *applicationRepository) AddApplicationFixLog(ctx context.Context, dto en
 	(uuid, application_uuid, text, created_by) VALUES
 	($1, $2, $3, $4);`
 
-	_, err := r.db.ExecContext(ctx, query, uuid.New().String(), dto.ApplicationUUID, dto.Text, dto.CreatedBy)
+	_, err := r.db.ExecContext(ctx, query, uuid.Must(uuid.NewV7()).String(), dto.ApplicationUUID, dto.Text, dto.CreatedBy)
 	if err != nil {
 		var pgErr *pq.Error
 		if errors.As(err, &pgErr) {

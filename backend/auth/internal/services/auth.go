@@ -80,7 +80,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	}
 
 	// Создаем uuid для пользователя
-	userUUID := uuid.New().String()
+	userUUID := uuid.Must(uuid.NewV7()).String()
 
 	// Переводим пароль из строки в срез байт
 	bytePassword := []byte(req.GetPassword())

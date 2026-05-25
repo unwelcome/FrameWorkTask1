@@ -79,7 +79,7 @@ func (s *ApplicationService) CreateApplication(ctx context.Context, req *pb.Crea
 	}
 
 	// Генерируем uuid для новой заявки
-	applicationUUID := uuid.New().String()
+	applicationUUID := uuid.Must(uuid.NewV7()).String()
 
 	// Создаем заявку
 	createErr := s.db.ApplicationRepository.CreateApplication(ctx, entities.CreateApplicationDTO{

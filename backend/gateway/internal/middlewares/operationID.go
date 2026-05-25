@@ -7,7 +7,7 @@ import (
 
 func NewOperationIDMiddleware(operationIDKey string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		operationID := uuid.NewString()
+		operationID := uuid.Must(uuid.NewV7()).String()
 		c.Locals(operationIDKey, operationID)
 
 		return c.Next()

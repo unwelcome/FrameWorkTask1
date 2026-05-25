@@ -65,7 +65,7 @@ func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompan
 	}
 
 	// Создаем uuid компании
-	companyUUID := uuid.New().String()
+	companyUUID := uuid.Must(uuid.NewV7()).String()
 
 	// Создаем компанию
 	createErr := s.db.Company.CreateCompany(ctx, &entities.CreateCompany{
@@ -735,7 +735,7 @@ func (s *CompanyService) CreateDepartment(ctx context.Context, req *pb.CreateDep
 	}
 
 	// Создаем uuid департамента
-	departmentUUID := uuid.New().String()
+	departmentUUID := uuid.Must(uuid.NewV7()).String()
 
 	// Создаем департамент
 	createErr := s.db.Company.CreateDepartment(ctx, &entities.CreateDepartment{

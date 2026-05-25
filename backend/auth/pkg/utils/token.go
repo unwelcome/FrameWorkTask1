@@ -55,7 +55,7 @@ func ParseToken(tokenString string, secretKey string) (*entities.TokenClaims, er
 func generateToken(userUUID, secretKey, tokenType string, tokenLifetime time.Duration) (string, error) {
 	// Создаем тело токена
 	claims := &entities.TokenClaims{
-		TokenUUID: uuid.New().String(),
+		TokenUUID: uuid.Must(uuid.NewV7()).String(),
 		UserUUID:  userUUID,
 		TokenType: tokenType,
 		RegisteredClaims: jwt.RegisteredClaims{

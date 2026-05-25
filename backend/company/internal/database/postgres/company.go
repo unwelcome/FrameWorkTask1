@@ -239,14 +239,14 @@ func (r *companyRepository) GetCompanyEmployee(ctx context.Context, companyUUID,
 
 // GetCompanyEmployees Возвращает сотрудников компании (сортировка по role, departmentUUID и ограничения через offset и count)
 func (r *companyRepository) GetCompanyEmployees(ctx context.Context, companyUUID, departmentUUID, role string, offset, count int64) ([]*entities.Employee, Error.CodeError) {
-	query := `SELECT 
-		user_uuid, 
-		role, 
-		department_uuid,
-		joined_at 
-	FROM employees 
-	WHERE company_uuid = $1 AND ($2 = '' OR role = $2) AND ($3 = '' OR department_uuid = $3)
-	ORDER BY joined_at DESC 
+	query := `SELECT
+		user_uuid,
+		role,
+		COALESCE(department_uuid::text, ''),
+		joined_at
+	FROM employees
+	WHERE company_uuid = $1 AND ($2 = '' OR role::text = $2) AND ($3 = '' OR department_uuid::text = $3)
+	ORDER BY joined_at DESC
 	OFFSET $4 LIMIT $5;`
 
 	rows, err := r.db.QueryContext(ctx, query, companyUUID, role, departmentUUID, offset, count)
@@ -283,7 +283,7 @@ func (r *companyRepository) GetCompanyEmployeesSummary(ctx context.Context, comp
     	COUNT(CASE WHEN role = 'analytic' THEN 1 END) as analytic_count,
     	COUNT(CASE WHEN role = 'chief' THEN 1 END) as chief_count
 	FROM employees
-	WHERE company_uuid = $1 AND ($2 = '' OR department_uuid = $2);`
+	WHERE company_uuid = $1 AND ($2 = '' OR department_uuid::text = $2);`
 
 	employeeSummary := &entities.EmployeesSummary{
 		CompanyUUID: companyUUID,

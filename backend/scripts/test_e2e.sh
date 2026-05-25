@@ -11,9 +11,15 @@ E2E_SERVICES=("auth" "company")
 # Map service name → Go -run pattern
 get_pattern() {
   case "$1" in
-    auth)    echo "^(TestRegister|TestLogin|TestRefreshToken|TestGetUser|TestUpdateUserBio|TestChangePassword|TestGetAllActiveTokens|TestRevokeToken|TestRevokeAllTokens|TestDeleteUser|TestAuthFullFlow)" ;;
-    company) echo "^(TestCreateCompany|TestGetCompany|TestGetCompaniesList|TestGetMyCompanies|TestUpdateCompanyTitle|TestUpdateCompanyStatus|TestDeleteCompany|TestCreateJoinCode|TestGetJoinCodes|TestJoinCompany|TestDeleteJoinCode|TestCompanyFullWorkflow)" ;;
-    *)       echo "^Test" ;;
+    auth)
+      echo "^(TestRegister|TestLogin|TestRefreshToken|TestGetUser|TestUpdateUserBio|TestChangePassword|TestGetAllActiveTokens|TestRevokeToken|TestRevokeAllTokens|TestDeleteUser|TestAuthFullFlow)"
+      ;;
+    company)
+      echo "^(TestCreateCompany|TestGetCompany|TestGetCompaniesList|TestGetMyCompanies|TestUpdateCompanyTitle|TestUpdateCompanyStatus|TestDeleteCompany|TestCreateJoinCode|TestGetJoinCodes|TestJoinCompany|TestDeleteJoinCode|TestCompanyFullWorkflow|TestCreateDepartment|TestGetDepartment|TestGetCompanyDepartments|TestUpdateDepartmentTitle|TestDeleteDepartment|TestAddEmployeeToDepartment|TestRemoveEmployeeFromDepartment|TestDepartmentFullWorkflow|TestGetCompanyEmployee|TestGetCompanyEmployees|TestGetCompanyEmployeesSummary|TestUpdateEmployeeRole|TestRemoveCompanyEmployee|TestEmployeeFullWorkflow)"
+      ;;
+    *)
+      echo "^Test"
+      ;;
   esac
 }
 

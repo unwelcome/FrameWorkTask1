@@ -46,6 +46,10 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
+	if code != 0 {
+		dumpContainerLogs()
+	}
+
 	fmt.Println("=== E2E: tearing down test environment ===")
 	stopCompose()
 	os.Exit(code)
@@ -85,6 +89,36 @@ type healthResponse struct {
 
 type serviceHealth struct {
 	Service string `json:"service"`
+}
+
+// dumpContainerLogs выводит последние 200 строк логов каждого сервисного
+// контейнера. Вызывается только при падении тестов, до stopCompose().
+func dumpContainerLogs() {
+	containers := []string{
+		"gateway_test",
+		"auth_service_test",
+		"company_service_test",
+		"application_service_test",
+	}
+
+	fmt.Println()
+	fmt.Println("══════════════════════════════════════════════════════════════")
+	fmt.Println("  Container logs (tests failed)")
+	fmt.Println("══════════════════════════════════════════════════════════════")
+
+	for _, name := range containers {
+		fmt.Printf("\n>>> %s <<<\n", name)
+		cmd := exec.Command("docker", "logs", "--tail", "200", name)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stdout // stderr контейнера тоже в stdout чтобы не перемешивать
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("(could not get logs for %s: %v)\n", name, err)
+		}
+	}
+
+	fmt.Println()
+	fmt.Println("══════════════════════════════════════════════════════════════")
+	fmt.Println()
 }
 
 func waitForGateway(timeout time.Duration) error {

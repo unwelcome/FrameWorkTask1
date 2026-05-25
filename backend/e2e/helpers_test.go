@@ -163,6 +163,49 @@ func mustRegisterAndLogin(t *testing.T, c *apiClient) (string, loginResp) {
 	return email, login
 }
 
+// ─── Department response types ────────────────────────────────────────────────
+
+type createDepartmentResp struct {
+	DepartmentUUID string `json:"department_uuid"`
+}
+
+type departmentResp struct {
+	DepartmentUUID string `json:"department_uuid"`
+	CompanyUUID    string `json:"company_uuid"`
+	Title          string `json:"title"`
+	CreatedAt      string `json:"created_at"`
+	CreatedBy      string `json:"created_by"`
+}
+
+type departmentListItem struct {
+	DepartmentUUID string `json:"department_uuid"`
+	Title          string `json:"title"`
+}
+
+type departmentsListResp struct {
+	Departments []departmentListItem `json:"departments"`
+}
+
+type employeeInfoResp struct {
+	UserUUID       string `json:"user_uuid"`
+	Role           string `json:"role"`
+	DepartmentUUID string `json:"department_uuid"`
+	JoinedAt       string `json:"joined_at"`
+}
+
+type employeesListResp struct {
+	Employees []employeeInfoResp `json:"employees"`
+}
+
+type employeesSummaryResp struct {
+	ChiefCount      int64 `json:"chief_count"`
+	AnalyticsCount  int64 `json:"analytics_count"`
+	ManagerCount    int64 `json:"manager_count"`
+	EngineerCount   int64 `json:"engineer_count"`
+	InspectorCount  int64 `json:"inspector_count"`
+	UnemployedCount int64 `json:"unemployed_count"`
+}
+
 // ─── Company response types ───────────────────────────────────────────────────
 
 type createCompanyResp struct {
@@ -231,6 +274,37 @@ func mustJoinCompany(t *testing.T, c *apiClient, code string) joinCompanyResp {
 	require.NoError(t, json.Unmarshal(body, &resp))
 	require.NotEmpty(t, resp.CompanyUUID)
 	return resp
+}
+
+// mustCreateDepartment создаёт департамент и возвращает его UUID.
+func mustCreateDepartment(t *testing.T, chief *apiClient, companyUUID, title string) string {
+	t.Helper()
+	status, body := chief.post("/api/auth/company/"+companyUUID+"/department", map[string]string{"title": title})
+	require.Equalf(t, http.StatusCreated, status, "create department failed (body: %s)", body)
+	var resp createDepartmentResp
+	require.NoError(t, json.Unmarshal(body, &resp))
+	require.NotEmpty(t, resp.DepartmentUUID, "create department returned empty department_uuid")
+	return resp.DepartmentUUID
+}
+
+// mustSetEmployeeRole устанавливает роль сотрудника в компании.
+func mustSetEmployeeRole(t *testing.T, chief *apiClient, companyUUID, targetUUID, role string) {
+	t.Helper()
+	status, body := chief.patch(
+		fmt.Sprintf("/api/auth/company/%s/employee/%s/role", companyUUID, targetUUID),
+		map[string]string{"role": role},
+	)
+	require.Equalf(t, http.StatusOK, status, "set employee role failed (body: %s)", body)
+}
+
+// mustAddEmployeeToDepartment добавляет сотрудника в департамент.
+func mustAddEmployeeToDepartment(t *testing.T, chief *apiClient, companyUUID, deptUUID, targetUUID string) {
+	t.Helper()
+	status, body := chief.post(
+		fmt.Sprintf("/api/auth/company/%s/department/%s/employee/%s", companyUUID, deptUUID, targetUUID),
+		nil,
+	)
+	require.Equalf(t, http.StatusOK, status, "add employee to department failed (body: %s)", body)
 }
 
 // mustOpenCompany открывает компанию (устанавливает статус "open") от имени chief.

@@ -813,7 +813,7 @@ func TestJoinCompany(t *testing.T) {
 
 		svc := newTestService(pg, joinRdb())
 		_, err := svc.JoinCompany(ctx, req)
-		assertGRPCCode(t, err, codes.Canceled)
+		assertGRPCCode(t, err, codes.PermissionDenied)
 	})
 
 	t.Run("join company db error", func(t *testing.T) {
@@ -1822,6 +1822,66 @@ func TestDeleteDepartment(t *testing.T) {
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.DeleteDepartment(ctx, req)
+		assertGRPCCode(t, err, codes.Internal)
+	})
+}
+
+// ─── GetUserCompanies ─────────────────────────────────────────────────────────
+
+func TestGetUserCompanies(t *testing.T) {
+	ctx := context.Background()
+	req := &pb.GetUserCompaniesRequest{OperationId: opID, InitiatorUuid: initiatorID}
+
+	t.Run("success — returns user companies", func(t *testing.T) {
+		pg := emptyPGRepo()
+		pg.getUserCompanies = func(_ context.Context, _ string) ([]*entities.GetCompanies, Error.CodeError) {
+			return []*entities.GetCompanies{
+				{CompanyUUID: companyID, Title: "My Company", Status: "open"},
+			}, ok()
+		}
+
+		svc := newTestService(pg, emptyRedisRepo())
+		res, err := svc.GetUserCompanies(ctx, req)
+		assertNoError(t, err)
+		if len(res.GetCompanies()) != 1 {
+			t.Errorf("expected 1 company, got %d", len(res.GetCompanies()))
+		}
+		if res.GetCompanies()[0].GetCompanyUuid() != companyID {
+			t.Errorf("expected company uuid %q, got %q", companyID, res.GetCompanies()[0].GetCompanyUuid())
+		}
+	})
+
+	t.Run("success — empty list", func(t *testing.T) {
+		pg := emptyPGRepo()
+		pg.getUserCompanies = func(_ context.Context, _ string) ([]*entities.GetCompanies, Error.CodeError) {
+			return []*entities.GetCompanies{}, ok()
+		}
+
+		svc := newTestService(pg, emptyRedisRepo())
+		res, err := svc.GetUserCompanies(ctx, req)
+		assertNoError(t, err)
+		if len(res.GetCompanies()) != 0 {
+			t.Errorf("expected 0 companies, got %d", len(res.GetCompanies()))
+		}
+	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
+		_, err := svc.GetUserCompanies(ctx, &pb.GetUserCompaniesRequest{
+			OperationId:   opID,
+			InitiatorUuid: "not-a-uuid",
+		})
+		assertGRPCCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		pg := emptyPGRepo()
+		pg.getUserCompanies = func(_ context.Context, _ string) ([]*entities.GetCompanies, Error.CodeError) {
+			return nil, internalErr()
+		}
+
+		svc := newTestService(pg, emptyRedisRepo())
+		_, err := svc.GetUserCompanies(ctx, req)
 		assertGRPCCode(t, err, codes.Internal)
 	})
 }

@@ -34,6 +34,7 @@ type mockPGCompanyRepo struct {
 	updateDepartmentTitle      func(ctx context.Context, dto *entities.UpdateDepartment) Error.CodeError
 	deleteDepartment           func(ctx context.Context, departmentUUID string) Error.CodeError
 	removeEmployeeFromDepartment func(ctx context.Context, companyUUID, targetUUID string) Error.CodeError
+	getUserCompanies             func(ctx context.Context, userUUID string) ([]*entities.GetCompanies, Error.CodeError)
 }
 
 func (m *mockPGCompanyRepo) CreateCompany(ctx context.Context, dto *entities.CreateCompany) Error.CodeError {
@@ -92,6 +93,9 @@ func (m *mockPGCompanyRepo) DeleteDepartment(ctx context.Context, departmentUUID
 }
 func (m *mockPGCompanyRepo) RemoveEmployeeFromDepartment(ctx context.Context, companyUUID, targetUUID string) Error.CodeError {
 	return m.removeEmployeeFromDepartment(ctx, companyUUID, targetUUID)
+}
+func (m *mockPGCompanyRepo) GetUserCompanies(ctx context.Context, userUUID string) ([]*entities.GetCompanies, Error.CodeError) {
+	return m.getUserCompanies(ctx, userUUID)
 }
 
 // ─── Mock: Redis CompanyRepository ───────────────────────────────────────────

@@ -233,9 +233,17 @@ func mustJoinCompany(t *testing.T, c *apiClient, code string) joinCompanyResp {
 	return resp
 }
 
-// mustAddMember creates a join code as chief and has the guest client join the company.
+// mustOpenCompany открывает компанию (устанавливает статус "open") от имени chief.
+func mustOpenCompany(t *testing.T, chief *apiClient, companyUUID string) {
+	t.Helper()
+	status, body := chief.patch("/api/auth/company/"+companyUUID+"/status", map[string]string{"status": "open"})
+	require.Equalf(t, http.StatusOK, status, "open company failed (body: %s)", body)
+}
+
+// mustAddMember opens the company, creates a join code as chief and has the guest client join the company.
 func mustAddMember(t *testing.T, chief *apiClient, guest *apiClient, companyUUID string) {
 	t.Helper()
+	mustOpenCompany(t, chief, companyUUID)
 	code := mustCreateCode(t, chief, companyUUID, 3600)
 	mustJoinCompany(t, guest, code)
 }

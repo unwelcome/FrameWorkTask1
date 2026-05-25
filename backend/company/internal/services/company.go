@@ -646,7 +646,7 @@ func (s *CompanyService) UpdateEmployeeRole(ctx context.Context, req *pb.UpdateE
 	// Нельзя изменять свою роль
 	if req.GetInitiatorUuid() == req.GetTargetUuid() {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "update employee role").Err(fmt.Errorf("cannot change your own role")).Msg("error")
-		return nil, status.Error(codes.PermissionDenied, "cannot change your own role")
+		return nil, status.Error(codes.InvalidArgument, "cannot change your own role")
 	}
 
 	// Проверяем роль инициатора
@@ -692,7 +692,7 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 	// Нельзя удалить себя из компании
 	if req.GetInitiatorUuid() == req.GetTargetUuid() {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "remove company employee").Err(fmt.Errorf("cannot remove yourself")).Msg("error")
-		return nil, status.Error(codes.PermissionDenied, "cannot remove yourself from company")
+		return nil, status.Error(codes.InvalidArgument, "cannot remove yourself from company")
 	}
 
 	// Проверка роли инициатора
@@ -786,7 +786,7 @@ func (s *CompanyService) AddEmployeeToDepartment(ctx context.Context, req *pb.Ad
 	target, getTargetErr := s.db.Company.GetCompanyEmployee(ctx, department.CompanyUUID, req.GetTargetUuid())
 	if getTargetErr.Code == int(codes.NotFound) {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "add employee to department").Err(fmt.Errorf("target not in company")).Msg("error")
-		return nil, status.Errorf(codes.NotFound, "employee not found in company")
+		return nil, status.Errorf(codes.PermissionDenied, "employee not found in company")
 	}
 	err = Error.HandleError(getTargetErr, req.GetOperationId(), "add employee to department")
 	if err != nil {
@@ -1009,7 +1009,7 @@ func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *
 
 	if target.DepartmentUUID != req.GetDepartmentUuid() {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "remove employee from department").Err(fmt.Errorf("user not in this department")).Msg("error")
-		return nil, status.Errorf(codes.NotFound, "user not in this department")
+		return nil, status.Errorf(codes.InvalidArgument, "user not in this department")
 	}
 
 	// Убираем сотрудника из департамента

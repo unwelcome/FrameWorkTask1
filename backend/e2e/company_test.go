@@ -602,6 +602,7 @@ func TestJoinCompany(t *testing.T) {
 		_, chiefLogin := mustRegisterAndLogin(t, c)
 		chief := c.withToken(chiefLogin.AccessToken)
 		companyUUID := mustCreateCompany(t, chief, randomTitle())
+		mustOpenCompany(t, chief, companyUUID)
 		code := mustCreateCode(t, chief, companyUUID, 3600)
 
 		_, guestLogin := mustRegisterAndLogin(t, c)
@@ -646,6 +647,7 @@ func TestJoinCompany(t *testing.T) {
 		_, chiefLogin := mustRegisterAndLogin(t, c)
 		chief := c.withToken(chiefLogin.AccessToken)
 		companyUUID := mustCreateCompany(t, chief, randomTitle())
+		mustOpenCompany(t, chief, companyUUID)
 
 		_, guestLogin := mustRegisterAndLogin(t, c)
 		guest := c.withToken(guestLogin.AccessToken)
@@ -790,11 +792,14 @@ func TestCompanyFullWorkflow(t *testing.T) {
 	chief := c.withToken(chiefLogin.AccessToken)
 	companyUUID := mustCreateCompany(t, chief, randomTitle())
 
+	// Открываем компанию (при создании может быть closed)
+	mustOpenCompany(t, chief, companyUUID)
+
 	infoStatus, infoBody := chief.get("/api/auth/company/" + companyUUID)
 	require.Equal(t, http.StatusOK, infoStatus, "chief should see own company (body: %s)", infoBody)
 	var company companyResp
 	require.NoError(t, json.Unmarshal(infoBody, &company))
-	assert.Equal(t, "open", company.Status, "new company should have open status")
+	assert.Equal(t, "open", company.Status, "company should have open status after opening")
 
 	// 2. Chief генерирует код вступления
 	code := mustCreateCode(t, chief, companyUUID, 3600)

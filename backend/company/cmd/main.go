@@ -17,7 +17,7 @@ import (
 func main() {
 	cfg := config.NewConfig()
 
-	loggerConf := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
+	loggerConf, _ := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
 	log.Logger = *loggerConf
 
 	db := postgresDB.NewDatabaseInstance(cfg.Postgres.ConnectionString())

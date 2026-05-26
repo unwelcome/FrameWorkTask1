@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	application_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
@@ -34,7 +35,7 @@ type App struct {
 	ApplicationHandler handlers.ApplicationHandler
 }
 
-func InitApp(cfg *config.Config) *App {
+func InitApp(cfg *config.Config, httpLogger zerolog.Logger) *App {
 	// Загружаем публичный ключ из PEM-файла
 	publicKey, err := utils.LoadPublicKey(cfg.JWT.PublicKeyPath)
 	if err != nil {
@@ -48,7 +49,7 @@ func InitApp(cfg *config.Config) *App {
 	application.ApplicationServiceClient = application_proto.NewApplicationServiceClient(dial(cfg.App.Addr()))
 
 	application.OperationIDMiddleware = middlewares.NewOperationIDMiddleware(OperationIDKey)
-	application.LoggerMiddleware = middlewares.NewRequestLoggerMiddleware(OperationIDKey)
+	application.LoggerMiddleware = middlewares.NewRequestLoggerMiddleware(OperationIDKey, UserUUIDKey, httpLogger)
 	application.AuthMiddleware = middlewares.NewAuthMiddleware(publicKey, UserUUIDKey)
 
 	application.HealthHandler = handlers.NewHealthHandler(application.AuthServiceClient, application.CompanyServiceClient, application.ApplicationServiceClient, OperationIDKey)

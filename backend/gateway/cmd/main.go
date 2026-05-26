@@ -22,12 +22,12 @@ import (
 func main() {
 	cfg := config.NewConfig()
 
-	loggerConf := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
+	loggerConf, httpLogger := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
 	log.Logger = *loggerConf
 
 	server := fiber.New()
 
-	application := app.InitApp(cfg)
+	application := app.InitApp(cfg, *httpLogger)
 
 	routes.SetupRoutes(server, application)
 

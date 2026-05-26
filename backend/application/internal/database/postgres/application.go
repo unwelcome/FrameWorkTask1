@@ -38,70 +38,6 @@ func NewApplicationRepository(db *sql.DB) ApplicationRepository {
 	return &applicationRepository{db: db}
 }
 
-// saveVersion сохраняет снапшот текущего состояния заявки в application_versions внутри транзакции.
-// Использует SELECT FOR UPDATE, чтобы заблокировать строку на время транзакции.
-func (r *applicationRepository) saveVersion(ctx context.Context, tx *sql.Tx, applicationUUID string) error {
-	var app entities.Application
-	err := tx.QueryRowContext(ctx, `
-		SELECT
-			uuid, 
-			company_uuid, 
-			department_uuid, 
-			version, 
-			title, 
-			description, 
-			status,
-			revision_count,
-			created_at::text, 
-			created_by,
-		    COALESCE(updated_at::text, ''),
-			COALESCE(updated_by::text, ''),
-			COALESCE(managed_by::text, ''),
-			COALESCE(executed_by::text, ''),
-			COALESCE(inspected_by::text, ''),
-			COALESCE(closed_at::text, ''),
-			COALESCE(deleted_at::text, ''),
-			COALESCE(deleted_by::text, '')
-		FROM applications
-		WHERE uuid = $1
-		FOR UPDATE`,
-		applicationUUID,
-	).Scan(
-		&app.ApplicationUUID,
-		&app.CompanyUUID,
-		&app.DepartmentUUID,
-		&app.Version,
-		&app.Title,
-		&app.Description,
-		&app.Status,
-		&app.RevisionCount,
-		&app.CreatedAt,
-		&app.CreatedBy,
-		&app.UpdatedAt,
-		&app.UpdatedBy,
-		&app.ManagedBy,
-		&app.ExecutedBy,
-		&app.InspectedBy,
-		&app.ClosedAt,
-		&app.DeletedAt,
-		&app.DeletedBy,
-	)
-	if err != nil {
-		return err
-	}
-
-	body, err := json.Marshal(app)
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.ExecContext(ctx,
-		`INSERT INTO application_versions (uuid, application_uuid, version, body) VALUES ($1, $2, $3, $4)`,
-		uuid.Must(uuid.NewV7()).String(), app.ApplicationUUID, app.Version, body,
-	)
-	return err
-}
-
 // CreateApplication Создание заявки
 // 'created'				- inspector
 func (r *applicationRepository) CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError {
@@ -354,17 +290,14 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 		updated_by = $3,
 
 		managed_by = CASE
-		    WHEN $4 THEN NULL
 			WHEN $2::text = 'rejected' THEN $3
 			ELSE managed_by
 		END,
 
-	    executed_by = CASE
-	        WHEN $5 THEN NULL
-	        ELSE executed_by
+		inspected_by = CASE 
+			WHEN $2::text = 'on_revision' THEN NULL
+			ELSE inspected_by
 	    END,
-
-	    inspected_by = NULL,
 
 		closed_at = CASE
 			WHEN $2::text IN ('completed', 'failed') THEN CURRENT_TIMESTAMP
@@ -372,7 +305,7 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 		END
 	WHERE uuid = $1 AND deleted_at IS NULL;`
 
-	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.Status, dto.InitiatorUUID, dto.DropManagedBy, dto.DropExecutedBy)
+	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.Status, dto.InitiatorUUID)
 	if err != nil {
 		return Error.Internal(err)
 	}
@@ -707,4 +640,68 @@ func (r *applicationRepository) DeleteApplication(ctx context.Context, dto entit
 	}
 
 	return Error.CodeError{}
+}
+
+// saveVersion сохраняет снапшот текущего состояния заявки в application_versions внутри транзакции.
+// Использует SELECT FOR UPDATE, чтобы заблокировать строку на время транзакции.
+func (r *applicationRepository) saveVersion(ctx context.Context, tx *sql.Tx, applicationUUID string) error {
+	var app entities.Application
+	err := tx.QueryRowContext(ctx, `
+		SELECT
+			uuid, 
+			company_uuid, 
+			department_uuid, 
+			version, 
+			title, 
+			description, 
+			status,
+			revision_count,
+			created_at::text, 
+			created_by,
+		    COALESCE(updated_at::text, ''),
+			COALESCE(updated_by::text, ''),
+			COALESCE(managed_by::text, ''),
+			COALESCE(executed_by::text, ''),
+			COALESCE(inspected_by::text, ''),
+			COALESCE(closed_at::text, ''),
+			COALESCE(deleted_at::text, ''),
+			COALESCE(deleted_by::text, '')
+		FROM applications
+		WHERE uuid = $1
+		FOR UPDATE`,
+		applicationUUID,
+	).Scan(
+		&app.ApplicationUUID,
+		&app.CompanyUUID,
+		&app.DepartmentUUID,
+		&app.Version,
+		&app.Title,
+		&app.Description,
+		&app.Status,
+		&app.RevisionCount,
+		&app.CreatedAt,
+		&app.CreatedBy,
+		&app.UpdatedAt,
+		&app.UpdatedBy,
+		&app.ManagedBy,
+		&app.ExecutedBy,
+		&app.InspectedBy,
+		&app.ClosedAt,
+		&app.DeletedAt,
+		&app.DeletedBy,
+	)
+	if err != nil {
+		return err
+	}
+
+	body, err := json.Marshal(app)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO application_versions (uuid, application_uuid, version, body) VALUES ($1, $2, $3, $4)`,
+		uuid.Must(uuid.NewV7()).String(), app.ApplicationUUID, app.Version, body,
+	)
+	return err
 }

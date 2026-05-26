@@ -4,6 +4,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKEND_DIR="$SCRIPT_DIR/.."
 E2E_DIR="$BACKEND_DIR/e2e"
+LOGS_DIR="$SCRIPT_DIR/../../logs/tests"
+
+# Clear logs from the previous run
+rm -f "$LOGS_DIR"/*.log 2>/dev/null || true
 
 # Services that have e2e tests
 E2E_SERVICES=("auth" "company" "application")
@@ -18,7 +22,7 @@ get_pattern() {
       echo "^(TestCreateCompany|TestGetCompany|TestGetCompaniesList|TestGetMyCompanies|TestUpdateCompanyTitle|TestUpdateCompanyStatus|TestDeleteCompany|TestCreateJoinCode|TestGetJoinCodes|TestJoinCompany|TestDeleteJoinCode|TestCompanyFullWorkflow|TestCreateDepartment|TestGetDepartment|TestGetCompanyDepartments|TestUpdateDepartmentTitle|TestDeleteDepartment|TestAddEmployeeToDepartment|TestRemoveEmployeeFromDepartment|TestDepartmentFullWorkflow|TestGetCompanyEmployee|TestGetCompanyEmployees|TestGetCompanyEmployeesSummary|TestUpdateEmployeeRole|TestRemoveCompanyEmployee|TestEmployeeFullWorkflow)"
       ;;
     application)
-      echo "^(TestCreateApplication|TestGetApplication|TestGetApplications)"
+      echo "^(TestCreateApplication|TestGetApplication|TestGetApplications|TestUpdateApplicationStatus)"
       ;;
     *)
       echo "^Test"

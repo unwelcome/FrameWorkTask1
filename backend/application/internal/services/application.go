@@ -385,8 +385,6 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *p
 	}
 
 	currentStatus := application.Status
-	dropManagedBy := false
-	dropExecutedBy := false
 
 	switch initiator.Role {
 
@@ -410,12 +408,6 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *p
 			log.Info().Str("id", req.GetOperationId()).Str("method", "update application status").
 				Err(fmt.Errorf("invalid status transition")).Msg("error")
 			return nil, status.Error(codes.FailedPrecondition, "invalid status transition")
-		}
-
-		// Если новый статус on_revision и revision_count % 5 == 0, то отдаем заявку в общий пул менеджеров
-		if newStatus == "on_revision" && (application.RevisionCount+1)%5 == 0 {
-			dropManagedBy = true
-			dropExecutedBy = true
 		}
 
 	case "manager":
@@ -474,8 +466,6 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, req *p
 		ApplicationUUID: req.GetApplicationUuid(),
 		InitiatorUUID:   req.GetInitiatorUuid(),
 		Status:          newStatus,
-		DropManagedBy:   dropManagedBy,
-		DropExecutedBy:  dropExecutedBy,
 	})
 	err = Error.HandleError(updateErr, req.GetOperationId(), "update application status")
 	if err != nil {
@@ -515,11 +505,6 @@ func (s *ApplicationService) AssignApplication(ctx context.Context, req *pb.Assi
 	if !helpers.Contains([]string{"created", "redirected", "recalled", "on_revision"}, application.Status) {
 		log.Info().Str("id", req.GetOperationId()).Str("method", "assign application").Err(fmt.Errorf("invalid status")).Msg("error")
 		return nil, status.Error(codes.InvalidArgument, "can't assign application with current status")
-	}
-	// Проверяем, чтобы заявка со статусом on_revision имела кратное 5 кол-во пересмотров
-	if application.Status == "on_revision" && application.RevisionCount%5 != 0 {
-		log.Info().Str("id", req.GetOperationId()).Str("method", "assign application").Err(fmt.Errorf("revision is not")).Msg("error")
-		return nil, status.Error(codes.InvalidArgument, "revision has not reached the boiling point")
 	}
 
 	// Получаем менеджера

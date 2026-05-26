@@ -568,13 +568,9 @@ func TestUpdateApplicationStatus(t *testing.T) {
 		}
 	})
 
-	t.Run("inspector: on_revision without escalation (revision_count=0)", func(t *testing.T) {
-		repo := repoWithApp(onVerificationApp()) // RevisionCount=0, (0+1)%5 != 0
-		var capturedDTO entities.UpdateApplicationStatusDTO
-		repo.updateApplicationStatus = func(_ context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError {
-			capturedDTO = dto
-			return ok()
-		}
+	t.Run("inspector: on_revision succeeds (revision_count=0)", func(t *testing.T) {
+		repo := repoWithApp(onVerificationApp()) // RevisionCount=0
+		repo.updateApplicationStatus = func(_ context.Context, _ entities.UpdateApplicationStatusDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))
 		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
@@ -585,21 +581,16 @@ func TestUpdateApplicationStatus(t *testing.T) {
 		})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
-		}
-		if capturedDTO.DropManagedBy || capturedDTO.DropExecutedBy {
-			t.Error("should not escalate when (RevisionCount+1)%5 != 0")
 		}
 	})
 
-	t.Run("inspector: on_revision with escalation (revision_count=4)", func(t *testing.T) {
+	t.Run("inspector: on_revision succeeds (revision_count=4, no auto-escalation)", func(t *testing.T) {
+		// Previously revision_count=4 triggered auto-drop of manager+engineer at the 5th revision.
+		// Now on_revision always keeps manager and engineer assigned — manager recalls manually.
 		app := onVerificationApp()
-		app.RevisionCount = 4 // (4+1)%5 == 0 → escalation
+		app.RevisionCount = 4
 		repo := repoWithApp(app)
-		var capturedDTO entities.UpdateApplicationStatusDTO
-		repo.updateApplicationStatus = func(_ context.Context, dto entities.UpdateApplicationStatusDTO) Error.CodeError {
-			capturedDTO = dto
-			return ok()
-		}
+		repo.updateApplicationStatus = func(_ context.Context, _ entities.UpdateApplicationStatusDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))
 		_, err := svc.UpdateApplicationStatus(context.Background(), &pb.UpdateApplicationStatusRequest{
@@ -609,10 +600,7 @@ func TestUpdateApplicationStatus(t *testing.T) {
 			Status:          "on_revision",
 		})
 		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if !capturedDTO.DropManagedBy || !capturedDTO.DropExecutedBy {
-			t.Error("should escalate when (RevisionCount+1)%5 == 0")
+			t.Fatalf("on_revision at revision_count=4 must succeed without escalation: %v", err)
 		}
 	})
 
@@ -828,24 +816,10 @@ func TestAssignApplication(t *testing.T) {
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("on_revision not escalated (revision_count=3)", func(t *testing.T) {
-		repo := repoWithApp(onRevisionApp()) // RevisionCount=3, not divisible by 5
-
-		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
-			initiatorID: "manager",
-			targetID:    "engineer",
-		}))
-		_, err := svc.AssignApplication(context.Background(), &pb.AssignApplicationRequest{
-			OperationId:     opID,
-			InitiatorUuid:   initiatorID,
-			TargetUuid:      targetID,
-			ApplicationUuid: appID,
-		})
-		assertCode(t, err, codes.InvalidArgument)
-	})
-
-	t.Run("on_revision escalated (revision_count=5)", func(t *testing.T) {
-		repo := repoWithApp(escalatedOnRevisionApp()) // RevisionCount=5
+	t.Run("on_revision always assignable", func(t *testing.T) {
+		// on_revision apps are never auto-dropped into the pool anymore.
+		// The manager can assign directly (or recall first — both are valid flows).
+		repo := repoWithApp(onRevisionApp()) // RevisionCount=3
 		repo.assignApplicationToEmployee = func(_ context.Context, _ entities.AssignApplicationDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleByTargetClient(map[string]string{
@@ -859,7 +833,7 @@ func TestAssignApplication(t *testing.T) {
 			ApplicationUuid: appID,
 		})
 		if err != nil {
-			t.Fatalf("escalated on_revision should be assignable, got: %v", err)
+			t.Fatalf("on_revision should always be directly assignable: %v", err)
 		}
 	})
 

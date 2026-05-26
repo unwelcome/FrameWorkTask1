@@ -52,8 +52,6 @@ type UpdateApplicationStatusDTO struct {
 	ApplicationUUID string
 	InitiatorUUID   string
 	Status          string
-	DropManagedBy   bool
-	DropExecutedBy  bool
 }
 
 type AssignApplicationDTO struct {

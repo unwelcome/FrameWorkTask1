@@ -494,3 +494,309 @@ func TestGetApplications(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, code, "offset=-1 should return 400 (body: %s)", body)
 	})
 }
+
+// ─── TestUpdateApplicationStatus ─────────────────────────────────────────────
+
+func TestUpdateApplicationStatus(t *testing.T) {
+	c := newClient()
+	env := mustSetupAppEnv(t, c)
+
+	// ── Inspector ────────────────────────────────────────────────────────────────
+
+	// inspector_complete — инспектор завершает заявку (on_verification → completed).
+	// Проверяем: closed_at заполнен, inspected_by сброшен.
+	t.Run("inspector_complete", func(t *testing.T) {
+		appUUID := mustAdvanceToOnVerification(t, env, "Inspector complete test")
+
+		code, body := env.Inspector2.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "completed",
+		})
+		assert.Equal(t, http.StatusOK, code, "inspector should complete application (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "completed", app.Status)
+		assert.NotEmpty(t, app.ClosedAt, "closed_at must be set on completion")
+		assert.Equal(t, env.Inspector2UUID, app.InspectedBy, "inspected_by must be unchanged")
+		assert.Equal(t, env.ManagerUUID, app.ManagedBy, "managed_by must be unchanged")
+		assert.Equal(t, env.EngineerUUID, app.ExecutedBy, "executed_by must be unchanged")
+	})
+
+	// inspector_fail — инспектор проваливает заявку (on_verification → failed).
+	// Проверяем: closed_at заполнен, inspected_by сброшен.
+	t.Run("inspector_fail", func(t *testing.T) {
+		appUUID := mustAdvanceToOnVerification(t, env, "Inspector fail test")
+
+		code, body := env.Inspector2.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "failed",
+		})
+		assert.Equal(t, http.StatusOK, code, "inspector should fail application (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "failed", app.Status)
+		assert.NotEmpty(t, app.ClosedAt, "closed_at must be set on failure")
+		assert.Equal(t, env.Inspector2UUID, app.InspectedBy, "inspected_by must be unchanged")
+	})
+
+	// inspector_on_revision — инспектор отправляет заявку на доработку (on_verification → on_revision).
+	// Проверяем: revision_count увеличился на 1, managed_by и executed_by не сброшены.
+	t.Run("inspector_on_revision", func(t *testing.T) {
+		appUUID := mustAdvanceToOnVerification(t, env, "Inspector on_revision test")
+
+		code, body := env.Inspector2.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "on_revision",
+		})
+		assert.Equal(t, http.StatusOK, code, "inspector should set on_revision (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "on_revision", app.Status)
+		assert.Equal(t, int64(1), app.RevisionCount, "revision_count must be incremented")
+		assert.Equal(t, env.ManagerUUID, app.ManagedBy, "managed_by must not be dropped on revision")
+		assert.Equal(t, env.EngineerUUID, app.ExecutedBy, "executed_by must not be dropped on revision")
+		assert.Empty(t, app.InspectedBy, "inspected_by must be cleared")
+	})
+
+	// inspector_not_responsible — инспектор, не взявший заявку на проверку, получает 403.
+	t.Run("inspector_not_responsible", func(t *testing.T) {
+		appUUID := mustAdvanceToOnVerification(t, env, "Inspector not responsible test")
+
+		// Inspector (not Inspector2) tries to close the application.
+		code, body := env.Inspector.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "completed",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-responsible inspector must be denied (body: %s)", body)
+	})
+
+	// inspector_target_status_denied — инспектор пытается выставить недопустимый для него статус (rejected).
+	t.Run("inspector_target_status_denied", func(t *testing.T) {
+		appUUID := mustAdvanceToOnVerification(t, env, "Inspector target status denied test")
+
+		code, body := env.Inspector2.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "rejected",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "inspector must not set rejected (body: %s)", body)
+	})
+
+	// ── Manager ──────────────────────────────────────────────────────────────────
+
+	// manager_reject_created — менеджер отклоняет заявку из статуса created.
+	// Проверяем: managed_by устанавливается как инициатор.
+	t.Run("manager_reject_created", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Manager reject created test", "Reject from created.")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "rejected",
+		})
+		assert.Equal(t, http.StatusOK, code, "manager should reject from created (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "rejected", app.Status)
+		assert.Equal(t, env.ManagerUUID, app.ManagedBy, "managed_by must be set to initiator on rejection")
+	})
+
+	// manager_reject_recalled — менеджер отклоняет заявку из статуса recalled.
+	t.Run("manager_reject_recalled", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Manager reject recalled test", "Reject from recalled.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustRecallApplication(t, env.Manager, appUUID)
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "rejected",
+		})
+		assert.Equal(t, http.StatusOK, code, "manager should reject from recalled (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "rejected", app.Status)
+	})
+
+	// manager_reject_on_revision — менеджер отклоняет заявку из статуса on_revision.
+	t.Run("manager_reject_on_revision", func(t *testing.T) {
+		appUUID := mustAdvanceToOnRevision(t, env, "Manager reject on_revision test")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "rejected",
+		})
+		assert.Equal(t, http.StatusOK, code, "manager should reject from on_revision (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "rejected", app.Status)
+	})
+
+	// manager_reject_after_redirect — заявка перенаправлена в dept2; менеджер из dept2 её отклоняет.
+	t.Run("manager_reject_after_redirect", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Manager reject after redirect test", "Redirect then reject.")
+		mustRedirectApplication(t, env.Manager, appUUID, env.Dept2UUID)
+
+		code, body := env.Manager2.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "rejected",
+		})
+		assert.Equal(t, http.StatusOK, code, "dept2 manager should reject redirected application (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "rejected", app.Status)
+	})
+
+	// manager_wrong_dept — менеджер из другого департамента не может изменить статус.
+	t.Run("manager_wrong_dept", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Manager wrong dept test", "Dept2 manager should be denied.")
+
+		// Manager2 is from dept2, application is in dept1.
+		code, body := env.Manager2.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "rejected",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "manager from another dept must be denied (body: %s)", body)
+	})
+
+	// manager_wrong_current_status — менеджер пытается отклонить заявку в статусе assigned (недопустимый переход).
+	t.Run("manager_wrong_current_status", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Manager wrong current status test", "Should return 412.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		// Status is now "assigned" — not in {created, redirected, recalled, on_revision}.
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "rejected",
+		})
+		assert.Equal(t, http.StatusPreconditionFailed, code, "manager reject from assigned must return 412 (body: %s)", body)
+	})
+
+	// ── Engineer ─────────────────────────────────────────────────────────────────
+
+	// engineer_start_progress — инженер начинает работу (assigned → in_progress).
+	t.Run("engineer_start_progress", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Engineer start progress test", "Assign then start.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+
+		code, body := env.Engineer.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "in_progress",
+		})
+		assert.Equal(t, http.StatusOK, code, "engineer should start progress (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "in_progress", app.Status)
+	})
+
+	// engineer_on_hold — инженер приостанавливает работу (in_progress → on_hold).
+	t.Run("engineer_on_hold", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Engineer on_hold test", "in_progress then on_hold.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+
+		code, body := env.Engineer.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "on_hold",
+		})
+		assert.Equal(t, http.StatusOK, code, "engineer should pause to on_hold (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "on_hold", app.Status)
+	})
+
+	// engineer_pending_verification — инженер передаёт заявку на проверку (in_progress → pending_verification).
+	t.Run("engineer_pending_verification", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Engineer pending verification test", "in_progress then pending_verification.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+
+		code, body := env.Engineer.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "pending_verification",
+		})
+		assert.Equal(t, http.StatusOK, code, "engineer should submit for verification (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "pending_verification", app.Status)
+	})
+
+	// engineer_resume_from_revision — инженер возобновляет работу после доработки (on_revision → in_progress).
+	// Проверяем, что executed_by не был сброшен и инженер может продолжить работу.
+	t.Run("engineer_resume_from_revision", func(t *testing.T) {
+		appUUID := mustAdvanceToOnRevision(t, env, "Engineer resume from revision test")
+
+		code, body := env.Engineer.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "in_progress",
+		})
+		assert.Equal(t, http.StatusOK, code, "engineer should resume from on_revision (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "in_progress", app.Status)
+		assert.Equal(t, env.EngineerUUID, app.ExecutedBy, "executed_by must remain the same engineer after revision")
+	})
+
+	// engineer_not_responsible — инженер, которому заявка не назначена, получает 403.
+	t.Run("engineer_not_responsible", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Engineer not responsible test", "Engineer2 should be denied.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		// Engineer2 is not ExecutedBy for this application.
+
+		code, body := env.Engineer2.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "in_progress",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-responsible engineer must be denied (body: %s)", body)
+	})
+
+	// engineer_wrong_current_status — инженер пытается изменить статус из pending_verification (недопустимый переход).
+	t.Run("engineer_wrong_current_status", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Engineer wrong current status test", "pending_verification should return 412.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+		mustSetAppStatus(t, env.Engineer, appUUID, "pending_verification")
+		// Status is now "pending_verification" — not in engineer's allowed source statuses.
+
+		code, body := env.Engineer.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "in_progress",
+		})
+		assert.Equal(t, http.StatusPreconditionFailed, code, "engineer from pending_verification must get 412 (body: %s)", body)
+	})
+
+	// ── Role denied ───────────────────────────────────────────────────────────────
+
+	// chief_denied — chief не может изменять статус заявок.
+	t.Run("chief_denied", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Chief denied test", "Chief must not update status.")
+
+		code, body := env.Chief.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "rejected",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "chief must not update application status (body: %s)", body)
+	})
+
+	// analytic_denied — аналитик не может изменять статус заявок.
+	t.Run("analytic_denied", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Analytic denied test", "Analytic must not update status.")
+
+		code, body := env.Analytic.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "rejected",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "analytic must not update application status (body: %s)", body)
+	})
+
+	// ── Validation ────────────────────────────────────────────────────────────────
+
+	// invalid_status_value — статус "created" не входит в допустимое множество для этого метода.
+	t.Run("invalid_status_value", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Invalid status value test", "Status created is not settable via this endpoint.")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+			"status": "created",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "status=created must return 400 (body: %s)", body)
+	})
+
+	// not_found — заявка с несуществующим UUID должна вернуть 404.
+	t.Run("not_found", func(t *testing.T) {
+		code, body := env.Manager.patch("/api/auth/application/00000000-0000-0000-0000-000000000000/status", map[string]string{
+			"status": "rejected",
+		})
+		assert.Equal(t, http.StatusNotFound, code, "non-existent application must return 404 (body: %s)", body)
+	})
+}

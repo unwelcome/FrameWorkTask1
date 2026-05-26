@@ -285,10 +285,4 @@ func onRevisionApp() *entities.Application {
 	return app
 }
 
-func escalatedOnRevisionApp() *entities.Application {
-	app := testApp()
-	app.Status = "on_revision"
-	app.RevisionCount = 5 // кратно 5 — заявка в пуле менеджеров (executed_by NULL)
-	return app
-}
 

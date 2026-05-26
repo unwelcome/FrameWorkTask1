@@ -339,6 +339,7 @@ type applicationDetail struct {
 	ManagedBy       string           `json:"managed_by"`
 	ExecutedBy      string           `json:"executed_by"`
 	InspectedBy     string           `json:"inspected_by"`
+	ClosedAt        string           `json:"closed_at"`
 	FixLogs         []fixLogRespItem `json:"fix_logs"`
 }
 
@@ -501,4 +502,56 @@ func mustTakeToVerification(t *testing.T, inspector *apiClient, appUUID string) 
 	t.Helper()
 	code, body := inspector.patch("/api/auth/application/"+appUUID+"/take-verification", nil)
 	require.Equalf(t, http.StatusOK, code, "take to verification failed (body: %s)", body)
+}
+
+// mustRecallApplication recalls an application (manager takes it back from the engineer).
+func mustRecallApplication(t *testing.T, manager *apiClient, appUUID string) {
+	t.Helper()
+	code, body := manager.patch("/api/auth/application/"+appUUID+"/recall", map[string]string{
+		"message": "Recalled for reassignment.",
+	})
+	require.Equalf(t, http.StatusOK, code, "recall application failed (body: %s)", body)
+}
+
+// mustRedirectApplication redirects an application to another department.
+func mustRedirectApplication(t *testing.T, manager *apiClient, appUUID, targetDeptUUID string) {
+	t.Helper()
+	code, body := manager.patch("/api/auth/application/"+appUUID+"/redirect", map[string]string{
+		"target_department_uuid": targetDeptUUID,
+		"message":                "Redirected to another department.",
+	})
+	require.Equalf(t, http.StatusOK, code, "redirect application failed (body: %s)", body)
+}
+
+// mustAdvanceToOnVerification creates an application and advances it to on_verification status.
+// Returns the application UUID.
+// Flow: created → assigned → in_progress → pending_verification → on_verification (held by inspector2).
+func mustAdvanceToOnVerification(t *testing.T, env appEnv, title string) string {
+	t.Helper()
+	appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID, title, "Advance to on_verification.")
+	mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+	mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+	mustSetAppStatus(t, env.Engineer, appUUID, "pending_verification")
+	mustTakeToVerification(t, env.Inspector2, appUUID)
+	return appUUID
+}
+
+// mustAdvanceToOnRevision creates an application and advances it to on_revision status.
+// Returns the application UUID.
+// Flow: …on_verification → on_revision (set by inspector2).
+func mustAdvanceToOnRevision(t *testing.T, env appEnv, title string) string {
+	t.Helper()
+	appUUID := mustAdvanceToOnVerification(t, env, title)
+	mustSetAppStatus(t, env.Inspector2, appUUID, "on_revision")
+	return appUUID
+}
+
+// mustGetApplicationDetail fetches and unmarshals the full application detail.
+func mustGetApplicationDetail(t *testing.T, client *apiClient, appUUID string) applicationDetail {
+	t.Helper()
+	code, body := client.get("/api/auth/application/" + appUUID)
+	require.Equalf(t, http.StatusOK, code, "get application failed (body: %s)", body)
+	var resp applicationDetailResp
+	require.NoError(t, json.Unmarshal(body, &resp))
+	return resp.Application
 }

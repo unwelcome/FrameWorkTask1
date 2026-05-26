@@ -6,7 +6,7 @@ BACKEND_DIR="$SCRIPT_DIR/.."
 E2E_DIR="$BACKEND_DIR/e2e"
 
 # Services that have e2e tests
-E2E_SERVICES=("auth" "company")
+E2E_SERVICES=("auth" "company" "application")
 
 # Map service name → Go -run pattern
 get_pattern() {
@@ -16,6 +16,9 @@ get_pattern() {
       ;;
     company)
       echo "^(TestCreateCompany|TestGetCompany|TestGetCompaniesList|TestGetMyCompanies|TestUpdateCompanyTitle|TestUpdateCompanyStatus|TestDeleteCompany|TestCreateJoinCode|TestGetJoinCodes|TestJoinCompany|TestDeleteJoinCode|TestCompanyFullWorkflow|TestCreateDepartment|TestGetDepartment|TestGetCompanyDepartments|TestUpdateDepartmentTitle|TestDeleteDepartment|TestAddEmployeeToDepartment|TestRemoveEmployeeFromDepartment|TestDepartmentFullWorkflow|TestGetCompanyEmployee|TestGetCompanyEmployees|TestGetCompanyEmployeesSummary|TestUpdateEmployeeRole|TestRemoveCompanyEmployee|TestEmployeeFullWorkflow)"
+      ;;
+    application)
+      echo "^(TestCreateApplication|TestGetApplication|TestGetApplications)"
       ;;
     *)
       echo "^Test"
@@ -61,6 +64,7 @@ usage() {
   echo "  $0              — run all e2e tests"
   echo "  $0 auth         — run auth service tests only"
   echo "  $0 company      — run company service tests only"
+  echo "  $0 application  — run application service tests only"
   echo ""
   echo "Available services: ${E2E_SERVICES[*]}"
 }

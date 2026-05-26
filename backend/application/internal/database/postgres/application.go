@@ -55,7 +55,7 @@ func (r *applicationRepository) saveVersion(ctx context.Context, tx *sql.Tx, app
 			created_at::text, 
 			created_by,
 		    COALESCE(updated_at::text, ''),
-			COALESCE(updated_by, ''),
+			COALESCE(updated_by::text, ''),
 			COALESCE(managed_by::text, ''),
 			COALESCE(executed_by::text, ''),
 			COALESCE(inspected_by::text, ''),
@@ -158,13 +158,13 @@ func (r *applicationRepository) GetApplication(ctx context.Context, dto entities
 			created_at::text,
 			created_by,
 			COALESCE(updated_at::text, ''),
-			COALESCE(updated_by, ''),
-			COALESCE(managed_by, ''),
-			COALESCE(executed_by, ''),
-			COALESCE(inspected_by, ''),
+			COALESCE(updated_by::text, ''),
+			COALESCE(managed_by::text, ''),
+			COALESCE(executed_by::text, ''),
+			COALESCE(inspected_by::text, ''),
 			COALESCE(closed_at::text, ''),
 			COALESCE(deleted_at::text, ''),
-			COALESCE(deleted_by, '')
+			COALESCE(deleted_by::text, '')
 		FROM applications
 		WHERE uuid = $1;`
 
@@ -244,22 +244,22 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 			created_at::text,
 			created_by,
 			COALESCE(updated_at::text, ''),
-			COALESCE(updated_by, ''),
-			COALESCE(managed_by, ''),
-			COALESCE(executed_by, ''),
-			COALESCE(inspected_by, ''),
+			COALESCE(updated_by::text, ''),
+			COALESCE(managed_by::text, ''),
+			COALESCE(executed_by::text, ''),
+			COALESCE(inspected_by::text, ''),
 			COALESCE(closed_at::text, ''),
 			COALESCE(deleted_at::text, ''),
-			COALESCE(deleted_by, '')
+			COALESCE(deleted_by::text, '')
 		FROM applications
-		WHERE company_uuid = $1 
-		  	AND (ARRAY_LENGTH($2::text[], 1) IS NULL OR status = ANY($2::text[])) 
-		  	AND ($3 = '' OR created_by = $3)
-			AND ($4 = '' OR managed_by = $4)
-			AND ($5 = '' OR executed_by = $5)
-			AND ($6 = '' OR inspected_by = $6)
+		WHERE company_uuid = $1
+		  	AND (ARRAY_LENGTH($2::text[], 1) IS NULL OR status::text = ANY($2::text[]))
+		  	AND ($3 = '' OR created_by::text = $3)
+			AND ($4 = '' OR managed_by::text = $4)
+			AND ($5 = '' OR executed_by::text = $5)
+			AND ($6 = '' OR inspected_by::text = $6)
 			AND (NOT $7 OR executed_by IS NULL)
-		  	AND ($8 = '' OR department_uuid = $8) 
+		  	AND ($8 = '' OR department_uuid::text = $8)
 		  	AND ((NOT $9 AND deleted_at IS NULL) OR ($9 AND deleted_at IS NOT NULL))
 		ORDER BY created_at DESC, uuid
 		OFFSET $10 LIMIT $11;`
@@ -343,31 +343,31 @@ func (r *applicationRepository) UpdateApplicationStatus(ctx context.Context, dto
 	query := `UPDATE applications
 	SET
 		version = version + 1,
-		status = $2,
-		
+		status = $2::application_status,
+
 		revision_count = CASE
-		    WHEN $2 = 'on_revision' THEN revision_count + 1
-	        ELSE revision_count 
+		    WHEN $2::text = 'on_revision' THEN revision_count + 1
+	        ELSE revision_count
 		END,
-		
+
 		updated_at = CURRENT_TIMESTAMP,
 		updated_by = $3,
 
 		managed_by = CASE
 		    WHEN $4 THEN NULL
-			WHEN $2 = 'rejected' THEN $3
+			WHEN $2::text = 'rejected' THEN $3
 			ELSE managed_by
 		END,
-	    
+
 	    executed_by = CASE
 	        WHEN $5 THEN NULL
 	        ELSE executed_by
 	    END,
-	    
+
 	    inspected_by = NULL,
 
 		closed_at = CASE
-			WHEN $2 IN ('completed', 'failed') THEN CURRENT_TIMESTAMP
+			WHEN $2::text IN ('completed', 'failed') THEN CURRENT_TIMESTAMP
 			ELSE NULL
 		END
 	WHERE uuid = $1 AND deleted_at IS NULL;`

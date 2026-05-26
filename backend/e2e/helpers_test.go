@@ -321,3 +321,184 @@ func mustAddMember(t *testing.T, chief *apiClient, guest *apiClient, companyUUID
 	code := mustCreateCode(t, chief, companyUUID, 3600)
 	mustJoinCompany(t, guest, code)
 }
+
+// ─── Application response types ───────────────────────────────────────────────
+
+type createApplicationResp struct {
+	ApplicationUUID string `json:"application_uuid"`
+}
+
+type applicationDetailResp struct {
+	Application applicationDetail `json:"application"`
+}
+
+type applicationDetail struct {
+	ApplicationUUID string           `json:"application_uuid"`
+	Status          string           `json:"status"`
+	RevisionCount   int64            `json:"revision_count"`
+	ManagedBy       string           `json:"managed_by"`
+	ExecutedBy      string           `json:"executed_by"`
+	InspectedBy     string           `json:"inspected_by"`
+	FixLogs         []fixLogRespItem `json:"fix_logs"`
+}
+
+type fixLogRespItem struct {
+	UUID      string `json:"uuid"`
+	Text      string `json:"text"`
+	CreatedBy string `json:"created_by"`
+}
+
+type applicationListResp struct {
+	Applications []applicationListItem `json:"applications"`
+}
+
+type applicationListItem struct {
+	ApplicationUUID string `json:"application_uuid"`
+	Status          string `json:"status"`
+}
+
+// ─── Application environment ──────────────────────────────────────────────────
+
+// appEnv holds all clients and identifiers required for application e2e tests.
+type appEnv struct {
+	CompanyUUID string
+
+	// Department 1 — primary department used for main test scenarios.
+	DeptUUID string
+
+	Chief        *apiClient
+	Analytic     *apiClient
+	AnalyticUUID string
+
+	Inspector      *apiClient
+	InspectorUUID  string
+	Inspector2     *apiClient // second inspector — used for InspectedBy tests
+	Inspector2UUID string
+
+	Manager      *apiClient
+	ManagerUUID  string
+	Engineer     *apiClient
+	EngineerUUID string
+
+	// Department 2 — separate department for cross-department isolation tests.
+	Dept2UUID      string
+	Inspector3     *apiClient
+	Inspector3UUID string
+	Manager2       *apiClient
+	Manager2UUID   string
+	Engineer2      *apiClient
+	Engineer2UUID  string
+}
+
+// mustSetupAppEnv creates a full company environment:
+//
+//	chief → company → dept1 + dept2
+//	dept1: inspector, inspector2, manager, engineer, analytic
+//	dept2: inspector3, manager2, engineer2
+//
+// A single join code is created once and reused for all members.
+func mustSetupAppEnv(t *testing.T, c *apiClient) appEnv {
+	t.Helper()
+
+	_, chiefLogin := mustRegisterAndLogin(t, c)
+	chief := c.withToken(chiefLogin.AccessToken)
+	companyUUID := mustCreateCompany(t, chief, randomTitle())
+	mustOpenCompany(t, chief, companyUUID)
+
+	deptUUID := mustCreateDepartment(t, chief, companyUUID, "Main Department")
+	dept2UUID := mustCreateDepartment(t, chief, companyUUID, "Other Department")
+
+	// One shared code is enough — codes are multi-use until their TTL expires.
+	sharedCode := mustCreateCode(t, chief, companyUUID, 3600)
+
+	// joinMember registers a new user, joins via the shared code, sets the role,
+	// and adds the user to the given department.
+	joinMember := func(deptID, role string) (*apiClient, string) {
+		_, login := mustRegisterAndLogin(t, c)
+		client := c.withToken(login.AccessToken)
+		mustJoinCompany(t, client, sharedCode)
+		mustSetEmployeeRole(t, chief, companyUUID, login.UserUUID, role)
+		if deptID != "" {
+			mustAddEmployeeToDepartment(t, chief, companyUUID, deptID, login.UserUUID)
+		}
+		return client, login.UserUUID
+	}
+
+	analytic, analyticUUID := joinMember("", "analytic")
+
+	// Dept 1 members.
+	inspector, inspectorUUID := joinMember(deptUUID, "inspector")
+	inspector2, inspector2UUID := joinMember(deptUUID, "inspector")
+	manager, managerUUID := joinMember(deptUUID, "manager")
+	engineer, engineerUUID := joinMember(deptUUID, "engineer")
+
+	// Dept 2 members — used for cross-department isolation tests.
+	inspector3, inspector3UUID := joinMember(dept2UUID, "inspector")
+	manager2, manager2UUID := joinMember(dept2UUID, "manager")
+	engineer2, engineer2UUID := joinMember(dept2UUID, "engineer")
+
+	return appEnv{
+		CompanyUUID:    companyUUID,
+		DeptUUID:       deptUUID,
+		Chief:          chief,
+		Analytic:       analytic,
+		AnalyticUUID:   analyticUUID,
+		Inspector:      inspector,
+		InspectorUUID:  inspectorUUID,
+		Inspector2:     inspector2,
+		Inspector2UUID: inspector2UUID,
+		Manager:        manager,
+		ManagerUUID:    managerUUID,
+		Engineer:       engineer,
+		EngineerUUID:   engineerUUID,
+		Dept2UUID:      dept2UUID,
+		Inspector3:     inspector3,
+		Inspector3UUID: inspector3UUID,
+		Manager2:       manager2,
+		Manager2UUID:   manager2UUID,
+		Engineer2:      engineer2,
+		Engineer2UUID:  engineer2UUID,
+	}
+}
+
+// ─── Application flow helpers ─────────────────────────────────────────────────
+
+// mustCreateApplication creates an application on behalf of an inspector and returns its UUID.
+func mustCreateApplication(t *testing.T, inspector *apiClient, companyUUID, title, description string) string {
+	t.Helper()
+	code, body := inspector.post("/api/auth/application/create", map[string]string{
+		"company_uuid": companyUUID,
+		"title":        title,
+		"description":  description,
+	})
+	require.Equalf(t, http.StatusCreated, code, "create application failed (body: %s)", body)
+	var resp createApplicationResp
+	require.NoError(t, json.Unmarshal(body, &resp))
+	require.NotEmpty(t, resp.ApplicationUUID, "create application returned empty uuid")
+	return resp.ApplicationUUID
+}
+
+// mustAssignApplication assigns an application to an engineer on behalf of a manager.
+func mustAssignApplication(t *testing.T, manager *apiClient, appUUID, engineerUUID string) {
+	t.Helper()
+	code, body := manager.patch("/api/auth/application/"+appUUID+"/assign", map[string]string{
+		"target_uuid": engineerUUID,
+	})
+	require.Equalf(t, http.StatusOK, code, "assign application failed (body: %s)", body)
+}
+
+// mustSetAppStatus updates the application status via PATCH /status.
+func mustSetAppStatus(t *testing.T, client *apiClient, appUUID, newStatus string) {
+	t.Helper()
+	code, body := client.patch("/api/auth/application/"+appUUID+"/status", map[string]string{
+		"status": newStatus,
+	})
+	require.Equalf(t, http.StatusOK, code, "set app status %q failed (body: %s)", newStatus, body)
+}
+
+// mustTakeToVerification moves an application from pending_verification to on_verification.
+func mustTakeToVerification(t *testing.T, inspector *apiClient, appUUID string) {
+	t.Helper()
+	code, body := inspector.patch("/api/auth/application/"+appUUID+"/take-verification", nil)
+	require.Equalf(t, http.StatusOK, code, "take to verification failed (body: %s)", body)
+}

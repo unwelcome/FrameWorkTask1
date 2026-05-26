@@ -44,6 +44,7 @@ services:
       - ./backend/gateway/.env
     volumes:
       - ./backend/keys/test/public.pem:/run/secrets/jwt_public.pem:ro
+      - ./logs/tests:/var/log/app
     healthcheck:
       test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/api/health" ]
       interval: 5s
@@ -63,6 +64,7 @@ services:
       - ./backend/auth/.env
     volumes:
       - ./backend/keys/test/private.pem:/run/secrets/jwt_private.pem:ro
+      - ./logs/tests:/var/log/app
     depends_on:
       auth_service_postgres:
         condition: service_healthy
@@ -79,6 +81,8 @@ services:
     env_file:
       - ./.env
       - ./backend/company/.env
+    volumes:
+      - ./logs/tests:/var/log/app
     depends_on:
       company_service_postgres:
         condition: service_healthy
@@ -95,6 +99,8 @@ services:
     env_file:
       - ./.env
       - ./backend/application/.env
+    volumes:
+      - ./logs/tests:/var/log/app
     depends_on:
       application_service_postgres:
         condition: service_healthy

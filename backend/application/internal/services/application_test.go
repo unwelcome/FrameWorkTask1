@@ -969,7 +969,6 @@ func TestAssignApplication(t *testing.T) {
 func TestRedirectApplication(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := repoWithApp(testApp())
-		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
 		repo.redirectApplication = func(_ context.Context, _ entities.RedirectApplicationDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, redirectClient("manager", companyID))
@@ -1055,21 +1054,6 @@ func TestRedirectApplication(t *testing.T) {
 		assertCode(t, err, codes.PermissionDenied)
 	})
 
-	t.Run("db error on fix log", func(t *testing.T) {
-		repo := repoWithApp(testApp())
-		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return internalErr() }
-
-		svc := newAppTestService(repo, redirectClient("manager", companyID))
-		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
-			OperationId:          opID,
-			InitiatorUuid:        initiatorID,
-			ApplicationUuid:      appID,
-			TargetDepartmentUuid: otherDeptID,
-			Message:              "message",
-		})
-		assertCode(t, err, codes.Internal)
-	})
-
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newAppTestService(emptyRepo(), redirectClient("manager", companyID))
 		_, err := svc.RedirectApplication(context.Background(), &pb.RedirectApplicationRequest{
@@ -1112,7 +1096,6 @@ func TestRedirectApplication(t *testing.T) {
 func TestRecallApplication(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := repoWithApp(assignedApp()) // ManagedBy=initiatorID
-		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
 		repo.recallApplication = func(_ context.Context, _ entities.RecallApplicationDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("manager"))
@@ -1179,7 +1162,6 @@ func TestRecallApplication(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		repo := repoWithApp(assignedApp())
-		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
 		repo.recallApplication = func(_ context.Context, _ entities.RecallApplicationDTO) Error.CodeError { return internalErr() }
 
 		svc := newAppTestService(repo, roleClient("manager"))
@@ -1312,7 +1294,6 @@ func TestTakeApplicationToVerification(t *testing.T) {
 func TestReleaseApplicationVerification(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := repoWithApp(onVerificationApp()) // InspectedBy=initiatorID
-		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
 		repo.releaseApplicationVerification = func(_ context.Context, _ entities.ReleaseApplicationVerificationDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))
@@ -1379,7 +1360,6 @@ func TestReleaseApplicationVerification(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		repo := repoWithApp(onVerificationApp())
-		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
 		repo.releaseApplicationVerification = func(_ context.Context, _ entities.ReleaseApplicationVerificationDTO) Error.CodeError {
 			return internalErr()
 		}
@@ -1518,7 +1498,6 @@ func TestAddApplicationFixLog(t *testing.T) {
 func TestDeleteApplication(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		repo := repoWithApp(testApp()) // CreatedBy=initiatorID, status=created
-		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
 		repo.deleteApplication = func(_ context.Context, _ entities.DeleteApplicationDTO) Error.CodeError { return ok() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))
@@ -1574,7 +1553,6 @@ func TestDeleteApplication(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		repo := repoWithApp(testApp())
-		repo.addApplicationFixLog = func(_ context.Context, _ entities.AddFixLogDTO) Error.CodeError { return ok() }
 		repo.deleteApplication = func(_ context.Context, _ entities.DeleteApplicationDTO) Error.CodeError { return internalErr() }
 
 		svc := newAppTestService(repo, roleClient("inspector"))

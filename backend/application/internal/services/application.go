@@ -626,22 +626,12 @@ func (s *ApplicationService) RedirectApplication(ctx context.Context, req *pb.Re
 		return nil, status.Error(codes.PermissionDenied, "department is from another company")
 	}
 
-	// Пишем fix log
-	addFixLogErr := s.db.ApplicationRepository.AddApplicationFixLog(ctx, entities.AddFixLogDTO{
-		ApplicationUUID: req.GetApplicationUuid(),
-		Text:            message,
-		CreatedBy:       req.GetInitiatorUuid(),
-	})
-	err = Error.HandleError(addFixLogErr, req.GetOperationId(), "redirect application")
-	if err != nil {
-		return nil, err
-	}
-
-	// Передаем заявку в другой департамент
+	// Передаем заявку в другой департамент (fix log записывается внутри транзакции)
 	redirectErr := s.db.ApplicationRepository.RedirectApplication(ctx, entities.RedirectApplicationDTO{
 		ApplicationUUID:      req.GetApplicationUuid(),
 		InitiatorUUID:        req.GetInitiatorUuid(),
 		TargetDepartmentUUID: req.GetTargetDepartmentUuid(),
+		FixLogText:           message,
 	})
 	err = Error.HandleError(redirectErr, req.GetOperationId(), "redirect application")
 	if err != nil {
@@ -699,21 +689,11 @@ func (s *ApplicationService) RecallApplication(ctx context.Context, req *pb.Reca
 		return nil, status.Error(codes.PermissionDenied, "only responsible manager can recall applications")
 	}
 
-	// Пишем fix log
-	addFixLogErr := s.db.ApplicationRepository.AddApplicationFixLog(ctx, entities.AddFixLogDTO{
-		ApplicationUUID: req.GetApplicationUuid(),
-		Text:            message,
-		CreatedBy:       req.GetInitiatorUuid(),
-	})
-	err = Error.HandleError(addFixLogErr, req.GetOperationId(), "recall application")
-	if err != nil {
-		return nil, err
-	}
-
-	// Отзываем заявку
+	// Отзываем заявку (fix log записывается внутри транзакции)
 	recallErr := s.db.ApplicationRepository.RecallApplication(ctx, entities.RecallApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
 		InitiatorUUID:   req.GetInitiatorUuid(),
+		FixLogText:      message,
 	})
 	err = Error.HandleError(recallErr, req.GetOperationId(), "recall application")
 	if err != nil {
@@ -828,21 +808,11 @@ func (s *ApplicationService) ReleaseApplicationVerification(ctx context.Context,
 		return nil, status.Error(codes.PermissionDenied, "only responsible inspector can release application")
 	}
 
-	// Пишем fix log
-	addFixLogErr := s.db.ApplicationRepository.AddApplicationFixLog(ctx, entities.AddFixLogDTO{
-		ApplicationUUID: req.GetApplicationUuid(),
-		Text:            message,
-		CreatedBy:       req.GetInitiatorUuid(),
-	})
-	err = Error.HandleError(addFixLogErr, req.GetOperationId(), "release application")
-	if err != nil {
-		return nil, err
-	}
-
-	// Возвращаем заявку на проверку
+	// Возвращаем заявку на проверку (fix log записывается внутри транзакции)
 	releaseErr := s.db.ApplicationRepository.ReleaseApplicationVerification(ctx, entities.ReleaseApplicationVerificationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
 		InitiatorUUID:   req.GetInitiatorUuid(),
+		FixLogText:      message,
 	})
 	err = Error.HandleError(releaseErr, req.GetOperationId(), "release application")
 	if err != nil {
@@ -949,21 +919,11 @@ func (s *ApplicationService) DeleteApplication(ctx context.Context, req *pb.Dele
 		return nil, status.Error(codes.PermissionDenied, "only a creator can delete application")
 	}
 
-	// Создаем новую запись в fix log
-	addErr := s.db.ApplicationRepository.AddApplicationFixLog(ctx, entities.AddFixLogDTO{
-		ApplicationUUID: req.GetApplicationUuid(),
-		Text:            message,
-		CreatedBy:       req.GetInitiatorUuid(),
-	})
-	err = Error.HandleError(addErr, req.GetOperationId(), "delete application")
-	if err != nil {
-		return nil, err
-	}
-
-	// Мягкое удаление (deleted_at = now(), deleted_by = initiator)
+	// Мягкое удаление (fix log записывается внутри транзакции)
 	deleteErr := s.db.ApplicationRepository.DeleteApplication(ctx, entities.DeleteApplicationDTO{
 		ApplicationUUID: req.GetApplicationUuid(),
 		DeletedBy:       req.GetInitiatorUuid(),
+		FixLogText:      message,
 	})
 	err = Error.HandleError(deleteErr, req.GetOperationId(), "delete application")
 	if err != nil {

@@ -66,11 +66,13 @@ type RedirectApplicationDTO struct {
 	ApplicationUUID      string
 	InitiatorUUID        string
 	TargetDepartmentUUID string
+	FixLogText           string
 }
 
 type RecallApplicationDTO struct {
 	ApplicationUUID string
 	InitiatorUUID   string
+	FixLogText      string
 }
 
 type TakeApplicationToVerificationDTO struct {
@@ -81,9 +83,11 @@ type TakeApplicationToVerificationDTO struct {
 type ReleaseApplicationVerificationDTO struct {
 	ApplicationUUID string
 	InitiatorUUID   string
+	FixLogText      string
 }
 
 type DeleteApplicationDTO struct {
 	ApplicationUUID string
 	DeletedBy       string
+	FixLogText      string
 }

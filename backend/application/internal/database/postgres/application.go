@@ -447,7 +447,7 @@ func (r *applicationRepository) RedirectApplication(ctx context.Context, dto ent
 	if err != nil {
 		return Error.Internal(err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -456,19 +456,28 @@ func (r *applicationRepository) RedirectApplication(ctx context.Context, dto ent
 		return Error.Internal(err)
 	}
 
-	query := `UPDATE applications
-	SET 
-	    department_uuid = $2,
-	    version = version + 1,
-	    status = 'redirected',
-	    updated_at = CURRENT_TIMESTAMP,
-	    updated_by = $3,
-	    managed_by = $3,
-	    executed_by = NULL,
-	    inspected_by = NULL
-	WHERE uuid = $1 AND deleted_at IS NULL;`
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO application_fix_logs (uuid, application_uuid, text, created_by) VALUES ($1, $2, $3, $4)`,
+		uuid.Must(uuid.NewV7()).String(), dto.ApplicationUUID, dto.FixLogText, dto.InitiatorUUID,
+	)
+	if err != nil {
+		return Error.Internal(err)
+	}
 
-	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.TargetDepartmentUUID, dto.InitiatorUUID)
+	res, err := tx.ExecContext(ctx, `
+		UPDATE applications
+		SET
+		    department_uuid = $2,
+		    version = version + 1,
+		    status = 'redirected',
+		    updated_at = CURRENT_TIMESTAMP,
+		    updated_by = $3,
+		    managed_by = $3,
+		    executed_by = NULL,
+		    inspected_by = NULL
+		WHERE uuid = $1 AND deleted_at IS NULL`,
+		dto.ApplicationUUID, dto.TargetDepartmentUUID, dto.InitiatorUUID,
+	)
 	if err != nil {
 		return Error.Internal(err)
 	}
@@ -496,7 +505,7 @@ func (r *applicationRepository) RecallApplication(ctx context.Context, dto entit
 	if err != nil {
 		return Error.Internal(err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -505,17 +514,26 @@ func (r *applicationRepository) RecallApplication(ctx context.Context, dto entit
 		return Error.Internal(err)
 	}
 
-	query := `UPDATE applications
-	SET
-	    version = version + 1,
-	    status = 'recalled',
-	    updated_at = CURRENT_TIMESTAMP,
-	    updated_by = $2,
-	    managed_by = $2,
-	    executed_by = NULL
-	WHERE uuid = $1 AND deleted_at IS NULL;`
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO application_fix_logs (uuid, application_uuid, text, created_by) VALUES ($1, $2, $3, $4)`,
+		uuid.Must(uuid.NewV7()).String(), dto.ApplicationUUID, dto.FixLogText, dto.InitiatorUUID,
+	)
+	if err != nil {
+		return Error.Internal(err)
+	}
 
-	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID)
+	res, err := tx.ExecContext(ctx, `
+		UPDATE applications
+		SET
+		    version = version + 1,
+		    status = 'recalled',
+		    updated_at = CURRENT_TIMESTAMP,
+		    updated_by = $2,
+		    managed_by = $2,
+		    executed_by = NULL
+		WHERE uuid = $1 AND deleted_at IS NULL`,
+		dto.ApplicationUUID, dto.InitiatorUUID,
+	)
 	if err != nil {
 		return Error.Internal(err)
 	}
@@ -589,7 +607,7 @@ func (r *applicationRepository) ReleaseApplicationVerification(ctx context.Conte
 	if err != nil {
 		return Error.Internal(err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -598,16 +616,25 @@ func (r *applicationRepository) ReleaseApplicationVerification(ctx context.Conte
 		return Error.Internal(err)
 	}
 
-	query := `UPDATE applications
-	SET
-		version = version + 1,
-		status = 'pending_verification',
-		updated_at = CURRENT_TIMESTAMP,
-		updated_by = $2,
-		inspected_by = NULL
-	WHERE uuid = $1 AND deleted_at IS NULL;`
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO application_fix_logs (uuid, application_uuid, text, created_by) VALUES ($1, $2, $3, $4)`,
+		uuid.Must(uuid.NewV7()).String(), dto.ApplicationUUID, dto.FixLogText, dto.InitiatorUUID,
+	)
+	if err != nil {
+		return Error.Internal(err)
+	}
 
-	res, err := tx.ExecContext(ctx, query, dto.ApplicationUUID, dto.InitiatorUUID)
+	res, err := tx.ExecContext(ctx, `
+		UPDATE applications
+		SET
+			version = version + 1,
+			status = 'pending_verification',
+			updated_at = CURRENT_TIMESTAMP,
+			updated_by = $2,
+			inspected_by = NULL
+		WHERE uuid = $1 AND deleted_at IS NULL`,
+		dto.ApplicationUUID, dto.InitiatorUUID,
+	)
 	if err != nil {
 		return Error.Internal(err)
 	}
@@ -634,7 +661,7 @@ func (r *applicationRepository) DeleteApplication(ctx context.Context, dto entit
 	if err != nil {
 		return Error.Internal(err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	if err := r.saveVersion(ctx, tx, dto.ApplicationUUID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -643,15 +670,23 @@ func (r *applicationRepository) DeleteApplication(ctx context.Context, dto entit
 		return Error.Internal(err)
 	}
 
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO application_fix_logs (uuid, application_uuid, text, created_by) VALUES ($1, $2, $3, $4)`,
+		uuid.Must(uuid.NewV7()).String(), dto.ApplicationUUID, dto.FixLogText, dto.DeletedBy,
+	)
+	if err != nil {
+		return Error.Internal(err)
+	}
+
 	res, err := tx.ExecContext(ctx, `
 		UPDATE applications
-		SET 
+		SET
 		    version = version + 1,
 		    updated_at = CURRENT_TIMESTAMP,
 		    updated_by = $2,
-		    deleted_at = CURRENT_TIMESTAMP, 
+		    deleted_at = CURRENT_TIMESTAMP,
 		    deleted_by = $2
-		WHERE uuid = $1 AND deleted_at IS NULL;`,
+		WHERE uuid = $1 AND deleted_at IS NULL`,
 		dto.ApplicationUUID, dto.DeletedBy,
 	)
 	if err != nil {

@@ -43,14 +43,45 @@ func NewCompanyRepository(db *sql.DB) CompanyRepository {
 	return &companyRepository{db: db}
 }
 
-// CreateCompany Создание компании
+// CreateCompany Создание компании с добавлением основателя
 func (r *companyRepository) CreateCompany(ctx context.Context, dto *entities.CreateCompany) Error.CodeError {
-	query := `INSERT INTO companies (uuid, title, created_by) VALUES ($1, $2, $3);`
-
-	_, err := r.db.ExecContext(ctx, query, dto.CompanyUUID, dto.Title, dto.CreatedBy)
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return Error.Internal(err)
 	}
+	defer tx.Rollback()
+
+	// 1. Создаём компанию
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO companies (uuid, title, created_by) VALUES ($1, $2, $3)`,
+		dto.CompanyUUID, dto.Title, dto.CreatedBy,
+	)
+	if err != nil {
+		return Error.Internal(err)
+	}
+
+	// 2. Добавляем основателя как сотрудника
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO employees (company_uuid, user_uuid) VALUES ($1, $2)`,
+		dto.CompanyUUID, dto.CreatedBy,
+	)
+	if err != nil {
+		return Error.Internal(err)
+	}
+
+	// 3. Устанавливаем роль chief
+	_, err = tx.ExecContext(ctx,
+		`UPDATE employees SET role = 'chief' WHERE company_uuid = $1 AND user_uuid = $2`,
+		dto.CompanyUUID, dto.CreatedBy,
+	)
+	if err != nil {
+		return Error.Internal(err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return Error.Internal(err)
+	}
+
 	return Error.CodeError{}
 }
 

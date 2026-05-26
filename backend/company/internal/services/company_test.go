@@ -62,8 +62,6 @@ func TestCreateCompany(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		pg := emptyPGRepo()
 		pg.createCompany = func(_ context.Context, _ *entities.CreateCompany) Error.CodeError { return ok() }
-		pg.joinCompany = func(_ context.Context, _, _ string) Error.CodeError { return ok() }
-		pg.setCompanyEmployeeRole = func(_ context.Context, _, _, _ string) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		res, err := svc.CreateCompany(ctx, req)
@@ -93,50 +91,13 @@ func TestCreateCompany(t *testing.T) {
 		assertGRPCCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("create company db error", func(t *testing.T) {
+	t.Run("db error", func(t *testing.T) {
 		pg := emptyPGRepo()
 		pg.createCompany = func(_ context.Context, _ *entities.CreateCompany) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.CreateCompany(ctx, req)
 		assertGRPCCode(t, err, codes.Internal)
-	})
-
-	t.Run("join company fails — company is rolled back", func(t *testing.T) {
-		deleted := false
-		pg := emptyPGRepo()
-		pg.createCompany = func(_ context.Context, _ *entities.CreateCompany) Error.CodeError { return ok() }
-		pg.joinCompany = func(_ context.Context, _, _ string) Error.CodeError { return internalErr() }
-		pg.deleteCompany = func(_ context.Context, _ string) Error.CodeError {
-			deleted = true
-			return ok()
-		}
-
-		svc := newTestService(pg, emptyRedisRepo())
-		_, err := svc.CreateCompany(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
-		if !deleted {
-			t.Error("expected DeleteCompany rollback to be called")
-		}
-	})
-
-	t.Run("set role fails — company is rolled back", func(t *testing.T) {
-		deleted := false
-		pg := emptyPGRepo()
-		pg.createCompany = func(_ context.Context, _ *entities.CreateCompany) Error.CodeError { return ok() }
-		pg.joinCompany = func(_ context.Context, _, _ string) Error.CodeError { return ok() }
-		pg.setCompanyEmployeeRole = func(_ context.Context, _, _, _ string) Error.CodeError { return internalErr() }
-		pg.deleteCompany = func(_ context.Context, _ string) Error.CodeError {
-			deleted = true
-			return ok()
-		}
-
-		svc := newTestService(pg, emptyRedisRepo())
-		_, err := svc.CreateCompany(ctx, req)
-		assertGRPCCode(t, err, codes.Internal)
-		if !deleted {
-			t.Error("expected DeleteCompany rollback to be called")
-		}
 	})
 }
 

@@ -67,7 +67,7 @@ func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompan
 	// Создаем uuid компании
 	companyUUID := uuid.Must(uuid.NewV7()).String()
 
-	// Создаем компанию
+	// Создаем компанию, добавляем основателя и устанавливаем роль chief в одной транзакции
 	createErr := s.db.Company.CreateCompany(ctx, &entities.CreateCompany{
 		CompanyUUID: companyUUID,
 		Title:       req.GetTitle(),
@@ -75,24 +75,6 @@ func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompan
 	})
 	err := Error.HandleError(createErr, req.GetOperationId(), "create company")
 	if err != nil {
-		return nil, err
-	}
-
-	// Добавляем руководителя в компанию
-	createChiefErr := s.db.Company.JoinCompany(ctx, companyUUID, req.GetInitiatorUuid())
-	err = Error.HandleError(createChiefErr, req.GetOperationId(), "create company")
-	if err != nil {
-		// Не удалось добавить руководителя в компанию -> удаляем компанию
-		_ = s.db.Company.DeleteCompany(ctx, companyUUID)
-		return nil, err
-	}
-
-	// Устанавливаем роль руководителя
-	setRoleErr := s.db.Company.SetCompanyEmployeeRole(ctx, companyUUID, req.GetInitiatorUuid(), "chief")
-	err = Error.HandleError(setRoleErr, req.GetOperationId(), "create company")
-	if err != nil {
-		// Не удалось установить руководителю роль "chief" -> удаляем компанию
-		_ = s.db.Company.DeleteCompany(ctx, companyUUID)
 		return nil, err
 	}
 

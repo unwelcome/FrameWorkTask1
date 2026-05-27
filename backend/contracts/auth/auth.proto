@@ -6,7 +6,7 @@ option go_package = "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/
 import "google/protobuf/empty.proto";
 
 service AuthService {
-  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc Health(google.protobuf.Empty) returns (HealthResponse);
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
@@ -19,10 +19,14 @@ service AuthService {
   rpc RevokeAllTokens(RevokeAllTokensRequest) returns (google.protobuf.Empty);
 }
 
-// Health
-message HealthRequest {
-  string operation_id = 1;
+
+message Token {
+  string token = 1;
 }
+
+
+// Health
+// Empty request
 message HealthResponse {
   string service = 1;
   string postgres = 2;
@@ -31,24 +35,24 @@ message HealthResponse {
   string mongo = 5;
 }
 
+
 // Register user
 message RegisterRequest {
-  string operation_id = 1;
-  string email = 2;
-  string password = 3;
-  string first_name = 4;
-  string last_name = 5;
-  string patronymic = 6;
+  string email = 1;
+  string password = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string patronymic = 5;
 }
 message RegisterResponse {
   string user_uuid = 1;
 }
 
+
 // Login
 message LoginRequest {
-  string operation_id = 1;
-  string email = 2;
-  string password = 3;
+  string email = 1;
+  string password = 2;
 }
 message LoginResponse {
   string user_uuid = 1;
@@ -56,10 +60,10 @@ message LoginResponse {
   string refresh_token = 3;
 }
 
+
 // Get user
 message GetUserRequest {
-  string operation_id = 1;
-  string user_uuid = 2;
+  string user_uuid = 1;
 }
 message GetUserResponse {
   string user_uuid = 1;
@@ -70,65 +74,62 @@ message GetUserResponse {
   string created_at = 6;
 }
 
+
 // Change user password
 message ChangePasswordRequest {
-  string operation_id = 1;
-  string user_uuid = 2;
-  string password = 3;
+  string user_uuid = 1;
+  string password = 2;
 }
 // Empty response
+
 
 // Update user bio
 message UpdateUserBioRequest {
-  string operation_id = 1;
-  string user_uuid = 2;
-  string first_name = 3;
-  string last_name = 4;
-  string patronymic = 5;
+  string user_uuid = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string patronymic = 4;
 }
 // Empty response
+
 
 // Delete user
 message DeleteUserRequest {
-  string operation_id = 1;
-  string initiator_user_uuid = 2;
-  string target_user_uuid = 3;
+  string initiator_user_uuid = 1;
+  string target_user_uuid = 2;
 }
 // Empty response
 
+
 // Refresh token
 message RefreshTokenRequest {
-  string operation_id = 1;
-  string refresh_token = 2;
+  string refresh_token = 1;
 }
 message RefreshTokenResponse {
   string access_token = 1;
   string refresh_token = 2;
 }
 
+
 // Get all user active refresh tokens
 message GetAllActiveTokensRequest {
-  string operation_id = 1;
-  string user_uuid = 2;
+  string user_uuid = 1;
 }
 message GetAllActiveTokensResponse{
   repeated Token tokens = 1;
 }
-message Token {
-  string token = 1;
-}
+
 
 // Revoke token
 message RevokeTokenRequest {
-  string operation_id = 1;
-  string user_uuid = 2;
-  string token_hash = 3;
+  string user_uuid = 1;
+  string token_hash = 2;
 }
 // Empty response
 
+
 // Revoke all user tokens
 message RevokeAllTokensRequest {
-  string operation_id = 1;
-  string user_uuid = 2;
+  string user_uuid = 1;
 }
 // Empty response

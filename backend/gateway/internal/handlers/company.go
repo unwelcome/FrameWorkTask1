@@ -80,7 +80,6 @@ func (h *companyHandler) CreateCompany(c *fiber.Ctx) error {
 	}
 
 	req := &company_proto.CreateCompanyRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		Title:         httpReq.Title,
 	}
@@ -125,7 +124,6 @@ func (h *companyHandler) GetCompany(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.GetCompany(ctx, &company_proto.GetCompanyRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
 	})
@@ -171,9 +169,8 @@ func (h *companyHandler) GetCompanies(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.GetCompanies(ctx, &company_proto.GetCompaniesRequest{
-		OperationId: operationID,
-		Offset:      httpReq.Offset,
-		Count:       httpReq.Count,
+		Offset: httpReq.Offset,
+		Count:  httpReq.Count,
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -210,7 +207,6 @@ func (h *companyHandler) GetUserCompanies(c *fiber.Ctx) error {
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	res, err := h.CompanyServiceClient.GetUserCompanies(ctx, &company_proto.GetUserCompaniesRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 	})
 	if err != nil {
@@ -264,7 +260,6 @@ func (h *companyHandler) UpdateCompanyTitle(c *fiber.Ctx) error {
 	}
 
 	_, err := h.CompanyServiceClient.UpdateCompanyTitle(ctx, &company_proto.UpdateCompanyTitleRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
 		Title:         httpReq.Title,
@@ -311,7 +306,6 @@ func (h *companyHandler) UpdateCompanyStatus(c *fiber.Ctx) error {
 	}
 
 	_, err := h.CompanyServiceClient.UpdateCompanyStatus(ctx, &company_proto.UpdateCompanyStatusRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
 		Status:        httpReq.Status,
@@ -354,7 +348,6 @@ func (h *companyHandler) DeleteCompany(c *fiber.Ctx) error {
 	}
 
 	_, err := h.CompanyServiceClient.DeleteCompany(ctx, &company_proto.DeleteCompanyRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
 	})
@@ -400,7 +393,6 @@ func (h *companyHandler) CreateCompanyJoinCode(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.CreateCompanyJoinCode(ctx, &company_proto.CreateCompanyJoinCodeRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
 		CodeTtl:       httpReq.CodeTTL,
@@ -445,7 +437,6 @@ func (h *companyHandler) GetCompanyJoinCodes(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.GetCompanyJoinCodes(ctx, &company_proto.GetCompanyJoinCodesRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
 	})
@@ -493,7 +484,6 @@ func (h *companyHandler) DeleteCompanyJoinCode(c *fiber.Ctx) error {
 	}
 
 	_, err := h.CompanyServiceClient.DeleteCompanyJoinCode(ctx, &company_proto.DeleteCompanyJoinCodeRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
 		Code:          httpReq.Code,
@@ -537,7 +527,6 @@ func (h *companyHandler) JoinCompany(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.JoinCompany(ctx, &company_proto.JoinCompanyRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		JoinCode:      httpReq.Code,
 	})
@@ -584,7 +573,6 @@ func (h *companyHandler) GetCompanyEmployee(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.GetCompanyEmployee(ctx, &company_proto.GetCompanyEmployeeRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		TargetUuid:    httpReq.TargetUUID,
 		CompanyUuid:   httpReq.CompanyUUID,
@@ -638,7 +626,6 @@ func (h *companyHandler) GetCompanyEmployees(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.GetCompanyEmployees(ctx, &company_proto.GetCompanyEmployeesRequest{
-		OperationId:    operationID,
 		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:    httpReq.CompanyUUID,
 		DepartmentUuid: httpReq.DepartmentUUID,
@@ -697,7 +684,6 @@ func (h *companyHandler) GetCompanyEmployeesSummary(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.GetCompanyEmployeesSummary(ctx, &company_proto.GetCompanyEmployeesSummaryRequest{
-		OperationId:    operationID,
 		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:    httpReq.CompanyUUID,
 		DepartmentUuid: httpReq.DepartmentUUID,
@@ -753,7 +739,6 @@ func (h *companyHandler) UpdateEmployeeRole(c *fiber.Ctx) error {
 	}
 
 	_, err := h.CompanyServiceClient.UpdateEmployeeRole(ctx, &company_proto.UpdateEmployeeRoleRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		TargetUuid:    httpReq.TargetUUID,
 		CompanyUuid:   httpReq.CompanyUUID,
@@ -799,7 +784,6 @@ func (h *companyHandler) RemoveCompanyEmployee(c *fiber.Ctx) error {
 	}
 
 	_, err := h.CompanyServiceClient.RemoveCompanyEmployee(ctx, &company_proto.RemoveCompanyEmployeeRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		TargetUuid:    httpReq.TargetUUID,
 		CompanyUuid:   httpReq.CompanyUUID,
@@ -846,7 +830,6 @@ func (h *companyHandler) CreateDepartment(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.CreateDepartment(ctx, &company_proto.CreateDepartmentRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
 		Title:         httpReq.Title,
@@ -893,7 +876,6 @@ func (h *companyHandler) GetDepartment(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.GetDepartment(ctx, &company_proto.GetDepartmentRequest{
-		OperationId:    operationID,
 		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
 		DepartmentUuid: httpReq.DepartmentUUID,
 	})
@@ -945,7 +927,6 @@ func (h *companyHandler) GetCompanyDepartments(c *fiber.Ctx) error {
 	}
 
 	res, err := h.CompanyServiceClient.GetCompanyDepartments(ctx, &company_proto.GetCompanyDepartmentsRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
 		Offset:        httpReq.Offset,
@@ -1003,7 +984,6 @@ func (h *companyHandler) UpdateDepartmentTitle(c *fiber.Ctx) error {
 	}
 
 	_, err := h.CompanyServiceClient.UpdateDepartmentTitle(ctx, &company_proto.UpdateDepartmentTitleRequest{
-		OperationId:    operationID,
 		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
 		DepartmentUuid: httpReq.DepartmentUUID,
 		Title:          httpReq.Title,
@@ -1048,7 +1028,6 @@ func (h *companyHandler) DeleteDepartment(c *fiber.Ctx) error {
 	}
 
 	_, err := h.CompanyServiceClient.DeleteDepartment(ctx, &company_proto.DeleteDepartmentRequest{
-		OperationId:    operationID,
 		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
 		DepartmentUuid: httpReq.DepartmentUUID,
 	})
@@ -1094,7 +1073,6 @@ func (h *companyHandler) AddEmployeeToDepartment(c *fiber.Ctx) error {
 	}
 
 	_, err := h.CompanyServiceClient.AddEmployeeToDepartment(ctx, &company_proto.AddEmployeeToDepartmentRequest{
-		OperationId:    operationID,
 		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
 		DepartmentUuid: httpReq.DepartmentUUID,
 		TargetUuid:     httpReq.TargetUUID,
@@ -1141,7 +1119,6 @@ func (h *companyHandler) RemoveEmployeeFromDepartment(c *fiber.Ctx) error {
 	}
 
 	_, err := h.CompanyServiceClient.RemoveEmployeeFromDepartment(ctx, &company_proto.RemoveEmployeeFromDepartmentRequest{
-		OperationId:    operationID,
 		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
 		DepartmentUuid: httpReq.DepartmentUUID,
 		TargetUuid:     httpReq.TargetUUID,

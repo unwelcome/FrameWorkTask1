@@ -6,7 +6,7 @@ option go_package = "github.com/unwelcome/FrameWorkTask1/backend/contracts/appli
 import "google/protobuf/empty.proto";
 
 service ApplicationService {
-  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc Health(google.protobuf.Empty) returns (HealthResponse);
   rpc CreateApplication(CreateApplicationRequest) returns (CreateApplicationResponse);
   rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
   rpc GetApplications(GetApplicationsRequest) returns (GetApplicationsResponse);
@@ -57,9 +57,7 @@ message ApplicationData {
 
 
 // Health
-message HealthRequest {
-  string operation_id = 1;
-}
+// Empty request
 message HealthResponse {
   string service = 1;
   string postgres = 2;
@@ -71,10 +69,9 @@ message HealthResponse {
 
 // CreateApplication
 message CreateApplicationRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string company_uuid = 3;
-  ApplicationData application_data = 4;
+  string initiator_uuid = 1;
+  string company_uuid = 2;
+  ApplicationData application_data = 3;
 }
 message CreateApplicationResponse {
   string application_uuid = 1;
@@ -83,9 +80,8 @@ message CreateApplicationResponse {
 
 // GetApplication
 message GetApplicationRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string application_uuid = 3;
+  string initiator_uuid = 1;
+  string application_uuid = 2;
 }
 message GetApplicationResponse {
   Application application = 1;
@@ -94,15 +90,14 @@ message GetApplicationResponse {
 
 // GetApplications
 message GetApplicationsRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string company_uuid = 3;
-  string department_uuid = 4;
-  repeated string statuses = 5;
-  int64 count = 6;
-  int64 offset = 7;
-  bool is_deleted = 8;
-  bool from_pool = 9; // true - заявки из пула (для инспекторов, менеджеров) false - (личные заявки)
+  string initiator_uuid = 1;
+  string company_uuid = 2;
+  string department_uuid = 3;
+  repeated string statuses = 4;
+  int64 count = 5;
+  int64 offset = 6;
+  bool is_deleted = 7;
+  bool from_pool = 8; // true - заявки из пула (для инспекторов, менеджеров) false - (личные заявки)
 }
 message GetApplicationsResponse {
   repeated Application applications = 1;
@@ -111,79 +106,71 @@ message GetApplicationsResponse {
 
 // UpdateApplicationStatus
 message UpdateApplicationStatusRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string application_uuid = 3;
-  string status = 4;
+  string initiator_uuid = 1;
+  string application_uuid = 2;
+  string status = 3;
 }
 // Empty response
 
 
 // AssignApplication
 message AssignApplicationRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string application_uuid = 3;
-  string target_uuid = 4;
+  string initiator_uuid = 1;
+  string application_uuid = 2;
+  string target_uuid = 3;
 }
 // Empty response
 
 
 // RedirectApplication
 message RedirectApplicationRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string application_uuid = 3;
-  string target_department_uuid = 4;
-  string message = 5;
+  string initiator_uuid = 1;
+  string application_uuid = 2;
+  string target_department_uuid = 3;
+  string message = 4;
 }
 // Empty response
 
 
 // RecallApplication
 message RecallApplicationRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string application_uuid = 3;
-  string message = 4;
+  string initiator_uuid = 1;
+  string application_uuid = 2;
+  string message = 3;
 }
 // Empty response
 
 
 // TakeApplicationToVerification
 message TakeApplicationToVerificationRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string application_uuid = 3;
+  string initiator_uuid = 1;
+  string application_uuid = 2;
 }
 // Empty response
 
 
 // ReleaseApplicationVerification
 message ReleaseApplicationVerificationRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string application_uuid = 3;
-  string message = 4;
+  string initiator_uuid = 1;
+  string application_uuid = 2;
+  string message = 3;
 }
 // Empty response
 
 
 // AddApplicationFixLog
 message AddApplicationFixLogRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string application_uuid = 3;
-  string message = 4;
+  string initiator_uuid = 1;
+  string application_uuid = 2;
+  string message = 3;
 }
 // Empty response
 
 
 // DeleteApplication
 message DeleteApplicationRequest {
-  string operation_id = 1;
-  string initiator_uuid = 2;
-  string application_uuid = 3;
-  string message = 4;
+  string initiator_uuid = 1;
+  string application_uuid = 2;
+  string message = 3;
 }
 // Empty response

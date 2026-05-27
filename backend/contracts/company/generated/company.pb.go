@@ -22,28 +22,29 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Health
-type HealthRequest struct {
+type Company struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,1,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HealthRequest) Reset() {
-	*x = HealthRequest{}
+func (x *Company) Reset() {
+	*x = Company{}
 	mi := &file_company_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HealthRequest) String() string {
+func (x *Company) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HealthRequest) ProtoMessage() {}
+func (*Company) ProtoMessage() {}
 
-func (x *HealthRequest) ProtoReflect() protoreflect.Message {
+func (x *Company) ProtoReflect() protoreflect.Message {
 	mi := &file_company_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,18 +56,154 @@ func (x *HealthRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HealthRequest.ProtoReflect.Descriptor instead.
-func (*HealthRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use Company.ProtoReflect.Descriptor instead.
+func (*Company) Descriptor() ([]byte, []int) {
 	return file_company_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *HealthRequest) GetOperationId() string {
+func (x *Company) GetCompanyUuid() string {
 	if x != nil {
-		return x.OperationId
+		return x.CompanyUuid
 	}
 	return ""
 }
 
+func (x *Company) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Company) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type Employee struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	UserUuid       string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	Role           string                 `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	JoinedAt       string                 `protobuf:"bytes,4,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Employee) Reset() {
+	*x = Employee{}
+	mi := &file_company_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Employee) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Employee) ProtoMessage() {}
+
+func (x *Employee) ProtoReflect() protoreflect.Message {
+	mi := &file_company_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Employee.ProtoReflect.Descriptor instead.
+func (*Employee) Descriptor() ([]byte, []int) {
+	return file_company_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Employee) GetUserUuid() string {
+	if x != nil {
+		return x.UserUuid
+	}
+	return ""
+}
+
+func (x *Employee) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *Employee) GetDepartmentUuid() string {
+	if x != nil {
+		return x.DepartmentUuid
+	}
+	return ""
+}
+
+func (x *Employee) GetJoinedAt() string {
+	if x != nil {
+		return x.JoinedAt
+	}
+	return ""
+}
+
+type Department struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	DepartmentUuid string                 `protobuf:"bytes,1,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	Title          string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Department) Reset() {
+	*x = Department{}
+	mi := &file_company_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Department) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Department) ProtoMessage() {}
+
+func (x *Department) ProtoReflect() protoreflect.Message {
+	mi := &file_company_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Department.ProtoReflect.Descriptor instead.
+func (*Department) Descriptor() ([]byte, []int) {
+	return file_company_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Department) GetDepartmentUuid() string {
+	if x != nil {
+		return x.DepartmentUuid
+	}
+	return ""
+}
+
+func (x *Department) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+// Health
+// Empty request
 type HealthResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Service       string                 `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`
@@ -80,7 +217,7 @@ type HealthResponse struct {
 
 func (x *HealthResponse) Reset() {
 	*x = HealthResponse{}
-	mi := &file_company_proto_msgTypes[1]
+	mi := &file_company_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -92,7 +229,7 @@ func (x *HealthResponse) String() string {
 func (*HealthResponse) ProtoMessage() {}
 
 func (x *HealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[1]
+	mi := &file_company_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -105,7 +242,7 @@ func (x *HealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthResponse.ProtoReflect.Descriptor instead.
 func (*HealthResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{1}
+	return file_company_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *HealthResponse) GetService() string {
@@ -146,16 +283,15 @@ func (x *HealthResponse) GetMongo() string {
 // CreateCompany
 type CreateCompanyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateCompanyRequest) Reset() {
 	*x = CreateCompanyRequest{}
-	mi := &file_company_proto_msgTypes[2]
+	mi := &file_company_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -167,7 +303,7 @@ func (x *CreateCompanyRequest) String() string {
 func (*CreateCompanyRequest) ProtoMessage() {}
 
 func (x *CreateCompanyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[2]
+	mi := &file_company_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -180,14 +316,7 @@ func (x *CreateCompanyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCompanyRequest.ProtoReflect.Descriptor instead.
 func (*CreateCompanyRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *CreateCompanyRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CreateCompanyRequest) GetInitiatorUuid() string {
@@ -213,7 +342,7 @@ type CreateCompanyResponse struct {
 
 func (x *CreateCompanyResponse) Reset() {
 	*x = CreateCompanyResponse{}
-	mi := &file_company_proto_msgTypes[3]
+	mi := &file_company_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -225,7 +354,7 @@ func (x *CreateCompanyResponse) String() string {
 func (*CreateCompanyResponse) ProtoMessage() {}
 
 func (x *CreateCompanyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[3]
+	mi := &file_company_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -238,7 +367,7 @@ func (x *CreateCompanyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCompanyResponse.ProtoReflect.Descriptor instead.
 func (*CreateCompanyResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{3}
+	return file_company_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CreateCompanyResponse) GetCompanyUuid() string {
@@ -251,16 +380,15 @@ func (x *CreateCompanyResponse) GetCompanyUuid() string {
 // GetCompany
 type GetCompanyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCompanyRequest) Reset() {
 	*x = GetCompanyRequest{}
-	mi := &file_company_proto_msgTypes[4]
+	mi := &file_company_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -272,7 +400,7 @@ func (x *GetCompanyRequest) String() string {
 func (*GetCompanyRequest) ProtoMessage() {}
 
 func (x *GetCompanyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[4]
+	mi := &file_company_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -285,14 +413,7 @@ func (x *GetCompanyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompanyRequest.ProtoReflect.Descriptor instead.
 func (*GetCompanyRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *GetCompanyRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetCompanyRequest) GetInitiatorUuid() string {
@@ -320,7 +441,7 @@ type GetCompanyResponse struct {
 
 func (x *GetCompanyResponse) Reset() {
 	*x = GetCompanyResponse{}
-	mi := &file_company_proto_msgTypes[5]
+	mi := &file_company_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -332,7 +453,7 @@ func (x *GetCompanyResponse) String() string {
 func (*GetCompanyResponse) ProtoMessage() {}
 
 func (x *GetCompanyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[5]
+	mi := &file_company_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -345,7 +466,7 @@ func (x *GetCompanyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompanyResponse.ProtoReflect.Descriptor instead.
 func (*GetCompanyResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{5}
+	return file_company_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetCompanyResponse) GetCompanyUuid() string {
@@ -372,16 +493,15 @@ func (x *GetCompanyResponse) GetStatus() string {
 // GetCompanies
 type GetCompaniesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	Offset        int64                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
-	Count         int64                  `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	Offset        int64                  `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
+	Count         int64                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCompaniesRequest) Reset() {
 	*x = GetCompaniesRequest{}
-	mi := &file_company_proto_msgTypes[6]
+	mi := &file_company_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -393,7 +513,7 @@ func (x *GetCompaniesRequest) String() string {
 func (*GetCompaniesRequest) ProtoMessage() {}
 
 func (x *GetCompaniesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[6]
+	mi := &file_company_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,14 +526,7 @@ func (x *GetCompaniesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompaniesRequest.ProtoReflect.Descriptor instead.
 func (*GetCompaniesRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *GetCompaniesRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetCompaniesRequest) GetOffset() int64 {
@@ -439,7 +552,7 @@ type GetCompaniesResponse struct {
 
 func (x *GetCompaniesResponse) Reset() {
 	*x = GetCompaniesResponse{}
-	mi := &file_company_proto_msgTypes[7]
+	mi := &file_company_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -451,7 +564,7 @@ func (x *GetCompaniesResponse) String() string {
 func (*GetCompaniesResponse) ProtoMessage() {}
 
 func (x *GetCompaniesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[7]
+	mi := &file_company_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -464,7 +577,7 @@ func (x *GetCompaniesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompaniesResponse.ProtoReflect.Descriptor instead.
 func (*GetCompaniesResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{7}
+	return file_company_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetCompaniesResponse) GetCompanies() []*Company {
@@ -474,78 +587,17 @@ func (x *GetCompaniesResponse) GetCompanies() []*Company {
 	return nil
 }
 
-type Company struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CompanyUuid   string                 `protobuf:"bytes,1,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Company) Reset() {
-	*x = Company{}
-	mi := &file_company_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Company) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Company) ProtoMessage() {}
-
-func (x *Company) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Company.ProtoReflect.Descriptor instead.
-func (*Company) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *Company) GetCompanyUuid() string {
-	if x != nil {
-		return x.CompanyUuid
-	}
-	return ""
-}
-
-func (x *Company) GetTitle() string {
-	if x != nil {
-		return x.Title
-	}
-	return ""
-}
-
-func (x *Company) GetStatus() string {
-	if x != nil {
-		return x.Status
-	}
-	return ""
-}
-
 // GetUserCompanies
 type GetUserCompaniesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetUserCompaniesRequest) Reset() {
 	*x = GetUserCompaniesRequest{}
-	mi := &file_company_proto_msgTypes[9]
+	mi := &file_company_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -557,7 +609,7 @@ func (x *GetUserCompaniesRequest) String() string {
 func (*GetUserCompaniesRequest) ProtoMessage() {}
 
 func (x *GetUserCompaniesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[9]
+	mi := &file_company_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -570,14 +622,7 @@ func (x *GetUserCompaniesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserCompaniesRequest.ProtoReflect.Descriptor instead.
 func (*GetUserCompaniesRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *GetUserCompaniesRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetUserCompaniesRequest) GetInitiatorUuid() string {
@@ -596,7 +641,7 @@ type GetUserCompaniesResponse struct {
 
 func (x *GetUserCompaniesResponse) Reset() {
 	*x = GetUserCompaniesResponse{}
-	mi := &file_company_proto_msgTypes[10]
+	mi := &file_company_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -608,7 +653,7 @@ func (x *GetUserCompaniesResponse) String() string {
 func (*GetUserCompaniesResponse) ProtoMessage() {}
 
 func (x *GetUserCompaniesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[10]
+	mi := &file_company_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -621,7 +666,7 @@ func (x *GetUserCompaniesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserCompaniesResponse.ProtoReflect.Descriptor instead.
 func (*GetUserCompaniesResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{10}
+	return file_company_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetUserCompaniesResponse) GetCompanies() []*Company {
@@ -634,17 +679,16 @@ func (x *GetUserCompaniesResponse) GetCompanies() []*Company {
 // UpdateCompanyTitle
 type UpdateCompanyTitleRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	Title         string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateCompanyTitleRequest) Reset() {
 	*x = UpdateCompanyTitleRequest{}
-	mi := &file_company_proto_msgTypes[11]
+	mi := &file_company_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -656,7 +700,7 @@ func (x *UpdateCompanyTitleRequest) String() string {
 func (*UpdateCompanyTitleRequest) ProtoMessage() {}
 
 func (x *UpdateCompanyTitleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[11]
+	mi := &file_company_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -669,14 +713,7 @@ func (x *UpdateCompanyTitleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCompanyTitleRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCompanyTitleRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *UpdateCompanyTitleRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UpdateCompanyTitleRequest) GetInitiatorUuid() string {
@@ -703,17 +740,16 @@ func (x *UpdateCompanyTitleRequest) GetTitle() string {
 // UpdateCompanyStatus
 type UpdateCompanyStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateCompanyStatusRequest) Reset() {
 	*x = UpdateCompanyStatusRequest{}
-	mi := &file_company_proto_msgTypes[12]
+	mi := &file_company_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -725,7 +761,7 @@ func (x *UpdateCompanyStatusRequest) String() string {
 func (*UpdateCompanyStatusRequest) ProtoMessage() {}
 
 func (x *UpdateCompanyStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[12]
+	mi := &file_company_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -738,14 +774,7 @@ func (x *UpdateCompanyStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCompanyStatusRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCompanyStatusRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *UpdateCompanyStatusRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *UpdateCompanyStatusRequest) GetInitiatorUuid() string {
@@ -772,16 +801,15 @@ func (x *UpdateCompanyStatusRequest) GetStatus() string {
 // DeleteCompany
 type DeleteCompanyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteCompanyRequest) Reset() {
 	*x = DeleteCompanyRequest{}
-	mi := &file_company_proto_msgTypes[13]
+	mi := &file_company_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -793,7 +821,7 @@ func (x *DeleteCompanyRequest) String() string {
 func (*DeleteCompanyRequest) ProtoMessage() {}
 
 func (x *DeleteCompanyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[13]
+	mi := &file_company_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -806,14 +834,7 @@ func (x *DeleteCompanyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCompanyRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCompanyRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *DeleteCompanyRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *DeleteCompanyRequest) GetInitiatorUuid() string {
@@ -833,17 +854,16 @@ func (x *DeleteCompanyRequest) GetCompanyUuid() string {
 // CreateCompanyJoinCode
 type CreateCompanyJoinCodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	CodeTtl       int64                  `protobuf:"varint,4,opt,name=code_ttl,json=codeTtl,proto3" json:"code_ttl,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	CodeTtl       int64                  `protobuf:"varint,3,opt,name=code_ttl,json=codeTtl,proto3" json:"code_ttl,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateCompanyJoinCodeRequest) Reset() {
 	*x = CreateCompanyJoinCodeRequest{}
-	mi := &file_company_proto_msgTypes[14]
+	mi := &file_company_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -855,7 +875,7 @@ func (x *CreateCompanyJoinCodeRequest) String() string {
 func (*CreateCompanyJoinCodeRequest) ProtoMessage() {}
 
 func (x *CreateCompanyJoinCodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[14]
+	mi := &file_company_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -868,14 +888,7 @@ func (x *CreateCompanyJoinCodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCompanyJoinCodeRequest.ProtoReflect.Descriptor instead.
 func (*CreateCompanyJoinCodeRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *CreateCompanyJoinCodeRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *CreateCompanyJoinCodeRequest) GetInitiatorUuid() string {
@@ -908,7 +921,7 @@ type CreateCompanyJoinCodeResponse struct {
 
 func (x *CreateCompanyJoinCodeResponse) Reset() {
 	*x = CreateCompanyJoinCodeResponse{}
-	mi := &file_company_proto_msgTypes[15]
+	mi := &file_company_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -920,7 +933,7 @@ func (x *CreateCompanyJoinCodeResponse) String() string {
 func (*CreateCompanyJoinCodeResponse) ProtoMessage() {}
 
 func (x *CreateCompanyJoinCodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[15]
+	mi := &file_company_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -933,7 +946,7 @@ func (x *CreateCompanyJoinCodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCompanyJoinCodeResponse.ProtoReflect.Descriptor instead.
 func (*CreateCompanyJoinCodeResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{15}
+	return file_company_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *CreateCompanyJoinCodeResponse) GetJoinCode() string {
@@ -946,16 +959,15 @@ func (x *CreateCompanyJoinCodeResponse) GetJoinCode() string {
 // GetCompanyJoinCodes
 type GetCompanyJoinCodesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCompanyJoinCodesRequest) Reset() {
 	*x = GetCompanyJoinCodesRequest{}
-	mi := &file_company_proto_msgTypes[16]
+	mi := &file_company_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -967,7 +979,7 @@ func (x *GetCompanyJoinCodesRequest) String() string {
 func (*GetCompanyJoinCodesRequest) ProtoMessage() {}
 
 func (x *GetCompanyJoinCodesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[16]
+	mi := &file_company_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -980,14 +992,7 @@ func (x *GetCompanyJoinCodesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompanyJoinCodesRequest.ProtoReflect.Descriptor instead.
 func (*GetCompanyJoinCodesRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *GetCompanyJoinCodesRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetCompanyJoinCodesRequest) GetInitiatorUuid() string {
@@ -1013,7 +1018,7 @@ type GetCompanyJoinCodesResponse struct {
 
 func (x *GetCompanyJoinCodesResponse) Reset() {
 	*x = GetCompanyJoinCodesResponse{}
-	mi := &file_company_proto_msgTypes[17]
+	mi := &file_company_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1025,7 +1030,7 @@ func (x *GetCompanyJoinCodesResponse) String() string {
 func (*GetCompanyJoinCodesResponse) ProtoMessage() {}
 
 func (x *GetCompanyJoinCodesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[17]
+	mi := &file_company_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1038,7 +1043,7 @@ func (x *GetCompanyJoinCodesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompanyJoinCodesResponse.ProtoReflect.Descriptor instead.
 func (*GetCompanyJoinCodesResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{17}
+	return file_company_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetCompanyJoinCodesResponse) GetCodes() []string {
@@ -1051,17 +1056,16 @@ func (x *GetCompanyJoinCodesResponse) GetCodes() []string {
 // DeleteCompanyJoinCodes
 type DeleteCompanyJoinCodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	Code          string                 `protobuf:"bytes,4,opt,name=code,proto3" json:"code,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	Code          string                 `protobuf:"bytes,3,opt,name=code,proto3" json:"code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteCompanyJoinCodeRequest) Reset() {
 	*x = DeleteCompanyJoinCodeRequest{}
-	mi := &file_company_proto_msgTypes[18]
+	mi := &file_company_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1073,7 +1077,7 @@ func (x *DeleteCompanyJoinCodeRequest) String() string {
 func (*DeleteCompanyJoinCodeRequest) ProtoMessage() {}
 
 func (x *DeleteCompanyJoinCodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[18]
+	mi := &file_company_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1086,14 +1090,7 @@ func (x *DeleteCompanyJoinCodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCompanyJoinCodeRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCompanyJoinCodeRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *DeleteCompanyJoinCodeRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *DeleteCompanyJoinCodeRequest) GetInitiatorUuid() string {
@@ -1120,16 +1117,15 @@ func (x *DeleteCompanyJoinCodeRequest) GetCode() string {
 // JoinCompany
 type JoinCompanyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	JoinCode      string                 `protobuf:"bytes,3,opt,name=join_code,json=joinCode,proto3" json:"join_code,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	JoinCode      string                 `protobuf:"bytes,2,opt,name=join_code,json=joinCode,proto3" json:"join_code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *JoinCompanyRequest) Reset() {
 	*x = JoinCompanyRequest{}
-	mi := &file_company_proto_msgTypes[19]
+	mi := &file_company_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1141,7 +1137,7 @@ func (x *JoinCompanyRequest) String() string {
 func (*JoinCompanyRequest) ProtoMessage() {}
 
 func (x *JoinCompanyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[19]
+	mi := &file_company_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1154,14 +1150,7 @@ func (x *JoinCompanyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinCompanyRequest.ProtoReflect.Descriptor instead.
 func (*JoinCompanyRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{19}
-}
-
-func (x *JoinCompanyRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *JoinCompanyRequest) GetInitiatorUuid() string {
@@ -1188,7 +1177,7 @@ type JoinCompanyResponse struct {
 
 func (x *JoinCompanyResponse) Reset() {
 	*x = JoinCompanyResponse{}
-	mi := &file_company_proto_msgTypes[20]
+	mi := &file_company_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1200,7 +1189,7 @@ func (x *JoinCompanyResponse) String() string {
 func (*JoinCompanyResponse) ProtoMessage() {}
 
 func (x *JoinCompanyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[20]
+	mi := &file_company_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1213,7 +1202,7 @@ func (x *JoinCompanyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JoinCompanyResponse.ProtoReflect.Descriptor instead.
 func (*JoinCompanyResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{20}
+	return file_company_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *JoinCompanyResponse) GetCompanyUuid() string {
@@ -1233,17 +1222,16 @@ func (x *JoinCompanyResponse) GetRole() string {
 // GetCompanyEmployee
 type GetCompanyEmployeeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	TargetUuid    string                 `protobuf:"bytes,3,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,4,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	TargetUuid    string                 `protobuf:"bytes,2,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCompanyEmployeeRequest) Reset() {
 	*x = GetCompanyEmployeeRequest{}
-	mi := &file_company_proto_msgTypes[21]
+	mi := &file_company_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1255,7 +1243,7 @@ func (x *GetCompanyEmployeeRequest) String() string {
 func (*GetCompanyEmployeeRequest) ProtoMessage() {}
 
 func (x *GetCompanyEmployeeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[21]
+	mi := &file_company_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1268,14 +1256,7 @@ func (x *GetCompanyEmployeeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompanyEmployeeRequest.ProtoReflect.Descriptor instead.
 func (*GetCompanyEmployeeRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{21}
-}
-
-func (x *GetCompanyEmployeeRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetCompanyEmployeeRequest) GetInitiatorUuid() string {
@@ -1310,7 +1291,7 @@ type GetCompanyEmployeeResponse struct {
 
 func (x *GetCompanyEmployeeResponse) Reset() {
 	*x = GetCompanyEmployeeResponse{}
-	mi := &file_company_proto_msgTypes[22]
+	mi := &file_company_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1322,7 +1303,7 @@ func (x *GetCompanyEmployeeResponse) String() string {
 func (*GetCompanyEmployeeResponse) ProtoMessage() {}
 
 func (x *GetCompanyEmployeeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[22]
+	mi := &file_company_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1335,7 +1316,7 @@ func (x *GetCompanyEmployeeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompanyEmployeeResponse.ProtoReflect.Descriptor instead.
 func (*GetCompanyEmployeeResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{22}
+	return file_company_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetCompanyEmployeeResponse) GetRole() string {
@@ -1362,20 +1343,19 @@ func (x *GetCompanyEmployeeResponse) GetJoinedAt() string {
 // GetCompanyEmployees
 type GetCompanyEmployeesRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	OperationId    string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid  string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid    string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	Role           string                 `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"`
-	DepartmentUuid string                 `protobuf:"bytes,5,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
-	Count          int64                  `protobuf:"varint,6,opt,name=count,proto3" json:"count,omitempty"`
-	Offset         int64                  `protobuf:"varint,7,opt,name=offset,proto3" json:"offset,omitempty"`
+	InitiatorUuid  string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid    string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	Role           string                 `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,4,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	Count          int64                  `protobuf:"varint,5,opt,name=count,proto3" json:"count,omitempty"`
+	Offset         int64                  `protobuf:"varint,6,opt,name=offset,proto3" json:"offset,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetCompanyEmployeesRequest) Reset() {
 	*x = GetCompanyEmployeesRequest{}
-	mi := &file_company_proto_msgTypes[23]
+	mi := &file_company_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1387,7 +1367,7 @@ func (x *GetCompanyEmployeesRequest) String() string {
 func (*GetCompanyEmployeesRequest) ProtoMessage() {}
 
 func (x *GetCompanyEmployeesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[23]
+	mi := &file_company_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1400,14 +1380,7 @@ func (x *GetCompanyEmployeesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompanyEmployeesRequest.ProtoReflect.Descriptor instead.
 func (*GetCompanyEmployeesRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{23}
-}
-
-func (x *GetCompanyEmployeesRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetCompanyEmployeesRequest) GetInitiatorUuid() string {
@@ -1461,7 +1434,7 @@ type GetCompanyEmployeesResponse struct {
 
 func (x *GetCompanyEmployeesResponse) Reset() {
 	*x = GetCompanyEmployeesResponse{}
-	mi := &file_company_proto_msgTypes[24]
+	mi := &file_company_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1473,7 +1446,7 @@ func (x *GetCompanyEmployeesResponse) String() string {
 func (*GetCompanyEmployeesResponse) ProtoMessage() {}
 
 func (x *GetCompanyEmployeesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[24]
+	mi := &file_company_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1486,7 +1459,7 @@ func (x *GetCompanyEmployeesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompanyEmployeesResponse.ProtoReflect.Descriptor instead.
 func (*GetCompanyEmployeesResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{24}
+	return file_company_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetCompanyEmployeesResponse) GetEmployees() []*Employee {
@@ -1496,81 +1469,12 @@ func (x *GetCompanyEmployeesResponse) GetEmployees() []*Employee {
 	return nil
 }
 
-type Employee struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	UserUuid       string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
-	Role           string                 `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
-	DepartmentUuid string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
-	JoinedAt       string                 `protobuf:"bytes,4,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *Employee) Reset() {
-	*x = Employee{}
-	mi := &file_company_proto_msgTypes[25]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Employee) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Employee) ProtoMessage() {}
-
-func (x *Employee) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[25]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Employee.ProtoReflect.Descriptor instead.
-func (*Employee) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *Employee) GetUserUuid() string {
-	if x != nil {
-		return x.UserUuid
-	}
-	return ""
-}
-
-func (x *Employee) GetRole() string {
-	if x != nil {
-		return x.Role
-	}
-	return ""
-}
-
-func (x *Employee) GetDepartmentUuid() string {
-	if x != nil {
-		return x.DepartmentUuid
-	}
-	return ""
-}
-
-func (x *Employee) GetJoinedAt() string {
-	if x != nil {
-		return x.JoinedAt
-	}
-	return ""
-}
-
 // GetCompanyEmployeesSummary
 type GetCompanyEmployeesSummaryRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	OperationId    string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid  string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid    string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	DepartmentUuid string                 `protobuf:"bytes,4,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	InitiatorUuid  string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid    string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1603,13 +1507,6 @@ func (x *GetCompanyEmployeesSummaryRequest) ProtoReflect() protoreflect.Message 
 // Deprecated: Use GetCompanyEmployeesSummaryRequest.ProtoReflect.Descriptor instead.
 func (*GetCompanyEmployeesSummaryRequest) Descriptor() ([]byte, []int) {
 	return file_company_proto_rawDescGZIP(), []int{26}
-}
-
-func (x *GetCompanyEmployeesSummaryRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
 }
 
 func (x *GetCompanyEmployeesSummaryRequest) GetInitiatorUuid() string {
@@ -1720,11 +1617,10 @@ func (x *GetCompanyEmployeesSummaryResponse) GetUnemployedCount() int64 {
 // UpdateEmployeeRole
 type UpdateEmployeeRoleRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	TargetUuid    string                 `protobuf:"bytes,3,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,4,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	Role          string                 `protobuf:"bytes,5,opt,name=role,proto3" json:"role,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	TargetUuid    string                 `protobuf:"bytes,2,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	Role          string                 `protobuf:"bytes,4,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1759,13 +1655,6 @@ func (*UpdateEmployeeRoleRequest) Descriptor() ([]byte, []int) {
 	return file_company_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *UpdateEmployeeRoleRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
-}
-
 func (x *UpdateEmployeeRoleRequest) GetInitiatorUuid() string {
 	if x != nil {
 		return x.InitiatorUuid
@@ -1797,10 +1686,9 @@ func (x *UpdateEmployeeRoleRequest) GetRole() string {
 // RemoveCompanyEmployee
 type RemoveCompanyEmployeeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	TargetUuid    string                 `protobuf:"bytes,4,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	TargetUuid    string                 `protobuf:"bytes,3,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1835,13 +1723,6 @@ func (*RemoveCompanyEmployeeRequest) Descriptor() ([]byte, []int) {
 	return file_company_proto_rawDescGZIP(), []int{29}
 }
 
-func (x *RemoveCompanyEmployeeRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
-}
-
 func (x *RemoveCompanyEmployeeRequest) GetInitiatorUuid() string {
 	if x != nil {
 		return x.InitiatorUuid
@@ -1866,10 +1747,9 @@ func (x *RemoveCompanyEmployeeRequest) GetTargetUuid() string {
 // CreateDepartment
 type CreateDepartmentRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	Title         string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1902,13 +1782,6 @@ func (x *CreateDepartmentRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateDepartmentRequest.ProtoReflect.Descriptor instead.
 func (*CreateDepartmentRequest) Descriptor() ([]byte, []int) {
 	return file_company_proto_rawDescGZIP(), []int{30}
-}
-
-func (x *CreateDepartmentRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
 }
 
 func (x *CreateDepartmentRequest) GetInitiatorUuid() string {
@@ -1979,10 +1852,9 @@ func (x *CreateDepartmentResponse) GetDepartmentUuid() string {
 // AddEmployeeToDepartment
 type AddEmployeeToDepartmentRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	OperationId    string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid  string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	DepartmentUuid string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
-	TargetUuid     string                 `protobuf:"bytes,4,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
+	InitiatorUuid  string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,2,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	TargetUuid     string                 `protobuf:"bytes,3,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -2017,13 +1889,6 @@ func (*AddEmployeeToDepartmentRequest) Descriptor() ([]byte, []int) {
 	return file_company_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *AddEmployeeToDepartmentRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
-}
-
 func (x *AddEmployeeToDepartmentRequest) GetInitiatorUuid() string {
 	if x != nil {
 		return x.InitiatorUuid
@@ -2048,9 +1913,8 @@ func (x *AddEmployeeToDepartmentRequest) GetTargetUuid() string {
 // GetDepartment
 type GetDepartmentRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	OperationId    string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid  string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	DepartmentUuid string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	InitiatorUuid  string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,2,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -2083,13 +1947,6 @@ func (x *GetDepartmentRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetDepartmentRequest.ProtoReflect.Descriptor instead.
 func (*GetDepartmentRequest) Descriptor() ([]byte, []int) {
 	return file_company_proto_rawDescGZIP(), []int{33}
-}
-
-func (x *GetDepartmentRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
 }
 
 func (x *GetDepartmentRequest) GetInitiatorUuid() string {
@@ -2185,11 +2042,10 @@ func (x *GetDepartmentResponse) GetCreatedBy() string {
 // GetCompanyDepartments
 type GetCompanyDepartmentsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid   string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	Offset        int64                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
-	Count         int64                  `protobuf:"varint,5,opt,name=count,proto3" json:"count,omitempty"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid   string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	Offset        int64                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	Count         int64                  `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2224,13 +2080,6 @@ func (*GetCompanyDepartmentsRequest) Descriptor() ([]byte, []int) {
 	return file_company_proto_rawDescGZIP(), []int{35}
 }
 
-func (x *GetCompanyDepartmentsRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
-}
-
 func (x *GetCompanyDepartmentsRequest) GetInitiatorUuid() string {
 	if x != nil {
 		return x.InitiatorUuid
@@ -2259,58 +2108,6 @@ func (x *GetCompanyDepartmentsRequest) GetCount() int64 {
 	return 0
 }
 
-type Department struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	DepartmentUuid string                 `protobuf:"bytes,1,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
-	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *Department) Reset() {
-	*x = Department{}
-	mi := &file_company_proto_msgTypes[36]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Department) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Department) ProtoMessage() {}
-
-func (x *Department) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[36]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Department.ProtoReflect.Descriptor instead.
-func (*Department) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{36}
-}
-
-func (x *Department) GetDepartmentUuid() string {
-	if x != nil {
-		return x.DepartmentUuid
-	}
-	return ""
-}
-
-func (x *Department) GetTitle() string {
-	if x != nil {
-		return x.Title
-	}
-	return ""
-}
-
 type GetCompanyDepartmentsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Departments   []*Department          `protobuf:"bytes,1,rep,name=departments,proto3" json:"departments,omitempty"`
@@ -2320,7 +2117,7 @@ type GetCompanyDepartmentsResponse struct {
 
 func (x *GetCompanyDepartmentsResponse) Reset() {
 	*x = GetCompanyDepartmentsResponse{}
-	mi := &file_company_proto_msgTypes[37]
+	mi := &file_company_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2332,7 +2129,7 @@ func (x *GetCompanyDepartmentsResponse) String() string {
 func (*GetCompanyDepartmentsResponse) ProtoMessage() {}
 
 func (x *GetCompanyDepartmentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[37]
+	mi := &file_company_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2345,7 +2142,7 @@ func (x *GetCompanyDepartmentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompanyDepartmentsResponse.ProtoReflect.Descriptor instead.
 func (*GetCompanyDepartmentsResponse) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{37}
+	return file_company_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *GetCompanyDepartmentsResponse) GetDepartments() []*Department {
@@ -2358,17 +2155,16 @@ func (x *GetCompanyDepartmentsResponse) GetDepartments() []*Department {
 // UpdateDepartmentTitle
 type UpdateDepartmentTitleRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	OperationId    string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid  string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	DepartmentUuid string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
-	Title          string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	InitiatorUuid  string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,2,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UpdateDepartmentTitleRequest) Reset() {
 	*x = UpdateDepartmentTitleRequest{}
-	mi := &file_company_proto_msgTypes[38]
+	mi := &file_company_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2380,7 +2176,7 @@ func (x *UpdateDepartmentTitleRequest) String() string {
 func (*UpdateDepartmentTitleRequest) ProtoMessage() {}
 
 func (x *UpdateDepartmentTitleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[38]
+	mi := &file_company_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2393,14 +2189,7 @@ func (x *UpdateDepartmentTitleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateDepartmentTitleRequest.ProtoReflect.Descriptor instead.
 func (*UpdateDepartmentTitleRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{38}
-}
-
-func (x *UpdateDepartmentTitleRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *UpdateDepartmentTitleRequest) GetInitiatorUuid() string {
@@ -2427,16 +2216,15 @@ func (x *UpdateDepartmentTitleRequest) GetTitle() string {
 // DeleteDepartment
 type DeleteDepartmentRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	OperationId    string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid  string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	DepartmentUuid string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	InitiatorUuid  string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,2,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *DeleteDepartmentRequest) Reset() {
 	*x = DeleteDepartmentRequest{}
-	mi := &file_company_proto_msgTypes[39]
+	mi := &file_company_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2448,7 +2236,7 @@ func (x *DeleteDepartmentRequest) String() string {
 func (*DeleteDepartmentRequest) ProtoMessage() {}
 
 func (x *DeleteDepartmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[39]
+	mi := &file_company_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2461,14 +2249,7 @@ func (x *DeleteDepartmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDepartmentRequest.ProtoReflect.Descriptor instead.
 func (*DeleteDepartmentRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{39}
-}
-
-func (x *DeleteDepartmentRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *DeleteDepartmentRequest) GetInitiatorUuid() string {
@@ -2488,17 +2269,16 @@ func (x *DeleteDepartmentRequest) GetDepartmentUuid() string {
 // RemoveEmployeeFromDepartment
 type RemoveEmployeeFromDepartmentRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	OperationId    string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid  string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	DepartmentUuid string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
-	TargetUuid     string                 `protobuf:"bytes,4,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
+	InitiatorUuid  string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,2,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	TargetUuid     string                 `protobuf:"bytes,3,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *RemoveEmployeeFromDepartmentRequest) Reset() {
 	*x = RemoveEmployeeFromDepartmentRequest{}
-	mi := &file_company_proto_msgTypes[40]
+	mi := &file_company_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2510,7 +2290,7 @@ func (x *RemoveEmployeeFromDepartmentRequest) String() string {
 func (*RemoveEmployeeFromDepartmentRequest) ProtoMessage() {}
 
 func (x *RemoveEmployeeFromDepartmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_company_proto_msgTypes[40]
+	mi := &file_company_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2523,14 +2303,7 @@ func (x *RemoveEmployeeFromDepartmentRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use RemoveEmployeeFromDepartmentRequest.ProtoReflect.Descriptor instead.
 func (*RemoveEmployeeFromDepartmentRequest) Descriptor() ([]byte, []int) {
-	return file_company_proto_rawDescGZIP(), []int{40}
-}
-
-func (x *RemoveEmployeeFromDepartmentRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_company_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *RemoveEmployeeFromDepartmentRequest) GetInitiatorUuid() string {
@@ -2558,113 +2331,101 @@ var File_company_proto protoreflect.FileDescriptor
 
 const file_company_proto_rawDesc = "" +
 	"\n" +
-	"\rcompany.proto\x12\acompany\x1a\x1bgoogle/protobuf/empty.proto\"2\n" +
-	"\rHealthRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\"\x88\x01\n" +
+	"\rcompany.proto\x12\acompany\x1a\x1bgoogle/protobuf/empty.proto\"Z\n" +
+	"\aCompany\x12!\n" +
+	"\fcompany_uuid\x18\x01 \x01(\tR\vcompanyUuid\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"\x81\x01\n" +
+	"\bEmployee\x12\x1b\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x12\n" +
+	"\x04role\x18\x02 \x01(\tR\x04role\x12'\n" +
+	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\x12\x1b\n" +
+	"\tjoined_at\x18\x04 \x01(\tR\bjoinedAt\"K\n" +
+	"\n" +
+	"Department\x12'\n" +
+	"\x0fdepartment_uuid\x18\x01 \x01(\tR\x0edepartmentUuid\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\x88\x01\n" +
 	"\x0eHealthResponse\x12\x18\n" +
 	"\aservice\x18\x01 \x01(\tR\aservice\x12\x1a\n" +
 	"\bpostgres\x18\x02 \x01(\tR\bpostgres\x12\x14\n" +
 	"\x05redis\x18\x03 \x01(\tR\x05redis\x12\x14\n" +
 	"\x05minio\x18\x04 \x01(\tR\x05minio\x12\x14\n" +
-	"\x05mongo\x18\x05 \x01(\tR\x05mongo\"v\n" +
-	"\x14CreateCompanyRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05title\":\n" +
+	"\x05mongo\x18\x05 \x01(\tR\x05mongo\"S\n" +
+	"\x14CreateCompanyRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\":\n" +
 	"\x15CreateCompanyResponse\x12!\n" +
-	"\fcompany_uuid\x18\x01 \x01(\tR\vcompanyUuid\"\x80\x01\n" +
-	"\x11GetCompanyRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\"e\n" +
+	"\fcompany_uuid\x18\x01 \x01(\tR\vcompanyUuid\"]\n" +
+	"\x11GetCompanyRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\"e\n" +
 	"\x12GetCompanyResponse\x12!\n" +
 	"\fcompany_uuid\x18\x01 \x01(\tR\vcompanyUuid\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
-	"\x06status\x18\x03 \x01(\tR\x06status\"f\n" +
-	"\x13GetCompaniesRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12\x16\n" +
-	"\x06offset\x18\x02 \x01(\x03R\x06offset\x12\x14\n" +
-	"\x05count\x18\x03 \x01(\x03R\x05count\"F\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"C\n" +
+	"\x13GetCompaniesRequest\x12\x16\n" +
+	"\x06offset\x18\x01 \x01(\x03R\x06offset\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\x03R\x05count\"F\n" +
 	"\x14GetCompaniesResponse\x12.\n" +
-	"\tcompanies\x18\x01 \x03(\v2\x10.company.CompanyR\tcompanies\"Z\n" +
-	"\aCompany\x12!\n" +
-	"\fcompany_uuid\x18\x01 \x01(\tR\vcompanyUuid\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
-	"\x06status\x18\x03 \x01(\tR\x06status\"c\n" +
-	"\x17GetUserCompaniesRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\"J\n" +
+	"\tcompanies\x18\x01 \x03(\v2\x10.company.CompanyR\tcompanies\"@\n" +
+	"\x17GetUserCompaniesRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\"J\n" +
 	"\x18GetUserCompaniesResponse\x12.\n" +
-	"\tcompanies\x18\x01 \x03(\v2\x10.company.CompanyR\tcompanies\"\x9e\x01\n" +
-	"\x19UpdateCompanyTitleRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x14\n" +
-	"\x05title\x18\x04 \x01(\tR\x05title\"\xa1\x01\n" +
-	"\x1aUpdateCompanyStatusRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x16\n" +
-	"\x06status\x18\x04 \x01(\tR\x06status\"\x83\x01\n" +
-	"\x14DeleteCompanyRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\"\xa6\x01\n" +
-	"\x1cCreateCompanyJoinCodeRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x19\n" +
-	"\bcode_ttl\x18\x04 \x01(\x03R\acodeTtl\"<\n" +
+	"\tcompanies\x18\x01 \x03(\v2\x10.company.CompanyR\tcompanies\"{\n" +
+	"\x19UpdateCompanyTitleRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\"~\n" +
+	"\x1aUpdateCompanyStatusRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"`\n" +
+	"\x14DeleteCompanyRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\"\x83\x01\n" +
+	"\x1cCreateCompanyJoinCodeRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12\x19\n" +
+	"\bcode_ttl\x18\x03 \x01(\x03R\acodeTtl\"<\n" +
 	"\x1dCreateCompanyJoinCodeResponse\x12\x1b\n" +
-	"\tjoin_code\x18\x01 \x01(\tR\bjoinCode\"\x89\x01\n" +
-	"\x1aGetCompanyJoinCodesRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\"3\n" +
+	"\tjoin_code\x18\x01 \x01(\tR\bjoinCode\"f\n" +
+	"\x1aGetCompanyJoinCodesRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\"3\n" +
 	"\x1bGetCompanyJoinCodesResponse\x12\x14\n" +
-	"\x05codes\x18\x01 \x03(\tR\x05codes\"\x9f\x01\n" +
-	"\x1cDeleteCompanyJoinCodeRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x12\n" +
-	"\x04code\x18\x04 \x01(\tR\x04code\"{\n" +
-	"\x12JoinCompanyRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12\x1b\n" +
-	"\tjoin_code\x18\x03 \x01(\tR\bjoinCode\"L\n" +
+	"\x05codes\x18\x01 \x03(\tR\x05codes\"|\n" +
+	"\x1cDeleteCompanyJoinCodeRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12\x12\n" +
+	"\x04code\x18\x03 \x01(\tR\x04code\"X\n" +
+	"\x12JoinCompanyRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12\x1b\n" +
+	"\tjoin_code\x18\x02 \x01(\tR\bjoinCode\"L\n" +
 	"\x13JoinCompanyResponse\x12!\n" +
 	"\fcompany_uuid\x18\x01 \x01(\tR\vcompanyUuid\x12\x12\n" +
-	"\x04role\x18\x02 \x01(\tR\x04role\"\xa9\x01\n" +
-	"\x19GetCompanyEmployeeRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12\x1f\n" +
-	"\vtarget_uuid\x18\x03 \x01(\tR\n" +
+	"\x04role\x18\x02 \x01(\tR\x04role\"\x86\x01\n" +
+	"\x19GetCompanyEmployeeRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12\x1f\n" +
+	"\vtarget_uuid\x18\x02 \x01(\tR\n" +
 	"targetUuid\x12!\n" +
-	"\fcompany_uuid\x18\x04 \x01(\tR\vcompanyUuid\"v\n" +
+	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\"v\n" +
 	"\x1aGetCompanyEmployeeResponse\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12'\n" +
 	"\x0fdepartment_uuid\x18\x02 \x01(\tR\x0edepartmentUuid\x12\x1b\n" +
-	"\tjoined_at\x18\x03 \x01(\tR\bjoinedAt\"\xf4\x01\n" +
-	"\x1aGetCompanyEmployeesRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x12\n" +
-	"\x04role\x18\x04 \x01(\tR\x04role\x12'\n" +
-	"\x0fdepartment_uuid\x18\x05 \x01(\tR\x0edepartmentUuid\x12\x14\n" +
-	"\x05count\x18\x06 \x01(\x03R\x05count\x12\x16\n" +
-	"\x06offset\x18\a \x01(\x03R\x06offset\"N\n" +
+	"\tjoined_at\x18\x03 \x01(\tR\bjoinedAt\"\xd1\x01\n" +
+	"\x1aGetCompanyEmployeesRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12\x12\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\x12'\n" +
+	"\x0fdepartment_uuid\x18\x04 \x01(\tR\x0edepartmentUuid\x12\x14\n" +
+	"\x05count\x18\x05 \x01(\x03R\x05count\x12\x16\n" +
+	"\x06offset\x18\x06 \x01(\x03R\x06offset\"N\n" +
 	"\x1bGetCompanyEmployeesResponse\x12/\n" +
-	"\temployees\x18\x01 \x03(\v2\x11.company.EmployeeR\temployees\"\x81\x01\n" +
-	"\bEmployee\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x12\n" +
-	"\x04role\x18\x02 \x01(\tR\x04role\x12'\n" +
-	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\x12\x1b\n" +
-	"\tjoined_at\x18\x04 \x01(\tR\bjoinedAt\"\xb9\x01\n" +
-	"!GetCompanyEmployeesSummaryRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12'\n" +
-	"\x0fdepartment_uuid\x18\x04 \x01(\tR\x0edepartmentUuid\"\x8e\x02\n" +
+	"\temployees\x18\x01 \x03(\v2\x11.company.EmployeeR\temployees\"\x96\x01\n" +
+	"!GetCompanyEmployeesSummaryRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12'\n" +
+	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\"\x8e\x02\n" +
 	"\"GetCompanyEmployeesSummaryResponse\x12\x1f\n" +
 	"\vchief_count\x18\x01 \x01(\x03R\n" +
 	"chiefCount\x12'\n" +
@@ -2672,37 +2433,32 @@ const file_company_proto_rawDesc = "" +
 	"\rmanager_count\x18\x03 \x01(\x03R\fmanagerCount\x12%\n" +
 	"\x0eengineer_count\x18\x04 \x01(\x03R\rengineerCount\x12'\n" +
 	"\x0finspector_count\x18\x05 \x01(\x03R\x0einspectorCount\x12)\n" +
-	"\x10unemployed_count\x18\x06 \x01(\x03R\x0funemployedCount\"\xbd\x01\n" +
-	"\x19UpdateEmployeeRoleRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12\x1f\n" +
-	"\vtarget_uuid\x18\x03 \x01(\tR\n" +
+	"\x10unemployed_count\x18\x06 \x01(\x03R\x0funemployedCount\"\x9a\x01\n" +
+	"\x19UpdateEmployeeRoleRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12\x1f\n" +
+	"\vtarget_uuid\x18\x02 \x01(\tR\n" +
 	"targetUuid\x12!\n" +
-	"\fcompany_uuid\x18\x04 \x01(\tR\vcompanyUuid\x12\x12\n" +
-	"\x04role\x18\x05 \x01(\tR\x04role\"\xac\x01\n" +
-	"\x1cRemoveCompanyEmployeeRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x1f\n" +
-	"\vtarget_uuid\x18\x04 \x01(\tR\n" +
-	"targetUuid\"\x9c\x01\n" +
-	"\x17CreateDepartmentRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x14\n" +
-	"\x05title\x18\x04 \x01(\tR\x05title\"C\n" +
+	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x12\n" +
+	"\x04role\x18\x04 \x01(\tR\x04role\"\x89\x01\n" +
+	"\x1cRemoveCompanyEmployeeRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12\x1f\n" +
+	"\vtarget_uuid\x18\x03 \x01(\tR\n" +
+	"targetUuid\"y\n" +
+	"\x17CreateDepartmentRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\"C\n" +
 	"\x18CreateDepartmentResponse\x12'\n" +
-	"\x0fdepartment_uuid\x18\x01 \x01(\tR\x0edepartmentUuid\"\xb4\x01\n" +
-	"\x1eAddEmployeeToDepartmentRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12'\n" +
-	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\x12\x1f\n" +
-	"\vtarget_uuid\x18\x04 \x01(\tR\n" +
-	"targetUuid\"\x89\x01\n" +
-	"\x14GetDepartmentRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12'\n" +
-	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\"\xb7\x01\n" +
+	"\x0fdepartment_uuid\x18\x01 \x01(\tR\x0edepartmentUuid\"\x91\x01\n" +
+	"\x1eAddEmployeeToDepartmentRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12'\n" +
+	"\x0fdepartment_uuid\x18\x02 \x01(\tR\x0edepartmentUuid\x12\x1f\n" +
+	"\vtarget_uuid\x18\x03 \x01(\tR\n" +
+	"targetUuid\"f\n" +
+	"\x14GetDepartmentRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12'\n" +
+	"\x0fdepartment_uuid\x18\x02 \x01(\tR\x0edepartmentUuid\"\xb7\x01\n" +
 	"\x15GetDepartmentResponse\x12'\n" +
 	"\x0fdepartment_uuid\x18\x01 \x01(\tR\x0edepartmentUuid\x12!\n" +
 	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12\x14\n" +
@@ -2710,36 +2466,28 @@ const file_company_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x04 \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"created_by\x18\x05 \x01(\tR\tcreatedBy\"\xb9\x01\n" +
-	"\x1cGetCompanyDepartmentsRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12\x16\n" +
-	"\x06offset\x18\x04 \x01(\x03R\x06offset\x12\x14\n" +
-	"\x05count\x18\x05 \x01(\x03R\x05count\"K\n" +
-	"\n" +
-	"Department\x12'\n" +
-	"\x0fdepartment_uuid\x18\x01 \x01(\tR\x0edepartmentUuid\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05title\"V\n" +
+	"created_by\x18\x05 \x01(\tR\tcreatedBy\"\x96\x01\n" +
+	"\x1cGetCompanyDepartmentsRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12\x16\n" +
+	"\x06offset\x18\x03 \x01(\x03R\x06offset\x12\x14\n" +
+	"\x05count\x18\x04 \x01(\x03R\x05count\"V\n" +
 	"\x1dGetCompanyDepartmentsResponse\x125\n" +
-	"\vdepartments\x18\x01 \x03(\v2\x13.company.DepartmentR\vdepartments\"\xa7\x01\n" +
-	"\x1cUpdateDepartmentTitleRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12'\n" +
-	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\x12\x14\n" +
-	"\x05title\x18\x04 \x01(\tR\x05title\"\x8c\x01\n" +
-	"\x17DeleteDepartmentRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12'\n" +
-	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\"\xb9\x01\n" +
-	"#RemoveEmployeeFromDepartmentRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12'\n" +
-	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\x12\x1f\n" +
-	"\vtarget_uuid\x18\x04 \x01(\tR\n" +
+	"\vdepartments\x18\x01 \x03(\v2\x13.company.DepartmentR\vdepartments\"\x84\x01\n" +
+	"\x1cUpdateDepartmentTitleRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12'\n" +
+	"\x0fdepartment_uuid\x18\x02 \x01(\tR\x0edepartmentUuid\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\"i\n" +
+	"\x17DeleteDepartmentRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12'\n" +
+	"\x0fdepartment_uuid\x18\x02 \x01(\tR\x0edepartmentUuid\"\x96\x01\n" +
+	"#RemoveEmployeeFromDepartmentRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12'\n" +
+	"\x0fdepartment_uuid\x18\x02 \x01(\tR\x0edepartmentUuid\x12\x1f\n" +
+	"\vtarget_uuid\x18\x03 \x01(\tR\n" +
 	"targetUuid2\xbd\x10\n" +
 	"\x0eCompanyService\x129\n" +
-	"\x06Health\x12\x16.company.HealthRequest\x1a\x17.company.HealthResponse\x12N\n" +
+	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x17.company.HealthResponse\x12N\n" +
 	"\rCreateCompany\x12\x1d.company.CreateCompanyRequest\x1a\x1e.company.CreateCompanyResponse\x12E\n" +
 	"\n" +
 	"GetCompany\x12\x1a.company.GetCompanyRequest\x1a\x1b.company.GetCompanyResponse\x12K\n" +
@@ -2777,34 +2525,34 @@ func file_company_proto_rawDescGZIP() []byte {
 	return file_company_proto_rawDescData
 }
 
-var file_company_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
+var file_company_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_company_proto_goTypes = []any{
-	(*HealthRequest)(nil),                       // 0: company.HealthRequest
-	(*HealthResponse)(nil),                      // 1: company.HealthResponse
-	(*CreateCompanyRequest)(nil),                // 2: company.CreateCompanyRequest
-	(*CreateCompanyResponse)(nil),               // 3: company.CreateCompanyResponse
-	(*GetCompanyRequest)(nil),                   // 4: company.GetCompanyRequest
-	(*GetCompanyResponse)(nil),                  // 5: company.GetCompanyResponse
-	(*GetCompaniesRequest)(nil),                 // 6: company.GetCompaniesRequest
-	(*GetCompaniesResponse)(nil),                // 7: company.GetCompaniesResponse
-	(*Company)(nil),                             // 8: company.Company
-	(*GetUserCompaniesRequest)(nil),             // 9: company.GetUserCompaniesRequest
-	(*GetUserCompaniesResponse)(nil),            // 10: company.GetUserCompaniesResponse
-	(*UpdateCompanyTitleRequest)(nil),           // 11: company.UpdateCompanyTitleRequest
-	(*UpdateCompanyStatusRequest)(nil),          // 12: company.UpdateCompanyStatusRequest
-	(*DeleteCompanyRequest)(nil),                // 13: company.DeleteCompanyRequest
-	(*CreateCompanyJoinCodeRequest)(nil),        // 14: company.CreateCompanyJoinCodeRequest
-	(*CreateCompanyJoinCodeResponse)(nil),       // 15: company.CreateCompanyJoinCodeResponse
-	(*GetCompanyJoinCodesRequest)(nil),          // 16: company.GetCompanyJoinCodesRequest
-	(*GetCompanyJoinCodesResponse)(nil),         // 17: company.GetCompanyJoinCodesResponse
-	(*DeleteCompanyJoinCodeRequest)(nil),        // 18: company.DeleteCompanyJoinCodeRequest
-	(*JoinCompanyRequest)(nil),                  // 19: company.JoinCompanyRequest
-	(*JoinCompanyResponse)(nil),                 // 20: company.JoinCompanyResponse
-	(*GetCompanyEmployeeRequest)(nil),           // 21: company.GetCompanyEmployeeRequest
-	(*GetCompanyEmployeeResponse)(nil),          // 22: company.GetCompanyEmployeeResponse
-	(*GetCompanyEmployeesRequest)(nil),          // 23: company.GetCompanyEmployeesRequest
-	(*GetCompanyEmployeesResponse)(nil),         // 24: company.GetCompanyEmployeesResponse
-	(*Employee)(nil),                            // 25: company.Employee
+	(*Company)(nil),                             // 0: company.Company
+	(*Employee)(nil),                            // 1: company.Employee
+	(*Department)(nil),                          // 2: company.Department
+	(*HealthResponse)(nil),                      // 3: company.HealthResponse
+	(*CreateCompanyRequest)(nil),                // 4: company.CreateCompanyRequest
+	(*CreateCompanyResponse)(nil),               // 5: company.CreateCompanyResponse
+	(*GetCompanyRequest)(nil),                   // 6: company.GetCompanyRequest
+	(*GetCompanyResponse)(nil),                  // 7: company.GetCompanyResponse
+	(*GetCompaniesRequest)(nil),                 // 8: company.GetCompaniesRequest
+	(*GetCompaniesResponse)(nil),                // 9: company.GetCompaniesResponse
+	(*GetUserCompaniesRequest)(nil),             // 10: company.GetUserCompaniesRequest
+	(*GetUserCompaniesResponse)(nil),            // 11: company.GetUserCompaniesResponse
+	(*UpdateCompanyTitleRequest)(nil),           // 12: company.UpdateCompanyTitleRequest
+	(*UpdateCompanyStatusRequest)(nil),          // 13: company.UpdateCompanyStatusRequest
+	(*DeleteCompanyRequest)(nil),                // 14: company.DeleteCompanyRequest
+	(*CreateCompanyJoinCodeRequest)(nil),        // 15: company.CreateCompanyJoinCodeRequest
+	(*CreateCompanyJoinCodeResponse)(nil),       // 16: company.CreateCompanyJoinCodeResponse
+	(*GetCompanyJoinCodesRequest)(nil),          // 17: company.GetCompanyJoinCodesRequest
+	(*GetCompanyJoinCodesResponse)(nil),         // 18: company.GetCompanyJoinCodesResponse
+	(*DeleteCompanyJoinCodeRequest)(nil),        // 19: company.DeleteCompanyJoinCodeRequest
+	(*JoinCompanyRequest)(nil),                  // 20: company.JoinCompanyRequest
+	(*JoinCompanyResponse)(nil),                 // 21: company.JoinCompanyResponse
+	(*GetCompanyEmployeeRequest)(nil),           // 22: company.GetCompanyEmployeeRequest
+	(*GetCompanyEmployeeResponse)(nil),          // 23: company.GetCompanyEmployeeResponse
+	(*GetCompanyEmployeesRequest)(nil),          // 24: company.GetCompanyEmployeesRequest
+	(*GetCompanyEmployeesResponse)(nil),         // 25: company.GetCompanyEmployeesResponse
 	(*GetCompanyEmployeesSummaryRequest)(nil),   // 26: company.GetCompanyEmployeesSummaryRequest
 	(*GetCompanyEmployeesSummaryResponse)(nil),  // 27: company.GetCompanyEmployeesSummaryResponse
 	(*UpdateEmployeeRoleRequest)(nil),           // 28: company.UpdateEmployeeRoleRequest
@@ -2815,32 +2563,31 @@ var file_company_proto_goTypes = []any{
 	(*GetDepartmentRequest)(nil),                // 33: company.GetDepartmentRequest
 	(*GetDepartmentResponse)(nil),               // 34: company.GetDepartmentResponse
 	(*GetCompanyDepartmentsRequest)(nil),        // 35: company.GetCompanyDepartmentsRequest
-	(*Department)(nil),                          // 36: company.Department
-	(*GetCompanyDepartmentsResponse)(nil),       // 37: company.GetCompanyDepartmentsResponse
-	(*UpdateDepartmentTitleRequest)(nil),        // 38: company.UpdateDepartmentTitleRequest
-	(*DeleteDepartmentRequest)(nil),             // 39: company.DeleteDepartmentRequest
-	(*RemoveEmployeeFromDepartmentRequest)(nil), // 40: company.RemoveEmployeeFromDepartmentRequest
-	(*emptypb.Empty)(nil),                       // 41: google.protobuf.Empty
+	(*GetCompanyDepartmentsResponse)(nil),       // 36: company.GetCompanyDepartmentsResponse
+	(*UpdateDepartmentTitleRequest)(nil),        // 37: company.UpdateDepartmentTitleRequest
+	(*DeleteDepartmentRequest)(nil),             // 38: company.DeleteDepartmentRequest
+	(*RemoveEmployeeFromDepartmentRequest)(nil), // 39: company.RemoveEmployeeFromDepartmentRequest
+	(*emptypb.Empty)(nil),                       // 40: google.protobuf.Empty
 }
 var file_company_proto_depIdxs = []int32{
-	8,  // 0: company.GetCompaniesResponse.companies:type_name -> company.Company
-	8,  // 1: company.GetUserCompaniesResponse.companies:type_name -> company.Company
-	25, // 2: company.GetCompanyEmployeesResponse.employees:type_name -> company.Employee
-	36, // 3: company.GetCompanyDepartmentsResponse.departments:type_name -> company.Department
-	0,  // 4: company.CompanyService.Health:input_type -> company.HealthRequest
-	2,  // 5: company.CompanyService.CreateCompany:input_type -> company.CreateCompanyRequest
-	4,  // 6: company.CompanyService.GetCompany:input_type -> company.GetCompanyRequest
-	6,  // 7: company.CompanyService.GetCompanies:input_type -> company.GetCompaniesRequest
-	9,  // 8: company.CompanyService.GetUserCompanies:input_type -> company.GetUserCompaniesRequest
-	11, // 9: company.CompanyService.UpdateCompanyTitle:input_type -> company.UpdateCompanyTitleRequest
-	12, // 10: company.CompanyService.UpdateCompanyStatus:input_type -> company.UpdateCompanyStatusRequest
-	13, // 11: company.CompanyService.DeleteCompany:input_type -> company.DeleteCompanyRequest
-	14, // 12: company.CompanyService.CreateCompanyJoinCode:input_type -> company.CreateCompanyJoinCodeRequest
-	16, // 13: company.CompanyService.GetCompanyJoinCodes:input_type -> company.GetCompanyJoinCodesRequest
-	18, // 14: company.CompanyService.DeleteCompanyJoinCode:input_type -> company.DeleteCompanyJoinCodeRequest
-	19, // 15: company.CompanyService.JoinCompany:input_type -> company.JoinCompanyRequest
-	21, // 16: company.CompanyService.GetCompanyEmployee:input_type -> company.GetCompanyEmployeeRequest
-	23, // 17: company.CompanyService.GetCompanyEmployees:input_type -> company.GetCompanyEmployeesRequest
+	0,  // 0: company.GetCompaniesResponse.companies:type_name -> company.Company
+	0,  // 1: company.GetUserCompaniesResponse.companies:type_name -> company.Company
+	1,  // 2: company.GetCompanyEmployeesResponse.employees:type_name -> company.Employee
+	2,  // 3: company.GetCompanyDepartmentsResponse.departments:type_name -> company.Department
+	40, // 4: company.CompanyService.Health:input_type -> google.protobuf.Empty
+	4,  // 5: company.CompanyService.CreateCompany:input_type -> company.CreateCompanyRequest
+	6,  // 6: company.CompanyService.GetCompany:input_type -> company.GetCompanyRequest
+	8,  // 7: company.CompanyService.GetCompanies:input_type -> company.GetCompaniesRequest
+	10, // 8: company.CompanyService.GetUserCompanies:input_type -> company.GetUserCompaniesRequest
+	12, // 9: company.CompanyService.UpdateCompanyTitle:input_type -> company.UpdateCompanyTitleRequest
+	13, // 10: company.CompanyService.UpdateCompanyStatus:input_type -> company.UpdateCompanyStatusRequest
+	14, // 11: company.CompanyService.DeleteCompany:input_type -> company.DeleteCompanyRequest
+	15, // 12: company.CompanyService.CreateCompanyJoinCode:input_type -> company.CreateCompanyJoinCodeRequest
+	17, // 13: company.CompanyService.GetCompanyJoinCodes:input_type -> company.GetCompanyJoinCodesRequest
+	19, // 14: company.CompanyService.DeleteCompanyJoinCode:input_type -> company.DeleteCompanyJoinCodeRequest
+	20, // 15: company.CompanyService.JoinCompany:input_type -> company.JoinCompanyRequest
+	22, // 16: company.CompanyService.GetCompanyEmployee:input_type -> company.GetCompanyEmployeeRequest
+	24, // 17: company.CompanyService.GetCompanyEmployees:input_type -> company.GetCompanyEmployeesRequest
 	26, // 18: company.CompanyService.GetCompanyEmployeesSummary:input_type -> company.GetCompanyEmployeesSummaryRequest
 	28, // 19: company.CompanyService.UpdateEmployeeRole:input_type -> company.UpdateEmployeeRoleRequest
 	29, // 20: company.CompanyService.RemoveCompanyEmployee:input_type -> company.RemoveCompanyEmployeeRequest
@@ -2848,33 +2595,33 @@ var file_company_proto_depIdxs = []int32{
 	32, // 22: company.CompanyService.AddEmployeeToDepartment:input_type -> company.AddEmployeeToDepartmentRequest
 	33, // 23: company.CompanyService.GetDepartment:input_type -> company.GetDepartmentRequest
 	35, // 24: company.CompanyService.GetCompanyDepartments:input_type -> company.GetCompanyDepartmentsRequest
-	38, // 25: company.CompanyService.UpdateDepartmentTitle:input_type -> company.UpdateDepartmentTitleRequest
-	39, // 26: company.CompanyService.DeleteDepartment:input_type -> company.DeleteDepartmentRequest
-	40, // 27: company.CompanyService.RemoveEmployeeFromDepartment:input_type -> company.RemoveEmployeeFromDepartmentRequest
-	1,  // 28: company.CompanyService.Health:output_type -> company.HealthResponse
-	3,  // 29: company.CompanyService.CreateCompany:output_type -> company.CreateCompanyResponse
-	5,  // 30: company.CompanyService.GetCompany:output_type -> company.GetCompanyResponse
-	7,  // 31: company.CompanyService.GetCompanies:output_type -> company.GetCompaniesResponse
-	10, // 32: company.CompanyService.GetUserCompanies:output_type -> company.GetUserCompaniesResponse
-	41, // 33: company.CompanyService.UpdateCompanyTitle:output_type -> google.protobuf.Empty
-	41, // 34: company.CompanyService.UpdateCompanyStatus:output_type -> google.protobuf.Empty
-	41, // 35: company.CompanyService.DeleteCompany:output_type -> google.protobuf.Empty
-	15, // 36: company.CompanyService.CreateCompanyJoinCode:output_type -> company.CreateCompanyJoinCodeResponse
-	17, // 37: company.CompanyService.GetCompanyJoinCodes:output_type -> company.GetCompanyJoinCodesResponse
-	41, // 38: company.CompanyService.DeleteCompanyJoinCode:output_type -> google.protobuf.Empty
-	20, // 39: company.CompanyService.JoinCompany:output_type -> company.JoinCompanyResponse
-	22, // 40: company.CompanyService.GetCompanyEmployee:output_type -> company.GetCompanyEmployeeResponse
-	24, // 41: company.CompanyService.GetCompanyEmployees:output_type -> company.GetCompanyEmployeesResponse
+	37, // 25: company.CompanyService.UpdateDepartmentTitle:input_type -> company.UpdateDepartmentTitleRequest
+	38, // 26: company.CompanyService.DeleteDepartment:input_type -> company.DeleteDepartmentRequest
+	39, // 27: company.CompanyService.RemoveEmployeeFromDepartment:input_type -> company.RemoveEmployeeFromDepartmentRequest
+	3,  // 28: company.CompanyService.Health:output_type -> company.HealthResponse
+	5,  // 29: company.CompanyService.CreateCompany:output_type -> company.CreateCompanyResponse
+	7,  // 30: company.CompanyService.GetCompany:output_type -> company.GetCompanyResponse
+	9,  // 31: company.CompanyService.GetCompanies:output_type -> company.GetCompaniesResponse
+	11, // 32: company.CompanyService.GetUserCompanies:output_type -> company.GetUserCompaniesResponse
+	40, // 33: company.CompanyService.UpdateCompanyTitle:output_type -> google.protobuf.Empty
+	40, // 34: company.CompanyService.UpdateCompanyStatus:output_type -> google.protobuf.Empty
+	40, // 35: company.CompanyService.DeleteCompany:output_type -> google.protobuf.Empty
+	16, // 36: company.CompanyService.CreateCompanyJoinCode:output_type -> company.CreateCompanyJoinCodeResponse
+	18, // 37: company.CompanyService.GetCompanyJoinCodes:output_type -> company.GetCompanyJoinCodesResponse
+	40, // 38: company.CompanyService.DeleteCompanyJoinCode:output_type -> google.protobuf.Empty
+	21, // 39: company.CompanyService.JoinCompany:output_type -> company.JoinCompanyResponse
+	23, // 40: company.CompanyService.GetCompanyEmployee:output_type -> company.GetCompanyEmployeeResponse
+	25, // 41: company.CompanyService.GetCompanyEmployees:output_type -> company.GetCompanyEmployeesResponse
 	27, // 42: company.CompanyService.GetCompanyEmployeesSummary:output_type -> company.GetCompanyEmployeesSummaryResponse
-	41, // 43: company.CompanyService.UpdateEmployeeRole:output_type -> google.protobuf.Empty
-	41, // 44: company.CompanyService.RemoveCompanyEmployee:output_type -> google.protobuf.Empty
+	40, // 43: company.CompanyService.UpdateEmployeeRole:output_type -> google.protobuf.Empty
+	40, // 44: company.CompanyService.RemoveCompanyEmployee:output_type -> google.protobuf.Empty
 	31, // 45: company.CompanyService.CreateDepartment:output_type -> company.CreateDepartmentResponse
-	41, // 46: company.CompanyService.AddEmployeeToDepartment:output_type -> google.protobuf.Empty
+	40, // 46: company.CompanyService.AddEmployeeToDepartment:output_type -> google.protobuf.Empty
 	34, // 47: company.CompanyService.GetDepartment:output_type -> company.GetDepartmentResponse
-	37, // 48: company.CompanyService.GetCompanyDepartments:output_type -> company.GetCompanyDepartmentsResponse
-	41, // 49: company.CompanyService.UpdateDepartmentTitle:output_type -> google.protobuf.Empty
-	41, // 50: company.CompanyService.DeleteDepartment:output_type -> google.protobuf.Empty
-	41, // 51: company.CompanyService.RemoveEmployeeFromDepartment:output_type -> google.protobuf.Empty
+	36, // 48: company.CompanyService.GetCompanyDepartments:output_type -> company.GetCompanyDepartmentsResponse
+	40, // 49: company.CompanyService.UpdateDepartmentTitle:output_type -> google.protobuf.Empty
+	40, // 50: company.CompanyService.DeleteDepartment:output_type -> google.protobuf.Empty
+	40, // 51: company.CompanyService.RemoveEmployeeFromDepartment:output_type -> google.protobuf.Empty
 	28, // [28:52] is the sub-list for method output_type
 	4,  // [4:28] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
@@ -2893,7 +2640,7 @@ func file_company_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_company_proto_rawDesc), len(file_company_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   41,
+			NumMessages:   40,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

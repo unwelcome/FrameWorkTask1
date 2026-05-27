@@ -57,7 +57,7 @@ func TestHealth(t *testing.T) {
 
 func TestCreateCompany(t *testing.T) {
 	ctx := context.Background()
-	req := &pb.CreateCompanyRequest{OperationId: opID, Title: "ACME", InitiatorUuid: initiatorID}
+	req := &pb.CreateCompanyRequest{Title: "ACME", InitiatorUuid: initiatorID}
 
 	t.Run("success", func(t *testing.T) {
 		pg := emptyPGRepo()
@@ -74,7 +74,6 @@ func TestCreateCompany(t *testing.T) {
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.CreateCompany(ctx, &pb.CreateCompanyRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			Title:         "ACME",
 		})
@@ -84,7 +83,6 @@ func TestCreateCompany(t *testing.T) {
 	t.Run("invalid_title", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.CreateCompany(ctx, &pb.CreateCompanyRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			Title:         "",
 		})
@@ -106,7 +104,7 @@ func TestCreateCompany(t *testing.T) {
 func TestGetCompany(t *testing.T) {
 	ctx := context.Background()
 	// InitiatorUuid обязателен — GetCompany его валидирует
-	req := &pb.GetCompanyRequest{OperationId: opID, InitiatorUuid: initiatorID, CompanyUuid: companyID}
+	req := &pb.GetCompanyRequest{InitiatorUuid: initiatorID, CompanyUuid: companyID}
 
 	t.Run("success", func(t *testing.T) {
 		pg := emptyPGRepo()
@@ -125,7 +123,6 @@ func TestGetCompany(t *testing.T) {
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.GetCompany(ctx, &pb.GetCompanyRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 		})
@@ -135,7 +132,6 @@ func TestGetCompany(t *testing.T) {
 	t.Run("invalid_company_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.GetCompany(ctx, &pb.GetCompanyRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   "not-a-uuid",
 		})
@@ -169,7 +165,7 @@ func TestGetCompanies(t *testing.T) {
 		}
 
 		svc := newTestService(pg, emptyRedisRepo())
-		res, err := svc.GetCompanies(ctx, &pb.GetCompaniesRequest{OperationId: opID, Offset: 0, Count: 10})
+		res, err := svc.GetCompanies(ctx, &pb.GetCompaniesRequest{Offset: 0, Count: 10})
 		assertNoError(t, err)
 		if len(res.GetCompanies()) != 2 {
 			t.Errorf("expected 2 companies, got %d", len(res.GetCompanies()))
@@ -178,19 +174,19 @@ func TestGetCompanies(t *testing.T) {
 
 	t.Run("negative offset", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
-		_, err := svc.GetCompanies(ctx, &pb.GetCompaniesRequest{OperationId: opID, Offset: -1, Count: 10})
+		_, err := svc.GetCompanies(ctx, &pb.GetCompaniesRequest{Offset: -1, Count: 10})
 		assertGRPCCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("count zero", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
-		_, err := svc.GetCompanies(ctx, &pb.GetCompaniesRequest{OperationId: opID, Offset: 0, Count: 0})
+		_, err := svc.GetCompanies(ctx, &pb.GetCompaniesRequest{Offset: 0, Count: 0})
 		assertGRPCCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("count too large", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
-		_, err := svc.GetCompanies(ctx, &pb.GetCompaniesRequest{OperationId: opID, Offset: 0, Count: 101})
+		_, err := svc.GetCompanies(ctx, &pb.GetCompaniesRequest{Offset: 0, Count: 101})
 		assertGRPCCode(t, err, codes.InvalidArgument)
 	})
 
@@ -201,7 +197,7 @@ func TestGetCompanies(t *testing.T) {
 		}
 
 		svc := newTestService(pg, emptyRedisRepo())
-		_, err := svc.GetCompanies(ctx, &pb.GetCompaniesRequest{OperationId: opID, Offset: 0, Count: 10})
+		_, err := svc.GetCompanies(ctx, &pb.GetCompaniesRequest{Offset: 0, Count: 10})
 		assertGRPCCode(t, err, codes.Internal)
 	})
 }
@@ -211,7 +207,7 @@ func TestGetCompanies(t *testing.T) {
 func TestUpdateCompanyTitle(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.UpdateCompanyTitleRequest{
-		OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID, Title: "New Title",
+		CompanyUuid: companyID, InitiatorUuid: initiatorID, Title: "New Title",
 	}
 
 	t.Run("success", func(t *testing.T) {
@@ -226,7 +222,6 @@ func TestUpdateCompanyTitle(t *testing.T) {
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.UpdateCompanyTitle(ctx, &pb.UpdateCompanyTitleRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 			Title:         "New Title",
@@ -237,7 +232,6 @@ func TestUpdateCompanyTitle(t *testing.T) {
 	t.Run("invalid_company_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.UpdateCompanyTitle(ctx, &pb.UpdateCompanyTitleRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   "not-a-uuid",
 			Title:         "New Title",
@@ -248,7 +242,6 @@ func TestUpdateCompanyTitle(t *testing.T) {
 	t.Run("invalid_title", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.UpdateCompanyTitle(ctx, &pb.UpdateCompanyTitleRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   companyID,
 			Title:         "",
@@ -311,7 +304,7 @@ func TestUpdateCompanyStatus(t *testing.T) {
 	ctx := context.Background()
 	// Допустимые статусы: "open" и "close" (не "closed")
 	req := &pb.UpdateCompanyStatusRequest{
-		OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID, Status: "close",
+		CompanyUuid: companyID, InitiatorUuid: initiatorID, Status: "close",
 	}
 
 	t.Run("success", func(t *testing.T) {
@@ -326,7 +319,6 @@ func TestUpdateCompanyStatus(t *testing.T) {
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.UpdateCompanyStatus(ctx, &pb.UpdateCompanyStatusRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 			Status:        "close",
@@ -337,7 +329,6 @@ func TestUpdateCompanyStatus(t *testing.T) {
 	t.Run("invalid_status", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.UpdateCompanyStatus(ctx, &pb.UpdateCompanyStatusRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   companyID,
 			Status:        "closed", // "closed" не входит в AllStatuses
@@ -370,7 +361,7 @@ func TestUpdateCompanyStatus(t *testing.T) {
 
 func TestDeleteCompany(t *testing.T) {
 	ctx := context.Background()
-	req := &pb.DeleteCompanyRequest{OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID}
+	req := &pb.DeleteCompanyRequest{CompanyUuid: companyID, InitiatorUuid: initiatorID}
 
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
@@ -384,7 +375,6 @@ func TestDeleteCompany(t *testing.T) {
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.DeleteCompany(ctx, &pb.DeleteCompanyRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 		})
@@ -394,7 +384,6 @@ func TestDeleteCompany(t *testing.T) {
 	t.Run("invalid_company_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.DeleteCompany(ctx, &pb.DeleteCompanyRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   "not-a-uuid",
 		})
@@ -427,13 +416,12 @@ func TestDeleteCompany(t *testing.T) {
 func TestCreateCompanyJoinCode(t *testing.T) {
 	ctx := context.Background()
 	validReq := &pb.CreateCompanyJoinCodeRequest{
-		OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID, CodeTtl: 3600,
+		CompanyUuid: companyID, InitiatorUuid: initiatorID, CodeTtl: 3600,
 	}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.CreateCompanyJoinCode(ctx, &pb.CreateCompanyJoinCodeRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 			CodeTtl:       3600,
@@ -444,7 +432,6 @@ func TestCreateCompanyJoinCode(t *testing.T) {
 	t.Run("invalid_company_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.CreateCompanyJoinCode(ctx, &pb.CreateCompanyJoinCodeRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   "not-a-uuid",
 			CodeTtl:       3600,
@@ -471,7 +458,7 @@ func TestCreateCompanyJoinCode(t *testing.T) {
 	t.Run("ttl too short", func(t *testing.T) {
 		svc := newTestService(pgRepoWithChief(), emptyRedisRepo())
 		_, err := svc.CreateCompanyJoinCode(ctx, &pb.CreateCompanyJoinCodeRequest{
-			OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID, CodeTtl: 59,
+			CompanyUuid: companyID, InitiatorUuid: initiatorID, CodeTtl: 59,
 		})
 		assertGRPCCode(t, err, codes.InvalidArgument)
 	})
@@ -479,7 +466,7 @@ func TestCreateCompanyJoinCode(t *testing.T) {
 	t.Run("ttl too long", func(t *testing.T) {
 		svc := newTestService(pgRepoWithChief(), emptyRedisRepo())
 		_, err := svc.CreateCompanyJoinCode(ctx, &pb.CreateCompanyJoinCodeRequest{
-			OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID, CodeTtl: 60*60*24*7 + 1,
+			CompanyUuid: companyID, InitiatorUuid: initiatorID, CodeTtl: 60*60*24*7 + 1,
 		})
 		assertGRPCCode(t, err, codes.InvalidArgument)
 	})
@@ -523,12 +510,11 @@ func TestCreateCompanyJoinCode(t *testing.T) {
 
 func TestGetCompanyJoinCodes(t *testing.T) {
 	ctx := context.Background()
-	req := &pb.GetCompanyJoinCodesRequest{OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID}
+	req := &pb.GetCompanyJoinCodesRequest{CompanyUuid: companyID, InitiatorUuid: initiatorID}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.GetCompanyJoinCodes(ctx, &pb.GetCompanyJoinCodesRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 		})
@@ -579,13 +565,12 @@ func TestGetCompanyJoinCodes(t *testing.T) {
 func TestDeleteCompanyJoinCode(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.DeleteCompanyJoinCodeRequest{
-		OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID, Code: testCode,
+		CompanyUuid: companyID, InitiatorUuid: initiatorID, Code: testCode,
 	}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.DeleteCompanyJoinCode(ctx, &pb.DeleteCompanyJoinCodeRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 			Code:          testCode,
@@ -597,7 +582,6 @@ func TestDeleteCompanyJoinCode(t *testing.T) {
 		// Код должен быть ровно 6 цифр
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.DeleteCompanyJoinCode(ctx, &pb.DeleteCompanyJoinCodeRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   companyID,
 			Code:          "1234", // 4 цифры вместо 6
@@ -668,12 +652,11 @@ func TestDeleteCompanyJoinCode(t *testing.T) {
 
 func TestJoinCompany(t *testing.T) {
 	ctx := context.Background()
-	req := &pb.JoinCompanyRequest{OperationId: opID, JoinCode: testCode, InitiatorUuid: targetID}
+	req := &pb.JoinCompanyRequest{JoinCode: testCode, InitiatorUuid: targetID}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.JoinCompany(ctx, &pb.JoinCompanyRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			JoinCode:      testCode,
 		})
@@ -683,7 +666,6 @@ func TestJoinCompany(t *testing.T) {
 	t.Run("invalid_join_code", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.JoinCompany(ctx, &pb.JoinCompanyRequest{
-			OperationId:   opID,
 			InitiatorUuid: targetID,
 			JoinCode:      "abc", // не 6 цифр
 		})
@@ -798,13 +780,12 @@ func TestJoinCompany(t *testing.T) {
 func TestGetCompanyEmployee(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.GetCompanyEmployeeRequest{
-		OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID, TargetUuid: targetID,
+		CompanyUuid: companyID, InitiatorUuid: initiatorID, TargetUuid: targetID,
 	}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.GetCompanyEmployee(ctx, &pb.GetCompanyEmployeeRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 			TargetUuid:    targetID,
@@ -815,7 +796,6 @@ func TestGetCompanyEmployee(t *testing.T) {
 	t.Run("invalid_target_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.GetCompanyEmployee(ctx, &pb.GetCompanyEmployeeRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   companyID,
 			TargetUuid:    "not-a-uuid",
@@ -882,7 +862,6 @@ func TestGetCompanyEmployees(t *testing.T) {
 
 	makeReq := func(role, departmentUUID string, count, offset int64) *pb.GetCompanyEmployeesRequest {
 		return &pb.GetCompanyEmployeesRequest{
-			OperationId:    opID,
 			CompanyUuid:    companyID,
 			InitiatorUuid:  initiatorID,
 			Role:           role,
@@ -1006,7 +985,7 @@ func TestGetCompanyEmployees(t *testing.T) {
 func TestGetCompanyEmployeesSummary(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.GetCompanyEmployeesSummaryRequest{
-		OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID,
+		CompanyUuid: companyID, InitiatorUuid: initiatorID,
 	}
 
 	t.Run("success", func(t *testing.T) {
@@ -1036,7 +1015,7 @@ func TestGetCompanyEmployeesSummary(t *testing.T) {
 
 		svc := newTestService(pg, emptyRedisRepo())
 		res, err := svc.GetCompanyEmployeesSummary(ctx, &pb.GetCompanyEmployeesSummaryRequest{
-			OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID, DepartmentUuid: deptID,
+			CompanyUuid: companyID, InitiatorUuid: initiatorID, DepartmentUuid: deptID,
 		})
 		assertNoError(t, err)
 		if res.GetEngineerCount() != 2 {
@@ -1047,7 +1026,6 @@ func TestGetCompanyEmployeesSummary(t *testing.T) {
 	t.Run("invalid_department_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.GetCompanyEmployeesSummary(ctx, &pb.GetCompanyEmployeesSummaryRequest{
-			OperationId:    opID,
 			InitiatorUuid:  initiatorID,
 			CompanyUuid:    companyID,
 			DepartmentUuid: "not-a-uuid",
@@ -1083,7 +1061,6 @@ func TestGetCompanyEmployeesSummary(t *testing.T) {
 func TestUpdateEmployeeRole(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.UpdateEmployeeRoleRequest{
-		OperationId:   opID,
 		CompanyUuid:   companyID,
 		InitiatorUuid: initiatorID,
 		TargetUuid:    targetID,
@@ -1093,7 +1070,6 @@ func TestUpdateEmployeeRole(t *testing.T) {
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.UpdateEmployeeRole(ctx, &pb.UpdateEmployeeRoleRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 			TargetUuid:    targetID,
@@ -1105,7 +1081,6 @@ func TestUpdateEmployeeRole(t *testing.T) {
 	t.Run("invalid_target_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.UpdateEmployeeRole(ctx, &pb.UpdateEmployeeRoleRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   companyID,
 			TargetUuid:    "not-a-uuid",
@@ -1136,7 +1111,6 @@ func TestUpdateEmployeeRole(t *testing.T) {
 		// Проверка initiator == target происходит до checkEmployeeRole — мок БД не нужен
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.UpdateEmployeeRole(ctx, &pb.UpdateEmployeeRoleRequest{
-			OperationId:   opID,
 			CompanyUuid:   companyID,
 			InitiatorUuid: initiatorID,
 			TargetUuid:    initiatorID,
@@ -1199,7 +1173,6 @@ func TestRemoveCompanyEmployee(t *testing.T) {
 
 	makeReq := func(initiator, target string) *pb.RemoveCompanyEmployeeRequest {
 		return &pb.RemoveCompanyEmployeeRequest{
-			OperationId:   opID,
 			CompanyUuid:   companyID,
 			InitiatorUuid: initiator,
 			TargetUuid:    target,
@@ -1262,13 +1235,12 @@ func TestRemoveCompanyEmployee(t *testing.T) {
 func TestCreateDepartment(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.CreateDepartmentRequest{
-		OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID, Title: "Engineering",
+		CompanyUuid: companyID, InitiatorUuid: initiatorID, Title: "Engineering",
 	}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.CreateDepartment(ctx, &pb.CreateDepartmentRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 			Title:         "Engineering",
@@ -1279,7 +1251,6 @@ func TestCreateDepartment(t *testing.T) {
 	t.Run("invalid_company_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.CreateDepartment(ctx, &pb.CreateDepartmentRequest{
-			OperationId:   opID,
 			InitiatorUuid: initiatorID,
 			CompanyUuid:   "not-a-uuid",
 			Title:         "Engineering",
@@ -1302,7 +1273,7 @@ func TestCreateDepartment(t *testing.T) {
 	t.Run("invalid title — empty", func(t *testing.T) {
 		svc := newTestService(pgRepoWithChief(), emptyRedisRepo())
 		_, err := svc.CreateDepartment(ctx, &pb.CreateDepartmentRequest{
-			OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID, Title: "",
+			CompanyUuid: companyID, InitiatorUuid: initiatorID, Title: "",
 		})
 		assertGRPCCode(t, err, codes.InvalidArgument)
 	})
@@ -1347,13 +1318,12 @@ func TestCreateDepartment(t *testing.T) {
 func TestAddEmployeeToDepartment(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.AddEmployeeToDepartmentRequest{
-		OperationId: opID, InitiatorUuid: initiatorID, DepartmentUuid: deptID, TargetUuid: targetID,
+		InitiatorUuid: initiatorID, DepartmentUuid: deptID, TargetUuid: targetID,
 	}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.AddEmployeeToDepartment(ctx, &pb.AddEmployeeToDepartmentRequest{
-			OperationId:    opID,
 			InitiatorUuid:  "not-a-uuid",
 			DepartmentUuid: deptID,
 			TargetUuid:     targetID,
@@ -1364,7 +1334,6 @@ func TestAddEmployeeToDepartment(t *testing.T) {
 	t.Run("invalid_department_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.AddEmployeeToDepartment(ctx, &pb.AddEmployeeToDepartmentRequest{
-			OperationId:    opID,
 			InitiatorUuid:  initiatorID,
 			DepartmentUuid: "not-a-uuid",
 			TargetUuid:     targetID,
@@ -1375,7 +1344,6 @@ func TestAddEmployeeToDepartment(t *testing.T) {
 	t.Run("invalid_target_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.AddEmployeeToDepartment(ctx, &pb.AddEmployeeToDepartmentRequest{
-			OperationId:    opID,
 			InitiatorUuid:  initiatorID,
 			DepartmentUuid: deptID,
 			TargetUuid:     "not-a-uuid",
@@ -1479,13 +1447,12 @@ func TestAddEmployeeToDepartment(t *testing.T) {
 func TestGetDepartment(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.GetDepartmentRequest{
-		OperationId: opID, InitiatorUuid: initiatorID, DepartmentUuid: deptID,
+		InitiatorUuid: initiatorID, DepartmentUuid: deptID,
 	}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.GetDepartment(ctx, &pb.GetDepartmentRequest{
-			OperationId:    opID,
 			InitiatorUuid:  "not-a-uuid",
 			DepartmentUuid: deptID,
 		})
@@ -1495,7 +1462,6 @@ func TestGetDepartment(t *testing.T) {
 	t.Run("invalid_department_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.GetDepartment(ctx, &pb.GetDepartmentRequest{
-			OperationId:    opID,
 			InitiatorUuid:  initiatorID,
 			DepartmentUuid: "not-a-uuid",
 		})
@@ -1552,7 +1518,7 @@ func TestGetCompanyDepartments(t *testing.T) {
 
 	makeReq := func(offset, count int64) *pb.GetCompanyDepartmentsRequest {
 		return &pb.GetCompanyDepartmentsRequest{
-			OperationId: opID, CompanyUuid: companyID, InitiatorUuid: initiatorID,
+			CompanyUuid: companyID, InitiatorUuid: initiatorID,
 			Offset: offset, Count: count,
 		}
 	}
@@ -1560,7 +1526,6 @@ func TestGetCompanyDepartments(t *testing.T) {
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.GetCompanyDepartments(ctx, &pb.GetCompanyDepartmentsRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 			CompanyUuid:   companyID,
 			Offset:        0,
@@ -1632,13 +1597,12 @@ func TestGetCompanyDepartments(t *testing.T) {
 func TestUpdateDepartmentTitle(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.UpdateDepartmentTitleRequest{
-		OperationId: opID, InitiatorUuid: initiatorID, DepartmentUuid: deptID, Title: "New Name",
+		InitiatorUuid: initiatorID, DepartmentUuid: deptID, Title: "New Name",
 	}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.UpdateDepartmentTitle(ctx, &pb.UpdateDepartmentTitleRequest{
-			OperationId:    opID,
 			InitiatorUuid:  "not-a-uuid",
 			DepartmentUuid: deptID,
 			Title:          "New Name",
@@ -1649,7 +1613,6 @@ func TestUpdateDepartmentTitle(t *testing.T) {
 	t.Run("invalid_department_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.UpdateDepartmentTitle(ctx, &pb.UpdateDepartmentTitleRequest{
-			OperationId:    opID,
 			InitiatorUuid:  initiatorID,
 			DepartmentUuid: "not-a-uuid",
 			Title:          "New Name",
@@ -1669,7 +1632,7 @@ func TestUpdateDepartmentTitle(t *testing.T) {
 	t.Run("invalid title — empty", func(t *testing.T) {
 		svc := newTestService(pgRepoWithChiefAndDept(), emptyRedisRepo())
 		_, err := svc.UpdateDepartmentTitle(ctx, &pb.UpdateDepartmentTitleRequest{
-			OperationId: opID, InitiatorUuid: initiatorID, DepartmentUuid: deptID, Title: "",
+			InitiatorUuid: initiatorID, DepartmentUuid: deptID, Title: "",
 		})
 		assertGRPCCode(t, err, codes.InvalidArgument)
 	})
@@ -1717,13 +1680,12 @@ func TestUpdateDepartmentTitle(t *testing.T) {
 func TestDeleteDepartment(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.DeleteDepartmentRequest{
-		OperationId: opID, InitiatorUuid: initiatorID, DepartmentUuid: deptID,
+		InitiatorUuid: initiatorID, DepartmentUuid: deptID,
 	}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.DeleteDepartment(ctx, &pb.DeleteDepartmentRequest{
-			OperationId:    opID,
 			InitiatorUuid:  "not-a-uuid",
 			DepartmentUuid: deptID,
 		})
@@ -1733,7 +1695,6 @@ func TestDeleteDepartment(t *testing.T) {
 	t.Run("invalid_department_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.DeleteDepartment(ctx, &pb.DeleteDepartmentRequest{
-			OperationId:    opID,
 			InitiatorUuid:  initiatorID,
 			DepartmentUuid: "not-a-uuid",
 		})
@@ -1791,7 +1752,7 @@ func TestDeleteDepartment(t *testing.T) {
 
 func TestGetUserCompanies(t *testing.T) {
 	ctx := context.Background()
-	req := &pb.GetUserCompaniesRequest{OperationId: opID, InitiatorUuid: initiatorID}
+	req := &pb.GetUserCompaniesRequest{InitiatorUuid: initiatorID}
 
 	t.Run("success — returns user companies", func(t *testing.T) {
 		pg := emptyPGRepo()
@@ -1829,7 +1790,6 @@ func TestGetUserCompanies(t *testing.T) {
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.GetUserCompanies(ctx, &pb.GetUserCompaniesRequest{
-			OperationId:   opID,
 			InitiatorUuid: "not-a-uuid",
 		})
 		assertGRPCCode(t, err, codes.InvalidArgument)
@@ -1852,13 +1812,12 @@ func TestGetUserCompanies(t *testing.T) {
 func TestRemoveEmployeeFromDepartment(t *testing.T) {
 	ctx := context.Background()
 	req := &pb.RemoveEmployeeFromDepartmentRequest{
-		OperationId: opID, InitiatorUuid: initiatorID, DepartmentUuid: deptID, TargetUuid: targetID,
+		InitiatorUuid: initiatorID, DepartmentUuid: deptID, TargetUuid: targetID,
 	}
 
 	t.Run("invalid_initiator_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.RemoveEmployeeFromDepartment(ctx, &pb.RemoveEmployeeFromDepartmentRequest{
-			OperationId:    opID,
 			InitiatorUuid:  "not-a-uuid",
 			DepartmentUuid: deptID,
 			TargetUuid:     targetID,
@@ -1869,7 +1828,6 @@ func TestRemoveEmployeeFromDepartment(t *testing.T) {
 	t.Run("invalid_department_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.RemoveEmployeeFromDepartment(ctx, &pb.RemoveEmployeeFromDepartmentRequest{
-			OperationId:    opID,
 			InitiatorUuid:  initiatorID,
 			DepartmentUuid: "not-a-uuid",
 			TargetUuid:     targetID,
@@ -1880,7 +1838,6 @@ func TestRemoveEmployeeFromDepartment(t *testing.T) {
 	t.Run("invalid_target_uuid", func(t *testing.T) {
 		svc := newTestService(emptyPGRepo(), emptyRedisRepo())
 		_, err := svc.RemoveEmployeeFromDepartment(ctx, &pb.RemoveEmployeeFromDepartmentRequest{
-			OperationId:    opID,
 			InitiatorUuid:  initiatorID,
 			DepartmentUuid: deptID,
 			TargetUuid:     "not-a-uuid",

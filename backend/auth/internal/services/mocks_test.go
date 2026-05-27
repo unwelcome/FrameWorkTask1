@@ -2,11 +2,13 @@ package services
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"time"
 
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 )
 
@@ -72,8 +74,18 @@ func (m *mockAuthRepo) RefreshToken(ctx context.Context, userUUID, oldRawToken, 
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// testPrivateKey — ECDSA ключ из /keys/test/private.pem для unit-тестов.
+var testPrivateKey *ecdsa.PrivateKey
+
+func init() {
+	var err error
+	testPrivateKey, err = utils.LoadPrivateKey("../../../keys/test/private.pem")
+	if err != nil {
+		panic("failed to load test private key: " + err.Error())
+	}
+}
+
 const (
-	testSecret     = "test-secret-key"
 	testAccessTTL  = time.Minute
 	testRefreshTTL = time.Hour
 
@@ -89,7 +101,7 @@ const (
 func newTestService(userRepo postgresDB.UserRepository, authRepo redisDB.AuthRepository) *AuthService {
 	db := &postgresDB.DatabaseRepository{User: userRepo}
 	cache := &redisDB.CacheRepository{Auth: authRepo}
-	return NewAuthService(db, cache, testSecret, testAccessTTL, testRefreshTTL)
+	return NewAuthService(db, cache, testPrivateKey, testAccessTTL, testRefreshTTL)
 }
 
 // emptyUserRepo — заглушка для тестов, где UserRepository не должен вызываться

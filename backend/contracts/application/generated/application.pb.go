@@ -331,50 +331,7 @@ func (x *ApplicationData) GetDescription() string {
 }
 
 // Health
-type HealthRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HealthRequest) Reset() {
-	*x = HealthRequest{}
-	mi := &file_application_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HealthRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HealthRequest) ProtoMessage() {}
-
-func (x *HealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HealthRequest.ProtoReflect.Descriptor instead.
-func (*HealthRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *HealthRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
-}
-
+// Empty request
 type HealthResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Service       string                 `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`
@@ -388,7 +345,7 @@ type HealthResponse struct {
 
 func (x *HealthResponse) Reset() {
 	*x = HealthResponse{}
-	mi := &file_application_proto_msgTypes[4]
+	mi := &file_application_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -400,7 +357,7 @@ func (x *HealthResponse) String() string {
 func (*HealthResponse) ProtoMessage() {}
 
 func (x *HealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[4]
+	mi := &file_application_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -413,7 +370,7 @@ func (x *HealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthResponse.ProtoReflect.Descriptor instead.
 func (*HealthResponse) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{4}
+	return file_application_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *HealthResponse) GetService() string {
@@ -454,17 +411,16 @@ func (x *HealthResponse) GetMongo() string {
 // CreateApplication
 type CreateApplicationRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	OperationId     string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid   string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid     string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	ApplicationData *ApplicationData       `protobuf:"bytes,4,opt,name=application_data,json=applicationData,proto3" json:"application_data,omitempty"`
+	InitiatorUuid   string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid     string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	ApplicationData *ApplicationData       `protobuf:"bytes,3,opt,name=application_data,json=applicationData,proto3" json:"application_data,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateApplicationRequest) Reset() {
 	*x = CreateApplicationRequest{}
-	mi := &file_application_proto_msgTypes[5]
+	mi := &file_application_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -476,7 +432,7 @@ func (x *CreateApplicationRequest) String() string {
 func (*CreateApplicationRequest) ProtoMessage() {}
 
 func (x *CreateApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[5]
+	mi := &file_application_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -489,14 +445,7 @@ func (x *CreateApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateApplicationRequest.ProtoReflect.Descriptor instead.
 func (*CreateApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *CreateApplicationRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CreateApplicationRequest) GetInitiatorUuid() string {
@@ -529,7 +478,7 @@ type CreateApplicationResponse struct {
 
 func (x *CreateApplicationResponse) Reset() {
 	*x = CreateApplicationResponse{}
-	mi := &file_application_proto_msgTypes[6]
+	mi := &file_application_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -541,7 +490,7 @@ func (x *CreateApplicationResponse) String() string {
 func (*CreateApplicationResponse) ProtoMessage() {}
 
 func (x *CreateApplicationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[6]
+	mi := &file_application_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -554,7 +503,7 @@ func (x *CreateApplicationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateApplicationResponse.ProtoReflect.Descriptor instead.
 func (*CreateApplicationResponse) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{6}
+	return file_application_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CreateApplicationResponse) GetApplicationUuid() string {
@@ -567,16 +516,15 @@ func (x *CreateApplicationResponse) GetApplicationUuid() string {
 // GetApplication
 type GetApplicationRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	OperationId     string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid   string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	ApplicationUuid string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	InitiatorUuid   string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid string                 `protobuf:"bytes,2,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetApplicationRequest) Reset() {
 	*x = GetApplicationRequest{}
-	mi := &file_application_proto_msgTypes[7]
+	mi := &file_application_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -588,7 +536,7 @@ func (x *GetApplicationRequest) String() string {
 func (*GetApplicationRequest) ProtoMessage() {}
 
 func (x *GetApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[7]
+	mi := &file_application_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -601,14 +549,7 @@ func (x *GetApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetApplicationRequest.ProtoReflect.Descriptor instead.
 func (*GetApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *GetApplicationRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetApplicationRequest) GetInitiatorUuid() string {
@@ -634,7 +575,7 @@ type GetApplicationResponse struct {
 
 func (x *GetApplicationResponse) Reset() {
 	*x = GetApplicationResponse{}
-	mi := &file_application_proto_msgTypes[8]
+	mi := &file_application_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -646,7 +587,7 @@ func (x *GetApplicationResponse) String() string {
 func (*GetApplicationResponse) ProtoMessage() {}
 
 func (x *GetApplicationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[8]
+	mi := &file_application_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -659,7 +600,7 @@ func (x *GetApplicationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetApplicationResponse.ProtoReflect.Descriptor instead.
 func (*GetApplicationResponse) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{8}
+	return file_application_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetApplicationResponse) GetApplication() *Application {
@@ -672,22 +613,21 @@ func (x *GetApplicationResponse) GetApplication() *Application {
 // GetApplications
 type GetApplicationsRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	OperationId    string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid  string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	CompanyUuid    string                 `protobuf:"bytes,3,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
-	DepartmentUuid string                 `protobuf:"bytes,4,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
-	Statuses       []string               `protobuf:"bytes,5,rep,name=statuses,proto3" json:"statuses,omitempty"`
-	Count          int64                  `protobuf:"varint,6,opt,name=count,proto3" json:"count,omitempty"`
-	Offset         int64                  `protobuf:"varint,7,opt,name=offset,proto3" json:"offset,omitempty"`
-	IsDeleted      bool                   `protobuf:"varint,8,opt,name=is_deleted,json=isDeleted,proto3" json:"is_deleted,omitempty"`
-	FromPool       bool                   `protobuf:"varint,9,opt,name=from_pool,json=fromPool,proto3" json:"from_pool,omitempty"` // true - заявки из пула (для инспекторов, менеджеров) false - (личные заявки)
+	InitiatorUuid  string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	CompanyUuid    string                 `protobuf:"bytes,2,opt,name=company_uuid,json=companyUuid,proto3" json:"company_uuid,omitempty"`
+	DepartmentUuid string                 `protobuf:"bytes,3,opt,name=department_uuid,json=departmentUuid,proto3" json:"department_uuid,omitempty"`
+	Statuses       []string               `protobuf:"bytes,4,rep,name=statuses,proto3" json:"statuses,omitempty"`
+	Count          int64                  `protobuf:"varint,5,opt,name=count,proto3" json:"count,omitempty"`
+	Offset         int64                  `protobuf:"varint,6,opt,name=offset,proto3" json:"offset,omitempty"`
+	IsDeleted      bool                   `protobuf:"varint,7,opt,name=is_deleted,json=isDeleted,proto3" json:"is_deleted,omitempty"`
+	FromPool       bool                   `protobuf:"varint,8,opt,name=from_pool,json=fromPool,proto3" json:"from_pool,omitempty"` // true - заявки из пула (для инспекторов, менеджеров) false - (личные заявки)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetApplicationsRequest) Reset() {
 	*x = GetApplicationsRequest{}
-	mi := &file_application_proto_msgTypes[9]
+	mi := &file_application_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -699,7 +639,7 @@ func (x *GetApplicationsRequest) String() string {
 func (*GetApplicationsRequest) ProtoMessage() {}
 
 func (x *GetApplicationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[9]
+	mi := &file_application_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -712,14 +652,7 @@ func (x *GetApplicationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetApplicationsRequest.ProtoReflect.Descriptor instead.
 func (*GetApplicationsRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *GetApplicationsRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetApplicationsRequest) GetInitiatorUuid() string {
@@ -787,7 +720,7 @@ type GetApplicationsResponse struct {
 
 func (x *GetApplicationsResponse) Reset() {
 	*x = GetApplicationsResponse{}
-	mi := &file_application_proto_msgTypes[10]
+	mi := &file_application_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -799,7 +732,7 @@ func (x *GetApplicationsResponse) String() string {
 func (*GetApplicationsResponse) ProtoMessage() {}
 
 func (x *GetApplicationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[10]
+	mi := &file_application_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -812,7 +745,7 @@ func (x *GetApplicationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetApplicationsResponse.ProtoReflect.Descriptor instead.
 func (*GetApplicationsResponse) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{10}
+	return file_application_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetApplicationsResponse) GetApplications() []*Application {
@@ -825,17 +758,16 @@ func (x *GetApplicationsResponse) GetApplications() []*Application {
 // UpdateApplicationStatus
 type UpdateApplicationStatusRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	OperationId     string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid   string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	ApplicationUuid string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
-	Status          string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	InitiatorUuid   string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid string                 `protobuf:"bytes,2,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	Status          string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UpdateApplicationStatusRequest) Reset() {
 	*x = UpdateApplicationStatusRequest{}
-	mi := &file_application_proto_msgTypes[11]
+	mi := &file_application_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -847,7 +779,7 @@ func (x *UpdateApplicationStatusRequest) String() string {
 func (*UpdateApplicationStatusRequest) ProtoMessage() {}
 
 func (x *UpdateApplicationStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[11]
+	mi := &file_application_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -860,14 +792,7 @@ func (x *UpdateApplicationStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateApplicationStatusRequest.ProtoReflect.Descriptor instead.
 func (*UpdateApplicationStatusRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *UpdateApplicationStatusRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *UpdateApplicationStatusRequest) GetInitiatorUuid() string {
@@ -894,17 +819,16 @@ func (x *UpdateApplicationStatusRequest) GetStatus() string {
 // AssignApplication
 type AssignApplicationRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	OperationId     string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid   string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	ApplicationUuid string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
-	TargetUuid      string                 `protobuf:"bytes,4,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
+	InitiatorUuid   string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid string                 `protobuf:"bytes,2,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	TargetUuid      string                 `protobuf:"bytes,3,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *AssignApplicationRequest) Reset() {
 	*x = AssignApplicationRequest{}
-	mi := &file_application_proto_msgTypes[12]
+	mi := &file_application_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -916,7 +840,7 @@ func (x *AssignApplicationRequest) String() string {
 func (*AssignApplicationRequest) ProtoMessage() {}
 
 func (x *AssignApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[12]
+	mi := &file_application_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -929,14 +853,7 @@ func (x *AssignApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssignApplicationRequest.ProtoReflect.Descriptor instead.
 func (*AssignApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *AssignApplicationRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *AssignApplicationRequest) GetInitiatorUuid() string {
@@ -963,18 +880,17 @@ func (x *AssignApplicationRequest) GetTargetUuid() string {
 // RedirectApplication
 type RedirectApplicationRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
-	OperationId          string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid        string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	ApplicationUuid      string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
-	TargetDepartmentUuid string                 `protobuf:"bytes,4,opt,name=target_department_uuid,json=targetDepartmentUuid,proto3" json:"target_department_uuid,omitempty"`
-	Message              string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	InitiatorUuid        string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid      string                 `protobuf:"bytes,2,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	TargetDepartmentUuid string                 `protobuf:"bytes,3,opt,name=target_department_uuid,json=targetDepartmentUuid,proto3" json:"target_department_uuid,omitempty"`
+	Message              string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
 
 func (x *RedirectApplicationRequest) Reset() {
 	*x = RedirectApplicationRequest{}
-	mi := &file_application_proto_msgTypes[13]
+	mi := &file_application_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -986,7 +902,7 @@ func (x *RedirectApplicationRequest) String() string {
 func (*RedirectApplicationRequest) ProtoMessage() {}
 
 func (x *RedirectApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[13]
+	mi := &file_application_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -999,14 +915,7 @@ func (x *RedirectApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RedirectApplicationRequest.ProtoReflect.Descriptor instead.
 func (*RedirectApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *RedirectApplicationRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RedirectApplicationRequest) GetInitiatorUuid() string {
@@ -1040,17 +949,16 @@ func (x *RedirectApplicationRequest) GetMessage() string {
 // RecallApplication
 type RecallApplicationRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	OperationId     string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid   string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	ApplicationUuid string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
-	Message         string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	InitiatorUuid   string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid string                 `protobuf:"bytes,2,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	Message         string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *RecallApplicationRequest) Reset() {
 	*x = RecallApplicationRequest{}
-	mi := &file_application_proto_msgTypes[14]
+	mi := &file_application_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1062,7 +970,7 @@ func (x *RecallApplicationRequest) String() string {
 func (*RecallApplicationRequest) ProtoMessage() {}
 
 func (x *RecallApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[14]
+	mi := &file_application_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1075,14 +983,7 @@ func (x *RecallApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecallApplicationRequest.ProtoReflect.Descriptor instead.
 func (*RecallApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *RecallApplicationRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RecallApplicationRequest) GetInitiatorUuid() string {
@@ -1109,16 +1010,15 @@ func (x *RecallApplicationRequest) GetMessage() string {
 // TakeApplicationToVerification
 type TakeApplicationToVerificationRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	OperationId     string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid   string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	ApplicationUuid string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	InitiatorUuid   string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid string                 `protobuf:"bytes,2,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *TakeApplicationToVerificationRequest) Reset() {
 	*x = TakeApplicationToVerificationRequest{}
-	mi := &file_application_proto_msgTypes[15]
+	mi := &file_application_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1130,7 +1030,7 @@ func (x *TakeApplicationToVerificationRequest) String() string {
 func (*TakeApplicationToVerificationRequest) ProtoMessage() {}
 
 func (x *TakeApplicationToVerificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[15]
+	mi := &file_application_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1143,14 +1043,7 @@ func (x *TakeApplicationToVerificationRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use TakeApplicationToVerificationRequest.ProtoReflect.Descriptor instead.
 func (*TakeApplicationToVerificationRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{15}
-}
-
-func (x *TakeApplicationToVerificationRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *TakeApplicationToVerificationRequest) GetInitiatorUuid() string {
@@ -1170,17 +1063,16 @@ func (x *TakeApplicationToVerificationRequest) GetApplicationUuid() string {
 // ReleaseApplicationVerification
 type ReleaseApplicationVerificationRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	OperationId     string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid   string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	ApplicationUuid string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
-	Message         string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	InitiatorUuid   string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid string                 `protobuf:"bytes,2,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	Message         string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ReleaseApplicationVerificationRequest) Reset() {
 	*x = ReleaseApplicationVerificationRequest{}
-	mi := &file_application_proto_msgTypes[16]
+	mi := &file_application_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1192,7 +1084,7 @@ func (x *ReleaseApplicationVerificationRequest) String() string {
 func (*ReleaseApplicationVerificationRequest) ProtoMessage() {}
 
 func (x *ReleaseApplicationVerificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[16]
+	mi := &file_application_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1205,14 +1097,7 @@ func (x *ReleaseApplicationVerificationRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ReleaseApplicationVerificationRequest.ProtoReflect.Descriptor instead.
 func (*ReleaseApplicationVerificationRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *ReleaseApplicationVerificationRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ReleaseApplicationVerificationRequest) GetInitiatorUuid() string {
@@ -1239,17 +1124,16 @@ func (x *ReleaseApplicationVerificationRequest) GetMessage() string {
 // AddApplicationFixLog
 type AddApplicationFixLogRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	OperationId     string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid   string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	ApplicationUuid string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
-	Message         string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	InitiatorUuid   string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid string                 `protobuf:"bytes,2,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	Message         string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *AddApplicationFixLogRequest) Reset() {
 	*x = AddApplicationFixLogRequest{}
-	mi := &file_application_proto_msgTypes[17]
+	mi := &file_application_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1261,7 +1145,7 @@ func (x *AddApplicationFixLogRequest) String() string {
 func (*AddApplicationFixLogRequest) ProtoMessage() {}
 
 func (x *AddApplicationFixLogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[17]
+	mi := &file_application_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1274,14 +1158,7 @@ func (x *AddApplicationFixLogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddApplicationFixLogRequest.ProtoReflect.Descriptor instead.
 func (*AddApplicationFixLogRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *AddApplicationFixLogRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *AddApplicationFixLogRequest) GetInitiatorUuid() string {
@@ -1308,17 +1185,16 @@ func (x *AddApplicationFixLogRequest) GetMessage() string {
 // DeleteApplication
 type DeleteApplicationRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	OperationId     string                 `protobuf:"bytes,1,opt,name=operation_id,json=operationId,proto3" json:"operation_id,omitempty"`
-	InitiatorUuid   string                 `protobuf:"bytes,2,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
-	ApplicationUuid string                 `protobuf:"bytes,3,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
-	Message         string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	InitiatorUuid   string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid string                 `protobuf:"bytes,2,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	Message         string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *DeleteApplicationRequest) Reset() {
 	*x = DeleteApplicationRequest{}
-	mi := &file_application_proto_msgTypes[18]
+	mi := &file_application_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1330,7 +1206,7 @@ func (x *DeleteApplicationRequest) String() string {
 func (*DeleteApplicationRequest) ProtoMessage() {}
 
 func (x *DeleteApplicationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_application_proto_msgTypes[18]
+	mi := &file_application_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1343,14 +1219,7 @@ func (x *DeleteApplicationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteApplicationRequest.ProtoReflect.Descriptor instead.
 func (*DeleteApplicationRequest) Descriptor() ([]byte, []int) {
-	return file_application_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *DeleteApplicationRequest) GetOperationId() string {
-	if x != nil {
-		return x.OperationId
-	}
-	return ""
+	return file_application_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *DeleteApplicationRequest) GetInitiatorUuid() string {
@@ -1417,84 +1286,71 @@ const file_application_proto_rawDesc = "" +
 	"created_by\x18\x04 \x01(\tR\tcreatedBy\"I\n" +
 	"\x0fApplicationData\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x02 \x01(\tR\vdescription\"2\n" +
-	"\rHealthRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\"\x88\x01\n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\"\x88\x01\n" +
 	"\x0eHealthResponse\x12\x18\n" +
 	"\aservice\x18\x01 \x01(\tR\aservice\x12\x1a\n" +
 	"\bpostgres\x18\x02 \x01(\tR\bpostgres\x12\x14\n" +
 	"\x05redis\x18\x03 \x01(\tR\x05redis\x12\x14\n" +
 	"\x05minio\x18\x04 \x01(\tR\x05minio\x12\x14\n" +
-	"\x05mongo\x18\x05 \x01(\tR\x05mongo\"\xd0\x01\n" +
-	"\x18CreateApplicationRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12G\n" +
-	"\x10application_data\x18\x04 \x01(\v2\x1c.application.ApplicationDataR\x0fapplicationData\"F\n" +
+	"\x05mongo\x18\x05 \x01(\tR\x05mongo\"\xad\x01\n" +
+	"\x18CreateApplicationRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12G\n" +
+	"\x10application_data\x18\x03 \x01(\v2\x1c.application.ApplicationDataR\x0fapplicationData\"F\n" +
 	"\x19CreateApplicationResponse\x12)\n" +
-	"\x10application_uuid\x18\x01 \x01(\tR\x0fapplicationUuid\"\x8c\x01\n" +
-	"\x15GetApplicationRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
-	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\"T\n" +
+	"\x10application_uuid\x18\x01 \x01(\tR\x0fapplicationUuid\"i\n" +
+	"\x15GetApplicationRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\"T\n" +
 	"\x16GetApplicationResponse\x12:\n" +
-	"\vapplication\x18\x01 \x01(\v2\x18.application.ApplicationR\vapplication\"\xb4\x02\n" +
-	"\x16GetApplicationsRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12!\n" +
-	"\fcompany_uuid\x18\x03 \x01(\tR\vcompanyUuid\x12'\n" +
-	"\x0fdepartment_uuid\x18\x04 \x01(\tR\x0edepartmentUuid\x12\x1a\n" +
-	"\bstatuses\x18\x05 \x03(\tR\bstatuses\x12\x14\n" +
-	"\x05count\x18\x06 \x01(\x03R\x05count\x12\x16\n" +
-	"\x06offset\x18\a \x01(\x03R\x06offset\x12\x1d\n" +
+	"\vapplication\x18\x01 \x01(\v2\x18.application.ApplicationR\vapplication\"\x91\x02\n" +
+	"\x16GetApplicationsRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12!\n" +
+	"\fcompany_uuid\x18\x02 \x01(\tR\vcompanyUuid\x12'\n" +
+	"\x0fdepartment_uuid\x18\x03 \x01(\tR\x0edepartmentUuid\x12\x1a\n" +
+	"\bstatuses\x18\x04 \x03(\tR\bstatuses\x12\x14\n" +
+	"\x05count\x18\x05 \x01(\x03R\x05count\x12\x16\n" +
+	"\x06offset\x18\x06 \x01(\x03R\x06offset\x12\x1d\n" +
 	"\n" +
-	"is_deleted\x18\b \x01(\bR\tisDeleted\x12\x1b\n" +
-	"\tfrom_pool\x18\t \x01(\bR\bfromPool\"W\n" +
+	"is_deleted\x18\a \x01(\bR\tisDeleted\x12\x1b\n" +
+	"\tfrom_pool\x18\b \x01(\bR\bfromPool\"W\n" +
 	"\x17GetApplicationsResponse\x12<\n" +
-	"\fapplications\x18\x01 \x03(\v2\x18.application.ApplicationR\fapplications\"\xad\x01\n" +
-	"\x1eUpdateApplicationStatusRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
-	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x12\x16\n" +
-	"\x06status\x18\x04 \x01(\tR\x06status\"\xb0\x01\n" +
-	"\x18AssignApplicationRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
-	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x12\x1f\n" +
-	"\vtarget_uuid\x18\x04 \x01(\tR\n" +
-	"targetUuid\"\xe1\x01\n" +
-	"\x1aRedirectApplicationRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
-	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x124\n" +
-	"\x16target_department_uuid\x18\x04 \x01(\tR\x14targetDepartmentUuid\x12\x18\n" +
-	"\amessage\x18\x05 \x01(\tR\amessage\"\xa9\x01\n" +
-	"\x18RecallApplicationRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
-	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\"\x9b\x01\n" +
-	"$TakeApplicationToVerificationRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
-	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\"\xb6\x01\n" +
-	"%ReleaseApplicationVerificationRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
-	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\"\xac\x01\n" +
-	"\x1bAddApplicationFixLogRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
-	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\"\xa9\x01\n" +
-	"\x18DeleteApplicationRequest\x12!\n" +
-	"\foperation_id\x18\x01 \x01(\tR\voperationId\x12%\n" +
-	"\x0einitiator_uuid\x18\x02 \x01(\tR\rinitiatorUuid\x12)\n" +
-	"\x10application_uuid\x18\x03 \x01(\tR\x0fapplicationUuid\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage2\xdc\b\n" +
-	"\x12ApplicationService\x12A\n" +
-	"\x06Health\x12\x1a.application.HealthRequest\x1a\x1b.application.HealthResponse\x12b\n" +
+	"\fapplications\x18\x01 \x03(\v2\x18.application.ApplicationR\fapplications\"\x8a\x01\n" +
+	"\x1eUpdateApplicationStatusRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"\x8d\x01\n" +
+	"\x18AssignApplicationRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\x12\x1f\n" +
+	"\vtarget_uuid\x18\x03 \x01(\tR\n" +
+	"targetUuid\"\xbe\x01\n" +
+	"\x1aRedirectApplicationRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\x124\n" +
+	"\x16target_department_uuid\x18\x03 \x01(\tR\x14targetDepartmentUuid\x12\x18\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\"\x86\x01\n" +
+	"\x18RecallApplicationRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"x\n" +
+	"$TakeApplicationToVerificationRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\"\x93\x01\n" +
+	"%ReleaseApplicationVerificationRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\x89\x01\n" +
+	"\x1bAddApplicationFixLogRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\x86\x01\n" +
+	"\x18DeleteApplicationRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage2\xd8\b\n" +
+	"\x12ApplicationService\x12=\n" +
+	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x1b.application.HealthResponse\x12b\n" +
 	"\x11CreateApplication\x12%.application.CreateApplicationRequest\x1a&.application.CreateApplicationResponse\x12Y\n" +
 	"\x0eGetApplication\x12\".application.GetApplicationRequest\x1a#.application.GetApplicationResponse\x12\\\n" +
 	"\x0fGetApplications\x12#.application.GetApplicationsRequest\x1a$.application.GetApplicationsResponse\x12^\n" +
@@ -1519,58 +1375,57 @@ func file_application_proto_rawDescGZIP() []byte {
 	return file_application_proto_rawDescData
 }
 
-var file_application_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_application_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_application_proto_goTypes = []any{
 	(*Application)(nil),                           // 0: application.Application
 	(*FixLog)(nil),                                // 1: application.FixLog
 	(*ApplicationData)(nil),                       // 2: application.ApplicationData
-	(*HealthRequest)(nil),                         // 3: application.HealthRequest
-	(*HealthResponse)(nil),                        // 4: application.HealthResponse
-	(*CreateApplicationRequest)(nil),              // 5: application.CreateApplicationRequest
-	(*CreateApplicationResponse)(nil),             // 6: application.CreateApplicationResponse
-	(*GetApplicationRequest)(nil),                 // 7: application.GetApplicationRequest
-	(*GetApplicationResponse)(nil),                // 8: application.GetApplicationResponse
-	(*GetApplicationsRequest)(nil),                // 9: application.GetApplicationsRequest
-	(*GetApplicationsResponse)(nil),               // 10: application.GetApplicationsResponse
-	(*UpdateApplicationStatusRequest)(nil),        // 11: application.UpdateApplicationStatusRequest
-	(*AssignApplicationRequest)(nil),              // 12: application.AssignApplicationRequest
-	(*RedirectApplicationRequest)(nil),            // 13: application.RedirectApplicationRequest
-	(*RecallApplicationRequest)(nil),              // 14: application.RecallApplicationRequest
-	(*TakeApplicationToVerificationRequest)(nil),  // 15: application.TakeApplicationToVerificationRequest
-	(*ReleaseApplicationVerificationRequest)(nil), // 16: application.ReleaseApplicationVerificationRequest
-	(*AddApplicationFixLogRequest)(nil),           // 17: application.AddApplicationFixLogRequest
-	(*DeleteApplicationRequest)(nil),              // 18: application.DeleteApplicationRequest
-	(*emptypb.Empty)(nil),                         // 19: google.protobuf.Empty
+	(*HealthResponse)(nil),                        // 3: application.HealthResponse
+	(*CreateApplicationRequest)(nil),              // 4: application.CreateApplicationRequest
+	(*CreateApplicationResponse)(nil),             // 5: application.CreateApplicationResponse
+	(*GetApplicationRequest)(nil),                 // 6: application.GetApplicationRequest
+	(*GetApplicationResponse)(nil),                // 7: application.GetApplicationResponse
+	(*GetApplicationsRequest)(nil),                // 8: application.GetApplicationsRequest
+	(*GetApplicationsResponse)(nil),               // 9: application.GetApplicationsResponse
+	(*UpdateApplicationStatusRequest)(nil),        // 10: application.UpdateApplicationStatusRequest
+	(*AssignApplicationRequest)(nil),              // 11: application.AssignApplicationRequest
+	(*RedirectApplicationRequest)(nil),            // 12: application.RedirectApplicationRequest
+	(*RecallApplicationRequest)(nil),              // 13: application.RecallApplicationRequest
+	(*TakeApplicationToVerificationRequest)(nil),  // 14: application.TakeApplicationToVerificationRequest
+	(*ReleaseApplicationVerificationRequest)(nil), // 15: application.ReleaseApplicationVerificationRequest
+	(*AddApplicationFixLogRequest)(nil),           // 16: application.AddApplicationFixLogRequest
+	(*DeleteApplicationRequest)(nil),              // 17: application.DeleteApplicationRequest
+	(*emptypb.Empty)(nil),                         // 18: google.protobuf.Empty
 }
 var file_application_proto_depIdxs = []int32{
 	1,  // 0: application.Application.fix_logs:type_name -> application.FixLog
 	2,  // 1: application.CreateApplicationRequest.application_data:type_name -> application.ApplicationData
 	0,  // 2: application.GetApplicationResponse.application:type_name -> application.Application
 	0,  // 3: application.GetApplicationsResponse.applications:type_name -> application.Application
-	3,  // 4: application.ApplicationService.Health:input_type -> application.HealthRequest
-	5,  // 5: application.ApplicationService.CreateApplication:input_type -> application.CreateApplicationRequest
-	7,  // 6: application.ApplicationService.GetApplication:input_type -> application.GetApplicationRequest
-	9,  // 7: application.ApplicationService.GetApplications:input_type -> application.GetApplicationsRequest
-	11, // 8: application.ApplicationService.UpdateApplicationStatus:input_type -> application.UpdateApplicationStatusRequest
-	12, // 9: application.ApplicationService.AssignApplication:input_type -> application.AssignApplicationRequest
-	13, // 10: application.ApplicationService.RedirectApplication:input_type -> application.RedirectApplicationRequest
-	14, // 11: application.ApplicationService.RecallApplication:input_type -> application.RecallApplicationRequest
-	15, // 12: application.ApplicationService.TakeApplicationToVerification:input_type -> application.TakeApplicationToVerificationRequest
-	16, // 13: application.ApplicationService.ReleaseApplicationVerification:input_type -> application.ReleaseApplicationVerificationRequest
-	17, // 14: application.ApplicationService.AddApplicationFixLog:input_type -> application.AddApplicationFixLogRequest
-	18, // 15: application.ApplicationService.DeleteApplication:input_type -> application.DeleteApplicationRequest
-	4,  // 16: application.ApplicationService.Health:output_type -> application.HealthResponse
-	6,  // 17: application.ApplicationService.CreateApplication:output_type -> application.CreateApplicationResponse
-	8,  // 18: application.ApplicationService.GetApplication:output_type -> application.GetApplicationResponse
-	10, // 19: application.ApplicationService.GetApplications:output_type -> application.GetApplicationsResponse
-	19, // 20: application.ApplicationService.UpdateApplicationStatus:output_type -> google.protobuf.Empty
-	19, // 21: application.ApplicationService.AssignApplication:output_type -> google.protobuf.Empty
-	19, // 22: application.ApplicationService.RedirectApplication:output_type -> google.protobuf.Empty
-	19, // 23: application.ApplicationService.RecallApplication:output_type -> google.protobuf.Empty
-	19, // 24: application.ApplicationService.TakeApplicationToVerification:output_type -> google.protobuf.Empty
-	19, // 25: application.ApplicationService.ReleaseApplicationVerification:output_type -> google.protobuf.Empty
-	19, // 26: application.ApplicationService.AddApplicationFixLog:output_type -> google.protobuf.Empty
-	19, // 27: application.ApplicationService.DeleteApplication:output_type -> google.protobuf.Empty
+	18, // 4: application.ApplicationService.Health:input_type -> google.protobuf.Empty
+	4,  // 5: application.ApplicationService.CreateApplication:input_type -> application.CreateApplicationRequest
+	6,  // 6: application.ApplicationService.GetApplication:input_type -> application.GetApplicationRequest
+	8,  // 7: application.ApplicationService.GetApplications:input_type -> application.GetApplicationsRequest
+	10, // 8: application.ApplicationService.UpdateApplicationStatus:input_type -> application.UpdateApplicationStatusRequest
+	11, // 9: application.ApplicationService.AssignApplication:input_type -> application.AssignApplicationRequest
+	12, // 10: application.ApplicationService.RedirectApplication:input_type -> application.RedirectApplicationRequest
+	13, // 11: application.ApplicationService.RecallApplication:input_type -> application.RecallApplicationRequest
+	14, // 12: application.ApplicationService.TakeApplicationToVerification:input_type -> application.TakeApplicationToVerificationRequest
+	15, // 13: application.ApplicationService.ReleaseApplicationVerification:input_type -> application.ReleaseApplicationVerificationRequest
+	16, // 14: application.ApplicationService.AddApplicationFixLog:input_type -> application.AddApplicationFixLogRequest
+	17, // 15: application.ApplicationService.DeleteApplication:input_type -> application.DeleteApplicationRequest
+	3,  // 16: application.ApplicationService.Health:output_type -> application.HealthResponse
+	5,  // 17: application.ApplicationService.CreateApplication:output_type -> application.CreateApplicationResponse
+	7,  // 18: application.ApplicationService.GetApplication:output_type -> application.GetApplicationResponse
+	9,  // 19: application.ApplicationService.GetApplications:output_type -> application.GetApplicationsResponse
+	18, // 20: application.ApplicationService.UpdateApplicationStatus:output_type -> google.protobuf.Empty
+	18, // 21: application.ApplicationService.AssignApplication:output_type -> google.protobuf.Empty
+	18, // 22: application.ApplicationService.RedirectApplication:output_type -> google.protobuf.Empty
+	18, // 23: application.ApplicationService.RecallApplication:output_type -> google.protobuf.Empty
+	18, // 24: application.ApplicationService.TakeApplicationToVerification:output_type -> google.protobuf.Empty
+	18, // 25: application.ApplicationService.ReleaseApplicationVerification:output_type -> google.protobuf.Empty
+	18, // 26: application.ApplicationService.AddApplicationFixLog:output_type -> google.protobuf.Empty
+	18, // 27: application.ApplicationService.DeleteApplication:output_type -> google.protobuf.Empty
 	16, // [16:28] is the sub-list for method output_type
 	4,  // [4:16] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
@@ -1589,7 +1444,7 @@ func file_application_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_application_proto_rawDesc), len(file_application_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

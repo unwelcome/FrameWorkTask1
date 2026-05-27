@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang/protobuf/ptypes/empty"
 	application_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
@@ -58,7 +59,7 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 
 	// Auth health check
 	g.Go(func() error {
-		res, err := h.AuthServiceClient.Health(ctx, &auth_proto.HealthRequest{OperationId: operationID})
+		res, err := h.AuthServiceClient.Health(ctx, &empty.Empty{})
 		if err != nil {
 			authHealth = entities.ServiceHealth{Service: "unhealthy"}
 			return fmt.Errorf("auth service: %w", err)
@@ -75,7 +76,7 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 
 	// Company health check
 	g.Go(func() error {
-		res, err := h.CompanyServiceClient.Health(ctx, &company_proto.HealthRequest{OperationId: operationID})
+		res, err := h.CompanyServiceClient.Health(ctx, &empty.Empty{})
 		if err != nil {
 			companyHealth = entities.ServiceHealth{Service: "unhealthy"}
 			return fmt.Errorf("company service: %w", err)
@@ -92,7 +93,7 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 
 	// Application health check
 	g.Go(func() error {
-		res, err := h.ApplicationServiceClient.Health(ctx, &application_proto.HealthRequest{OperationId: operationID})
+		res, err := h.ApplicationServiceClient.Health(ctx, &empty.Empty{})
 		if err != nil {
 			applicationHealth = entities.ServiceHealth{Service: "unhealthy"}
 			return fmt.Errorf("application service: %w", err)

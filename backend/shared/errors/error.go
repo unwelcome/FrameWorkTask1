@@ -70,10 +70,3 @@ func (e CodeError) GRPCError() error {
 
 	return status.Errorf(codes.Code(e.Code), msg)
 }
-
-// HandleError converts a CodeError into a gRPC status error.
-// Deprecated: prefer calling .GRPCError() directly on the CodeError value.
-// opID and method are kept for call-site compatibility but are ignored.
-func HandleError(errorCode CodeError, opID, method string) error {
-	return errorCode.GRPCError()
-}

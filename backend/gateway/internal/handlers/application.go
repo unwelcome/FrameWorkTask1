@@ -76,7 +76,6 @@ func (h *applicationHandler) CreateApplication(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &application_proto.CreateApplicationRequest{
-		OperationId:   operationID,
 		InitiatorUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:   httpReq.CompanyUUID,
 		ApplicationData: &application_proto.ApplicationData{
@@ -127,7 +126,6 @@ func (h *applicationHandler) GetApplication(c *fiber.Ctx) error {
 	}
 
 	res, err := h.ApplicationServiceClient.GetApplication(ctx, &application_proto.GetApplicationRequest{
-		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReq.ApplicationUUID,
 	})
@@ -210,7 +208,6 @@ func (h *applicationHandler) GetApplications(c *fiber.Ctx) error {
 	}
 
 	res, err := h.ApplicationServiceClient.GetApplications(ctx, &application_proto.GetApplicationsRequest{
-		OperationId:    operationID,
 		InitiatorUuid:  utils.GetLocal[string](c, h.userUUIDKey),
 		CompanyUuid:    httpReq.CompanyUUID,
 		DepartmentUuid: httpReq.DepartmentUUID,
@@ -273,7 +270,6 @@ func (h *applicationHandler) UpdateApplicationStatus(c *fiber.Ctx) error {
 	}
 
 	_, err := h.ApplicationServiceClient.UpdateApplicationStatus(ctx, &application_proto.UpdateApplicationStatusRequest{
-		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReq.ApplicationUUID,
 		Status:          httpReq.Status,
@@ -320,7 +316,6 @@ func (h *applicationHandler) AssignApplication(c *fiber.Ctx) error {
 	}
 
 	_, err := h.ApplicationServiceClient.AssignApplication(ctx, &application_proto.AssignApplicationRequest{
-		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReq.ApplicationUUID,
 		TargetUuid:      httpReq.TargetUUID,
@@ -367,7 +362,6 @@ func (h *applicationHandler) RedirectApplication(c *fiber.Ctx) error {
 	}
 
 	_, err := h.ApplicationServiceClient.RedirectApplication(ctx, &application_proto.RedirectApplicationRequest{
-		OperationId:          operationID,
 		InitiatorUuid:        utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid:      httpReq.ApplicationUUID,
 		TargetDepartmentUuid: httpReq.TargetDepartmentUUID,
@@ -415,7 +409,6 @@ func (h *applicationHandler) RecallApplication(c *fiber.Ctx) error {
 	}
 
 	_, err := h.ApplicationServiceClient.RecallApplication(ctx, &application_proto.RecallApplicationRequest{
-		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReq.ApplicationUUID,
 		Message:         httpReq.Message,
@@ -458,7 +451,6 @@ func (h *applicationHandler) TakeApplicationToVerification(c *fiber.Ctx) error {
 	}
 
 	_, err := h.ApplicationServiceClient.TakeApplicationToVerification(ctx, &application_proto.TakeApplicationToVerificationRequest{
-		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReq.ApplicationUUID,
 	})
@@ -504,7 +496,6 @@ func (h *applicationHandler) ReleaseApplicationVerification(c *fiber.Ctx) error 
 	}
 
 	_, err := h.ApplicationServiceClient.ReleaseApplicationVerification(ctx, &application_proto.ReleaseApplicationVerificationRequest{
-		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReq.ApplicationUUID,
 		Message:         httpReq.Message,
@@ -551,7 +542,6 @@ func (h *applicationHandler) AddApplicationFixLog(c *fiber.Ctx) error {
 	}
 
 	_, err := h.ApplicationServiceClient.AddApplicationFixLog(ctx, &application_proto.AddApplicationFixLogRequest{
-		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReq.ApplicationUUID,
 		Message:         httpReq.Message,
@@ -597,7 +587,6 @@ func (h *applicationHandler) DeleteApplication(c *fiber.Ctx) error {
 	}
 
 	_, err := h.ApplicationServiceClient.DeleteApplication(ctx, &application_proto.DeleteApplicationRequest{
-		OperationId:     operationID,
 		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
 		ApplicationUuid: httpReq.ApplicationUUID,
 		Message:         httpReq.Message,

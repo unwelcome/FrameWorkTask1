@@ -70,12 +70,11 @@ func (h *authHandler) Register(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.RegisterRequest{
-		OperationId: operationID,
-		Email:       httpReq.Email,
-		Password:    httpReq.Password,
-		FirstName:   httpReq.FirstName,
-		LastName:    httpReq.LastName,
-		Patronymic:  httpReq.Patronymic,
+		Email:      httpReq.Email,
+		Password:   httpReq.Password,
+		FirstName:  httpReq.FirstName,
+		LastName:   httpReq.LastName,
+		Patronymic: httpReq.Patronymic,
 	}
 
 	// Запрос в auth сервис
@@ -126,9 +125,8 @@ func (h *authHandler) Login(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.LoginRequest{
-		OperationId: operationID,
-		Email:       httpReq.Email,
-		Password:    httpReq.Password,
+		Email:    httpReq.Email,
+		Password: httpReq.Password,
 	}
 
 	// Запрос в auth сервис
@@ -181,8 +179,7 @@ func (h *authHandler) GetUser(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.GetUserRequest{
-		OperationId: operationID,
-		UserUuid:    httpReq.UserUUID,
+		UserUuid: httpReq.UserUUID,
 	}
 
 	// Запрос в auth сервис
@@ -240,9 +237,8 @@ func (h *authHandler) ChangePassword(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.ChangePasswordRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		Password:    httpReq.Password,
+		UserUuid: utils.GetLocal[string](c, h.userUUIDKey),
+		Password: httpReq.Password,
 	}
 
 	// Запрос в auth сервис
@@ -293,11 +289,10 @@ func (h *authHandler) UpdateUserBio(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.UpdateUserBioRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
-		FirstName:   httpReq.FirstName,
-		LastName:    httpReq.LastName,
-		Patronymic:  httpReq.Patronymic,
+		UserUuid:   utils.GetLocal[string](c, h.userUUIDKey),
+		FirstName:  httpReq.FirstName,
+		LastName:   httpReq.LastName,
+		Patronymic: httpReq.Patronymic,
 	}
 
 	// Запрос в auth сервис
@@ -348,7 +343,6 @@ func (h *authHandler) DeleteUser(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.DeleteUserRequest{
-		OperationId:       operationID,
 		InitiatorUserUuid: utils.GetLocal[string](c, h.userUUIDKey),
 		TargetUserUuid:    httpReq.TargetUUID,
 	}
@@ -387,8 +381,7 @@ func (h *authHandler) GetAllActiveTokens(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.GetAllActiveTokensRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
+		UserUuid: utils.GetLocal[string](c, h.userUUIDKey),
 	}
 
 	// Запрос в auth сервис
@@ -445,7 +438,6 @@ func (h *authHandler) RefreshToken(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.RefreshTokenRequest{
-		OperationId:  operationID,
 		RefreshToken: httpReq.RefreshToken,
 	}
 
@@ -502,9 +494,8 @@ func (h *authHandler) RevokeToken(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.RevokeTokenRequest{
-		OperationId: operationID,
-		UserUuid:    userUUID,
-		TokenHash:   httpReq.TokenHash,
+		UserUuid:  userUUID,
+		TokenHash: httpReq.TokenHash,
 	}
 
 	// Запрос в auth сервис
@@ -541,8 +532,7 @@ func (h *authHandler) RevokeAllTokens(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.RevokeAllTokensRequest{
-		OperationId: operationID,
-		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
+		UserUuid: utils.GetLocal[string](c, h.userUUIDKey),
 	}
 
 	// Запрос в auth сервис

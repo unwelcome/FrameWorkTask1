@@ -38,7 +38,7 @@ func NewCompanyService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRe
 }
 
 // Health Проверка состояния сервиса
-func (s *CompanyService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
+func (s *CompanyService) Health(ctx context.Context, _ *emptypb.Empty) (*pb.HealthResponse, error) {
 	return &pb.HealthResponse{
 		Service:  "healthy",
 		Postgres: helpers.PingStatus(s.db.Ping(ctx)),

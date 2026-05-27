@@ -11,7 +11,9 @@ import (
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/entities"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc/metadata"
 )
 
 type HealthHandler interface {
@@ -47,6 +49,7 @@ func (h *healthHandler) Health(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	g, ctx := errgroup.WithContext(ctx)
 

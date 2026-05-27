@@ -9,6 +9,8 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/errors"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
+	"google.golang.org/grpc/metadata"
 )
 
 type ApplicationHandler interface {
@@ -59,6 +61,7 @@ func (h *applicationHandler) CreateApplication(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Парсинг тела запроса
 	httpReq := &entities.CreateApplicationRequest{}
@@ -113,6 +116,7 @@ func (h *applicationHandler) GetApplication(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.GetApplicationRequest{
 		ApplicationUUID: c.Params("application_uuid", ""),
@@ -193,6 +197,7 @@ func (h *applicationHandler) GetApplications(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.GetApplicationsRequest{}
 	if err := c.QueryParser(httpReq); err != nil {
@@ -255,6 +260,7 @@ func (h *applicationHandler) UpdateApplicationStatus(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.UpdateApplicationStatusRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -301,6 +307,7 @@ func (h *applicationHandler) AssignApplication(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.AssignApplicationRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -347,6 +354,7 @@ func (h *applicationHandler) RedirectApplication(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.RedirectApplicationRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -394,6 +402,7 @@ func (h *applicationHandler) RecallApplication(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.RecallApplicationRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -438,6 +447,7 @@ func (h *applicationHandler) TakeApplicationToVerification(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.TakeApplicationToVerificationRequest{
 		ApplicationUUID: c.Params("application_uuid", ""),
@@ -481,6 +491,7 @@ func (h *applicationHandler) ReleaseApplicationVerification(c *fiber.Ctx) error 
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.ReleaseApplicationVerificationRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -527,6 +538,7 @@ func (h *applicationHandler) AddApplicationFixLog(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.AddApplicationFixLogRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -573,6 +585,7 @@ func (h *applicationHandler) DeleteApplication(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.DeleteApplicationRequest{}
 	// body необязателен — игнорируем ошибку парсинга

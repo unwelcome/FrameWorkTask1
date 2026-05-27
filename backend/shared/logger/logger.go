@@ -52,7 +52,7 @@ func Setup(logPath string, consoleOut bool) (appLogger *zerolog.Logger, httpLogg
 		zerolog.LevelFieldName,  // "level"
 		"time",                  // "time"
 		"id",                    // operation ID
-		"method",                // operation name
+		"method",                // method
 		zerolog.CallerFieldName, // "caller"
 	}
 	appWriter := &orderedWriter{w: rawWriter, priority: appPriority}

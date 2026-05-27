@@ -3,7 +3,6 @@ package errors
 import (
 	"fmt"
 
-	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -53,22 +52,28 @@ func (e *CodeError) Error() string {
 	return "empty error"
 }
 
-// HandleError обрабатывает CodeError, логирует и возвращает готовую gRPC ошибку.
-func HandleError(errorCode CodeError, opID, method string) error {
-	if errorCode.Code == 0 {
+// GRPCError converts the CodeError into a gRPC status error.
+// Returns nil when Code == 0 (no error).
+func (e CodeError) GRPCError() error {
+	if e.Code == 0 {
 		return nil
 	}
 
-	msg := errorCode.Msg
+	msg := e.Msg
 	if msg == "" {
 		msg = "internal error"
 	}
 
-	if errorCode.Code < 1 || errorCode.Code > 16 {
-		log.Error().Str("id", opID).Str("method", method).Err(fmt.Errorf("CodeError.Code is incorrect: %d", errorCode.Code)).Msg("error")
+	if e.Code < 1 || e.Code > 16 {
 		return status.Errorf(codes.Internal, "internal error")
 	}
 
-	log.Error().Str("id", opID).Str("method", method).Err(errorCode.Err).Msg("error")
-	return status.Errorf(codes.Code(errorCode.Code), msg)
+	return status.Errorf(codes.Code(e.Code), msg)
+}
+
+// HandleError converts a CodeError into a gRPC status error.
+// Deprecated: prefer calling .GRPCError() directly on the CodeError value.
+// opID and method are kept for call-site compatibility but are ignored.
+func HandleError(errorCode CodeError, opID, method string) error {
+	return errorCode.GRPCError()
 }

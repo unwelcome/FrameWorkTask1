@@ -10,6 +10,7 @@ import (
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/services"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 )
@@ -17,7 +18,7 @@ import (
 func main() {
 	cfg := config.NewConfig()
 
-	loggerConf, _ := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
+	loggerConf, httpLogger := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
 	log.Logger = *loggerConf
 
 	db := postgresDB.NewDatabaseInstance(cfg.Postgres.ConnectionString())
@@ -28,7 +29,9 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to start tcp server")
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.NewLoggingInterceptor(*httpLogger)),
+	)
 	company_proto.RegisterCompanyServiceServer(grpcServer, services.NewCompanyService(db, cache))
 
 	log.Info().Int("port", cfg.Port).Msg("company service started")

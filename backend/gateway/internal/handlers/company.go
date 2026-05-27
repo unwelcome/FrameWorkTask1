@@ -9,6 +9,8 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/errors"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
+	"google.golang.org/grpc/metadata"
 )
 
 type CompanyHandler interface {
@@ -66,6 +68,7 @@ func (h *companyHandler) CreateCompany(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.CreateCompanyRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -111,6 +114,7 @@ func (h *companyHandler) GetCompany(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.GetCompanyRequest{
 		CompanyUUID: c.Params("company_uuid", ""),
@@ -155,6 +159,7 @@ func (h *companyHandler) GetCompanies(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.GetCompaniesRequest{}
 	if err := c.QueryParser(httpReq); err != nil {
@@ -202,6 +207,7 @@ func (h *companyHandler) GetUserCompanies(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	res, err := h.CompanyServiceClient.GetUserCompanies(ctx, &company_proto.GetUserCompaniesRequest{
 		OperationId:   operationID,
@@ -245,6 +251,7 @@ func (h *companyHandler) UpdateCompanyTitle(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.UpdateCompanyTitleRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -291,6 +298,7 @@ func (h *companyHandler) UpdateCompanyStatus(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.UpdateCompanyStatusRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -335,6 +343,7 @@ func (h *companyHandler) DeleteCompany(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.DeleteCompanyRequest{
 		CompanyUUID: c.Params("company_uuid", ""),
@@ -378,6 +387,7 @@ func (h *companyHandler) CreateCompanyJoinCode(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.CreateCompanyJoinCodeRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -424,6 +434,7 @@ func (h *companyHandler) GetCompanyJoinCodes(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.GetCompanyJoinCodesRequest{
 		CompanyUUID: c.Params("company_uuid", ""),
@@ -469,6 +480,7 @@ func (h *companyHandler) DeleteCompanyJoinCode(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.DeleteCompanyJoinCodeRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -513,6 +525,7 @@ func (h *companyHandler) JoinCompany(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.JoinCompanyRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -559,6 +572,7 @@ func (h *companyHandler) GetCompanyEmployee(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.GetCompanyEmployeeRequest{
 		TargetUUID:  c.Params("employee_uuid", ""),
@@ -611,6 +625,7 @@ func (h *companyHandler) GetCompanyEmployees(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.GetCompanyEmployeesRequest{}
 	if err := c.QueryParser(httpReq); err != nil {
@@ -669,6 +684,7 @@ func (h *companyHandler) GetCompanyEmployeesSummary(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.GetCompanyEmployeesSummaryRequest{}
 	if err := c.QueryParser(httpReq); err != nil {
@@ -723,6 +739,7 @@ func (h *companyHandler) UpdateEmployeeRole(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.UpdateEmployeeRoleRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -770,6 +787,7 @@ func (h *companyHandler) RemoveCompanyEmployee(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.RemoveCompanyEmployeeRequest{
 		CompanyUUID: c.Params("company_uuid", ""),
@@ -815,6 +833,7 @@ func (h *companyHandler) CreateDepartment(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.CreateDepartmentRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -862,6 +881,7 @@ func (h *companyHandler) GetDepartment(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.GetDepartmentRequest{
 		CompanyUUID:    c.Params("company_uuid", ""),
@@ -912,6 +932,7 @@ func (h *companyHandler) GetCompanyDepartments(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.GetCompanyDepartmentsRequest{}
 	if err := c.QueryParser(httpReq); err != nil {
@@ -968,6 +989,7 @@ func (h *companyHandler) UpdateDepartmentTitle(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.UpdateDepartmentTitleRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
@@ -1014,6 +1036,7 @@ func (h *companyHandler) DeleteDepartment(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.DeleteDepartmentRequest{
 		CompanyUUID:    c.Params("company_uuid", ""),
@@ -1058,6 +1081,7 @@ func (h *companyHandler) AddEmployeeToDepartment(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.AddEmployeeToDepartmentRequest{
 		CompanyUUID:    c.Params("company_uuid", ""),
@@ -1104,6 +1128,7 @@ func (h *companyHandler) RemoveEmployeeFromDepartment(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	httpReq := &entities.RemoveEmployeeFromDepartmentRequest{
 		CompanyUUID:    c.Params("company_uuid", ""),

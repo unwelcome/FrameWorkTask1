@@ -9,6 +9,8 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/errors"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
+	"google.golang.org/grpc/metadata"
 )
 
 type AuthHandler interface {
@@ -52,6 +54,7 @@ func (h *authHandler) Register(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Парсит тело запроса
 	httpReq := &entities.RegisterRequest{}
@@ -107,6 +110,7 @@ func (h *authHandler) Login(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Парсит тело запроса
 	httpReq := &entities.LoginRequest{}
@@ -162,6 +166,7 @@ func (h *authHandler) GetUser(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Получаем UserUUID из параметров
 	httpReq := &entities.GetUserRequest{
@@ -219,6 +224,7 @@ func (h *authHandler) ChangePassword(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Парсит тело запроса
 	httpReq := &entities.ChangePasswordRequest{}
@@ -271,6 +277,7 @@ func (h *authHandler) UpdateUserBio(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Парсит тело запроса
 	httpReq := &entities.UpdateUserBioRequest{}
@@ -325,6 +332,7 @@ func (h *authHandler) DeleteUser(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Парсит тело запроса
 	httpReq := &entities.DeleteUserRequest{}
@@ -375,6 +383,7 @@ func (h *authHandler) GetAllActiveTokens(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Формируем тело запроса
 	req := &auth_proto.GetAllActiveTokensRequest{
@@ -420,6 +429,7 @@ func (h *authHandler) RefreshToken(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Парсит тело запроса
 	httpReq := &entities.RefreshTokenRequest{}
@@ -474,6 +484,7 @@ func (h *authHandler) RevokeToken(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Парсит тело запроса
 	httpReq := &entities.RevokeTokenRequest{}
@@ -526,6 +537,7 @@ func (h *authHandler) RevokeAllTokens(c *fiber.Ctx) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Формируем тело запроса
 	req := &auth_proto.RevokeAllTokensRequest{

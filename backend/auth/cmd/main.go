@@ -11,6 +11,7 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/services"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 )
@@ -18,7 +19,7 @@ import (
 func main() {
 	cfg := config.NewConfig()
 
-	loggerConf, _ := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
+	loggerConf, httpLogger := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
 	log.Logger = *loggerConf
 
 	// Загружаем приватный ключ из PEM-файла
@@ -35,7 +36,9 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to start tcp server")
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.NewLoggingInterceptor(*httpLogger)),
+	)
 	auth_proto.RegisterAuthServiceServer(grpcServer, services.NewAuthService(
 		db, cache,
 		privateKey,

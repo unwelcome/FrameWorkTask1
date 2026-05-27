@@ -10,6 +10,7 @@ import (
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/services"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,7 +19,7 @@ import (
 func main() {
 	cfg := config.NewConfig()
 
-	loggerConf, _ := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
+	loggerConf, httpLogger := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
 	log.Logger = *loggerConf
 
 	db := postgresDB.NewDatabaseInstance(cfg.Postgres.ConnectionString())
@@ -36,7 +37,9 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to start tcp server")
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.NewLoggingInterceptor(*httpLogger)),
+	)
 	application_proto.RegisterApplicationServiceServer(grpcServer, services.NewApplicationService(db, companyClient))
 
 	log.Info().Int("port", cfg.Port).Msg("application service started")

@@ -800,3 +800,633 @@ func TestUpdateApplicationStatus(t *testing.T) {
 		assert.Equal(t, http.StatusNotFound, code, "non-existent application must return 404 (body: %s)", body)
 	})
 }
+
+// ─── TestAssignApplication ────────────────────────────────────────────────────
+
+func TestAssignApplication(t *testing.T) {
+	c := newClient()
+	env := mustSetupAppEnv(t, c)
+
+	// happy_path — менеджер назначает инженера; статус становится assigned,
+	// executed_by и managed_by выставляются корректно.
+	t.Run("happy_path", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Assign happy path", "Application for assign test.")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/assign", map[string]string{
+			"target_uuid": env.EngineerUUID,
+		})
+		assert.Equal(t, http.StatusOK, code, "manager should assign application (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "assigned", app.Status)
+		assert.Equal(t, env.EngineerUUID, app.ExecutedBy, "executed_by must be set to target engineer")
+		assert.Equal(t, env.ManagerUUID, app.ManagedBy, "managed_by must be set to initiator manager")
+	})
+
+	// from_recalled — менеджер повторно назначает инженера после отзыва заявки.
+	t.Run("from_recalled", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Assign from recalled", "Application recalled before reassign.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustRecallApplication(t, env.Manager, appUUID)
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/assign", map[string]string{
+			"target_uuid": env.EngineerUUID,
+		})
+		assert.Equal(t, http.StatusOK, code, "manager should reassign after recall (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "assigned", app.Status)
+		assert.Equal(t, env.EngineerUUID, app.ExecutedBy, "executed_by must be set after reassign")
+	})
+
+	// wrong_role — не-менеджер (инспектор) пытается назначить инженера → 403.
+	t.Run("wrong_role", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Assign wrong role", "Inspector must not assign.")
+
+		code, body := env.Inspector.patch("/api/auth/application/"+appUUID+"/assign", map[string]string{
+			"target_uuid": env.EngineerUUID,
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-manager must not assign application (body: %s)", body)
+	})
+
+	// wrong_dept_manager — менеджер из другого департамента → 403.
+	t.Run("wrong_dept_manager", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Assign wrong dept", "Dept2 manager must not assign dept1 application.")
+
+		code, body := env.Manager2.patch("/api/auth/application/"+appUUID+"/assign", map[string]string{
+			"target_uuid": env.EngineerUUID,
+		})
+		assert.Equal(t, http.StatusForbidden, code, "manager from another dept must not assign (body: %s)", body)
+	})
+
+	// engineer_from_wrong_dept — менеджер пытается назначить инженера из другого департамента → 400.
+	t.Run("engineer_from_wrong_dept", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Assign engineer wrong dept", "Engineer from dept2 must not be assignable to dept1 application.")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/assign", map[string]string{
+			"target_uuid": env.Engineer2UUID,
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "engineer from wrong dept must return 400 (body: %s)", body)
+	})
+
+	// target_not_engineer — менеджер пытается назначить не-инженера (инспектора) → 400.
+	t.Run("target_not_engineer", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Assign target not engineer", "Inspector UUID as target must return 400.")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/assign", map[string]string{
+			"target_uuid": env.InspectorUUID,
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "assigning non-engineer must return 400 (body: %s)", body)
+	})
+
+	// wrong_status — заявка в статусе in_progress не может быть назначена → 400.
+	t.Run("wrong_status", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Assign wrong status", "In-progress application must not be assignable.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/assign", map[string]string{
+			"target_uuid": env.EngineerUUID,
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "in_progress application must not be assignable (body: %s)", body)
+	})
+
+	// not_found — заявка с несуществующим UUID → 404.
+	t.Run("not_found", func(t *testing.T) {
+		code, body := env.Manager.patch("/api/auth/application/00000000-0000-0000-0000-000000000000/assign", map[string]string{
+			"target_uuid": env.EngineerUUID,
+		})
+		assert.Equal(t, http.StatusNotFound, code, "non-existent application must return 404 (body: %s)", body)
+	})
+}
+
+// ─── TestRedirectApplication ──────────────────────────────────────────────────
+
+func TestRedirectApplication(t *testing.T) {
+	c := newClient()
+	env := mustSetupAppEnv(t, c)
+
+	// happy_path — менеджер dept1 перенаправляет заявку в dept2.
+	// Проверяем: статус redirected, department_uuid = dept2, fix_log записан.
+	t.Run("happy_path", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Redirect happy path", "Application to be redirected to dept2.")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/redirect", map[string]string{
+			"target_department_uuid": env.Dept2UUID,
+			"message":                "Redirected: not our area of responsibility.",
+		})
+		assert.Equal(t, http.StatusOK, code, "manager should redirect application (body: %s)", body)
+
+		// Inspector созданной заявки по-прежнему имеет доступ (поле created_by).
+		app := mustGetApplicationDetail(t, env.Inspector, appUUID)
+		assert.Equal(t, "redirected", app.Status)
+		assert.Equal(t, env.Dept2UUID, app.DepartmentUUID, "department_uuid must switch to target dept after redirect")
+		require.Len(t, app.FixLogs, 1, "redirect must write exactly one fix log entry")
+		assert.Equal(t, "Redirected: not our area of responsibility.", app.FixLogs[0].Text)
+	})
+
+	// from_recalled — менеджер перенаправляет заявку, которую предварительно отозвал.
+	t.Run("from_recalled", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Redirect from recalled", "Recalled application can be redirected.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustRecallApplication(t, env.Manager, appUUID)
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/redirect", map[string]string{
+			"target_department_uuid": env.Dept2UUID,
+			"message":                "Redirecting after recall.",
+		})
+		assert.Equal(t, http.StatusOK, code, "manager should redirect recalled application (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Inspector, appUUID)
+		assert.Equal(t, "redirected", app.Status)
+		assert.Equal(t, env.Dept2UUID, app.DepartmentUUID, "department_uuid must switch to target dept")
+	})
+
+	// wrong_role — не-менеджер (инспектор) пытается перенаправить → 403.
+	t.Run("wrong_role", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Redirect wrong role", "Inspector must not redirect.")
+
+		code, body := env.Inspector.patch("/api/auth/application/"+appUUID+"/redirect", map[string]string{
+			"target_department_uuid": env.Dept2UUID,
+			"message":                "Trying to redirect.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-manager must not redirect application (body: %s)", body)
+	})
+
+	// wrong_dept_manager — менеджер из другого департамента пытается перенаправить → 403.
+	t.Run("wrong_dept_manager", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Redirect wrong dept", "Dept2 manager must not redirect dept1 application.")
+
+		code, body := env.Manager2.patch("/api/auth/application/"+appUUID+"/redirect", map[string]string{
+			"target_department_uuid": env.Dept2UUID,
+			"message":                "Attempting cross-dept redirect.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "manager from wrong dept must not redirect (body: %s)", body)
+	})
+
+	// wrong_status — заявка в статусе assigned не может быть перенаправлена → 403.
+	t.Run("wrong_status", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Redirect wrong status", "Assigned application must not be redirectable.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/redirect", map[string]string{
+			"target_department_uuid": env.Dept2UUID,
+			"message":                "Redirect from assigned.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "assigned application must not be redirectable (body: %s)", body)
+	})
+
+	// empty_message — пустое поле message → 400.
+	t.Run("empty_message", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Redirect empty message", "Message must not be empty.")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/redirect", map[string]string{
+			"target_department_uuid": env.Dept2UUID,
+			"message":                "",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "empty message must return 400 (body: %s)", body)
+	})
+
+	// not_found — заявка с несуществующим UUID → 404.
+	t.Run("not_found", func(t *testing.T) {
+		code, body := env.Manager.patch("/api/auth/application/00000000-0000-0000-0000-000000000000/redirect", map[string]string{
+			"target_department_uuid": env.Dept2UUID,
+			"message":                "Redirect non-existent.",
+		})
+		assert.Equal(t, http.StatusNotFound, code, "non-existent application must return 404 (body: %s)", body)
+	})
+}
+
+// ─── TestRecallApplication ────────────────────────────────────────────────────
+
+func TestRecallApplication(t *testing.T) {
+	c := newClient()
+	env := mustSetupAppEnv(t, c)
+
+	// from_assigned — менеджер отзывает назначенную заявку.
+	// Проверяем: статус recalled, executed_by очищен, fix_log записан.
+	t.Run("from_assigned", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Recall from assigned", "Application to be recalled from assigned.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/recall", map[string]string{
+			"message": "Recalled: requirements changed.",
+		})
+		assert.Equal(t, http.StatusOK, code, "manager should recall assigned application (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "recalled", app.Status)
+		assert.Empty(t, app.ExecutedBy, "executed_by must be cleared after recall")
+		require.Len(t, app.FixLogs, 1, "recall must write exactly one fix log entry")
+		assert.Equal(t, "Recalled: requirements changed.", app.FixLogs[0].Text)
+	})
+
+	// from_in_progress — менеджер отзывает заявку, которую инженер уже взял в работу.
+	t.Run("from_in_progress", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Recall from in_progress", "Application to be recalled from in_progress.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/recall", map[string]string{
+			"message": "Recalled while in progress.",
+		})
+		assert.Equal(t, http.StatusOK, code, "manager should recall in_progress application (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "recalled", app.Status)
+		assert.Empty(t, app.ExecutedBy, "executed_by must be cleared after recall")
+	})
+
+	// from_on_hold — менеджер отзывает приостановленную заявку.
+	t.Run("from_on_hold", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Recall from on_hold", "Application to be recalled from on_hold.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+		mustSetAppStatus(t, env.Engineer, appUUID, "on_hold")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/recall", map[string]string{
+			"message": "Recalled while on hold.",
+		})
+		assert.Equal(t, http.StatusOK, code, "manager should recall on_hold application (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "recalled", app.Status)
+		assert.Empty(t, app.ExecutedBy, "executed_by must be cleared after recall")
+	})
+
+	// wrong_manager_not_responsible — другой менеджер (не ManagedBy) пытается отозвать → 403.
+	t.Run("wrong_manager_not_responsible", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Recall wrong manager", "Only responsible manager can recall.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+
+		code, body := env.Manager2.patch("/api/auth/application/"+appUUID+"/recall", map[string]string{
+			"message": "Trying to recall by wrong manager.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-responsible manager must not recall (body: %s)", body)
+	})
+
+	// wrong_role — не-менеджер (инспектор) пытается отозвать заявку → 403.
+	t.Run("wrong_role", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Recall wrong role", "Inspector must not recall.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+
+		code, body := env.Inspector.patch("/api/auth/application/"+appUUID+"/recall", map[string]string{
+			"message": "Inspector trying to recall.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-manager must not recall (body: %s)", body)
+	})
+
+	// wrong_status — заявка в статусе created не может быть отозвана → 403.
+	t.Run("wrong_status", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Recall wrong status", "Created application must not be recallable.")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/recall", map[string]string{
+			"message": "Trying to recall created application.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "created application must not be recallable (body: %s)", body)
+	})
+
+	// empty_message — пустое поле message → 400.
+	t.Run("empty_message", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Recall empty message", "Message must not be empty.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/recall", map[string]string{
+			"message": "",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "empty message must return 400 (body: %s)", body)
+	})
+
+	// not_found — заявка с несуществующим UUID → 404.
+	t.Run("not_found", func(t *testing.T) {
+		code, body := env.Manager.patch("/api/auth/application/00000000-0000-0000-0000-000000000000/recall", map[string]string{
+			"message": "Recall non-existent.",
+		})
+		assert.Equal(t, http.StatusNotFound, code, "non-existent application must return 404 (body: %s)", body)
+	})
+}
+
+// ─── TestTakeApplicationToVerification ───────────────────────────────────────
+
+func TestTakeApplicationToVerification(t *testing.T) {
+	c := newClient()
+	env := mustSetupAppEnv(t, c)
+
+	// happy_path — инспектор берёт заявку на проверку.
+	// pending_verification → on_verification, inspected_by = inspector2UUID.
+	t.Run("happy_path", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Take verification happy path", "Application to take to verification.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+		mustSetAppStatus(t, env.Engineer, appUUID, "pending_verification")
+
+		code, body := env.Inspector2.patch("/api/auth/application/"+appUUID+"/take-verification", nil)
+		assert.Equal(t, http.StatusOK, code, "inspector should take application to verification (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "on_verification", app.Status)
+		assert.Equal(t, env.Inspector2UUID, app.InspectedBy, "inspected_by must be set to initiator inspector")
+	})
+
+	// wrong_dept_inspector — инспектор из другого департамента → 403.
+	t.Run("wrong_dept_inspector", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Take verification wrong dept", "Dept2 inspector must not take dept1 application.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+		mustSetAppStatus(t, env.Engineer, appUUID, "pending_verification")
+
+		code, body := env.Inspector3.patch("/api/auth/application/"+appUUID+"/take-verification", nil)
+		assert.Equal(t, http.StatusForbidden, code, "inspector from wrong dept must not take (body: %s)", body)
+	})
+
+	// wrong_role — не-инспектор (менеджер) пытается взять заявку на проверку → 403.
+	t.Run("wrong_role", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Take verification wrong role", "Manager must not take application to verification.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+		mustSetAppStatus(t, env.Engineer, appUUID, "pending_verification")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/take-verification", nil)
+		assert.Equal(t, http.StatusForbidden, code, "non-inspector must not take application to verification (body: %s)", body)
+	})
+
+	// wrong_status — заявка не в статусе pending_verification → 403.
+	t.Run("wrong_status", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Take verification wrong status", "Assigned application must not be takeable.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		// Status is "assigned", not "pending_verification".
+
+		code, body := env.Inspector2.patch("/api/auth/application/"+appUUID+"/take-verification", nil)
+		assert.Equal(t, http.StatusForbidden, code, "non-pending_verification application must not be takeable (body: %s)", body)
+	})
+
+	// not_found — заявка с несуществующим UUID → 404.
+	t.Run("not_found", func(t *testing.T) {
+		code, body := env.Inspector2.patch("/api/auth/application/00000000-0000-0000-0000-000000000000/take-verification", nil)
+		assert.Equal(t, http.StatusNotFound, code, "non-existent application must return 404 (body: %s)", body)
+	})
+}
+
+// ─── TestReleaseApplicationVerification ──────────────────────────────────────
+
+func TestReleaseApplicationVerification(t *testing.T) {
+	c := newClient()
+	env := mustSetupAppEnv(t, c)
+
+	// happy_path — инспектор отпускает заявку (on_verification → pending_verification).
+	// Проверяем: статус pending_verification, inspected_by очищен, fix_log записан.
+	t.Run("happy_path", func(t *testing.T) {
+		appUUID := mustAdvanceToOnVerification(t, env, "Release verification happy path")
+
+		code, body := env.Inspector2.patch("/api/auth/application/"+appUUID+"/release-verification", map[string]string{
+			"message": "Releasing for another inspector to take.",
+		})
+		assert.Equal(t, http.StatusOK, code, "inspector should release verification (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		assert.Equal(t, "pending_verification", app.Status)
+		assert.Empty(t, app.InspectedBy, "inspected_by must be cleared after release")
+		require.Len(t, app.FixLogs, 1, "release must write exactly one fix log entry")
+		assert.Equal(t, "Releasing for another inspector to take.", app.FixLogs[0].Text)
+	})
+
+	// wrong_inspector_not_responsible — инспектор, не взявший заявку (не InspectedBy), пытается отпустить → 403.
+	t.Run("wrong_inspector_not_responsible", func(t *testing.T) {
+		appUUID := mustAdvanceToOnVerification(t, env, "Release verification wrong inspector")
+		// InspectedBy = Inspector2; Inspector is a different inspector in the same dept.
+
+		code, body := env.Inspector.patch("/api/auth/application/"+appUUID+"/release-verification", map[string]string{
+			"message": "Trying to release by wrong inspector.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-responsible inspector must not release (body: %s)", body)
+	})
+
+	// wrong_role — не-инспектор (менеджер) пытается отпустить заявку → 403.
+	t.Run("wrong_role", func(t *testing.T) {
+		appUUID := mustAdvanceToOnVerification(t, env, "Release verification wrong role")
+
+		code, body := env.Manager.patch("/api/auth/application/"+appUUID+"/release-verification", map[string]string{
+			"message": "Manager trying to release.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-inspector must not release verification (body: %s)", body)
+	})
+
+	// wrong_status — заявка не в статусе on_verification → 403.
+	t.Run("wrong_status", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Release wrong status", "Pending verification application must not be releaseable.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+		mustSetAppStatus(t, env.Engineer, appUUID, "pending_verification")
+		// Status is "pending_verification", not "on_verification".
+
+		code, body := env.Inspector2.patch("/api/auth/application/"+appUUID+"/release-verification", map[string]string{
+			"message": "Trying to release pending_verification.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-on_verification application must not be releaseable (body: %s)", body)
+	})
+
+	// empty_message — пустое поле message → 400.
+	t.Run("empty_message", func(t *testing.T) {
+		appUUID := mustAdvanceToOnVerification(t, env, "Release verification empty message")
+
+		code, body := env.Inspector2.patch("/api/auth/application/"+appUUID+"/release-verification", map[string]string{
+			"message": "",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "empty message must return 400 (body: %s)", body)
+	})
+
+	// not_found — заявка с несуществующим UUID → 404.
+	t.Run("not_found", func(t *testing.T) {
+		code, body := env.Inspector2.patch("/api/auth/application/00000000-0000-0000-0000-000000000000/release-verification", map[string]string{
+			"message": "Release non-existent.",
+		})
+		assert.Equal(t, http.StatusNotFound, code, "non-existent application must return 404 (body: %s)", body)
+	})
+}
+
+// ─── TestAddApplicationFixLog ─────────────────────────────────────────────────
+
+func TestAddApplicationFixLog(t *testing.T) {
+	c := newClient()
+	env := mustSetupAppEnv(t, c)
+
+	// happy_path — ответственный инженер добавляет fix log к заявке в статусе in_progress.
+	// Проверяем: 201, в FixLogs одна запись с правильным текстом и created_by = engineerUUID.
+	t.Run("happy_path", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Fix log happy path", "Application for fix log test.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+
+		code, body := env.Engineer.post("/api/auth/application/"+appUUID+"/fix-log", map[string]string{
+			"message": "Replaced the broken valve.",
+		})
+		assert.Equal(t, http.StatusCreated, code, "engineer should add fix log (body: %s)", body)
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		require.Len(t, app.FixLogs, 1, "should have exactly one fix log entry")
+		assert.Equal(t, "Replaced the broken valve.", app.FixLogs[0].Text)
+		assert.Equal(t, env.EngineerUUID, app.FixLogs[0].CreatedBy, "fix log must be attributed to the engineer")
+	})
+
+	// multiple_entries — инженер добавляет две записи подряд.
+	// Проверяем: FixLogs содержит обе записи независимо от их порядка.
+	t.Run("multiple_entries", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Fix log multiple entries", "Application for multiple fix log entries.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+
+		mustAddFixLog(t, env.Engineer, appUUID, "Step 1: drained the pipe.")
+		mustAddFixLog(t, env.Engineer, appUUID, "Step 2: replaced the gasket.")
+
+		app := mustGetApplicationDetail(t, env.Chief, appUUID)
+		require.Len(t, app.FixLogs, 2, "should have exactly two fix log entries")
+
+		texts := []string{app.FixLogs[0].Text, app.FixLogs[1].Text}
+		assert.Contains(t, texts, "Step 1: drained the pipe.")
+		assert.Contains(t, texts, "Step 2: replaced the gasket.")
+	})
+
+	// not_responsible_engineer — Engineer2 (не ExecutedBy) пытается добавить запись → 403.
+	t.Run("not_responsible_engineer", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Fix log not responsible", "Only ExecutedBy engineer may add fix logs.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+
+		code, body := env.Engineer2.post("/api/auth/application/"+appUUID+"/fix-log", map[string]string{
+			"message": "Engineer2 trying to add fix log.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-responsible engineer must not add fix log (body: %s)", body)
+	})
+
+	// wrong_role — не-инженер (менеджер) пытается добавить запись → 403.
+	t.Run("wrong_role", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Fix log wrong role", "Manager must not add fix logs.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+
+		code, body := env.Manager.post("/api/auth/application/"+appUUID+"/fix-log", map[string]string{
+			"message": "Manager trying to add fix log.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-engineer must not add fix log (body: %s)", body)
+	})
+
+	// empty_message — пустое поле message → 400.
+	t.Run("empty_message", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Fix log empty message", "Message must not be empty.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+
+		code, body := env.Engineer.post("/api/auth/application/"+appUUID+"/fix-log", map[string]string{
+			"message": "",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "empty message must return 400 (body: %s)", body)
+	})
+
+	// not_found — заявка с несуществующим UUID → 404.
+	t.Run("not_found", func(t *testing.T) {
+		code, body := env.Engineer.post("/api/auth/application/00000000-0000-0000-0000-000000000000/fix-log", map[string]string{
+			"message": "Fix log for non-existent application.",
+		})
+		assert.Equal(t, http.StatusNotFound, code, "non-existent application must return 404 (body: %s)", body)
+	})
+}
+
+// ─── TestDeleteApplication ────────────────────────────────────────────────────
+
+func TestDeleteApplication(t *testing.T) {
+	c := newClient()
+	env := mustSetupAppEnv(t, c)
+
+	// happy_path — инспектор (CreatedBy) удаляет свою заявку в статусе created.
+	// Проверяем: 200; после удаления GET возвращает заявку с заполненными deleted_at и deleted_by,
+	// а в FixLogs присутствует запись с текстом удаления.
+	t.Run("happy_path", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Delete happy path", "Application to be soft-deleted.")
+
+		code, body := env.Inspector.delete("/api/auth/application/"+appUUID, map[string]string{
+			"message": "Application created by mistake.",
+		})
+		assert.Equal(t, http.StatusOK, code, "inspector should delete own application (body: %s)", body)
+
+		// Soft delete: заявка доступна через GetApplication, поле deleted_at заполнено.
+		app := mustGetApplicationDetail(t, env.Inspector, appUUID)
+		assert.NotEmpty(t, app.DeletedAt, "deleted_at must be set after deletion")
+		assert.Equal(t, env.InspectorUUID, app.DeletedBy, "deleted_by must be set to the initiator inspector")
+		require.Len(t, app.FixLogs, 1, "delete must write exactly one fix log entry")
+		assert.Equal(t, "Application created by mistake.", app.FixLogs[0].Text)
+	})
+
+	// wrong_creator — другой инспектор (не CreatedBy) пытается удалить → 403.
+	t.Run("wrong_creator", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Delete wrong creator", "Only the creator may delete.")
+
+		code, body := env.Inspector2.delete("/api/auth/application/"+appUUID, map[string]string{
+			"message": "Inspector2 trying to delete.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-creator must not delete application (body: %s)", body)
+	})
+
+	// wrong_status — заявка уже назначена (статус assigned); создатель пытается удалить → 403.
+	t.Run("wrong_status", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Delete wrong status", "Assigned application must not be deletable.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		// Status is now "assigned" — only "created" is deletable.
+
+		code, body := env.Inspector.delete("/api/auth/application/"+appUUID, map[string]string{
+			"message": "Trying to delete assigned application.",
+		})
+		assert.Equal(t, http.StatusForbidden, code, "non-created application must not be deletable (body: %s)", body)
+	})
+
+	// empty_message — пустое поле message → 400.
+	t.Run("empty_message", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"Delete empty message", "Message must not be empty.")
+
+		code, body := env.Inspector.delete("/api/auth/application/"+appUUID, map[string]string{
+			"message": "",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "empty message must return 400 (body: %s)", body)
+	})
+
+	// not_found — заявка с несуществующим UUID → 404.
+	t.Run("not_found", func(t *testing.T) {
+		code, body := env.Inspector.delete("/api/auth/application/00000000-0000-0000-0000-000000000000", map[string]string{
+			"message": "Delete non-existent.",
+		})
+		assert.Equal(t, http.StatusNotFound, code, "non-existent application must return 404 (body: %s)", body)
+	})
+}

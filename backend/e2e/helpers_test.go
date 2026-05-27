@@ -334,12 +334,15 @@ type applicationDetailResp struct {
 
 type applicationDetail struct {
 	ApplicationUUID string           `json:"application_uuid"`
+	DepartmentUUID  string           `json:"department_uuid"`
 	Status          string           `json:"status"`
 	RevisionCount   int64            `json:"revision_count"`
 	ManagedBy       string           `json:"managed_by"`
 	ExecutedBy      string           `json:"executed_by"`
 	InspectedBy     string           `json:"inspected_by"`
 	ClosedAt        string           `json:"closed_at"`
+	DeletedAt       string           `json:"deleted_at"`
+	DeletedBy       string           `json:"deleted_by"`
 	FixLogs         []fixLogRespItem `json:"fix_logs"`
 }
 
@@ -511,6 +514,24 @@ func mustRecallApplication(t *testing.T, manager *apiClient, appUUID string) {
 		"message": "Recalled for reassignment.",
 	})
 	require.Equalf(t, http.StatusOK, code, "recall application failed (body: %s)", body)
+}
+
+// mustAddFixLog adds a fix log entry to an application on behalf of the responsible engineer.
+func mustAddFixLog(t *testing.T, engineer *apiClient, appUUID, message string) {
+	t.Helper()
+	code, body := engineer.post("/api/auth/application/"+appUUID+"/fix-log", map[string]string{
+		"message": message,
+	})
+	require.Equalf(t, http.StatusCreated, code, "add fix log failed (body: %s)", body)
+}
+
+// mustReleaseApplicationVerification releases an application from on_verification back to pending_verification.
+func mustReleaseApplicationVerification(t *testing.T, inspector *apiClient, appUUID, message string) {
+	t.Helper()
+	code, body := inspector.patch("/api/auth/application/"+appUUID+"/release-verification", map[string]string{
+		"message": message,
+	})
+	require.Equalf(t, http.StatusOK, code, "release application verification failed (body: %s)", body)
 }
 
 // mustRedirectApplication redirects an application to another department.

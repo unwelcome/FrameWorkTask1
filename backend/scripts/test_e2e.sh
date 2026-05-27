@@ -48,7 +48,7 @@ run_e2e() {
   echo ""
   echo "=== E2E tests: $service ==="
   cd "$E2E_DIR"
-  go test -v -timeout 10m -run "$(get_pattern "$service")" .
+  go test -v -timeout 10m -count=1 -run "$(get_pattern "$service")" .
   echo "=== $service e2e: OK ==="
 }
 
@@ -56,7 +56,7 @@ run_all() {
   cd "$E2E_DIR"
   echo ""
   echo "=== E2E tests: all services ==="
-  go test -v -timeout 10m .
+  go test -v -timeout 10m -count=1 .
   echo ""
   echo "=== All e2e tests passed ==="
 }

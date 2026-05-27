@@ -84,7 +84,7 @@ func (m *mockCompanyClient) GetDepartment(ctx context.Context, in *company_proto
 	}
 	panic("unexpected call to GetDepartment")
 }
-func (m *mockCompanyClient) Health(_ context.Context, _ *company_proto.HealthRequest, _ ...grpc.CallOption) (*company_proto.HealthResponse, error) {
+func (m *mockCompanyClient) Health(_ context.Context, _ *emptypb.Empty, _ ...grpc.CallOption) (*company_proto.HealthResponse, error) {
 	panic("unexpected call to Health")
 }
 func (m *mockCompanyClient) CreateCompany(_ context.Context, _ *company_proto.CreateCompanyRequest, _ ...grpc.CallOption) (*company_proto.CreateCompanyResponse, error) {
@@ -284,5 +284,3 @@ func onRevisionApp() *entities.Application {
 	app.RevisionCount = 3
 	return app
 }
-
-

@@ -5,10 +5,10 @@ import (
 	"net"
 
 	"github.com/rs/zerolog/log"
-	application_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/application/internal/database/postgres"
 	"github.com/unwelcome/FrameWorkTask1/backend/application/internal/services"
+	application_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated"
 	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"

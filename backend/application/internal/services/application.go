@@ -33,7 +33,7 @@ func NewApplicationService(db *postgresDB.DatabaseRepository, companyClient comp
 }
 
 // Health Проверка состояния сервиса
-func (s *ApplicationService) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
+func (s *ApplicationService) Health(ctx context.Context, _ *emptypb.Empty) (*pb.HealthResponse, error) {
 	return &pb.HealthResponse{
 		Service:  "healthy",
 		Postgres: helpers.PingStatus(s.db.Ping(ctx)),

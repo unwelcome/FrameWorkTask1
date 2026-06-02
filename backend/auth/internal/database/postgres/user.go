@@ -12,7 +12,7 @@ import (
 )
 
 type UserRepository interface {
-	CreateUser(ctx context.Context, dto entitпшies.User) Error.CodeError
+	CreateUser(ctx context.Context, dto entities.User) Error.CodeError
 	GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError)
 	GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError)
 	UpdateUserPassword(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError

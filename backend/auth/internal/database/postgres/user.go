@@ -28,6 +28,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
+// CreateUser Создает нового пользователя
 func (r *userRepository) CreateUser(ctx context.Context, dto entities.User) Error.CodeError {
 	query := `INSERT INTO users (uuid, email, password_hash, first_name, last_name, patronymic) VALUES ($1, $2, $3, $4, $5, $6);`
 
@@ -44,6 +45,7 @@ func (r *userRepository) CreateUser(ctx context.Context, dto entities.User) Erro
 	return Error.CodeError{}
 }
 
+// GetUserByEmail Возвращает частичные данные пользователя по его email
 func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
 	query := `SELECT uuid, password_hash FROM users WHERE email = $1;`
 
@@ -59,6 +61,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUse
 	return userGetByEmail, Error.CodeError{}
 }
 
+// GetUser Возвращает данные пользователя по его uuid
 func (r *userRepository) GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
 	query := `SELECT email, first_name, last_name, patronymic, created_at FROM users WHERE uuid = $1;`
 
@@ -74,6 +77,7 @@ func (r *userRepository) GetUser(ctx context.Context, dto entities.GetUserDTO) (
 	return userGet, Error.CodeError{}
 }
 
+// UpdateUserPassword Обновляет пароль пользователя
 func (r *userRepository) UpdateUserPassword(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError {
 	query := `UPDATE users SET password_hash = $2 WHERE uuid = $1;`
 
@@ -93,6 +97,7 @@ func (r *userRepository) UpdateUserPassword(ctx context.Context, dto entities.Up
 	return Error.CodeError{}
 }
 
+// UpdateUserBio Обновляет данные пользователя (ФИО)
 func (r *userRepository) UpdateUserBio(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError {
 	query := `UPDATE users SET (first_name, last_name, patronymic) = ($2, $3, $4) WHERE uuid = $1;`
 
@@ -112,6 +117,7 @@ func (r *userRepository) UpdateUserBio(ctx context.Context, dto entities.UserUpd
 	return Error.CodeError{}
 }
 
+// DeleteUser Удаляет данные пользователя
 func (r *userRepository) DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError {
 	query := `DELETE FROM users WHERE uuid = $1;`
 

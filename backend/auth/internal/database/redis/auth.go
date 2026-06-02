@@ -2,14 +2,13 @@ package redisDB
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc/codes"
 )
@@ -33,8 +32,9 @@ func NewAuthRepository(redis *redis.Client, refreshTokenTTL time.Duration, prefi
 	return &authRepository{redis: redis, refreshTokenTTL: refreshTokenTTL, prefix: prefix}
 }
 
+// SaveRefreshToken Хеширует и сохраняет refresh пользователя
 func (r *authRepository) SaveRefreshToken(ctx context.Context, dto entities.SaveRefreshTokenDTO) Error.CodeError {
-	hash := r.hashToken(dto.RawToken)
+	hash := utils.HashToken(dto.RawToken)
 
 	userTokensKey := r.getUserTokensKey(dto.UserUUID)
 	tokenKey := r.getRefreshTokenKey(hash)
@@ -50,6 +50,7 @@ func (r *authRepository) SaveRefreshToken(ctx context.Context, dto entities.Save
 	return Error.CodeError{}
 }
 
+// GetAllRefreshTokens Возвращает список всех активных refresh токенов пользователя
 func (r *authRepository) GetAllRefreshTokens(ctx context.Context, dto entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError) {
 	userTokensKey := r.getUserTokensKey(dto.UserUUID)
 
@@ -83,8 +84,9 @@ func (r *authRepository) GetAllRefreshTokens(ctx context.Context, dto entities.G
 	return actualRefreshTokens, Error.CodeError{}
 }
 
+// CheckRefreshTokenExists Проверяет существование refresh токена
 func (r *authRepository) CheckRefreshTokenExists(ctx context.Context, dto entities.CheckRefreshTokenExistsDTO) Error.CodeError {
-	hash := r.hashToken(dto.RawToken)
+	hash := utils.HashToken(dto.RawToken)
 	tokenKey := r.getRefreshTokenKey(hash)
 
 	exist, err := r.redis.Exists(ctx, tokenKey).Result()
@@ -101,7 +103,7 @@ func (r *authRepository) CheckRefreshTokenExists(ctx context.Context, dto entiti
 	return Error.CodeError{}
 }
 
-// RevokeRefreshToken принимает хеш токена (не сам токен) и проверяет принадлежность пользователю.
+// RevokeRefreshToken Принимает хеш токена (не сам токен) и проверяет принадлежность пользователю.
 func (r *authRepository) RevokeRefreshToken(ctx context.Context, dto entities.RevokeRefreshTokenDTO) Error.CodeError {
 	userTokensKey := r.getUserTokensKey(dto.UserUUID)
 	tokenKey := r.getRefreshTokenKey(dto.TokenHash)
@@ -131,6 +133,7 @@ func (r *authRepository) RevokeRefreshToken(ctx context.Context, dto entities.Re
 	return Error.CodeError{}
 }
 
+// RevokeAllRefreshTokens Отзывает все refresh токены пользователя, включая текущий
 func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, dto entities.RevokeAllRefreshTokensDTO) Error.CodeError {
 	userTokensKey := r.getUserTokensKey(dto.UserUUID)
 
@@ -155,10 +158,10 @@ func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, dto entitie
 	return Error.CodeError{}
 }
 
-// RefreshToken атомарно заменяет старый refresh токен на новый через Watch + TxPipelined.
+// RefreshToken Атомарно заменяет старый refresh токен на новый через Watch + TxPipelined.
 func (r *authRepository) RefreshToken(ctx context.Context, dto entities.RefreshTokenDTO) Error.CodeError {
-	oldHash := r.hashToken(dto.OldRawToken)
-	newHash := r.hashToken(dto.NewRawToken)
+	oldHash := utils.HashToken(dto.OldRawToken)
+	newHash := utils.HashToken(dto.NewRawToken)
 
 	userTokensKey := r.getUserTokensKey(dto.UserUUID)
 	oldTokenKey := r.getRefreshTokenKey(oldHash)
@@ -190,11 +193,6 @@ func (r *authRepository) RefreshToken(ctx context.Context, dto entities.RefreshT
 		return Error.Internal(err)
 	}
 	return Error.CodeError{}
-}
-
-func (r *authRepository) hashToken(rawToken string) string {
-	hash := sha256.Sum256([]byte(rawToken))
-	return hex.EncodeToString(hash[:])
 }
 
 func (r *authRepository) getRefreshTokenKey(hash string) string {

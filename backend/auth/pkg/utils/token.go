@@ -2,6 +2,8 @@ package utils
 
 import (
 	"crypto/ecdsa"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -32,6 +34,7 @@ func ParseToken(tokenString string, privateKey *ecdsa.PrivateKey) (*entities.Tok
 	return parseTokenWithPublicKey(tokenString, &privateKey.PublicKey)
 }
 
+// parseTokenWithPublicKey Парсинг токена с помощью открытого ключа
 func parseTokenWithPublicKey(tokenString string, publicKey *ecdsa.PublicKey) (*entities.TokenClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &entities.TokenClaims{}, func(token *jwt.Token) (any, error) {
 		// Проверяем алгоритм — защита от подмены alg=none или RS256
@@ -72,4 +75,10 @@ func generateToken(userUUID string, privateKey *ecdsa.PrivateKey, tokenType stri
 	}
 
 	return tokenString, nil
+}
+
+// HashToken Хеширование refresh токена
+func HashToken(rawToken string) string {
+	hash := sha256.Sum256([]byte(rawToken))
+	return hex.EncodeToString(hash[:])
 }

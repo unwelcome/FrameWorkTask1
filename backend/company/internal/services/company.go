@@ -79,7 +79,7 @@ func (s *CompanyService) GetCompany(ctx context.Context, req *pb.GetCompanyReque
 		return nil, status.Errorf(codes.InvalidArgument, "invalid company uuid")
 	}
 
-	companyInfo, getErr := s.db.Company.GetCompany(ctx, req.GetCompanyUuid())
+	companyInfo, getErr := s.db.Company.GetCompany(ctx, entities.GetCompanyDTO{CompanyUUID: req.GetCompanyUuid()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (s *CompanyService) GetCompanies(ctx context.Context, req *pb.GetCompaniesR
 		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
 	}
 
-	companies, getErr := s.db.Company.GetCompanies(ctx, offset, count)
+	companies, getErr := s.db.Company.GetCompanies(ctx, entities.GetCompaniesDTO{Offset: offset, Count: count})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (s *CompanyService) GetUserCompanies(ctx context.Context, req *pb.GetUserCo
 		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
 	}
 
-	companies, getErr := s.db.Company.GetUserCompanies(ctx, req.GetInitiatorUuid())
+	companies, getErr := s.db.Company.GetUserCompanies(ctx, entities.GetUserCompaniesDTO{UserUUID: req.GetInitiatorUuid()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -158,7 +158,10 @@ func (s *CompanyService) UpdateCompanyTitle(ctx context.Context, req *pb.UpdateC
 		return nil, err
 	}
 
-	if err := s.db.Company.UpdateCompanyTitle(ctx, req.GetCompanyUuid(), req.GetTitle()).GRPCError(); err != nil {
+	if err := s.db.Company.UpdateCompanyTitle(ctx, entities.UpdateCompanyTitleDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+		Title:       req.GetTitle(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -181,7 +184,10 @@ func (s *CompanyService) UpdateCompanyStatus(ctx context.Context, req *pb.Update
 		return nil, err
 	}
 
-	if err := s.db.Company.UpdateCompanyStatus(ctx, req.GetCompanyUuid(), req.GetStatus()).GRPCError(); err != nil {
+	if err := s.db.Company.UpdateCompanyStatus(ctx, entities.UpdateCompanyStatusDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+		Status:      req.GetStatus(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -201,7 +207,9 @@ func (s *CompanyService) DeleteCompany(ctx context.Context, req *pb.DeleteCompan
 		return nil, err
 	}
 
-	if err := s.db.Company.DeleteCompany(ctx, req.GetCompanyUuid()).GRPCError(); err != nil {
+	if err := s.db.Company.DeleteCompany(ctx, entities.DeleteCompanyDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -240,7 +248,7 @@ func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.Crea
 		}
 
 		// Проверяем, что такого кода ещё нет
-		checkErr := s.cache.Company.CheckJoinCodeExists(ctx, code)
+		checkErr := s.cache.Company.CheckJoinCodeExists(ctx, entities.CheckJoinCodeExistsDTO{Code: code})
 		if checkErr.Code == int(codes.NotFound) {
 			joinCode = code
 			found = true
@@ -252,7 +260,11 @@ func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.Crea
 		return nil, status.Error(codes.Internal, "failed to create join code")
 	}
 
-	if err := s.cache.Company.CreateCompanyJoinCode(ctx, req.GetCompanyUuid(), joinCode, joinCodeTTL).GRPCError(); err != nil {
+	if err := s.cache.Company.CreateCompanyJoinCode(ctx, entities.CreateCompanyJoinCodeDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+		Code:        joinCode,
+		TTL:         joinCodeTTL,
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -272,7 +284,7 @@ func (s *CompanyService) GetCompanyJoinCodes(ctx context.Context, req *pb.GetCom
 		return nil, err
 	}
 
-	companyCodes, getCodesErr := s.cache.Company.GetCompanyJoinCodes(ctx, req.GetCompanyUuid())
+	companyCodes, getCodesErr := s.cache.Company.GetCompanyJoinCodes(ctx, entities.GetCompanyJoinCodesDTO{CompanyUUID: req.GetCompanyUuid()})
 	if err := getCodesErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -297,16 +309,22 @@ func (s *CompanyService) DeleteCompanyJoinCode(ctx context.Context, req *pb.Dele
 	}
 
 	// Проверяем, что код существует
-	if existErr := s.cache.Company.CheckJoinCodeExists(ctx, req.GetCode()); existErr.Code != 0 {
+	if existErr := s.cache.Company.CheckJoinCodeExists(ctx, entities.CheckJoinCodeExistsDTO{Code: req.GetCode()}); existErr.Code != 0 {
 		return nil, status.Error(codes.NotFound, "join code not found")
 	}
 
 	// Проверяем, что код принадлежит компании
-	if belongErr := s.cache.Company.CheckJoinCodeBelongToCompany(ctx, req.GetCompanyUuid(), req.GetCode()); belongErr.Code != 0 {
+	if belongErr := s.cache.Company.CheckJoinCodeBelongToCompany(ctx, entities.CheckJoinCodeBelongToCompanyDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+		Code:        req.GetCode(),
+	}); belongErr.Code != 0 {
 		return nil, status.Error(codes.PermissionDenied, "join code not belong to this company")
 	}
 
-	if err := s.cache.Company.DeleteCompanyJoinCode(ctx, req.GetCompanyUuid(), req.GetCode()).GRPCError(); err != nil {
+	if err := s.cache.Company.DeleteCompanyJoinCode(ctx, entities.DeleteCompanyJoinCodeDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+		Code:        req.GetCode(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -323,18 +341,21 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 	}
 
 	// Проверяем, что код существует
-	if existErr := s.cache.Company.CheckJoinCodeExists(ctx, req.GetJoinCode()); existErr.Code != 0 {
+	if existErr := s.cache.Company.CheckJoinCodeExists(ctx, entities.CheckJoinCodeExistsDTO{Code: req.GetJoinCode()}); existErr.Code != 0 {
 		return nil, status.Error(codes.NotFound, "join code not found")
 	}
 
 	// Получаем uuid компании по коду добавления
-	companyUUID, getErr := s.cache.Company.GetCompanyByJoinCode(ctx, req.GetJoinCode())
+	companyUUID, getErr := s.cache.Company.GetCompanyByJoinCode(ctx, entities.GetCompanyByJoinCodeDTO{Code: req.GetJoinCode()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
 
 	// Проверяем, что пользователь еще не состоит в компании
-	_, getEmployeeErr := s.db.Company.GetCompanyEmployee(ctx, companyUUID, req.GetInitiatorUuid())
+	_, getEmployeeErr := s.db.Company.GetCompanyEmployee(ctx, entities.GetCompanyEmployeeDTO{
+		CompanyUUID: companyUUID,
+		UserUUID:    req.GetInitiatorUuid(),
+	})
 	if getEmployeeErr.Code == 0 {
 		return nil, status.Error(codes.AlreadyExists, "user already in company")
 	}
@@ -345,7 +366,7 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 	}
 
 	// Получаем информацию о компании (статус должен быть open)
-	companyInfo, getCompanyErr := s.db.Company.GetCompany(ctx, companyUUID)
+	companyInfo, getCompanyErr := s.db.Company.GetCompany(ctx, entities.GetCompanyDTO{CompanyUUID: companyUUID})
 	if err := getCompanyErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -354,7 +375,10 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 		return nil, status.Error(codes.PermissionDenied, "company is closed")
 	}
 
-	if err := s.db.Company.JoinCompany(ctx, companyUUID, req.GetInitiatorUuid()).GRPCError(); err != nil {
+	if err := s.db.Company.JoinCompany(ctx, entities.JoinCompanyDTO{
+		CompanyUUID: companyUUID,
+		UserUUID:    req.GetInitiatorUuid(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -377,7 +401,10 @@ func (s *CompanyService) GetCompanyEmployee(ctx context.Context, req *pb.GetComp
 		return nil, err
 	}
 
-	employeeInfo, getErr := s.db.Company.GetCompanyEmployee(ctx, req.GetCompanyUuid(), req.GetTargetUuid())
+	employeeInfo, getErr := s.db.Company.GetCompanyEmployee(ctx, entities.GetCompanyEmployeeDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+		UserUUID:    req.GetTargetUuid(),
+	})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -414,7 +441,13 @@ func (s *CompanyService) GetCompanyEmployees(ctx context.Context, req *pb.GetCom
 		return nil, err
 	}
 
-	employees, getErr := s.db.Company.GetCompanyEmployees(ctx, req.GetCompanyUuid(), req.GetDepartmentUuid(), req.GetRole(), req.GetOffset(), req.GetCount())
+	employees, getErr := s.db.Company.GetCompanyEmployees(ctx, entities.GetCompanyEmployeesDTO{
+		CompanyUUID:    req.GetCompanyUuid(),
+		DepartmentUUID: req.GetDepartmentUuid(),
+		Role:           req.GetRole(),
+		Offset:         req.GetOffset(),
+		Count:          req.GetCount(),
+	})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -448,7 +481,10 @@ func (s *CompanyService) GetCompanyEmployeesSummary(ctx context.Context, req *pb
 		return nil, err
 	}
 
-	employeesInfo, getErr := s.db.Company.GetCompanyEmployeesSummary(ctx, req.GetCompanyUuid(), req.GetDepartmentUuid())
+	employeesInfo, getErr := s.db.Company.GetCompanyEmployeesSummary(ctx, entities.GetCompanyEmployeesSummaryDTO{
+		CompanyUUID:    req.GetCompanyUuid(),
+		DepartmentUUID: req.GetDepartmentUuid(),
+	})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -483,13 +519,20 @@ func (s *CompanyService) UpdateEmployeeRole(ctx context.Context, req *pb.UpdateE
 	}
 
 	// Проверяем наличие сотрудника
-	if _, checkErr := s.db.Company.GetCompanyEmployee(ctx, req.GetCompanyUuid(), req.GetTargetUuid()); checkErr.Code != 0 {
+	if _, checkErr := s.db.Company.GetCompanyEmployee(ctx, entities.GetCompanyEmployeeDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+		UserUUID:    req.GetTargetUuid(),
+	}); checkErr.Code != 0 {
 		if err := checkErr.GRPCError(); err != nil {
 			return nil, err
 		}
 	}
 
-	if err := s.db.Company.SetCompanyEmployeeRole(ctx, req.GetCompanyUuid(), req.GetTargetUuid(), req.GetRole()).GRPCError(); err != nil {
+	if err := s.db.Company.SetCompanyEmployeeRole(ctx, entities.SetCompanyEmployeeRoleDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+		UserUUID:    req.GetTargetUuid(),
+		Role:        req.GetRole(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -515,7 +558,10 @@ func (s *CompanyService) RemoveCompanyEmployee(ctx context.Context, req *pb.Remo
 		return nil, err
 	}
 
-	if err := s.db.Company.RemoveCompanyEmployee(ctx, req.GetCompanyUuid(), req.GetTargetUuid()).GRPCError(); err != nil {
+	if err := s.db.Company.RemoveCompanyEmployee(ctx, entities.RemoveCompanyEmployeeDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+		UserUUID:    req.GetTargetUuid(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -564,7 +610,7 @@ func (s *CompanyService) AddEmployeeToDepartment(ctx context.Context, req *pb.Ad
 		return nil, status.Errorf(codes.InvalidArgument, "invalid target uuid")
 	}
 
-	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
+	department, getErr := s.db.Company.GetDepartment(ctx, entities.GetDepartmentDTO{DepartmentUUID: req.GetDepartmentUuid()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -574,7 +620,10 @@ func (s *CompanyService) AddEmployeeToDepartment(ctx context.Context, req *pb.Ad
 	}
 
 	// Проверяем принадлежность сотрудника к организации и получаем его данные
-	target, getTargetErr := s.db.Company.GetCompanyEmployee(ctx, department.CompanyUUID, req.GetTargetUuid())
+	target, getTargetErr := s.db.Company.GetCompanyEmployee(ctx, entities.GetCompanyEmployeeDTO{
+		CompanyUUID: department.CompanyUUID,
+		UserUUID:    req.GetTargetUuid(),
+	})
 	if getTargetErr.Code == int(codes.NotFound) {
 		return nil, status.Errorf(codes.PermissionDenied, "employee not found in company")
 	}
@@ -586,7 +635,11 @@ func (s *CompanyService) AddEmployeeToDepartment(ctx context.Context, req *pb.Ad
 		return nil, status.Errorf(codes.AlreadyExists, "employee is already in this department")
 	}
 
-	if err := s.db.Company.AddEmployeeToDepartment(ctx, req.GetDepartmentUuid(), department.CompanyUUID, req.GetTargetUuid()).GRPCError(); err != nil {
+	if err := s.db.Company.AddEmployeeToDepartment(ctx, entities.AddEmployeeToDepartmentDTO{
+		DepartmentUUID: req.GetDepartmentUuid(),
+		CompanyUUID:    department.CompanyUUID,
+		TargetUUID:     req.GetTargetUuid(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -602,7 +655,7 @@ func (s *CompanyService) GetDepartment(ctx context.Context, req *pb.GetDepartmen
 		return nil, status.Errorf(codes.InvalidArgument, "invalid department uuid")
 	}
 
-	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
+	department, getErr := s.db.Company.GetDepartment(ctx, entities.GetDepartmentDTO{DepartmentUUID: req.GetDepartmentUuid()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -639,7 +692,11 @@ func (s *CompanyService) GetCompanyDepartments(ctx context.Context, req *pb.GetC
 		return nil, err
 	}
 
-	departments, getErr := s.db.Company.GetCompanyDepartments(ctx, req.GetCompanyUuid(), req.GetOffset(), req.GetCount())
+	departments, getErr := s.db.Company.GetCompanyDepartments(ctx, entities.GetCompanyDepartmentsDTO{
+		CompanyUUID: req.GetCompanyUuid(),
+		Offset:      req.GetOffset(),
+		Count:       req.GetCount(),
+	})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -667,7 +724,7 @@ func (s *CompanyService) UpdateDepartmentTitle(ctx context.Context, req *pb.Upda
 		return nil, status.Errorf(codes.InvalidArgument, "invalid department title")
 	}
 
-	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
+	department, getErr := s.db.Company.GetDepartment(ctx, entities.GetDepartmentDTO{DepartmentUUID: req.GetDepartmentUuid()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -695,7 +752,7 @@ func (s *CompanyService) DeleteDepartment(ctx context.Context, req *pb.DeleteDep
 		return nil, status.Errorf(codes.InvalidArgument, "invalid department uuid")
 	}
 
-	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
+	department, getErr := s.db.Company.GetDepartment(ctx, entities.GetDepartmentDTO{DepartmentUUID: req.GetDepartmentUuid()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -704,7 +761,9 @@ func (s *CompanyService) DeleteDepartment(ctx context.Context, req *pb.DeleteDep
 		return nil, err
 	}
 
-	if err := s.db.Company.DeleteDepartment(ctx, req.GetDepartmentUuid()).GRPCError(); err != nil {
+	if err := s.db.Company.DeleteDepartment(ctx, entities.DeleteDepartmentDTO{
+		DepartmentUUID: req.GetDepartmentUuid(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -723,7 +782,7 @@ func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *
 		return nil, status.Errorf(codes.InvalidArgument, "invalid target uuid")
 	}
 
-	department, getErr := s.db.Company.GetDepartment(ctx, req.GetDepartmentUuid())
+	department, getErr := s.db.Company.GetDepartment(ctx, entities.GetDepartmentDTO{DepartmentUUID: req.GetDepartmentUuid()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -732,7 +791,10 @@ func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *
 		return nil, err
 	}
 
-	target, getTargetErr := s.db.Company.GetCompanyEmployee(ctx, department.CompanyUUID, req.GetTargetUuid())
+	target, getTargetErr := s.db.Company.GetCompanyEmployee(ctx, entities.GetCompanyEmployeeDTO{
+		CompanyUUID: department.CompanyUUID,
+		UserUUID:    req.GetTargetUuid(),
+	})
 	if err := getTargetErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -741,7 +803,10 @@ func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *
 		return nil, status.Errorf(codes.InvalidArgument, "user not in this department")
 	}
 
-	if err := s.db.Company.RemoveEmployeeFromDepartment(ctx, department.CompanyUUID, req.GetTargetUuid()).GRPCError(); err != nil {
+	if err := s.db.Company.RemoveEmployeeFromDepartment(ctx, entities.RemoveEmployeeFromDepartmentDTO{
+		CompanyUUID: department.CompanyUUID,
+		TargetUUID:  req.GetTargetUuid(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -768,7 +833,7 @@ func generateJoinCode() (string, error) {
 // checkEmployeeRole Проверяет роль пользователя в компании
 func (s *CompanyService) checkEmployeeRole(ctx context.Context, companyUUID, userUUID string, requiredRoles []string) error {
 	// Проверяем существование компании
-	_, getCompanyErr := s.db.Company.GetCompany(ctx, companyUUID)
+	_, getCompanyErr := s.db.Company.GetCompany(ctx, entities.GetCompanyDTO{CompanyUUID: companyUUID})
 	if getCompanyErr.Code == int(codes.NotFound) {
 		return status.Error(codes.NotFound, "company not found")
 	}
@@ -777,7 +842,10 @@ func (s *CompanyService) checkEmployeeRole(ctx context.Context, companyUUID, use
 	}
 
 	// Получаем роль пользователя в компании
-	employee, getErr := s.db.Company.GetCompanyEmployee(ctx, companyUUID, userUUID)
+	employee, getErr := s.db.Company.GetCompanyEmployee(ctx, entities.GetCompanyEmployeeDTO{
+		CompanyUUID: companyUUID,
+		UserUUID:    userUUID,
+	})
 	if getErr.Code == int(codes.NotFound) {
 		return status.Errorf(codes.PermissionDenied, "access denied")
 	}

@@ -19,3 +19,30 @@ type GetCompanies struct {
 	Title       string `db:"title"`
 	Status      string `db:"status"`
 }
+
+type GetCompanyDTO struct {
+	CompanyUUID string
+}
+
+type GetCompaniesDTO struct {
+	Offset int64
+	Count  int64
+}
+
+type GetUserCompaniesDTO struct {
+	UserUUID string
+}
+
+type UpdateCompanyTitleDTO struct {
+	CompanyUUID string
+	Title       string
+}
+
+type UpdateCompanyStatusDTO struct {
+	CompanyUUID string
+	Status      string
+}
+
+type DeleteCompanyDTO struct {
+	CompanyUUID string
+}

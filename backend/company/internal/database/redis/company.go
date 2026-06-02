@@ -4,20 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc/codes"
 )
 
 type CompanyRepository interface {
-	CreateCompanyJoinCode(ctx context.Context, companyUUID string, code string, tokenTTL time.Duration) Error.CodeError
-	CheckJoinCodeExists(ctx context.Context, code string) Error.CodeError
-	CheckJoinCodeBelongToCompany(ctx context.Context, companyUUID string, code string) Error.CodeError
-	GetCompanyJoinCodes(ctx context.Context, companyUUID string) ([]string, Error.CodeError)
-	GetCompanyByJoinCode(ctx context.Context, code string) (string, Error.CodeError)
-	DeleteCompanyJoinCode(ctx context.Context, companyUUID string, code string) Error.CodeError
+	CreateCompanyJoinCode(ctx context.Context, dto entities.CreateCompanyJoinCodeDTO) Error.CodeError
+	CheckJoinCodeExists(ctx context.Context, dto entities.CheckJoinCodeExistsDTO) Error.CodeError
+	CheckJoinCodeBelongToCompany(ctx context.Context, dto entities.CheckJoinCodeBelongToCompanyDTO) Error.CodeError
+	GetCompanyJoinCodes(ctx context.Context, dto entities.GetCompanyJoinCodesDTO) ([]string, Error.CodeError)
+	GetCompanyByJoinCode(ctx context.Context, dto entities.GetCompanyByJoinCodeDTO) (string, Error.CodeError)
+	DeleteCompanyJoinCode(ctx context.Context, dto entities.DeleteCompanyJoinCodeDTO) Error.CodeError
 }
 
 type companyRepository struct {
@@ -30,17 +30,12 @@ func NewCompanyRepository(redis *redis.Client, prefix string) CompanyRepository 
 }
 
 // CreateCompanyJoinCode Создает новый код для вступления сотрудника в компанию
-func (r *companyRepository) CreateCompanyJoinCode(ctx context.Context, companyUUID string, code string, tokenTTL time.Duration) Error.CodeError {
-	// Начинаем транзакцию
+func (r *companyRepository) CreateCompanyJoinCode(ctx context.Context, dto entities.CreateCompanyJoinCodeDTO) Error.CodeError {
 	pipeline := r.redis.Pipeline()
 
-	// Сохраняем код
-	pipeline.Set(ctx, r.getCodeKey(code), companyUUID, tokenTTL)
+	pipeline.Set(ctx, r.getCodeKey(dto.Code), dto.CompanyUUID, dto.TTL)
+	pipeline.SAdd(ctx, r.getCompanyCodesKey(dto.CompanyUUID), dto.Code)
 
-	// Добавляем код в коды компании
-	pipeline.SAdd(ctx, r.getCompanyCodesKey(companyUUID), code)
-
-	// Завершаем транзакцию
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
 		return Error.Internal(err)
@@ -49,14 +44,12 @@ func (r *companyRepository) CreateCompanyJoinCode(ctx context.Context, companyUU
 }
 
 // CheckJoinCodeExists Проверяет, что код для вступления существует
-func (r *companyRepository) CheckJoinCodeExists(ctx context.Context, code string) Error.CodeError {
-	// Получение токена
-	exist, err := r.redis.Exists(ctx, r.getCodeKey(code)).Result()
+func (r *companyRepository) CheckJoinCodeExists(ctx context.Context, dto entities.CheckJoinCodeExistsDTO) Error.CodeError {
+	exist, err := r.redis.Exists(ctx, r.getCodeKey(dto.Code)).Result()
 	if err != nil {
 		return Error.Internal(err)
 	}
 
-	// Токен не существует (возможно истек)
 	if exist == 0 {
 		return Error.Public(codes.NotFound, "code not found")
 	}
@@ -65,9 +58,8 @@ func (r *companyRepository) CheckJoinCodeExists(ctx context.Context, code string
 }
 
 // CheckJoinCodeBelongToCompany Проверяет, что код для вступления принадлежит конкретной компании
-func (r *companyRepository) CheckJoinCodeBelongToCompany(ctx context.Context, companyUUID string, code string) Error.CodeError {
-	// Проверка наличия кода у компании
-	exist, err := r.redis.SIsMember(ctx, r.getCompanyCodesKey(companyUUID), code).Result()
+func (r *companyRepository) CheckJoinCodeBelongToCompany(ctx context.Context, dto entities.CheckJoinCodeBelongToCompanyDTO) Error.CodeError {
+	exist, err := r.redis.SIsMember(ctx, r.getCompanyCodesKey(dto.CompanyUUID), dto.Code).Result()
 	if err != nil {
 		return Error.Internal(err)
 	}
@@ -80,9 +72,8 @@ func (r *companyRepository) CheckJoinCodeBelongToCompany(ctx context.Context, co
 }
 
 // GetCompanyJoinCodes Получение всех кодов компании для вступления
-func (r *companyRepository) GetCompanyJoinCodes(ctx context.Context, companyUUID string) ([]string, Error.CodeError) {
-	// Получаем коды компании
-	companyCodes, err := r.redis.SMembers(ctx, r.getCompanyCodesKey(companyUUID)).Result()
+func (r *companyRepository) GetCompanyJoinCodes(ctx context.Context, dto entities.GetCompanyJoinCodesDTO) ([]string, Error.CodeError) {
+	companyCodes, err := r.redis.SMembers(ctx, r.getCompanyCodesKey(dto.CompanyUUID)).Result()
 	if err != nil {
 		return nil, Error.Internal(err)
 	}
@@ -90,33 +81,30 @@ func (r *companyRepository) GetCompanyJoinCodes(ctx context.Context, companyUUID
 	validCodes := make([]string, 0)
 	invalidCodes := make([]string, 0)
 
-	// Проверяем существование кодов
 	for _, code := range companyCodes {
-		existErr := r.CheckJoinCodeExists(ctx, code)
+		existErr := r.CheckJoinCodeExists(ctx, entities.CheckJoinCodeExistsDTO{Code: code})
 
-		if existErr.Code != 0 { // Код не найден -> добавляем в массив на удаление
+		if existErr.Code != 0 {
 			invalidCodes = append(invalidCodes, code)
-		} else { // Код найден -> записываем в ответ
+		} else {
 			validCodes = append(validCodes, code)
 		}
 	}
 
-	// Удаляем истекшие коды
 	if len(invalidCodes) > 0 {
 		members := make([]interface{}, len(invalidCodes))
 		for i, c := range invalidCodes {
 			members[i] = c
 		}
-		_ = r.redis.SRem(ctx, r.getCompanyCodesKey(companyUUID), members...).Err()
+		_ = r.redis.SRem(ctx, r.getCompanyCodesKey(dto.CompanyUUID), members...).Err()
 	}
 
 	return validCodes, Error.CodeError{}
 }
 
 // GetCompanyByJoinCode Возвращает uuid компании, которой принадлежит данный код добавления
-func (r *companyRepository) GetCompanyByJoinCode(ctx context.Context, code string) (string, Error.CodeError) {
-	// Получаем uuid компании по коду
-	companyUUID, err := r.redis.Get(ctx, r.getCodeKey(code)).Result()
+func (r *companyRepository) GetCompanyByJoinCode(ctx context.Context, dto entities.GetCompanyByJoinCodeDTO) (string, Error.CodeError) {
+	companyUUID, err := r.redis.Get(ctx, r.getCodeKey(dto.Code)).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return "", Error.Public(codes.NotFound, "join code not found")
@@ -128,9 +116,8 @@ func (r *companyRepository) GetCompanyByJoinCode(ctx context.Context, code strin
 }
 
 // DeleteCompanyJoinCode Удаляет код для вступления
-func (r *companyRepository) DeleteCompanyJoinCode(ctx context.Context, companyUUID string, code string) Error.CodeError {
-	// Удаляем код из кодов компании
-	rmCount, err := r.redis.SRem(ctx, r.getCompanyCodesKey(companyUUID), code).Result()
+func (r *companyRepository) DeleteCompanyJoinCode(ctx context.Context, dto entities.DeleteCompanyJoinCodeDTO) Error.CodeError {
+	rmCount, err := r.redis.SRem(ctx, r.getCompanyCodesKey(dto.CompanyUUID), dto.Code).Result()
 	if err != nil {
 		return Error.Internal(err)
 	}
@@ -138,8 +125,7 @@ func (r *companyRepository) DeleteCompanyJoinCode(ctx context.Context, companyUU
 		return Error.Public(codes.PermissionDenied, "code not belong to company")
 	}
 
-	// Удаляем сам код только если он успешно удалился из кодов компании
-	err = r.redis.Del(ctx, r.getCodeKey(code)).Err()
+	err = r.redis.Del(ctx, r.getCodeKey(dto.Code)).Err()
 	if err != nil {
 		return Error.Internal(err)
 	}

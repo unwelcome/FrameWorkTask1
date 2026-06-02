@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/entities"
 	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
@@ -108,7 +107,7 @@ func TestGetCompany(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return &entities.Company{CompanyUUID: companyID, Title: "ACME", Status: "open"}, ok()
 		}
 
@@ -140,7 +139,7 @@ func TestGetCompany(t *testing.T) {
 
 	t.Run("company not found", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -157,7 +156,7 @@ func TestGetCompanies(t *testing.T) {
 
 	t.Run("success — returns mapped companies", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompanies = func(_ context.Context, _, _ int64) ([]*entities.GetCompanies, Error.CodeError) {
+		pg.getCompanies = func(_ context.Context, _ entities.GetCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError) {
 			return []*entities.GetCompanies{
 				{CompanyUUID: "c1", Title: "Company 1", Status: "open"},
 				{CompanyUUID: "c2", Title: "Company 2", Status: "closed"},
@@ -192,7 +191,7 @@ func TestGetCompanies(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompanies = func(_ context.Context, _, _ int64) ([]*entities.GetCompanies, Error.CodeError) {
+		pg.getCompanies = func(_ context.Context, _ entities.GetCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError) {
 			return nil, internalErr()
 		}
 
@@ -212,7 +211,7 @@ func TestUpdateCompanyTitle(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.updateCompanyTitle = func(_ context.Context, _, _ string) Error.CodeError { return ok() }
+		pg.updateCompanyTitle = func(_ context.Context, _ entities.UpdateCompanyTitleDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.UpdateCompanyTitle(ctx, req)
@@ -251,7 +250,7 @@ func TestUpdateCompanyTitle(t *testing.T) {
 
 	t.Run("company not found", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -262,10 +261,10 @@ func TestUpdateCompanyTitle(t *testing.T) {
 
 	t.Run("user not in company", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -276,10 +275,10 @@ func TestUpdateCompanyTitle(t *testing.T) {
 
 	t.Run("wrong role — engineer cannot update title", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return &entities.Employee{Role: "engineer"}, ok()
 		}
 
@@ -290,7 +289,7 @@ func TestUpdateCompanyTitle(t *testing.T) {
 
 	t.Run("db update error", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.updateCompanyTitle = func(_ context.Context, _, _ string) Error.CodeError { return internalErr() }
+		pg.updateCompanyTitle = func(_ context.Context, _ entities.UpdateCompanyTitleDTO) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.UpdateCompanyTitle(ctx, req)
@@ -309,7 +308,7 @@ func TestUpdateCompanyStatus(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.updateCompanyStatus = func(_ context.Context, _, _ string) Error.CodeError { return ok() }
+		pg.updateCompanyStatus = func(_ context.Context, _ entities.UpdateCompanyStatusDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.UpdateCompanyStatus(ctx, req)
@@ -338,7 +337,7 @@ func TestUpdateCompanyStatus(t *testing.T) {
 
 	t.Run("check role fails", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -349,7 +348,7 @@ func TestUpdateCompanyStatus(t *testing.T) {
 
 	t.Run("db update error", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.updateCompanyStatus = func(_ context.Context, _, _ string) Error.CodeError { return internalErr() }
+		pg.updateCompanyStatus = func(_ context.Context, _ entities.UpdateCompanyStatusDTO) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.UpdateCompanyStatus(ctx, req)
@@ -365,7 +364,7 @@ func TestDeleteCompany(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.deleteCompany = func(_ context.Context, _ string) Error.CodeError { return ok() }
+		pg.deleteCompany = func(_ context.Context, _ entities.DeleteCompanyDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.DeleteCompany(ctx, req)
@@ -392,7 +391,7 @@ func TestDeleteCompany(t *testing.T) {
 
 	t.Run("check role fails", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -403,7 +402,7 @@ func TestDeleteCompany(t *testing.T) {
 
 	t.Run("db delete error", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.deleteCompany = func(_ context.Context, _ string) Error.CodeError { return internalErr() }
+		pg.deleteCompany = func(_ context.Context, _ entities.DeleteCompanyDTO) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.DeleteCompany(ctx, req)
@@ -442,8 +441,8 @@ func TestCreateCompanyJoinCode(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
 		rdb := emptyRedisRepo()
-		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return notFound() }
-		rdb.createCompanyJoinCode = func(_ context.Context, _, _ string, _ time.Duration) Error.CodeError {
+		rdb.checkJoinCodeExists = func(_ context.Context, _ entities.CheckJoinCodeExistsDTO) Error.CodeError { return notFound() }
+		rdb.createCompanyJoinCode = func(_ context.Context, _ entities.CreateCompanyJoinCodeDTO) Error.CodeError {
 			return ok()
 		}
 
@@ -473,7 +472,7 @@ func TestCreateCompanyJoinCode(t *testing.T) {
 
 	t.Run("check role fails", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -485,7 +484,7 @@ func TestCreateCompanyJoinCode(t *testing.T) {
 	t.Run("all 10 attempts produce non-unique codes — internal error", func(t *testing.T) {
 		pg := pgRepoWithChief()
 		rdb := emptyRedisRepo()
-		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return ok() }
+		rdb.checkJoinCodeExists = func(_ context.Context, _ entities.CheckJoinCodeExistsDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, rdb)
 		_, err := svc.CreateCompanyJoinCode(ctx, validReq)
@@ -495,8 +494,8 @@ func TestCreateCompanyJoinCode(t *testing.T) {
 	t.Run("save join code error", func(t *testing.T) {
 		pg := pgRepoWithChief()
 		rdb := emptyRedisRepo()
-		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return notFound() }
-		rdb.createCompanyJoinCode = func(_ context.Context, _, _ string, _ time.Duration) Error.CodeError {
+		rdb.checkJoinCodeExists = func(_ context.Context, _ entities.CheckJoinCodeExistsDTO) Error.CodeError { return notFound() }
+		rdb.createCompanyJoinCode = func(_ context.Context, _ entities.CreateCompanyJoinCodeDTO) Error.CodeError {
 			return internalErr()
 		}
 
@@ -524,7 +523,7 @@ func TestGetCompanyJoinCodes(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
 		rdb := emptyRedisRepo()
-		rdb.getCompanyJoinCodes = func(_ context.Context, _ string) ([]string, Error.CodeError) {
+		rdb.getCompanyJoinCodes = func(_ context.Context, _ entities.GetCompanyJoinCodesDTO) ([]string, Error.CodeError) {
 			return []string{"111111", "222222"}, ok()
 		}
 
@@ -538,7 +537,7 @@ func TestGetCompanyJoinCodes(t *testing.T) {
 
 	t.Run("check role fails", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -550,7 +549,7 @@ func TestGetCompanyJoinCodes(t *testing.T) {
 	t.Run("cache error", func(t *testing.T) {
 		pg := pgRepoWithChief()
 		rdb := emptyRedisRepo()
-		rdb.getCompanyJoinCodes = func(_ context.Context, _ string) ([]string, Error.CodeError) {
+		rdb.getCompanyJoinCodes = func(_ context.Context, _ entities.GetCompanyJoinCodesDTO) ([]string, Error.CodeError) {
 			return nil, internalErr()
 		}
 
@@ -592,9 +591,9 @@ func TestDeleteCompanyJoinCode(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
 		rdb := emptyRedisRepo()
-		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return ok() }
-		rdb.checkJoinCodeBelongToCompany = func(_ context.Context, _, _ string) Error.CodeError { return ok() }
-		rdb.deleteCompanyJoinCode = func(_ context.Context, _, _ string) Error.CodeError { return ok() }
+		rdb.checkJoinCodeExists = func(_ context.Context, _ entities.CheckJoinCodeExistsDTO) Error.CodeError { return ok() }
+		rdb.checkJoinCodeBelongToCompany = func(_ context.Context, _ entities.CheckJoinCodeBelongToCompanyDTO) Error.CodeError { return ok() }
+		rdb.deleteCompanyJoinCode = func(_ context.Context, _ entities.DeleteCompanyJoinCodeDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, rdb)
 		_, err := svc.DeleteCompanyJoinCode(ctx, req)
@@ -603,7 +602,7 @@ func TestDeleteCompanyJoinCode(t *testing.T) {
 
 	t.Run("check role fails", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -615,7 +614,7 @@ func TestDeleteCompanyJoinCode(t *testing.T) {
 	t.Run("join code not found", func(t *testing.T) {
 		pg := pgRepoWithChief()
 		rdb := emptyRedisRepo()
-		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return notFound() }
+		rdb.checkJoinCodeExists = func(_ context.Context, _ entities.CheckJoinCodeExistsDTO) Error.CodeError { return notFound() }
 
 		svc := newTestService(pg, rdb)
 		_, err := svc.DeleteCompanyJoinCode(ctx, req)
@@ -625,8 +624,8 @@ func TestDeleteCompanyJoinCode(t *testing.T) {
 	t.Run("join code does not belong to company", func(t *testing.T) {
 		pg := pgRepoWithChief()
 		rdb := emptyRedisRepo()
-		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return ok() }
-		rdb.checkJoinCodeBelongToCompany = func(_ context.Context, _, _ string) Error.CodeError {
+		rdb.checkJoinCodeExists = func(_ context.Context, _ entities.CheckJoinCodeExistsDTO) Error.CodeError { return ok() }
+		rdb.checkJoinCodeBelongToCompany = func(_ context.Context, _ entities.CheckJoinCodeBelongToCompanyDTO) Error.CodeError {
 			return Error.Public(codes.PermissionDenied, "not belong")
 		}
 
@@ -638,9 +637,9 @@ func TestDeleteCompanyJoinCode(t *testing.T) {
 	t.Run("delete cache error", func(t *testing.T) {
 		pg := pgRepoWithChief()
 		rdb := emptyRedisRepo()
-		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return ok() }
-		rdb.checkJoinCodeBelongToCompany = func(_ context.Context, _, _ string) Error.CodeError { return ok() }
-		rdb.deleteCompanyJoinCode = func(_ context.Context, _, _ string) Error.CodeError { return internalErr() }
+		rdb.checkJoinCodeExists = func(_ context.Context, _ entities.CheckJoinCodeExistsDTO) Error.CodeError { return ok() }
+		rdb.checkJoinCodeBelongToCompany = func(_ context.Context, _ entities.CheckJoinCodeBelongToCompanyDTO) Error.CodeError { return ok() }
+		rdb.deleteCompanyJoinCode = func(_ context.Context, _ entities.DeleteCompanyJoinCodeDTO) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, rdb)
 		_, err := svc.DeleteCompanyJoinCode(ctx, req)
@@ -674,8 +673,8 @@ func TestJoinCompany(t *testing.T) {
 
 	joinRdb := func() *mockRedisCompanyRepo {
 		rdb := emptyRedisRepo()
-		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return ok() }
-		rdb.getCompanyByJoinCode = func(_ context.Context, _ string) (string, Error.CodeError) {
+		rdb.checkJoinCodeExists = func(_ context.Context, _ entities.CheckJoinCodeExistsDTO) Error.CodeError { return ok() }
+		rdb.getCompanyByJoinCode = func(_ context.Context, _ entities.GetCompanyByJoinCodeDTO) (string, Error.CodeError) {
 			return companyID, ok()
 		}
 		return rdb
@@ -683,13 +682,13 @@ func TestJoinCompany(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return nil, notFound()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return &entities.Company{Status: "open"}, ok()
 		}
-		pg.joinCompany = func(_ context.Context, _, _ string) Error.CodeError { return ok() }
+		pg.joinCompany = func(_ context.Context, _ entities.JoinCompanyDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, joinRdb())
 		res, err := svc.JoinCompany(ctx, req)
@@ -704,7 +703,7 @@ func TestJoinCompany(t *testing.T) {
 
 	t.Run("join code not found", func(t *testing.T) {
 		rdb := emptyRedisRepo()
-		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return notFound() }
+		rdb.checkJoinCodeExists = func(_ context.Context, _ entities.CheckJoinCodeExistsDTO) Error.CodeError { return notFound() }
 
 		svc := newTestService(emptyPGRepo(), rdb)
 		_, err := svc.JoinCompany(ctx, req)
@@ -713,8 +712,8 @@ func TestJoinCompany(t *testing.T) {
 
 	t.Run("get company by code error", func(t *testing.T) {
 		rdb := emptyRedisRepo()
-		rdb.checkJoinCodeExists = func(_ context.Context, _ string) Error.CodeError { return ok() }
-		rdb.getCompanyByJoinCode = func(_ context.Context, _ string) (string, Error.CodeError) {
+		rdb.checkJoinCodeExists = func(_ context.Context, _ entities.CheckJoinCodeExistsDTO) Error.CodeError { return ok() }
+		rdb.getCompanyByJoinCode = func(_ context.Context, _ entities.GetCompanyByJoinCodeDTO) (string, Error.CodeError) {
 			return "", internalErr()
 		}
 
@@ -725,7 +724,7 @@ func TestJoinCompany(t *testing.T) {
 
 	t.Run("user already in company", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return chiefEmployee(), ok()
 		}
 
@@ -736,7 +735,7 @@ func TestJoinCompany(t *testing.T) {
 
 	t.Run("get employee internal error", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return nil, internalErr()
 		}
 
@@ -747,10 +746,10 @@ func TestJoinCompany(t *testing.T) {
 
 	t.Run("company is closed", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return nil, notFound()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return &entities.Company{Status: "closed"}, ok()
 		}
 
@@ -761,13 +760,13 @@ func TestJoinCompany(t *testing.T) {
 
 	t.Run("join company db error", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return nil, notFound()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return &entities.Company{Status: "open"}, ok()
 		}
-		pg.joinCompany = func(_ context.Context, _, _ string) Error.CodeError { return internalErr() }
+		pg.joinCompany = func(_ context.Context, _ entities.JoinCompanyDTO) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, joinRdb())
 		_, err := svc.JoinCompany(ctx, req)
@@ -805,11 +804,11 @@ func TestGetCompanyEmployee(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return &entities.Employee{Role: "engineer", JoinedAt: "2024-01-01"}, ok()
@@ -825,10 +824,10 @@ func TestGetCompanyEmployee(t *testing.T) {
 
 	t.Run("check role fails — initiator not in company", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -839,11 +838,11 @@ func TestGetCompanyEmployee(t *testing.T) {
 
 	t.Run("target employee not found", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return nil, notFound()
@@ -873,7 +872,7 @@ func TestGetCompanyEmployees(t *testing.T) {
 
 	t.Run("success without filters", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.getCompanyEmployees = func(_ context.Context, _, _, _ string, _, _ int64) ([]*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployees = func(_ context.Context, _ entities.GetCompanyEmployeesDTO) ([]*entities.Employee, Error.CodeError) {
 			return []*entities.Employee{
 				{UserUUID: "u1", Role: "engineer"},
 				{UserUUID: "u2", Role: "manager"},
@@ -890,8 +889,8 @@ func TestGetCompanyEmployees(t *testing.T) {
 
 	t.Run("success with role filter", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.getCompanyEmployees = func(_ context.Context, _, _, role string, _, _ int64) ([]*entities.Employee, Error.CodeError) {
-			if role != "engineer" {
+		pg.getCompanyEmployees = func(_ context.Context, dto entities.GetCompanyEmployeesDTO) ([]*entities.Employee, Error.CodeError) {
+			if dto.Role != "engineer" {
 				return nil, internalErr()
 			}
 			return []*entities.Employee{
@@ -909,8 +908,8 @@ func TestGetCompanyEmployees(t *testing.T) {
 
 	t.Run("success with department filter", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.getCompanyEmployees = func(_ context.Context, _, deptUUID, _ string, _, _ int64) ([]*entities.Employee, Error.CodeError) {
-			if deptUUID != deptID {
+		pg.getCompanyEmployees = func(_ context.Context, dto entities.GetCompanyEmployeesDTO) ([]*entities.Employee, Error.CodeError) {
+			if dto.DepartmentUUID != deptID {
 				return nil, internalErr()
 			}
 			return []*entities.Employee{
@@ -959,7 +958,7 @@ func TestGetCompanyEmployees(t *testing.T) {
 
 	t.Run("check role fails", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -970,7 +969,7 @@ func TestGetCompanyEmployees(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.getCompanyEmployees = func(_ context.Context, _, _, _ string, _, _ int64) ([]*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployees = func(_ context.Context, _ entities.GetCompanyEmployeesDTO) ([]*entities.Employee, Error.CodeError) {
 			return nil, internalErr()
 		}
 
@@ -990,7 +989,7 @@ func TestGetCompanyEmployeesSummary(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.getCompanyEmployeesSummary = func(_ context.Context, _, _ string) (*entities.EmployeesSummary, Error.CodeError) {
+		pg.getCompanyEmployeesSummary = func(_ context.Context, _ entities.GetCompanyEmployeesSummaryDTO) (*entities.EmployeesSummary, Error.CodeError) {
 			return &entities.EmployeesSummary{
 				ChiefCount: 1, EngineerCount: 3, ManagerCount: 2, AnalyticCount: 1, UnemployedCount: 5, InspectorCount: 6,
 			}, ok()
@@ -1006,8 +1005,8 @@ func TestGetCompanyEmployeesSummary(t *testing.T) {
 
 	t.Run("success with department filter", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.getCompanyEmployeesSummary = func(_ context.Context, _, deptUUID string) (*entities.EmployeesSummary, Error.CodeError) {
-			if deptUUID != deptID {
+		pg.getCompanyEmployeesSummary = func(_ context.Context, dto entities.GetCompanyEmployeesSummaryDTO) (*entities.EmployeesSummary, Error.CodeError) {
+			if dto.DepartmentUUID != deptID {
 				return nil, internalErr()
 			}
 			return &entities.EmployeesSummary{EngineerCount: 2}, ok()
@@ -1035,7 +1034,7 @@ func TestGetCompanyEmployeesSummary(t *testing.T) {
 
 	t.Run("check role fails", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1046,7 +1045,7 @@ func TestGetCompanyEmployeesSummary(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.getCompanyEmployeesSummary = func(_ context.Context, _, _ string) (*entities.EmployeesSummary, Error.CodeError) {
+		pg.getCompanyEmployeesSummary = func(_ context.Context, _ entities.GetCompanyEmployeesSummaryDTO) (*entities.EmployeesSummary, Error.CodeError) {
 			return nil, internalErr()
 		}
 
@@ -1091,16 +1090,16 @@ func TestUpdateEmployeeRole(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return &entities.Employee{Role: "engineer"}, ok()
 		}
-		pg.setCompanyEmployeeRole = func(_ context.Context, _, _, _ string) Error.CodeError { return ok() }
+		pg.setCompanyEmployeeRole = func(_ context.Context, _ entities.SetCompanyEmployeeRoleDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.UpdateEmployeeRole(ctx, req)
@@ -1121,7 +1120,7 @@ func TestUpdateEmployeeRole(t *testing.T) {
 
 	t.Run("check role fails", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1132,11 +1131,11 @@ func TestUpdateEmployeeRole(t *testing.T) {
 
 	t.Run("target employee not found", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return nil, notFound()
@@ -1149,16 +1148,16 @@ func TestUpdateEmployeeRole(t *testing.T) {
 
 	t.Run("set role db error", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return &entities.Employee{Role: "engineer"}, ok()
 		}
-		pg.setCompanyEmployeeRole = func(_ context.Context, _, _, _ string) Error.CodeError { return internalErr() }
+		pg.setCompanyEmployeeRole = func(_ context.Context, _ entities.SetCompanyEmployeeRoleDTO) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.UpdateEmployeeRole(ctx, req)
@@ -1187,7 +1186,7 @@ func TestRemoveCompanyEmployee(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.removeCompanyEmployee = func(_ context.Context, _, _ string) Error.CodeError { return ok() }
+		pg.removeCompanyEmployee = func(_ context.Context, _ entities.RemoveCompanyEmployeeDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.RemoveCompanyEmployee(ctx, makeReq(initiatorID, targetID))
@@ -1196,7 +1195,7 @@ func TestRemoveCompanyEmployee(t *testing.T) {
 
 	t.Run("check role fails", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1213,7 +1212,7 @@ func TestRemoveCompanyEmployee(t *testing.T) {
 
 	t.Run("target employee not found", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.removeCompanyEmployee = func(_ context.Context, _, _ string) Error.CodeError { return notFound() }
+		pg.removeCompanyEmployee = func(_ context.Context, _ entities.RemoveCompanyEmployeeDTO) Error.CodeError { return notFound() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.RemoveCompanyEmployee(ctx, makeReq(initiatorID, targetID))
@@ -1222,7 +1221,7 @@ func TestRemoveCompanyEmployee(t *testing.T) {
 
 	t.Run("db delete error", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.removeCompanyEmployee = func(_ context.Context, _, _ string) Error.CodeError { return internalErr() }
+		pg.removeCompanyEmployee = func(_ context.Context, _ entities.RemoveCompanyEmployeeDTO) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.RemoveCompanyEmployee(ctx, makeReq(initiatorID, targetID))
@@ -1280,7 +1279,7 @@ func TestCreateDepartment(t *testing.T) {
 
 	t.Run("check role fails — company not found", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1291,10 +1290,10 @@ func TestCreateDepartment(t *testing.T) {
 
 	t.Run("check role fails — not chief", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return &entities.Employee{Role: "engineer"}, ok()
 		}
 
@@ -1353,19 +1352,19 @@ func TestAddEmployeeToDepartment(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return departmentEntity(), ok()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return &entities.Employee{Role: "engineer"}, ok()
 		}
-		pg.addEmployeeToDepartment = func(_ context.Context, _, _, _ string) Error.CodeError { return ok() }
+		pg.addEmployeeToDepartment = func(_ context.Context, _ entities.AddEmployeeToDepartmentDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.AddEmployeeToDepartment(ctx, req)
@@ -1374,7 +1373,7 @@ func TestAddEmployeeToDepartment(t *testing.T) {
 
 	t.Run("department not found", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1385,13 +1384,13 @@ func TestAddEmployeeToDepartment(t *testing.T) {
 
 	t.Run("initiator not chief", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return departmentEntity(), ok()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return &entities.Employee{Role: "manager"}, ok()
 		}
 
@@ -1402,14 +1401,14 @@ func TestAddEmployeeToDepartment(t *testing.T) {
 
 	t.Run("target not in company", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return departmentEntity(), ok()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return nil, notFound()
@@ -1422,19 +1421,19 @@ func TestAddEmployeeToDepartment(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return departmentEntity(), ok()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return &entities.Employee{Role: "engineer"}, ok()
 		}
-		pg.addEmployeeToDepartment = func(_ context.Context, _, _, _ string) Error.CodeError { return internalErr() }
+		pg.addEmployeeToDepartment = func(_ context.Context, _ entities.AddEmployeeToDepartmentDTO) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.AddEmployeeToDepartment(ctx, req)
@@ -1484,7 +1483,7 @@ func TestGetDepartment(t *testing.T) {
 
 	t.Run("department not found", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1495,13 +1494,13 @@ func TestGetDepartment(t *testing.T) {
 
 	t.Run("initiator not in company", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return departmentEntity(), ok()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1536,7 +1535,7 @@ func TestGetCompanyDepartments(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.getCompanyDepartments = func(_ context.Context, _ string, _, _ int64) ([]*entities.Department, Error.CodeError) {
+		pg.getCompanyDepartments = func(_ context.Context, _ entities.GetCompanyDepartmentsDTO) ([]*entities.Department, Error.CodeError) {
 			return []*entities.Department{
 				{UUID: "d1", Title: "Engineering"},
 				{UUID: "d2", Title: "Marketing"},
@@ -1553,7 +1552,7 @@ func TestGetCompanyDepartments(t *testing.T) {
 
 	t.Run("check role fails", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1582,7 +1581,7 @@ func TestGetCompanyDepartments(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.getCompanyDepartments = func(_ context.Context, _ string, _, _ int64) ([]*entities.Department, Error.CodeError) {
+		pg.getCompanyDepartments = func(_ context.Context, _ entities.GetCompanyDepartmentsDTO) ([]*entities.Department, Error.CodeError) {
 			return nil, internalErr()
 		}
 
@@ -1639,7 +1638,7 @@ func TestUpdateDepartmentTitle(t *testing.T) {
 
 	t.Run("department not found", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1650,13 +1649,13 @@ func TestUpdateDepartmentTitle(t *testing.T) {
 
 	t.Run("initiator not chief", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return departmentEntity(), ok()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return &entities.Employee{Role: "manager"}, ok()
 		}
 
@@ -1703,7 +1702,7 @@ func TestDeleteDepartment(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChiefAndDept()
-		pg.deleteDepartment = func(_ context.Context, _ string) Error.CodeError { return ok() }
+		pg.deleteDepartment = func(_ context.Context, _ entities.DeleteDepartmentDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.DeleteDepartment(ctx, req)
@@ -1712,7 +1711,7 @@ func TestDeleteDepartment(t *testing.T) {
 
 	t.Run("department not found", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1723,13 +1722,13 @@ func TestDeleteDepartment(t *testing.T) {
 
 	t.Run("initiator not chief", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return departmentEntity(), ok()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return &entities.Employee{Role: "manager"}, ok()
 		}
 
@@ -1740,7 +1739,7 @@ func TestDeleteDepartment(t *testing.T) {
 
 	t.Run("db delete error", func(t *testing.T) {
 		pg := pgRepoWithChiefAndDept()
-		pg.deleteDepartment = func(_ context.Context, _ string) Error.CodeError { return internalErr() }
+		pg.deleteDepartment = func(_ context.Context, _ entities.DeleteDepartmentDTO) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.DeleteDepartment(ctx, req)
@@ -1756,7 +1755,7 @@ func TestGetUserCompanies(t *testing.T) {
 
 	t.Run("success — returns user companies", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getUserCompanies = func(_ context.Context, _ string) ([]*entities.GetCompanies, Error.CodeError) {
+		pg.getUserCompanies = func(_ context.Context, _ entities.GetUserCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError) {
 			return []*entities.GetCompanies{
 				{CompanyUUID: companyID, Title: "My Company", Status: "open"},
 			}, ok()
@@ -1775,7 +1774,7 @@ func TestGetUserCompanies(t *testing.T) {
 
 	t.Run("success — empty list", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getUserCompanies = func(_ context.Context, _ string) ([]*entities.GetCompanies, Error.CodeError) {
+		pg.getUserCompanies = func(_ context.Context, _ entities.GetUserCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError) {
 			return []*entities.GetCompanies{}, ok()
 		}
 
@@ -1797,7 +1796,7 @@ func TestGetUserCompanies(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getUserCompanies = func(_ context.Context, _ string) ([]*entities.GetCompanies, Error.CodeError) {
+		pg.getUserCompanies = func(_ context.Context, _ entities.GetUserCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError) {
 			return nil, internalErr()
 		}
 
@@ -1848,13 +1847,13 @@ func TestRemoveEmployeeFromDepartment(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChiefAndDept()
 		// target is in this department
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return &entities.Employee{Role: "engineer", DepartmentUUID: deptID}, ok()
 		}
-		pg.removeEmployeeFromDepartment = func(_ context.Context, _, _ string) Error.CodeError { return ok() }
+		pg.removeEmployeeFromDepartment = func(_ context.Context, _ entities.RemoveEmployeeFromDepartmentDTO) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.RemoveEmployeeFromDepartment(ctx, req)
@@ -1863,7 +1862,7 @@ func TestRemoveEmployeeFromDepartment(t *testing.T) {
 
 	t.Run("department not found", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return nil, notFound()
 		}
 
@@ -1874,13 +1873,13 @@ func TestRemoveEmployeeFromDepartment(t *testing.T) {
 
 	t.Run("initiator not chief", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.getDepartment = func(_ context.Context, _ string) (*entities.Department, Error.CodeError) {
+		pg.getDepartment = func(_ context.Context, _ entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 			return departmentEntity(), ok()
 		}
-		pg.getCompany = func(_ context.Context, _ string) (*entities.Company, Error.CodeError) {
+		pg.getCompany = func(_ context.Context, _ entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
 			return companyEntity(), ok()
 		}
-		pg.getCompanyEmployee = func(_ context.Context, _, _ string) (*entities.Employee, Error.CodeError) {
+		pg.getCompanyEmployee = func(_ context.Context, _ entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
 			return &entities.Employee{Role: "manager"}, ok()
 		}
 
@@ -1891,8 +1890,8 @@ func TestRemoveEmployeeFromDepartment(t *testing.T) {
 
 	t.Run("target employee not found", func(t *testing.T) {
 		pg := pgRepoWithChiefAndDept()
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return nil, notFound()
@@ -1905,8 +1904,8 @@ func TestRemoveEmployeeFromDepartment(t *testing.T) {
 
 	t.Run("target not in this department", func(t *testing.T) {
 		pg := pgRepoWithChiefAndDept()
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return &entities.Employee{Role: "engineer", DepartmentUUID: "other-dept-uuid"}, ok()
@@ -1919,13 +1918,13 @@ func TestRemoveEmployeeFromDepartment(t *testing.T) {
 
 	t.Run("db remove error", func(t *testing.T) {
 		pg := pgRepoWithChiefAndDept()
-		pg.getCompanyEmployee = func(_ context.Context, _, userUUID string) (*entities.Employee, Error.CodeError) {
-			if userUUID == initiatorID {
+		pg.getCompanyEmployee = func(_ context.Context, dto entities.GetCompanyEmployeeDTO) (*entities.Employee, Error.CodeError) {
+			if dto.UserUUID == initiatorID {
 				return chiefEmployee(), ok()
 			}
 			return &entities.Employee{Role: "engineer", DepartmentUUID: deptID}, ok()
 		}
-		pg.removeEmployeeFromDepartment = func(_ context.Context, _, _ string) Error.CodeError { return internalErr() }
+		pg.removeEmployeeFromDepartment = func(_ context.Context, _ entities.RemoveEmployeeFromDepartmentDTO) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.RemoveEmployeeFromDepartment(ctx, req)

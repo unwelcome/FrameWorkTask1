@@ -17,3 +17,37 @@ type EmployeesSummary struct {
 	InspectorCount  int64
 	UnemployedCount int64
 }
+
+type JoinCompanyDTO struct {
+	CompanyUUID string
+	UserUUID    string
+}
+
+type GetCompanyEmployeeDTO struct {
+	CompanyUUID string
+	UserUUID    string
+}
+
+type GetCompanyEmployeesDTO struct {
+	CompanyUUID    string
+	DepartmentUUID string
+	Role           string
+	Offset         int64
+	Count          int64
+}
+
+type GetCompanyEmployeesSummaryDTO struct {
+	CompanyUUID    string
+	DepartmentUUID string
+}
+
+type SetCompanyEmployeeRoleDTO struct {
+	CompanyUUID string
+	UserUUID    string
+	Role        string
+}
+
+type RemoveCompanyEmployeeDTO struct {
+	CompanyUUID string
+	UserUUID    string
+}

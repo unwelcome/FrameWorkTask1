@@ -45,7 +45,7 @@ func Internal(err error) CodeError {
 	return CodeError{Code: int(codes.Internal), Err: err}
 }
 
-func (e *CodeError) Error() string {
+func (e CodeError) Error() string {
 	if e.Err != nil {
 		return e.Err.Error()
 	}

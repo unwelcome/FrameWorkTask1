@@ -2,14 +2,13 @@ package services
 
 import (
 	"context"
-	"crypto/rand"
-	"math/big"
 	"time"
 
 	"github.com/google/uuid"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/company/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/company/internal/entities"
+	"github.com/unwelcome/FrameWorkTask1/backend/company/pkg/utils"
 	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/helpers"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/validate"
@@ -242,7 +241,7 @@ func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.Crea
 	var joinCode string
 	found := false
 	for i := 0; i < JoinCodeCreateTries; i++ {
-		code, genErr := generateJoinCode()
+		code, genErr := utils.GenerateJoinCode(JoinCodeLength)
 		if genErr != nil {
 			return nil, status.Error(codes.Internal, "internal error")
 		}
@@ -814,21 +813,6 @@ func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *
 }
 
 // ДОП ФУНКЦИИ
-
-// generateJoinCode Генерирует криптографически случайную строку цифр длиной JoinCodeLength
-func generateJoinCode() (string, error) {
-	digits := make([]byte, JoinCodeLength)
-
-	for i := 0; i < JoinCodeLength; i++ {
-		n, err := rand.Int(rand.Reader, big.NewInt(10))
-		if err != nil {
-			return "", err
-		}
-		digits[i] = byte('0' + n.Int64())
-	}
-
-	return string(digits), nil
-}
 
 // checkEmployeeRole Проверяет роль пользователя в компании
 func (s *CompanyService) checkEmployeeRole(ctx context.Context, companyUUID, userUUID string, requiredRoles []string) error {

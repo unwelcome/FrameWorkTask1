@@ -51,7 +51,7 @@ func (r *companyRepository) CreateCompany(ctx context.Context, dto entities.Crea
 	}
 	defer tx.Rollback()
 
-	// 1. Создаём компанию
+	// Создаём компанию
 	_, err = tx.ExecContext(ctx,
 		`INSERT INTO companies (uuid, title, created_by) VALUES ($1, $2, $3)`,
 		dto.CompanyUUID, dto.Title, dto.CreatedBy,
@@ -60,7 +60,7 @@ func (r *companyRepository) CreateCompany(ctx context.Context, dto entities.Crea
 		return Error.Internal(err)
 	}
 
-	// 2. Добавляем основателя как сотрудника
+	// Добавляем основателя как сотрудника
 	_, err = tx.ExecContext(ctx,
 		`INSERT INTO employees (company_uuid, user_uuid) VALUES ($1, $2)`,
 		dto.CompanyUUID, dto.CreatedBy,
@@ -69,7 +69,7 @@ func (r *companyRepository) CreateCompany(ctx context.Context, dto entities.Crea
 		return Error.Internal(err)
 	}
 
-	// 3. Устанавливаем роль chief
+	// Устанавливаем роль chief
 	_, err = tx.ExecContext(ctx,
 		`UPDATE employees SET role = 'chief' WHERE company_uuid = $1 AND user_uuid = $2`,
 		dto.CompanyUUID, dto.CreatedBy,
@@ -379,7 +379,7 @@ func (r *companyRepository) RemoveCompanyEmployee(ctx context.Context, dto entit
 	return Error.CodeError{}
 }
 
-// CreateDepartment - Создание департамента
+// CreateDepartment Создание департамента
 func (r *companyRepository) CreateDepartment(ctx context.Context, dto entities.CreateDepartment) Error.CodeError {
 	query := `INSERT INTO departments (uuid, company_uuid, title, created_by) VALUES ($1, $2, $3, $4);`
 
@@ -390,7 +390,7 @@ func (r *companyRepository) CreateDepartment(ctx context.Context, dto entities.C
 	return Error.CodeError{}
 }
 
-// AddEmployeeToDepartment - Добавление сотрудника в департамент
+// AddEmployeeToDepartment Добавление сотрудника в департамент
 func (r *companyRepository) AddEmployeeToDepartment(ctx context.Context, dto entities.AddEmployeeToDepartmentDTO) Error.CodeError {
 	query := `UPDATE employees SET department_uuid = $3 WHERE company_uuid = $1 AND user_uuid = $2;`
 
@@ -411,7 +411,7 @@ func (r *companyRepository) AddEmployeeToDepartment(ctx context.Context, dto ent
 	return Error.CodeError{}
 }
 
-// GetDepartment - Получение полной информации о департаменте
+// GetDepartment Получение полной информации о департаменте
 func (r *companyRepository) GetDepartment(ctx context.Context, dto entities.GetDepartmentDTO) (*entities.Department, Error.CodeError) {
 	query := `SELECT company_uuid, title, created_at, created_by FROM departments WHERE uuid = $1;`
 
@@ -429,7 +429,7 @@ func (r *companyRepository) GetDepartment(ctx context.Context, dto entities.GetD
 	return department, Error.CodeError{}
 }
 
-// GetCompanyDepartments - Получение списка департаментов организации с фильтрацией (offset и count)
+// GetCompanyDepartments Получение списка департаментов организации с фильтрацией (offset и count)
 func (r *companyRepository) GetCompanyDepartments(ctx context.Context, dto entities.GetCompanyDepartmentsDTO) ([]*entities.Department, Error.CodeError) {
 	query := `SELECT uuid, title FROM departments WHERE company_uuid = $1 ORDER BY created_at DESC OFFSET $2 LIMIT $3;`
 
@@ -457,7 +457,7 @@ func (r *companyRepository) GetCompanyDepartments(ctx context.Context, dto entit
 	return departments, Error.CodeError{}
 }
 
-// UpdateDepartmentTitle - Обновление названия департамента
+// UpdateDepartmentTitle Обновление названия департамента
 func (r *companyRepository) UpdateDepartmentTitle(ctx context.Context, dto *entities.UpdateDepartment) Error.CodeError {
 	query := `UPDATE departments SET title = $1 WHERE uuid = $2;`
 
@@ -478,7 +478,7 @@ func (r *companyRepository) UpdateDepartmentTitle(ctx context.Context, dto *enti
 	return Error.CodeError{}
 }
 
-// DeleteDepartment - Удаление департамента
+// DeleteDepartment Удаление департамента
 func (r *companyRepository) DeleteDepartment(ctx context.Context, dto entities.DeleteDepartmentDTO) Error.CodeError {
 	query := `DELETE FROM departments WHERE uuid = $1;`
 
@@ -499,7 +499,7 @@ func (r *companyRepository) DeleteDepartment(ctx context.Context, dto entities.D
 	return Error.CodeError{}
 }
 
-// RemoveEmployeeFromDepartment - Удаление сотрудника из департамента
+// RemoveEmployeeFromDepartment Удаление сотрудника из департамента
 func (r *companyRepository) RemoveEmployeeFromDepartment(ctx context.Context, dto entities.RemoveEmployeeFromDepartmentDTO) Error.CodeError {
 	query := `UPDATE employees SET department_uuid = NULL WHERE company_uuid = $1 AND user_uuid = $2;`
 

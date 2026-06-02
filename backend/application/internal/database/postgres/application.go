@@ -104,25 +104,25 @@ func (r *applicationRepository) GetApplication(ctx context.Context, dto entities
 		FROM applications
 		WHERE uuid = $1;`
 
-	application := &entities.Application{ApplicationUUID: dto.ApplicationUUID}
+	app := &entities.Application{ApplicationUUID: dto.ApplicationUUID}
 	err := r.db.QueryRowContext(ctx, query, dto.ApplicationUUID).Scan(
-		&application.CompanyUUID,
-		&application.DepartmentUUID,
-		&application.Version,
-		&application.Title,
-		&application.Description,
-		&application.Status,
-		&application.RevisionCount,
-		&application.CreatedAt,
-		&application.CreatedBy,
-		&application.UpdatedAt,
-		&application.UpdatedBy,
-		&application.ManagedBy,
-		&application.ExecutedBy,
-		&application.InspectedBy,
-		&application.ClosedAt,
-		&application.DeletedAt,
-		&application.DeletedBy,
+		&app.CompanyUUID,
+		&app.DepartmentUUID,
+		&app.Version,
+		&app.Title,
+		&app.Description,
+		&app.Status,
+		&app.RevisionCount,
+		&app.CreatedAt,
+		&app.CreatedBy,
+		&app.UpdatedAt,
+		&app.UpdatedBy,
+		&app.ManagedBy,
+		&app.ExecutedBy,
+		&app.InspectedBy,
+		&app.ClosedAt,
+		&app.DeletedAt,
+		&app.DeletedBy,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -130,7 +130,7 @@ func (r *applicationRepository) GetApplication(ctx context.Context, dto entities
 		}
 		return nil, Error.Internal(err)
 	}
-	return application, Error.CodeError{}
+	return app, Error.CodeError{}
 }
 
 // GetApplicationFixLogs Получение всех fix log-ов заявки
@@ -220,31 +220,31 @@ func (r *applicationRepository) GetApplications(ctx context.Context, dto entitie
 
 	applications := make([]*entities.Application, 0)
 	for rows.Next() {
-		application := &entities.Application{CompanyUUID: dto.CompanyUUID}
+		app := &entities.Application{CompanyUUID: dto.CompanyUUID}
 		err = rows.Scan(
-			&application.ApplicationUUID,
-			&application.DepartmentUUID,
-			&application.Version,
-			&application.Title,
-			&application.Description,
-			&application.Status,
-			&application.RevisionCount,
-			&application.CreatedAt,
-			&application.CreatedBy,
-			&application.UpdatedAt,
-			&application.UpdatedBy,
-			&application.ManagedBy,
-			&application.ExecutedBy,
-			&application.InspectedBy,
-			&application.ClosedAt,
-			&application.DeletedAt,
-			&application.DeletedBy,
+			&app.ApplicationUUID,
+			&app.DepartmentUUID,
+			&app.Version,
+			&app.Title,
+			&app.Description,
+			&app.Status,
+			&app.RevisionCount,
+			&app.CreatedAt,
+			&app.CreatedBy,
+			&app.UpdatedAt,
+			&app.UpdatedBy,
+			&app.ManagedBy,
+			&app.ExecutedBy,
+			&app.InspectedBy,
+			&app.ClosedAt,
+			&app.DeletedAt,
+			&app.DeletedBy,
 		)
 		if err != nil {
 			return nil, Error.Internal(err)
 		}
 
-		applications = append(applications, application)
+		applications = append(applications, app)
 	}
 
 	if err = rows.Err(); err != nil {

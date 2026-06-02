@@ -812,7 +812,7 @@ func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *
 	return &emptypb.Empty{}, nil
 }
 
-// ДОП ФУНКЦИИ
+// ─── Вспомогательные функции ──────────────────────────────────────────────────
 
 // checkEmployeeRole Проверяет роль пользователя в компании
 func (s *CompanyService) checkEmployeeRole(ctx context.Context, companyUUID, userUUID string, requiredRoles []string) error {

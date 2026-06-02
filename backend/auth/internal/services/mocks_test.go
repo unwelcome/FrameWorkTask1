@@ -15,15 +15,15 @@ import (
 // ─── Mock: UserRepository ────────────────────────────────────────────────────
 
 type mockUserRepo struct {
-	createUser         func(ctx context.Context, dto *entities.User) Error.CodeError
+	createUser         func(ctx context.Context, dto entities.User) Error.CodeError
 	getUserByEmail     func(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError)
 	getUser            func(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError)
 	updateUserPassword func(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError
-	updateUserBio      func(ctx context.Context, dto *entities.UserUpdateBio) Error.CodeError
+	updateUserBio      func(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError
 	deleteUser         func(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError
 }
 
-func (m *mockUserRepo) CreateUser(ctx context.Context, dto *entities.User) Error.CodeError {
+func (m *mockUserRepo) CreateUser(ctx context.Context, dto entities.User) Error.CodeError {
 	return m.createUser(ctx, dto)
 }
 func (m *mockUserRepo) GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
@@ -35,7 +35,7 @@ func (m *mockUserRepo) GetUser(ctx context.Context, dto entities.GetUserDTO) (*e
 func (m *mockUserRepo) UpdateUserPassword(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError {
 	return m.updateUserPassword(ctx, dto)
 }
-func (m *mockUserRepo) UpdateUserBio(ctx context.Context, dto *entities.UserUpdateBio) Error.CodeError {
+func (m *mockUserRepo) UpdateUserBio(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError {
 	return m.updateUserBio(ctx, dto)
 }
 func (m *mockUserRepo) DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError {

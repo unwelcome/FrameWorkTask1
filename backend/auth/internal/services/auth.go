@@ -78,7 +78,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
-	if err := s.db.User.CreateUser(ctx, &entities.User{
+	if err := s.db.User.CreateUser(ctx, entities.User{
 		UserUUID:     userUUID,
 		Email:        req.GetEmail(),
 		PasswordHash: string(passwordHash),
@@ -197,7 +197,7 @@ func (s *AuthService) UpdateUserBio(ctx context.Context, req *pb.UpdateUserBioRe
 		return nil, status.Errorf(codes.InvalidArgument, "invalid patronymic")
 	}
 
-	if err := s.db.User.UpdateUserBio(ctx, &entities.UserUpdateBio{
+	if err := s.db.User.UpdateUserBio(ctx, entities.UserUpdateBio{
 		UserUUID:   req.GetUserUuid(),
 		FirstName:  req.GetFirstName(),
 		LastName:   req.GetLastName(),

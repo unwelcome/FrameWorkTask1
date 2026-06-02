@@ -12,11 +12,11 @@ import (
 )
 
 type UserRepository interface {
-	CreateUser(ctx context.Context, dto *entities.User) Error.CodeError
+	CreateUser(ctx context.Context, dto entitпшies.User) Error.CodeError
 	GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError)
 	GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError)
 	UpdateUserPassword(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError
-	UpdateUserBio(ctx context.Context, dto *entities.UserUpdateBio) Error.CodeError
+	UpdateUserBio(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError
 	DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError
 }
 
@@ -28,7 +28,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) CreateUser(ctx context.Context, dto *entities.User) Error.CodeError {
+func (r *userRepository) CreateUser(ctx context.Context, dto entities.User) Error.CodeError {
 	query := `INSERT INTO users (uuid, email, password_hash, first_name, last_name, patronymic) VALUES ($1, $2, $3, $4, $5, $6);`
 
 	_, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.Email, dto.PasswordHash, dto.FirstName, dto.LastName, dto.Patronymic)
@@ -93,7 +93,7 @@ func (r *userRepository) UpdateUserPassword(ctx context.Context, dto entities.Up
 	return Error.CodeError{}
 }
 
-func (r *userRepository) UpdateUserBio(ctx context.Context, dto *entities.UserUpdateBio) Error.CodeError {
+func (r *userRepository) UpdateUserBio(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError {
 	query := `UPDATE users SET (first_name, last_name, patronymic) = ($2, $3, $4) WHERE uuid = $1;`
 
 	result, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.FirstName, dto.LastName, dto.Patronymic)

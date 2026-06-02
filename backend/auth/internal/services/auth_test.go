@@ -77,7 +77,7 @@ func maxLenPassword() string {
 func TestRegister(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			createUser: func(_ context.Context, dto *entities.User) Error.CodeError {
+			createUser: func(_ context.Context, dto entities.User) Error.CodeError {
 				if dto.Email != "test@example.com" {
 					return Error.Internal(fmt.Errorf("unexpected email"))
 				}
@@ -136,7 +136,7 @@ func TestRegister(t *testing.T) {
 
 	t.Run("password_exactly_72_bytes_allowed", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			createUser: func(_ context.Context, _ *entities.User) Error.CodeError { return ok() },
+			createUser: func(_ context.Context, _ entities.User) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
 
@@ -178,7 +178,7 @@ func TestRegister(t *testing.T) {
 
 	t.Run("email_already_exists", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			createUser: func(_ context.Context, _ *entities.User) Error.CodeError {
+			createUser: func(_ context.Context, _ entities.User) Error.CodeError {
 				return Error.Public(codes.AlreadyExists, "email already registered")
 			},
 		}
@@ -468,7 +468,7 @@ func TestChangePassword(t *testing.T) {
 func TestUpdateUserBio(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			updateUserBio: func(_ context.Context, _ *entities.UserUpdateBio) Error.CodeError { return ok() },
+			updateUserBio: func(_ context.Context, _ entities.UserUpdateBio) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
 
@@ -507,7 +507,7 @@ func TestUpdateUserBio(t *testing.T) {
 
 	t.Run("not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			updateUserBio: func(_ context.Context, _ *entities.UserUpdateBio) Error.CodeError {
+			updateUserBio: func(_ context.Context, _ entities.UserUpdateBio) Error.CodeError {
 				return Error.Public(codes.NotFound, "user not found")
 			},
 		}

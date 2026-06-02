@@ -14,7 +14,7 @@ import (
 // ─── Mock: Postgres CompanyRepository ────────────────────────────────────────
 
 type mockPGCompanyRepo struct {
-	createCompany              func(ctx context.Context, dto *entities.CreateCompany) Error.CodeError
+	createCompany              func(ctx context.Context, dto entities.CreateCompany) Error.CodeError
 	getCompany                 func(ctx context.Context, dto entities.GetCompanyDTO) (*entities.Company, Error.CodeError)
 	getCompanies               func(ctx context.Context, dto entities.GetCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError)
 	updateCompanyTitle         func(ctx context.Context, dto entities.UpdateCompanyTitleDTO) Error.CodeError
@@ -26,7 +26,7 @@ type mockPGCompanyRepo struct {
 	getCompanyEmployeesSummary func(ctx context.Context, dto entities.GetCompanyEmployeesSummaryDTO) (*entities.EmployeesSummary, Error.CodeError)
 	setCompanyEmployeeRole     func(ctx context.Context, dto entities.SetCompanyEmployeeRoleDTO) Error.CodeError
 	removeCompanyEmployee      func(ctx context.Context, dto entities.RemoveCompanyEmployeeDTO) Error.CodeError
-	createDepartment           func(ctx context.Context, dto *entities.CreateDepartment) Error.CodeError
+	createDepartment           func(ctx context.Context, dto entities.CreateDepartment) Error.CodeError
 	addEmployeeToDepartment    func(ctx context.Context, dto entities.AddEmployeeToDepartmentDTO) Error.CodeError
 	getDepartment              func(ctx context.Context, dto entities.GetDepartmentDTO) (*entities.Department, Error.CodeError)
 	getCompanyDepartments      func(ctx context.Context, dto entities.GetCompanyDepartmentsDTO) ([]*entities.Department, Error.CodeError)
@@ -36,7 +36,7 @@ type mockPGCompanyRepo struct {
 	getUserCompanies             func(ctx context.Context, dto entities.GetUserCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError)
 }
 
-func (m *mockPGCompanyRepo) CreateCompany(ctx context.Context, dto *entities.CreateCompany) Error.CodeError {
+func (m *mockPGCompanyRepo) CreateCompany(ctx context.Context, dto entities.CreateCompany) Error.CodeError {
 	return m.createCompany(ctx, dto)
 }
 func (m *mockPGCompanyRepo) GetCompany(ctx context.Context, dto entities.GetCompanyDTO) (*entities.Company, Error.CodeError) {
@@ -72,7 +72,7 @@ func (m *mockPGCompanyRepo) SetCompanyEmployeeRole(ctx context.Context, dto enti
 func (m *mockPGCompanyRepo) RemoveCompanyEmployee(ctx context.Context, dto entities.RemoveCompanyEmployeeDTO) Error.CodeError {
 	return m.removeCompanyEmployee(ctx, dto)
 }
-func (m *mockPGCompanyRepo) CreateDepartment(ctx context.Context, dto *entities.CreateDepartment) Error.CodeError {
+func (m *mockPGCompanyRepo) CreateDepartment(ctx context.Context, dto entities.CreateDepartment) Error.CodeError {
 	return m.createDepartment(ctx, dto)
 }
 func (m *mockPGCompanyRepo) AddEmployeeToDepartment(ctx context.Context, dto entities.AddEmployeeToDepartmentDTO) Error.CodeError {

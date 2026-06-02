@@ -59,7 +59,7 @@ func (s *CompanyService) CreateCompany(ctx context.Context, req *pb.CreateCompan
 
 	companyUUID := uuid.Must(uuid.NewV7()).String()
 
-	if err := s.db.Company.CreateCompany(ctx, &entities.CreateCompany{
+	if err := s.db.Company.CreateCompany(ctx, entities.CreateCompany{
 		CompanyUUID: companyUUID,
 		Title:       req.GetTitle(),
 		CreatedBy:   req.GetInitiatorUuid(),
@@ -586,7 +586,7 @@ func (s *CompanyService) CreateDepartment(ctx context.Context, req *pb.CreateDep
 
 	departmentUUID := uuid.Must(uuid.NewV7()).String()
 
-	if err := s.db.Company.CreateDepartment(ctx, &entities.CreateDepartment{
+	if err := s.db.Company.CreateDepartment(ctx, entities.CreateDepartment{
 		UUID:        departmentUUID,
 		CompanyUUID: req.GetCompanyUuid(),
 		Title:       req.GetTitle(),

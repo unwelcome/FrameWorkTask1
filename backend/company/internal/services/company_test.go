@@ -60,7 +60,7 @@ func TestCreateCompany(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.createCompany = func(_ context.Context, _ *entities.CreateCompany) Error.CodeError { return ok() }
+		pg.createCompany = func(_ context.Context, _ entities.CreateCompany) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		res, err := svc.CreateCompany(ctx, req)
@@ -90,7 +90,7 @@ func TestCreateCompany(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		pg := emptyPGRepo()
-		pg.createCompany = func(_ context.Context, _ *entities.CreateCompany) Error.CodeError { return internalErr() }
+		pg.createCompany = func(_ context.Context, _ entities.CreateCompany) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.CreateCompany(ctx, req)
@@ -1259,7 +1259,7 @@ func TestCreateDepartment(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.createDepartment = func(_ context.Context, _ *entities.CreateDepartment) Error.CodeError { return ok() }
+		pg.createDepartment = func(_ context.Context, _ entities.CreateDepartment) Error.CodeError { return ok() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		res, err := svc.CreateDepartment(ctx, req)
@@ -1304,7 +1304,7 @@ func TestCreateDepartment(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		pg := pgRepoWithChief()
-		pg.createDepartment = func(_ context.Context, _ *entities.CreateDepartment) Error.CodeError { return internalErr() }
+		pg.createDepartment = func(_ context.Context, _ entities.CreateDepartment) Error.CodeError { return internalErr() }
 
 		svc := newTestService(pg, emptyRedisRepo())
 		_, err := svc.CreateDepartment(ctx, req)

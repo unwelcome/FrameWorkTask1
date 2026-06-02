@@ -13,7 +13,7 @@ import (
 )
 
 type CompanyRepository interface {
-	CreateCompany(ctx context.Context, dto *entities.CreateCompany) Error.CodeError
+	CreateCompany(ctx context.Context, dto entities.CreateCompany) Error.CodeError
 	GetCompany(ctx context.Context, dto entities.GetCompanyDTO) (*entities.Company, Error.CodeError)
 	GetCompanies(ctx context.Context, dto entities.GetCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError)
 	GetUserCompanies(ctx context.Context, dto entities.GetUserCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError)
@@ -26,7 +26,7 @@ type CompanyRepository interface {
 	GetCompanyEmployeesSummary(ctx context.Context, dto entities.GetCompanyEmployeesSummaryDTO) (*entities.EmployeesSummary, Error.CodeError)
 	SetCompanyEmployeeRole(ctx context.Context, dto entities.SetCompanyEmployeeRoleDTO) Error.CodeError
 	RemoveCompanyEmployee(ctx context.Context, dto entities.RemoveCompanyEmployeeDTO) Error.CodeError
-	CreateDepartment(ctx context.Context, dto *entities.CreateDepartment) Error.CodeError
+	CreateDepartment(ctx context.Context, dto entities.CreateDepartment) Error.CodeError
 	AddEmployeeToDepartment(ctx context.Context, dto entities.AddEmployeeToDepartmentDTO) Error.CodeError
 	GetDepartment(ctx context.Context, dto entities.GetDepartmentDTO) (*entities.Department, Error.CodeError)
 	GetCompanyDepartments(ctx context.Context, dto entities.GetCompanyDepartmentsDTO) ([]*entities.Department, Error.CodeError)
@@ -44,7 +44,7 @@ func NewCompanyRepository(db *sql.DB) CompanyRepository {
 }
 
 // CreateCompany Создание компании с добавлением основателя
-func (r *companyRepository) CreateCompany(ctx context.Context, dto *entities.CreateCompany) Error.CodeError {
+func (r *companyRepository) CreateCompany(ctx context.Context, dto entities.CreateCompany) Error.CodeError {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return Error.Internal(err)
@@ -380,7 +380,7 @@ func (r *companyRepository) RemoveCompanyEmployee(ctx context.Context, dto entit
 }
 
 // CreateDepartment - Создание департамента
-func (r *companyRepository) CreateDepartment(ctx context.Context, dto *entities.CreateDepartment) Error.CodeError {
+func (r *companyRepository) CreateDepartment(ctx context.Context, dto entities.CreateDepartment) Error.CodeError {
 	query := `INSERT INTO departments (uuid, company_uuid, title, created_by) VALUES ($1, $2, $3, $4);`
 
 	_, err := r.db.ExecContext(ctx, query, dto.UUID, dto.CompanyUUID, dto.Title, dto.CreatedBy)

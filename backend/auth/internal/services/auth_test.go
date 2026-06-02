@@ -77,7 +77,7 @@ func maxLenPassword() string {
 func TestRegister(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			createUser: func(_ context.Context, dto *entities.UserCreate) Error.CodeError {
+			createUser: func(_ context.Context, dto *entities.User) Error.CodeError {
 				if dto.Email != "test@example.com" {
 					return Error.Internal(fmt.Errorf("unexpected email"))
 				}
@@ -136,7 +136,7 @@ func TestRegister(t *testing.T) {
 
 	t.Run("password_exactly_72_bytes_allowed", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			createUser: func(_ context.Context, _ *entities.UserCreate) Error.CodeError { return ok() },
+			createUser: func(_ context.Context, _ *entities.User) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
 
@@ -178,7 +178,7 @@ func TestRegister(t *testing.T) {
 
 	t.Run("email_already_exists", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			createUser: func(_ context.Context, _ *entities.UserCreate) Error.CodeError {
+			createUser: func(_ context.Context, _ *entities.User) Error.CodeError {
 				return Error.Public(codes.AlreadyExists, "email already registered")
 			},
 		}
@@ -201,12 +201,12 @@ func TestLogin(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		hashedPwd := hashPassword(t, testPassword)
 		userRepo := &mockUserRepo{
-			getUserByEmail: func(_ context.Context, _ string) (*entities.UserGetByEmail, Error.CodeError) {
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
 				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd}, ok()
 			},
 		}
 		authRepo := &mockAuthRepo{
-			saveRefreshToken: func(_ context.Context, _, _ string) Error.CodeError { return ok() },
+			saveRefreshToken: func(_ context.Context, _ entities.SaveRefreshTokenDTO) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, authRepo)
 
@@ -248,7 +248,7 @@ func TestLogin(t *testing.T) {
 
 	t.Run("user_not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			getUserByEmail: func(_ context.Context, _ string) (*entities.UserGetByEmail, Error.CodeError) {
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
 				return nil, Error.Public(codes.NotFound, "user not found")
 			},
 		}
@@ -265,7 +265,7 @@ func TestLogin(t *testing.T) {
 	t.Run("wrong_password", func(t *testing.T) {
 		hashedPwd := hashPassword(t, testPassword)
 		userRepo := &mockUserRepo{
-			getUserByEmail: func(_ context.Context, _ string) (*entities.UserGetByEmail, Error.CodeError) {
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
 				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd}, ok()
 			},
 		}
@@ -282,12 +282,12 @@ func TestLogin(t *testing.T) {
 	t.Run("save_token_error", func(t *testing.T) {
 		hashedPwd := hashPassword(t, testPassword)
 		userRepo := &mockUserRepo{
-			getUserByEmail: func(_ context.Context, _ string) (*entities.UserGetByEmail, Error.CodeError) {
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
 				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd}, ok()
 			},
 		}
 		authRepo := &mockAuthRepo{
-			saveRefreshToken: func(_ context.Context, _, _ string) Error.CodeError {
+			saveRefreshToken: func(_ context.Context, _ entities.SaveRefreshTokenDTO) Error.CodeError {
 				return Error.Internal(fmt.Errorf("redis error"))
 			},
 		}
@@ -307,9 +307,9 @@ func TestLogin(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			getUser: func(_ context.Context, uuid string) (*entities.UserGet, Error.CodeError) {
+			getUser: func(_ context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
 				return &entities.UserGet{
-					UserUUID:  uuid,
+					UserUUID:  dto.UserUUID,
 					Email:     "test@example.com",
 					FirstName: "Ivan",
 					LastName:  "Ivanov",
@@ -340,7 +340,7 @@ func TestGetUser(t *testing.T) {
 
 	t.Run("not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			getUser: func(_ context.Context, _ string) (*entities.UserGet, Error.CodeError) {
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
 				return nil, Error.Public(codes.NotFound, "user not found")
 			},
 		}
@@ -359,10 +359,10 @@ func TestGetUser(t *testing.T) {
 func TestChangePassword(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			updateUserPassword: func(_ context.Context, _, _ string) Error.CodeError { return ok() },
+			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError { return ok() },
 		}
 		authRepo := &mockAuthRepo{
-			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError { return ok() },
+			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, authRepo)
 
@@ -377,10 +377,10 @@ func TestChangePassword(t *testing.T) {
 	t.Run("success_no_active_tokens", func(t *testing.T) {
 		// Если у пользователя нет токенов — ошибка NotFound из RevokeAll игнорируется
 		userRepo := &mockUserRepo{
-			updateUserPassword: func(_ context.Context, _, _ string) Error.CodeError { return ok() },
+			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError { return ok() },
 		}
 		authRepo := &mockAuthRepo{
-			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError {
+			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError {
 				return Error.Public(codes.NotFound, "no tokens")
 			},
 		}
@@ -429,7 +429,7 @@ func TestChangePassword(t *testing.T) {
 
 	t.Run("user_not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			updateUserPassword: func(_ context.Context, _, _ string) Error.CodeError {
+			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError {
 				return Error.Public(codes.NotFound, "user not found")
 			},
 		}
@@ -445,10 +445,10 @@ func TestChangePassword(t *testing.T) {
 
 	t.Run("revoke_tokens_error", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			updateUserPassword: func(_ context.Context, _, _ string) Error.CodeError { return ok() },
+			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError { return ok() },
 		}
 		authRepo := &mockAuthRepo{
-			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError {
+			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError {
 				return Error.Internal(fmt.Errorf("redis error"))
 			},
 		}
@@ -528,10 +528,10 @@ func TestUpdateUserBio(t *testing.T) {
 func TestDeleteUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			deleteUser: func(_ context.Context, _ string) Error.CodeError { return ok() },
+			deleteUser: func(_ context.Context, _ entities.DeleteUserDTO) Error.CodeError { return ok() },
 		}
 		authRepo := &mockAuthRepo{
-			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError { return ok() },
+			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, authRepo)
 
@@ -545,10 +545,10 @@ func TestDeleteUser(t *testing.T) {
 
 	t.Run("no_tokens_still_deletes", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			deleteUser: func(_ context.Context, _ string) Error.CodeError { return ok() },
+			deleteUser: func(_ context.Context, _ entities.DeleteUserDTO) Error.CodeError { return ok() },
 		}
 		authRepo := &mockAuthRepo{
-			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError {
+			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError {
 				return Error.Public(codes.NotFound, "no tokens")
 			},
 		}
@@ -597,12 +597,12 @@ func TestDeleteUser(t *testing.T) {
 
 	t.Run("user_not_found_in_db", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			deleteUser: func(_ context.Context, _ string) Error.CodeError {
+			deleteUser: func(_ context.Context, _ entities.DeleteUserDTO) Error.CodeError {
 				return Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		authRepo := &mockAuthRepo{
-			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError { return ok() },
+			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, authRepo)
 
@@ -620,7 +620,7 @@ func TestDeleteUser(t *testing.T) {
 func TestGetAllActiveTokens(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
-			getAllRefreshTokens: func(_ context.Context, _ string) ([]string, Error.CodeError) {
+			getAllRefreshTokens: func(_ context.Context, _ entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError) {
 				return []string{"hash1", "hash2", "hash3"}, ok()
 			},
 		}
@@ -638,7 +638,7 @@ func TestGetAllActiveTokens(t *testing.T) {
 
 	t.Run("empty", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
-			getAllRefreshTokens: func(_ context.Context, _ string) ([]string, Error.CodeError) {
+			getAllRefreshTokens: func(_ context.Context, _ entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError) {
 				return []string{}, ok()
 			},
 		}
@@ -666,7 +666,7 @@ func TestGetAllActiveTokens(t *testing.T) {
 
 	t.Run("cache_error", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
-			getAllRefreshTokens: func(_ context.Context, _ string) ([]string, Error.CodeError) {
+			getAllRefreshTokens: func(_ context.Context, _ entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError) {
 				return nil, Error.Internal(fmt.Errorf("redis error"))
 			},
 		}
@@ -686,13 +686,13 @@ func TestRefreshToken(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		refreshToken := validRefreshToken(t)
 		userRepo := &mockUserRepo{
-			getUser: func(_ context.Context, _ string) (*entities.UserGet, Error.CodeError) {
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
 				return &entities.UserGet{UserUUID: testUUID1}, ok()
 			},
 		}
 		authRepo := &mockAuthRepo{
-			checkRefreshTokenExists: func(_ context.Context, _, _ string) Error.CodeError { return ok() },
-			refreshToken:            func(_ context.Context, _, _, _ string) Error.CodeError { return ok() },
+			checkRefreshTokenExists: func(_ context.Context, _ entities.CheckRefreshTokenExistsDTO) Error.CodeError { return ok() },
+			refreshToken:            func(_ context.Context, _ entities.RefreshTokenDTO) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, authRepo)
 
@@ -730,7 +730,7 @@ func TestRefreshToken(t *testing.T) {
 	t.Run("token_not_in_cache", func(t *testing.T) {
 		refreshToken := validRefreshToken(t)
 		authRepo := &mockAuthRepo{
-			checkRefreshTokenExists: func(_ context.Context, _, _ string) Error.CodeError {
+			checkRefreshTokenExists: func(_ context.Context, _ entities.CheckRefreshTokenExistsDTO) Error.CodeError {
 				return Error.Public(codes.NotFound, "token not found")
 			},
 		}
@@ -746,12 +746,12 @@ func TestRefreshToken(t *testing.T) {
 	t.Run("user_not_found", func(t *testing.T) {
 		refreshToken := validRefreshToken(t)
 		userRepo := &mockUserRepo{
-			getUser: func(_ context.Context, _ string) (*entities.UserGet, Error.CodeError) {
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
 				return nil, Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		authRepo := &mockAuthRepo{
-			checkRefreshTokenExists: func(_ context.Context, _, _ string) Error.CodeError { return ok() },
+			checkRefreshTokenExists: func(_ context.Context, _ entities.CheckRefreshTokenExistsDTO) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, authRepo)
 
@@ -768,7 +768,7 @@ func TestRefreshToken(t *testing.T) {
 func TestRevokeToken(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
-			revokeRefreshToken: func(_ context.Context, _, _ string) Error.CodeError { return ok() },
+			revokeRefreshToken: func(_ context.Context, _ entities.RevokeRefreshTokenDTO) Error.CodeError { return ok() },
 		}
 		svc := newTestService(emptyUserRepo(), authRepo)
 
@@ -804,7 +804,7 @@ func TestRevokeToken(t *testing.T) {
 
 	t.Run("token_not_found", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
-			revokeRefreshToken: func(_ context.Context, _, _ string) Error.CodeError {
+			revokeRefreshToken: func(_ context.Context, _ entities.RevokeRefreshTokenDTO) Error.CodeError {
 				return Error.Public(codes.NotFound, "refresh token not found")
 			},
 		}
@@ -822,8 +822,8 @@ func TestRevokeToken(t *testing.T) {
 		// Слой репозитория проверяет принадлежность и возвращает NotFound
 		const ownerUUID = "cccccccc-cccc-cccc-cccc-cccccccccccc"
 		authRepo := &mockAuthRepo{
-			revokeRefreshToken: func(_ context.Context, userUUID, _ string) Error.CodeError {
-				if userUUID != ownerUUID {
+			revokeRefreshToken: func(_ context.Context, dto entities.RevokeRefreshTokenDTO) Error.CodeError {
+				if dto.UserUUID != ownerUUID {
 					return Error.Public(codes.NotFound, "refresh token not found")
 				}
 				return ok()
@@ -845,7 +845,7 @@ func TestRevokeToken(t *testing.T) {
 func TestRevokeAllTokens(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
-			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError { return ok() },
+			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError { return ok() },
 		}
 		svc := newTestService(emptyUserRepo(), authRepo)
 
@@ -868,7 +868,7 @@ func TestRevokeAllTokens(t *testing.T) {
 
 	t.Run("not_found", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
-			revokeAllRefreshTokens: func(_ context.Context, _ string) Error.CodeError {
+			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError {
 				return Error.Public(codes.NotFound, "no tokens")
 			},
 		}

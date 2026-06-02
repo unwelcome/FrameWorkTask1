@@ -78,7 +78,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
-	if err := s.db.User.CreateUser(ctx, &entities.UserCreate{
+	if err := s.db.User.CreateUser(ctx, &entities.User{
 		UserUUID:     userUUID,
 		Email:        req.GetEmail(),
 		PasswordHash: string(passwordHash),
@@ -101,7 +101,7 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		return nil, status.Errorf(codes.InvalidArgument, "invalid password")
 	}
 
-	user, getErr := s.db.User.GetUserByEmail(ctx, req.GetEmail())
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -115,7 +115,10 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
-	if err := s.cache.Auth.SaveRefreshToken(ctx, user.UserUUID, tokenPair.RefreshToken).GRPCError(); err != nil {
+	if err := s.cache.Auth.SaveRefreshToken(ctx, entities.SaveRefreshTokenDTO{
+		UserUUID: user.UserUUID,
+		RawToken: tokenPair.RefreshToken,
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -132,7 +135,7 @@ func (s *AuthService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
 	}
 
-	user, getErr := s.db.User.GetUser(ctx, req.GetUserUuid())
+	user, getErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: req.GetUserUuid()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -161,12 +164,15 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
-	if err := s.db.User.UpdateUserPassword(ctx, req.GetUserUuid(), string(passwordHash)).GRPCError(); err != nil {
+	if err := s.db.User.UpdateUserPassword(ctx, entities.UpdateUserPasswordDTO{
+		UserUUID:     req.GetUserUuid(),
+		PasswordHash: string(passwordHash),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
 	// Отзываем все токены после смены пароля
-	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, req.GetUserUuid())
+	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: req.GetUserUuid()})
 	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
 		if err := revokeErr.GRPCError(); err != nil {
 			return nil, err
@@ -217,14 +223,14 @@ func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 	}
 
 	// Отзываем все токены пользователя (если они есть)
-	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, req.GetTargetUserUuid())
+	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: req.GetTargetUserUuid()})
 	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
 		if err := revokeErr.GRPCError(); err != nil {
 			return nil, err
 		}
 	}
 
-	if err := s.db.User.DeleteUser(ctx, req.GetTargetUserUuid()).GRPCError(); err != nil {
+	if err := s.db.User.DeleteUser(ctx, entities.DeleteUserDTO{UserUUID: req.GetTargetUserUuid()}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -237,7 +243,7 @@ func (s *AuthService) GetAllActiveTokens(ctx context.Context, req *pb.GetAllActi
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
 	}
 
-	userTokens, getErr := s.cache.Auth.GetAllRefreshTokens(ctx, req.GetUserUuid())
+	userTokens, getErr := s.cache.Auth.GetAllRefreshTokens(ctx, entities.GetAllRefreshTokensDTO{UserUUID: req.GetUserUuid()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -261,11 +267,14 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 		return nil, status.Errorf(codes.InvalidArgument, "wrong token type")
 	}
 
-	if err = s.cache.Auth.CheckRefreshTokenExists(ctx, tokenClaims.UserUUID, req.GetRefreshToken()).GRPCError(); err != nil {
+	if err = s.cache.Auth.CheckRefreshTokenExists(ctx, entities.CheckRefreshTokenExistsDTO{
+		UserUUID: tokenClaims.UserUUID,
+		RawToken: req.GetRefreshToken(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
-	if _, getErr := s.db.User.GetUser(ctx, tokenClaims.UserUUID); getErr.Code != 0 {
+	if _, getErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: tokenClaims.UserUUID}); getErr.Code != 0 {
 		return nil, getErr.GRPCError()
 	}
 
@@ -274,7 +283,11 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	if err = s.cache.Auth.RefreshToken(ctx, tokenClaims.UserUUID, req.GetRefreshToken(), tokenPair.RefreshToken).GRPCError(); err != nil {
+	if err = s.cache.Auth.RefreshToken(ctx, entities.RefreshTokenDTO{
+		UserUUID:    tokenClaims.UserUUID,
+		OldRawToken: req.GetRefreshToken(),
+		NewRawToken: tokenPair.RefreshToken,
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -293,7 +306,10 @@ func (s *AuthService) RevokeToken(ctx context.Context, req *pb.RevokeTokenReques
 		return nil, status.Errorf(codes.InvalidArgument, "token hash missed")
 	}
 
-	if err := s.cache.Auth.RevokeRefreshToken(ctx, req.GetUserUuid(), req.GetTokenHash()).GRPCError(); err != nil {
+	if err := s.cache.Auth.RevokeRefreshToken(ctx, entities.RevokeRefreshTokenDTO{
+		UserUUID:  req.GetUserUuid(),
+		TokenHash: req.GetTokenHash(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -306,7 +322,9 @@ func (s *AuthService) RevokeAllTokens(ctx context.Context, req *pb.RevokeAllToke
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
 	}
 
-	if err := s.cache.Auth.RevokeAllRefreshTokens(ctx, req.GetUserUuid()).GRPCError(); err != nil {
+	if err := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{
+		UserUUID: req.GetUserUuid(),
+	}).GRPCError(); err != nil {
 		return nil, err
 	}
 

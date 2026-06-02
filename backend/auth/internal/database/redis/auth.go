@@ -9,17 +9,18 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc/codes"
 )
 
 type AuthRepository interface {
-	SaveRefreshToken(ctx context.Context, userUUID, rawToken string) Error.CodeError
-	GetAllRefreshTokens(ctx context.Context, userUUID string) ([]string, Error.CodeError)
-	CheckRefreshTokenExists(ctx context.Context, userUUID, rawToken string) Error.CodeError
-	RevokeRefreshToken(ctx context.Context, userUUID, tokenHash string) Error.CodeError
-	RevokeAllRefreshTokens(ctx context.Context, userUUID string) Error.CodeError
-	RefreshToken(ctx context.Context, userUUID, oldRawToken, newRawToken string) Error.CodeError
+	SaveRefreshToken(ctx context.Context, dto entities.SaveRefreshTokenDTO) Error.CodeError
+	GetAllRefreshTokens(ctx context.Context, dto entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError)
+	CheckRefreshTokenExists(ctx context.Context, dto entities.CheckRefreshTokenExistsDTO) Error.CodeError
+	RevokeRefreshToken(ctx context.Context, dto entities.RevokeRefreshTokenDTO) Error.CodeError
+	RevokeAllRefreshTokens(ctx context.Context, dto entities.RevokeAllRefreshTokensDTO) Error.CodeError
+	RefreshToken(ctx context.Context, dto entities.RefreshTokenDTO) Error.CodeError
 }
 
 type authRepository struct {
@@ -32,10 +33,10 @@ func NewAuthRepository(redis *redis.Client, refreshTokenTTL time.Duration, prefi
 	return &authRepository{redis: redis, refreshTokenTTL: refreshTokenTTL, prefix: prefix}
 }
 
-func (r *authRepository) SaveRefreshToken(ctx context.Context, userUUID, rawToken string) Error.CodeError {
-	hash := r.hashToken(rawToken)
+func (r *authRepository) SaveRefreshToken(ctx context.Context, dto entities.SaveRefreshTokenDTO) Error.CodeError {
+	hash := r.hashToken(dto.RawToken)
 
-	userTokensKey := r.getUserTokensKey(userUUID)
+	userTokensKey := r.getUserTokensKey(dto.UserUUID)
 	tokenKey := r.getRefreshTokenKey(hash)
 
 	pipeline := r.redis.Pipeline()
@@ -49,8 +50,8 @@ func (r *authRepository) SaveRefreshToken(ctx context.Context, userUUID, rawToke
 	return Error.CodeError{}
 }
 
-func (r *authRepository) GetAllRefreshTokens(ctx context.Context, userUUID string) ([]string, Error.CodeError) {
-	userTokensKey := r.getUserTokensKey(userUUID)
+func (r *authRepository) GetAllRefreshTokens(ctx context.Context, dto entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError) {
+	userTokensKey := r.getUserTokensKey(dto.UserUUID)
 
 	hashedTokens, err := r.redis.SMembers(ctx, userTokensKey).Result()
 	if err != nil {
@@ -82,8 +83,8 @@ func (r *authRepository) GetAllRefreshTokens(ctx context.Context, userUUID strin
 	return actualRefreshTokens, Error.CodeError{}
 }
 
-func (r *authRepository) CheckRefreshTokenExists(ctx context.Context, userUUID, rawToken string) Error.CodeError {
-	hash := r.hashToken(rawToken)
+func (r *authRepository) CheckRefreshTokenExists(ctx context.Context, dto entities.CheckRefreshTokenExistsDTO) Error.CodeError {
+	hash := r.hashToken(dto.RawToken)
 	tokenKey := r.getRefreshTokenKey(hash)
 
 	exist, err := r.redis.Exists(ctx, tokenKey).Result()
@@ -92,7 +93,7 @@ func (r *authRepository) CheckRefreshTokenExists(ctx context.Context, userUUID, 
 	}
 
 	if exist == 0 {
-		userTokensKey := r.getUserTokensKey(userUUID)
+		userTokensKey := r.getUserTokensKey(dto.UserUUID)
 		_ = r.redis.SRem(ctx, userTokensKey, hash).Err()
 		return Error.Public(codes.NotFound, "refresh token not found")
 	}
@@ -101,11 +102,11 @@ func (r *authRepository) CheckRefreshTokenExists(ctx context.Context, userUUID, 
 }
 
 // RevokeRefreshToken принимает хеш токена (не сам токен) и проверяет принадлежность пользователю.
-func (r *authRepository) RevokeRefreshToken(ctx context.Context, userUUID, tokenHash string) Error.CodeError {
-	userTokensKey := r.getUserTokensKey(userUUID)
-	tokenKey := r.getRefreshTokenKey(tokenHash)
+func (r *authRepository) RevokeRefreshToken(ctx context.Context, dto entities.RevokeRefreshTokenDTO) Error.CodeError {
+	userTokensKey := r.getUserTokensKey(dto.UserUUID)
+	tokenKey := r.getRefreshTokenKey(dto.TokenHash)
 
-	isMember, err := r.redis.SIsMember(ctx, userTokensKey, tokenHash).Result()
+	isMember, err := r.redis.SIsMember(ctx, userTokensKey, dto.TokenHash).Result()
 	if err != nil {
 		return Error.Internal(err)
 	}
@@ -119,19 +120,19 @@ func (r *authRepository) RevokeRefreshToken(ctx context.Context, userUUID, token
 	}
 	if count == 0 {
 		// Токен уже истек, но ещё числится в сете — чистим
-		_ = r.redis.SRem(ctx, userTokensKey, tokenHash).Err()
+		_ = r.redis.SRem(ctx, userTokensKey, dto.TokenHash).Err()
 		return Error.Public(codes.NotFound, "refresh token not found")
 	}
 
-	if err := r.redis.SRem(ctx, userTokensKey, tokenHash).Err(); err != nil {
+	if err := r.redis.SRem(ctx, userTokensKey, dto.TokenHash).Err(); err != nil {
 		return Error.Internal(err)
 	}
 
 	return Error.CodeError{}
 }
 
-func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, userUUID string) Error.CodeError {
-	userTokensKey := r.getUserTokensKey(userUUID)
+func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, dto entities.RevokeAllRefreshTokensDTO) Error.CodeError {
+	userTokensKey := r.getUserTokensKey(dto.UserUUID)
 
 	hashedTokens, err := r.redis.SMembers(ctx, userTokensKey).Result()
 	if err != nil {
@@ -155,11 +156,11 @@ func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, userUUID st
 }
 
 // RefreshToken атомарно заменяет старый refresh токен на новый через Watch + TxPipelined.
-func (r *authRepository) RefreshToken(ctx context.Context, userUUID, oldRawToken, newRawToken string) Error.CodeError {
-	oldHash := r.hashToken(oldRawToken)
-	newHash := r.hashToken(newRawToken)
+func (r *authRepository) RefreshToken(ctx context.Context, dto entities.RefreshTokenDTO) Error.CodeError {
+	oldHash := r.hashToken(dto.OldRawToken)
+	newHash := r.hashToken(dto.NewRawToken)
 
-	userTokensKey := r.getUserTokensKey(userUUID)
+	userTokensKey := r.getUserTokensKey(dto.UserUUID)
 	oldTokenKey := r.getRefreshTokenKey(oldHash)
 	newTokenKey := r.getRefreshTokenKey(newHash)
 

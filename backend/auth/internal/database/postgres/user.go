@@ -12,12 +12,12 @@ import (
 )
 
 type UserRepository interface {
-	CreateUser(ctx context.Context, dto *entities.UserCreate) Error.CodeError
-	GetUserByEmail(ctx context.Context, email string) (*entities.UserGetByEmail, Error.CodeError)
-	GetUser(ctx context.Context, uuid string) (*entities.UserGet, Error.CodeError)
-	UpdateUserPassword(ctx context.Context, uuid string, passwordHash string) Error.CodeError
+	CreateUser(ctx context.Context, dto *entities.User) Error.CodeError
+	GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError)
+	GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError)
+	UpdateUserPassword(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError
 	UpdateUserBio(ctx context.Context, dto *entities.UserUpdateBio) Error.CodeError
-	DeleteUser(ctx context.Context, uuid string) Error.CodeError
+	DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError
 }
 
 type userRepository struct {
@@ -28,7 +28,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) CreateUser(ctx context.Context, dto *entities.UserCreate) Error.CodeError {
+func (r *userRepository) CreateUser(ctx context.Context, dto *entities.User) Error.CodeError {
 	query := `INSERT INTO users (uuid, email, password_hash, first_name, last_name, patronymic) VALUES ($1, $2, $3, $4, $5, $6);`
 
 	_, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.Email, dto.PasswordHash, dto.FirstName, dto.LastName, dto.Patronymic)
@@ -44,12 +44,12 @@ func (r *userRepository) CreateUser(ctx context.Context, dto *entities.UserCreat
 	return Error.CodeError{}
 }
 
-func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*entities.UserGetByEmail, Error.CodeError) {
+func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
 	query := `SELECT uuid, password_hash FROM users WHERE email = $1;`
 
 	userGetByEmail := &entities.UserGetByEmail{}
 
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&userGetByEmail.UserUUID, &userGetByEmail.PasswordHash)
+	err := r.db.QueryRowContext(ctx, query, dto.Email).Scan(&userGetByEmail.UserUUID, &userGetByEmail.PasswordHash)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Error.Public(codes.NotFound, "user not found")
@@ -59,12 +59,12 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*ent
 	return userGetByEmail, Error.CodeError{}
 }
 
-func (r *userRepository) GetUser(ctx context.Context, uuid string) (*entities.UserGet, Error.CodeError) {
+func (r *userRepository) GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
 	query := `SELECT email, first_name, last_name, patronymic, created_at FROM users WHERE uuid = $1;`
 
-	userGet := &entities.UserGet{UserUUID: uuid}
+	userGet := &entities.UserGet{UserUUID: dto.UserUUID}
 
-	err := r.db.QueryRowContext(ctx, query, uuid).Scan(&userGet.Email, &userGet.FirstName, &userGet.LastName, &userGet.Patronymic, &userGet.CreatedAt)
+	err := r.db.QueryRowContext(ctx, query, dto.UserUUID).Scan(&userGet.Email, &userGet.FirstName, &userGet.LastName, &userGet.Patronymic, &userGet.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Error.Public(codes.NotFound, "user not found")
@@ -74,10 +74,10 @@ func (r *userRepository) GetUser(ctx context.Context, uuid string) (*entities.Us
 	return userGet, Error.CodeError{}
 }
 
-func (r *userRepository) UpdateUserPassword(ctx context.Context, uuid string, passwordHash string) Error.CodeError {
+func (r *userRepository) UpdateUserPassword(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError {
 	query := `UPDATE users SET password_hash = $2 WHERE uuid = $1;`
 
-	result, err := r.db.ExecContext(ctx, query, uuid, passwordHash)
+	result, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.PasswordHash)
 	if err != nil {
 		return Error.Internal(err)
 	}
@@ -112,10 +112,10 @@ func (r *userRepository) UpdateUserBio(ctx context.Context, dto *entities.UserUp
 	return Error.CodeError{}
 }
 
-func (r *userRepository) DeleteUser(ctx context.Context, uuid string) Error.CodeError {
+func (r *userRepository) DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError {
 	query := `DELETE FROM users WHERE uuid = $1;`
 
-	result, err := r.db.ExecContext(ctx, query, uuid)
+	result, err := r.db.ExecContext(ctx, query, dto.UserUUID)
 	if err != nil {
 		return Error.Internal(err)
 	}

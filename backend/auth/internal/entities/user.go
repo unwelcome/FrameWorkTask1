@@ -10,15 +10,6 @@ type User struct {
 	CreatedAt    string `db:"created_at"`
 }
 
-type UserCreate struct {
-	UserUUID     string `db:"uuid"`
-	Email        string `db:"email"`
-	PasswordHash string `db:"password_hash"`
-	FirstName    string `db:"first_name"`
-	LastName     string `db:"last_name"`
-	Patronymic   string `db:"patronymic"`
-}
-
 type UserGet struct {
 	UserUUID   string `db:"uuid"`
 	Email      string `db:"email"`
@@ -39,4 +30,21 @@ type UserUpdateBio struct {
 	FirstName  string `db:"first_name"`
 	LastName   string `db:"last_name"`
 	Patronymic string `db:"patronymic"`
+}
+
+type GetUserByEmailDTO struct {
+	Email string
+}
+
+type GetUserDTO struct {
+	UserUUID string
+}
+
+type UpdateUserPasswordDTO struct {
+	UserUUID     string
+	PasswordHash string
+}
+
+type DeleteUserDTO struct {
+	UserUUID string
 }

@@ -282,3 +282,28 @@ func (e *DeleteApplicationRequest) Validate() error {
 	}
 	return nil
 }
+
+// ─── GetApplicationHistory ────────────────────────────────────────────────────
+
+type GetApplicationHistoryRequest struct {
+	ApplicationUUID string `json:"-"`
+	Count           int64  `query:"count"`
+	Offset          int64  `query:"offset"`
+}
+type GetApplicationHistoryResponse struct {
+	History []*ApplicationResponse `json:"history"`
+}
+
+func (e *GetApplicationHistoryRequest) Validate() error {
+	e.ApplicationUUID = strings.TrimSpace(e.ApplicationUUID)
+	if err := validate.UUID(e.ApplicationUUID); err != nil {
+		return err
+	}
+	if err := validate.Number(int(e.Count), validate.IntPtr(1), validate.IntPtr(100), "count"); err != nil {
+		return err
+	}
+	if err := validate.Number(int(e.Offset), validate.IntPtr(0), nil, "offset"); err != nil {
+		return err
+	}
+	return nil
+}

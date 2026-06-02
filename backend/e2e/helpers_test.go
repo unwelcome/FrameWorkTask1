@@ -567,6 +567,32 @@ func mustAdvanceToOnRevision(t *testing.T, env appEnv, title string) string {
 	return appUUID
 }
 
+type applicationHistoryItem struct {
+	ApplicationUUID string `json:"application_uuid"`
+	Version         int64  `json:"version"`
+	Status          string `json:"status"`
+	ManagedBy       string `json:"managed_by"`
+	ExecutedBy      string `json:"executed_by"`
+	InspectedBy     string `json:"inspected_by"`
+}
+
+type applicationHistoryResp struct {
+	History []applicationHistoryItem `json:"history"`
+}
+
+// getApplicationHistory fetches application history and returns the raw status code plus parsed response.
+// On non-200 the response struct is empty.
+func getApplicationHistory(t *testing.T, client *apiClient, appUUID string, count, offset int) (int, applicationHistoryResp) {
+	t.Helper()
+	code, body := client.get(fmt.Sprintf("/api/auth/application/%s/history?count=%d&offset=%d", appUUID, count, offset))
+	if code != http.StatusOK {
+		return code, applicationHistoryResp{}
+	}
+	var resp applicationHistoryResp
+	require.NoError(t, json.Unmarshal(body, &resp))
+	return code, resp
+}
+
 // mustGetApplicationDetail fetches and unmarshals the full application detail.
 func mustGetApplicationDetail(t *testing.T, client *apiClient, appUUID string) applicationDetail {
 	t.Helper()

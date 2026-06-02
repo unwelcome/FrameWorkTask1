@@ -1430,3 +1430,144 @@ func TestDeleteApplication(t *testing.T) {
 		assert.Equal(t, http.StatusNotFound, code, "non-existent application must return 404 (body: %s)", body)
 	})
 }
+
+// ─── TestGetApplicationHistory ────────────────────────────────────────────────
+
+func TestGetApplicationHistory(t *testing.T) {
+	c := newClient()
+	env := mustSetupAppEnv(t, c)
+
+	// happy_path — создаём заявку и прогоняем два перехода состояния.
+	// saveVersion вызывается перед каждой мутацией, поэтому:
+	//   assign       → snapshot(v=1, status=created)
+	//   in_progress  → snapshot(v=2, status=assigned)
+	// История отсортирована по version DESC.
+	t.Run("happy_path", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"History happy path", "Check history order.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+		mustSetAppStatus(t, env.Engineer, appUUID, "in_progress")
+
+		code, resp := getApplicationHistory(t, env.Inspector, appUUID, 10, 0)
+		assert.Equal(t, http.StatusOK, code)
+		require.Len(t, resp.History, 2)
+
+		// Первая запись — самый свежий снапшот (перед in_progress)
+		assert.Equal(t, int64(2), resp.History[0].Version)
+		assert.Equal(t, "assigned", resp.History[0].Status)
+		assert.Equal(t, appUUID, resp.History[0].ApplicationUUID)
+
+		// Вторая запись — снапшот перед assign
+		assert.Equal(t, int64(1), resp.History[1].Version)
+		assert.Equal(t, "created", resp.History[1].Status)
+		assert.Equal(t, appUUID, resp.History[1].ApplicationUUID)
+	})
+
+	// pagination — 4 перехода = 4 записи (версии 1..4).
+	// mustAdvanceToOnVerification: create→assign→in_progress→pending_verification→on_verification
+	// Снапшоты (version, status): (1,created), (2,assigned), (3,in_progress), (4,pending_verification)
+	t.Run("pagination", func(t *testing.T) {
+		appUUID := mustAdvanceToOnVerification(t, env, "History pagination test")
+
+		// Первая страница — версии 4 и 3
+		code, resp := getApplicationHistory(t, env.Inspector, appUUID, 2, 0)
+		assert.Equal(t, http.StatusOK, code)
+		require.Len(t, resp.History, 2)
+		assert.Equal(t, int64(4), resp.History[0].Version)
+		assert.Equal(t, int64(3), resp.History[1].Version)
+
+		// Вторая страница — версии 2 и 1
+		code, resp = getApplicationHistory(t, env.Inspector, appUUID, 2, 2)
+		assert.Equal(t, http.StatusOK, code)
+		require.Len(t, resp.History, 2)
+		assert.Equal(t, int64(2), resp.History[0].Version)
+		assert.Equal(t, int64(1), resp.History[1].Version)
+
+		// offset=3 — только последняя (самая старая) запись
+		code, resp = getApplicationHistory(t, env.Inspector, appUUID, 2, 3)
+		assert.Equal(t, http.StatusOK, code)
+		require.Len(t, resp.History, 1)
+		assert.Equal(t, int64(1), resp.History[0].Version)
+	})
+
+	// as_managed_by — manager является участником заявки (managed_by).
+	t.Run("as_managed_by", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"History managed_by", "Desc.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID) // manager → ManagedBy
+
+		code, resp := getApplicationHistory(t, env.Manager, appUUID, 10, 0)
+		assert.Equal(t, http.StatusOK, code, "manager (ManagedBy) should access history")
+		assert.Len(t, resp.History, 1)
+	})
+
+	// as_executed_by — engineer является участником заявки (executed_by).
+	t.Run("as_executed_by", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"History executed_by", "Desc.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID) // engineer → ExecutedBy
+
+		code, resp := getApplicationHistory(t, env.Engineer, appUUID, 10, 0)
+		assert.Equal(t, http.StatusOK, code, "engineer (ExecutedBy) should access history")
+		assert.Len(t, resp.History, 1)
+	})
+
+	// as_chief — chief не является участником, но доступ разрешён по роли.
+	t.Run("as_chief", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"History chief access", "Desc.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+
+		code, _ := getApplicationHistory(t, env.Chief, appUUID, 10, 0)
+		assert.Equal(t, http.StatusOK, code, "chief should access any application history")
+	})
+
+	// as_analytic — analytic не является участником, но доступ разрешён по роли.
+	t.Run("as_analytic", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"History analytic access", "Desc.")
+		mustAssignApplication(t, env.Manager, appUUID, env.EngineerUUID)
+
+		code, _ := getApplicationHistory(t, env.Analytic, appUUID, 10, 0)
+		assert.Equal(t, http.StatusOK, code, "analytic should access any application history")
+	})
+
+	// permission_denied — engineer2 из другого отдела, не участник заявки.
+	t.Run("permission_denied", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"History denied", "Desc.")
+
+		code, _ := getApplicationHistory(t, env.Engineer2, appUUID, 10, 0)
+		assert.Equal(t, http.StatusForbidden, code)
+	})
+
+	// not_found — несуществующий UUID заявки.
+	t.Run("not_found", func(t *testing.T) {
+		code, _ := getApplicationHistory(t, env.Inspector, "00000000-0000-0000-0000-000000000000", 10, 0)
+		assert.Equal(t, http.StatusNotFound, code)
+	})
+
+	// invalid_count_zero — count=0 должен вернуть 400.
+	t.Run("invalid_count_zero", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"History invalid count zero", "Desc.")
+		code, _ := getApplicationHistory(t, env.Inspector, appUUID, 0, 0)
+		assert.Equal(t, http.StatusBadRequest, code)
+	})
+
+	// invalid_count_overflow — count=101 должен вернуть 400.
+	t.Run("invalid_count_overflow", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"History invalid count overflow", "Desc.")
+		code, _ := getApplicationHistory(t, env.Inspector, appUUID, 101, 0)
+		assert.Equal(t, http.StatusBadRequest, code)
+	})
+
+	// invalid_offset — offset=-1 должен вернуть 400.
+	t.Run("invalid_offset", func(t *testing.T) {
+		appUUID := mustCreateApplication(t, env.Inspector, env.CompanyUUID,
+			"History invalid offset", "Desc.")
+		code, _ := getApplicationHistory(t, env.Inspector, appUUID, 10, -1)
+		assert.Equal(t, http.StatusBadRequest, code)
+	})
+}

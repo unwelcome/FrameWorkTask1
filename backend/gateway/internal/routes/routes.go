@@ -76,4 +76,5 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	auth.Patch("/application/:application_uuid/take-verification", app.ApplicationHandler.TakeApplicationToVerification)
 	auth.Patch("/application/:application_uuid/release-verification", app.ApplicationHandler.ReleaseApplicationVerification)
 	auth.Delete("/application/:application_uuid", app.ApplicationHandler.DeleteApplication)
+	auth.Get("/application/:application_uuid/history", app.ApplicationHandler.GetApplicationHistory)
 }

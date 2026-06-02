@@ -25,6 +25,7 @@ type ApplicationHandler interface {
 	ReleaseApplicationVerification(c *fiber.Ctx) error
 	AddApplicationFixLog(c *fiber.Ctx) error
 	DeleteApplication(c *fiber.Ctx) error
+	GetApplicationHistory(c *fiber.Ctx) error
 }
 
 type applicationHandler struct {
@@ -596,4 +597,77 @@ func (h *applicationHandler) DeleteApplication(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(&entities.DeleteApplicationResponse{})
+}
+
+// GetApplicationHistory
+//
+//	@Summary		Get application history
+//	@Description	Get paginated list of application state snapshots (participants and chief/analytic only)
+//	@Tags			Application
+//	@Produce		json
+//	@Security		ApiKeyAuth
+//	@Param			application_uuid	path		string	true	"Application UUID"
+//	@Param			count				query		int		false	"Count"		default(10)
+//	@Param			offset				query		int		false	"Offset"	default(0)
+//	@Success		200					{object}	entities.GetApplicationHistoryResponse
+//	@Failure		400					{object}	Error.HttpError
+//	@Failure		401					{object}	Error.HttpError
+//	@Failure		403					{object}	Error.HttpError
+//	@Failure		404					{object}	Error.HttpError
+//	@Failure		500					{object}	Error.HttpError
+//	@Router			/auth/application/{application_uuid}/history [get]
+func (h *applicationHandler) GetApplicationHistory(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
+
+	httpReq := &entities.GetApplicationHistoryRequest{}
+	if err := c.QueryParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+	httpReq.ApplicationUUID = c.Params("application_uuid", "")
+
+	if err := httpReq.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	res, err := h.ApplicationServiceClient.GetApplicationHistory(ctx, &application_proto.GetApplicationHistoryRequest{
+		InitiatorUuid:   utils.GetLocal[string](c, h.userUUIDKey),
+		ApplicationUuid: httpReq.ApplicationUUID,
+		Count:           httpReq.Count,
+		Offset:          httpReq.Offset,
+	})
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	history := make([]*entities.ApplicationResponse, 0, len(res.GetHistory()))
+	for _, app := range res.GetHistory() {
+		history = append(history, &entities.ApplicationResponse{
+			ApplicationUUID: app.GetApplicationUuid(),
+			CompanyUUID:     app.GetCompanyUuid(),
+			DepartmentUUID:  app.GetDepartmentUuid(),
+			Version:         app.GetVersion(),
+			Title:           app.GetTitle(),
+			Description:     app.GetDescription(),
+			Status:          app.GetStatus(),
+			RevisionCount:   app.GetRevisionCount(),
+			CreatedAt:       app.GetCreatedAt(),
+			CreatedBy:       app.GetCreatedBy(),
+			UpdatedAt:       app.GetUpdatedAt(),
+			UpdatedBy:       app.GetUpdatedBy(),
+			ManagedBy:       app.GetManagedBy(),
+			ExecutedBy:      app.GetExecutedBy(),
+			InspectedBy:     app.GetInspectedBy(),
+			ClosedAt:        app.GetClosedAt(),
+			DeletedAt:       app.GetDeletedAt(),
+			DeletedBy:       app.GetDeletedBy(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(&entities.GetApplicationHistoryResponse{
+		History: history,
+	})
 }

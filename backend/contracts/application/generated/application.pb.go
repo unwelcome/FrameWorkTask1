@@ -1243,6 +1243,119 @@ func (x *DeleteApplicationRequest) GetMessage() string {
 	return ""
 }
 
+// GetApplicationHistory
+type GetApplicationHistoryRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	InitiatorUuid   string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	ApplicationUuid string                 `protobuf:"bytes,2,opt,name=application_uuid,json=applicationUuid,proto3" json:"application_uuid,omitempty"`
+	Offset          int64                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	Count           int64                  `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetApplicationHistoryRequest) Reset() {
+	*x = GetApplicationHistoryRequest{}
+	mi := &file_application_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetApplicationHistoryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetApplicationHistoryRequest) ProtoMessage() {}
+
+func (x *GetApplicationHistoryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_application_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetApplicationHistoryRequest.ProtoReflect.Descriptor instead.
+func (*GetApplicationHistoryRequest) Descriptor() ([]byte, []int) {
+	return file_application_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetApplicationHistoryRequest) GetInitiatorUuid() string {
+	if x != nil {
+		return x.InitiatorUuid
+	}
+	return ""
+}
+
+func (x *GetApplicationHistoryRequest) GetApplicationUuid() string {
+	if x != nil {
+		return x.ApplicationUuid
+	}
+	return ""
+}
+
+func (x *GetApplicationHistoryRequest) GetOffset() int64 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+func (x *GetApplicationHistoryRequest) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type GetApplicationHistoryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	History       []*Application         `protobuf:"bytes,1,rep,name=history,proto3" json:"history,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetApplicationHistoryResponse) Reset() {
+	*x = GetApplicationHistoryResponse{}
+	mi := &file_application_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetApplicationHistoryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetApplicationHistoryResponse) ProtoMessage() {}
+
+func (x *GetApplicationHistoryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_application_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetApplicationHistoryResponse.ProtoReflect.Descriptor instead.
+func (*GetApplicationHistoryResponse) Descriptor() ([]byte, []int) {
+	return file_application_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetApplicationHistoryResponse) GetHistory() []*Application {
+	if x != nil {
+		return x.History
+	}
+	return nil
+}
+
 var File_application_proto protoreflect.FileDescriptor
 
 const file_application_proto_rawDesc = "" +
@@ -1348,7 +1461,14 @@ const file_application_proto_rawDesc = "" +
 	"\x18DeleteApplicationRequest\x12%\n" +
 	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
 	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage2\xd8\b\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\x9e\x01\n" +
+	"\x1cGetApplicationHistoryRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12)\n" +
+	"\x10application_uuid\x18\x02 \x01(\tR\x0fapplicationUuid\x12\x16\n" +
+	"\x06offset\x18\x03 \x01(\x03R\x06offset\x12\x14\n" +
+	"\x05count\x18\x04 \x01(\x03R\x05count\"S\n" +
+	"\x1dGetApplicationHistoryResponse\x122\n" +
+	"\ahistory\x18\x01 \x03(\v2\x18.application.ApplicationR\ahistory2\xc8\t\n" +
 	"\x12ApplicationService\x12=\n" +
 	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x1b.application.HealthResponse\x12b\n" +
 	"\x11CreateApplication\x12%.application.CreateApplicationRequest\x1a&.application.CreateApplicationResponse\x12Y\n" +
@@ -1361,7 +1481,8 @@ const file_application_proto_rawDesc = "" +
 	"\x1dTakeApplicationToVerification\x121.application.TakeApplicationToVerificationRequest\x1a\x16.google.protobuf.Empty\x12l\n" +
 	"\x1eReleaseApplicationVerification\x122.application.ReleaseApplicationVerificationRequest\x1a\x16.google.protobuf.Empty\x12X\n" +
 	"\x14AddApplicationFixLog\x12(.application.AddApplicationFixLogRequest\x1a\x16.google.protobuf.Empty\x12R\n" +
-	"\x11DeleteApplication\x12%.application.DeleteApplicationRequest\x1a\x16.google.protobuf.EmptyB_Z]github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated;application_protob\x06proto3"
+	"\x11DeleteApplication\x12%.application.DeleteApplicationRequest\x1a\x16.google.protobuf.Empty\x12n\n" +
+	"\x15GetApplicationHistory\x12).application.GetApplicationHistoryRequest\x1a*.application.GetApplicationHistoryResponseB_Z]github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated;application_protob\x06proto3"
 
 var (
 	file_application_proto_rawDescOnce sync.Once
@@ -1375,7 +1496,7 @@ func file_application_proto_rawDescGZIP() []byte {
 	return file_application_proto_rawDescData
 }
 
-var file_application_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_application_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_application_proto_goTypes = []any{
 	(*Application)(nil),                           // 0: application.Application
 	(*FixLog)(nil),                                // 1: application.FixLog
@@ -1395,42 +1516,47 @@ var file_application_proto_goTypes = []any{
 	(*ReleaseApplicationVerificationRequest)(nil), // 15: application.ReleaseApplicationVerificationRequest
 	(*AddApplicationFixLogRequest)(nil),           // 16: application.AddApplicationFixLogRequest
 	(*DeleteApplicationRequest)(nil),              // 17: application.DeleteApplicationRequest
-	(*emptypb.Empty)(nil),                         // 18: google.protobuf.Empty
+	(*GetApplicationHistoryRequest)(nil),          // 18: application.GetApplicationHistoryRequest
+	(*GetApplicationHistoryResponse)(nil),         // 19: application.GetApplicationHistoryResponse
+	(*emptypb.Empty)(nil),                         // 20: google.protobuf.Empty
 }
 var file_application_proto_depIdxs = []int32{
 	1,  // 0: application.Application.fix_logs:type_name -> application.FixLog
 	2,  // 1: application.CreateApplicationRequest.application_data:type_name -> application.ApplicationData
 	0,  // 2: application.GetApplicationResponse.application:type_name -> application.Application
 	0,  // 3: application.GetApplicationsResponse.applications:type_name -> application.Application
-	18, // 4: application.ApplicationService.Health:input_type -> google.protobuf.Empty
-	4,  // 5: application.ApplicationService.CreateApplication:input_type -> application.CreateApplicationRequest
-	6,  // 6: application.ApplicationService.GetApplication:input_type -> application.GetApplicationRequest
-	8,  // 7: application.ApplicationService.GetApplications:input_type -> application.GetApplicationsRequest
-	10, // 8: application.ApplicationService.UpdateApplicationStatus:input_type -> application.UpdateApplicationStatusRequest
-	11, // 9: application.ApplicationService.AssignApplication:input_type -> application.AssignApplicationRequest
-	12, // 10: application.ApplicationService.RedirectApplication:input_type -> application.RedirectApplicationRequest
-	13, // 11: application.ApplicationService.RecallApplication:input_type -> application.RecallApplicationRequest
-	14, // 12: application.ApplicationService.TakeApplicationToVerification:input_type -> application.TakeApplicationToVerificationRequest
-	15, // 13: application.ApplicationService.ReleaseApplicationVerification:input_type -> application.ReleaseApplicationVerificationRequest
-	16, // 14: application.ApplicationService.AddApplicationFixLog:input_type -> application.AddApplicationFixLogRequest
-	17, // 15: application.ApplicationService.DeleteApplication:input_type -> application.DeleteApplicationRequest
-	3,  // 16: application.ApplicationService.Health:output_type -> application.HealthResponse
-	5,  // 17: application.ApplicationService.CreateApplication:output_type -> application.CreateApplicationResponse
-	7,  // 18: application.ApplicationService.GetApplication:output_type -> application.GetApplicationResponse
-	9,  // 19: application.ApplicationService.GetApplications:output_type -> application.GetApplicationsResponse
-	18, // 20: application.ApplicationService.UpdateApplicationStatus:output_type -> google.protobuf.Empty
-	18, // 21: application.ApplicationService.AssignApplication:output_type -> google.protobuf.Empty
-	18, // 22: application.ApplicationService.RedirectApplication:output_type -> google.protobuf.Empty
-	18, // 23: application.ApplicationService.RecallApplication:output_type -> google.protobuf.Empty
-	18, // 24: application.ApplicationService.TakeApplicationToVerification:output_type -> google.protobuf.Empty
-	18, // 25: application.ApplicationService.ReleaseApplicationVerification:output_type -> google.protobuf.Empty
-	18, // 26: application.ApplicationService.AddApplicationFixLog:output_type -> google.protobuf.Empty
-	18, // 27: application.ApplicationService.DeleteApplication:output_type -> google.protobuf.Empty
-	16, // [16:28] is the sub-list for method output_type
-	4,  // [4:16] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	0,  // 4: application.GetApplicationHistoryResponse.history:type_name -> application.Application
+	20, // 5: application.ApplicationService.Health:input_type -> google.protobuf.Empty
+	4,  // 6: application.ApplicationService.CreateApplication:input_type -> application.CreateApplicationRequest
+	6,  // 7: application.ApplicationService.GetApplication:input_type -> application.GetApplicationRequest
+	8,  // 8: application.ApplicationService.GetApplications:input_type -> application.GetApplicationsRequest
+	10, // 9: application.ApplicationService.UpdateApplicationStatus:input_type -> application.UpdateApplicationStatusRequest
+	11, // 10: application.ApplicationService.AssignApplication:input_type -> application.AssignApplicationRequest
+	12, // 11: application.ApplicationService.RedirectApplication:input_type -> application.RedirectApplicationRequest
+	13, // 12: application.ApplicationService.RecallApplication:input_type -> application.RecallApplicationRequest
+	14, // 13: application.ApplicationService.TakeApplicationToVerification:input_type -> application.TakeApplicationToVerificationRequest
+	15, // 14: application.ApplicationService.ReleaseApplicationVerification:input_type -> application.ReleaseApplicationVerificationRequest
+	16, // 15: application.ApplicationService.AddApplicationFixLog:input_type -> application.AddApplicationFixLogRequest
+	17, // 16: application.ApplicationService.DeleteApplication:input_type -> application.DeleteApplicationRequest
+	18, // 17: application.ApplicationService.GetApplicationHistory:input_type -> application.GetApplicationHistoryRequest
+	3,  // 18: application.ApplicationService.Health:output_type -> application.HealthResponse
+	5,  // 19: application.ApplicationService.CreateApplication:output_type -> application.CreateApplicationResponse
+	7,  // 20: application.ApplicationService.GetApplication:output_type -> application.GetApplicationResponse
+	9,  // 21: application.ApplicationService.GetApplications:output_type -> application.GetApplicationsResponse
+	20, // 22: application.ApplicationService.UpdateApplicationStatus:output_type -> google.protobuf.Empty
+	20, // 23: application.ApplicationService.AssignApplication:output_type -> google.protobuf.Empty
+	20, // 24: application.ApplicationService.RedirectApplication:output_type -> google.protobuf.Empty
+	20, // 25: application.ApplicationService.RecallApplication:output_type -> google.protobuf.Empty
+	20, // 26: application.ApplicationService.TakeApplicationToVerification:output_type -> google.protobuf.Empty
+	20, // 27: application.ApplicationService.ReleaseApplicationVerification:output_type -> google.protobuf.Empty
+	20, // 28: application.ApplicationService.AddApplicationFixLog:output_type -> google.protobuf.Empty
+	20, // 29: application.ApplicationService.DeleteApplication:output_type -> google.protobuf.Empty
+	19, // 30: application.ApplicationService.GetApplicationHistory:output_type -> application.GetApplicationHistoryResponse
+	18, // [18:31] is the sub-list for method output_type
+	5,  // [5:18] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_application_proto_init() }
@@ -1444,7 +1570,7 @@ func file_application_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_application_proto_rawDesc), len(file_application_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

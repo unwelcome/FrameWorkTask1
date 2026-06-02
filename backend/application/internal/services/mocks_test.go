@@ -29,6 +29,7 @@ type mockApplicationRepo struct {
 	takeApplicationToVerification  func(ctx context.Context, dto entities.TakeApplicationToVerificationDTO) Error.CodeError
 	releaseApplicationVerification func(ctx context.Context, dto entities.ReleaseApplicationVerificationDTO) Error.CodeError
 	deleteApplication              func(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError
+	getApplicationHistory          func(ctx context.Context, dto entities.GetApplicationHistoryDTO) ([]*entities.Application, Error.CodeError)
 }
 
 func (m *mockApplicationRepo) CreateApplication(ctx context.Context, dto entities.CreateApplicationDTO) Error.CodeError {
@@ -66,6 +67,9 @@ func (m *mockApplicationRepo) ReleaseApplicationVerification(ctx context.Context
 }
 func (m *mockApplicationRepo) DeleteApplication(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError {
 	return m.deleteApplication(ctx, dto)
+}
+func (m *mockApplicationRepo) GetApplicationHistory(ctx context.Context, dto entities.GetApplicationHistoryDTO) ([]*entities.Application, Error.CodeError) {
+	return m.getApplicationHistory(ctx, dto)
 }
 
 // ─── Mock: CompanyServiceClient ───────────────────────────────────────────────

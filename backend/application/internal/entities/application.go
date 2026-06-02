@@ -1,24 +1,24 @@
 package entities
 
 type Application struct {
-	ApplicationUUID string `db:"uuid"`
-	CompanyUUID     string `db:"company_uuid"`
-	DepartmentUUID  string `db:"department_uuid"`
-	Version         int    `db:"version"`
-	Title           string `db:"title"`
-	Description     string `db:"description"`
-	Status          string `db:"status"`
-	RevisionCount   int    `db:"revision_count"`
-	CreatedAt       string `db:"created_at"`
-	CreatedBy       string `db:"created_by"`
-	UpdatedAt       string `db:"updated_at"`
-	UpdatedBy       string `db:"updated_by"`
-	ManagedBy       string `db:"managed_by"`
-	ExecutedBy      string `db:"executed_by"`
-	InspectedBy     string `db:"inspected_by"`
-	ClosedAt        string `db:"closed_at"`
-	DeletedAt       string `db:"deleted_at"`
-	DeletedBy       string `db:"deleted_by"`
+	ApplicationUUID string `db:"uuid" json:"uuid"`
+	CompanyUUID     string `db:"company_uuid" json:"company_uuid"`
+	DepartmentUUID  string `db:"department_uuid" json:"department_uuid"`
+	Version         int    `db:"version" json:"version"`
+	Title           string `db:"title" json:"title"`
+	Description     string `db:"description" json:"description"`
+	Status          string `db:"status" json:"status"`
+	RevisionCount   int    `db:"revision_count" json:"revision_count"`
+	CreatedAt       string `db:"created_at" json:"created_at"`
+	CreatedBy       string `db:"created_by" json:"created_by"`
+	UpdatedAt       string `db:"updated_at" json:"updated_at"`
+	UpdatedBy       string `db:"updated_by" json:"updated_by"`
+	ManagedBy       string `db:"managed_by" json:"managed_by"`
+	ExecutedBy      string `db:"executed_by" json:"executed_by"`
+	InspectedBy     string `db:"inspected_by" json:"inspected_by"`
+	ClosedAt        string `db:"closed_at" json:"closed_at"`
+	DeletedAt       string `db:"deleted_at" json:"deleted_at"`
+	DeletedBy       string `db:"deleted_by" json:"deleted_by"`
 }
 
 type CreateApplicationDTO struct {
@@ -88,4 +88,10 @@ type DeleteApplicationDTO struct {
 	ApplicationUUID string
 	DeletedBy       string
 	FixLogText      string
+}
+
+type GetApplicationHistoryDTO struct {
+	ApplicationUUID string
+	Offset          int64
+	Count           int64
 }

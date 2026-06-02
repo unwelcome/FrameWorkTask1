@@ -1457,6 +1457,259 @@ func TestDeleteApplication(t *testing.T) {
 	})
 }
 
+// ─── GetApplicationHistory ────────────────────────────────────────────────────
+
+func TestGetApplicationHistory(t *testing.T) {
+	t.Run("success as participant (created_by)", func(t *testing.T) {
+		repo := repoWithApp(testApp()) // CreatedBy=initiatorID
+		repo.getApplicationHistory = func(_ context.Context, _ entities.GetApplicationHistoryDTO) ([]*entities.Application, Error.CodeError) {
+			return []*entities.Application{testApp()}, ok()
+		}
+
+		// Компания-клиент не должен вызываться — инициатор является участником заявки
+		svc := newAppTestService(repo, roleClient("engineer"))
+		res, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          0,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(res.GetHistory()) != 1 {
+			t.Fatalf("expected 1 history entry, got %d", len(res.GetHistory()))
+		}
+		if res.GetHistory()[0].GetApplicationUuid() != appID {
+			t.Errorf("expected application_uuid %q, got %q", appID, res.GetHistory()[0].GetApplicationUuid())
+		}
+	})
+
+	t.Run("success as participant (executed_by)", func(t *testing.T) {
+		repo := repoWithApp(assignedApp()) // ManagedBy=initiatorID, ExecutedBy=targetID
+		repo.getApplicationHistory = func(_ context.Context, _ entities.GetApplicationHistoryDTO) ([]*entities.Application, Error.CodeError) {
+			return []*entities.Application{}, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   targetID, // matches ExecutedBy
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          0,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("success as non-participant chief", func(t *testing.T) {
+		app := testApp()
+		app.CreatedBy = otherUserID // initiatorID не является участником
+		repo := repoWithApp(app)
+		repo.getApplicationHistory = func(_ context.Context, _ entities.GetApplicationHistoryDTO) ([]*entities.Application, Error.CodeError) {
+			return []*entities.Application{}, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("chief"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          0,
+		})
+		if err != nil {
+			t.Fatalf("chief should access history of any application: %v", err)
+		}
+	})
+
+	t.Run("success as non-participant analytic", func(t *testing.T) {
+		app := testApp()
+		app.CreatedBy = otherUserID
+		repo := repoWithApp(app)
+		repo.getApplicationHistory = func(_ context.Context, _ entities.GetApplicationHistoryDTO) ([]*entities.Application, Error.CodeError) {
+			return []*entities.Application{testApp(), testApp()}, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("analytic"))
+		res, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          0,
+		})
+		if err != nil {
+			t.Fatalf("analytic should access history of any application: %v", err)
+		}
+		if len(res.GetHistory()) != 2 {
+			t.Errorf("expected 2 history entries, got %d", len(res.GetHistory()))
+		}
+	})
+
+	t.Run("permission denied (non-participant engineer)", func(t *testing.T) {
+		app := testApp()
+		app.CreatedBy = otherUserID // initiatorID не является участником
+		repo := repoWithApp(app)
+
+		svc := newAppTestService(repo, roleClient("engineer"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          0,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("permission denied (non-participant manager)", func(t *testing.T) {
+		app := testApp()
+		app.CreatedBy = otherUserID
+		repo := repoWithApp(app)
+
+		svc := newAppTestService(repo, roleClient("manager"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          0,
+		})
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("company service error (non-participant)", func(t *testing.T) {
+		app := testApp()
+		app.CreatedBy = otherUserID
+		repo := repoWithApp(app)
+
+		svc := newAppTestService(repo, errCompanyClient())
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          0,
+		})
+		if err == nil {
+			t.Fatal("expected error from company service, got nil")
+		}
+	})
+
+	t.Run("application not found", func(t *testing.T) {
+		repo := emptyRepo()
+		repo.getApplication = func(_ context.Context, _ entities.GetApplicationDTO) (*entities.Application, Error.CodeError) {
+			return nil, notFound()
+		}
+
+		svc := newAppTestService(repo, roleClient("chief"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          0,
+		})
+		assertCode(t, err, codes.NotFound)
+	})
+
+	t.Run("db error (getApplicationHistory)", func(t *testing.T) {
+		repo := repoWithApp(testApp()) // инициатор — участник, company-клиент не вызывается
+		repo.getApplicationHistory = func(_ context.Context, _ entities.GetApplicationHistoryDTO) ([]*entities.Application, Error.CodeError) {
+			return nil, internalErr()
+		}
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          0,
+		})
+		assertCode(t, err, codes.Internal)
+	})
+
+	t.Run("pagination dto propagated to repository", func(t *testing.T) {
+		var capturedDTO entities.GetApplicationHistoryDTO
+		repo := repoWithApp(testApp())
+		repo.getApplicationHistory = func(_ context.Context, dto entities.GetApplicationHistoryDTO) ([]*entities.Application, Error.CodeError) {
+			capturedDTO = dto
+			return []*entities.Application{}, ok()
+		}
+
+		svc := newAppTestService(repo, roleClient("inspector"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           50,
+			Offset:          20,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if capturedDTO.Count != 50 {
+			t.Errorf("expected Count=50, got %d", capturedDTO.Count)
+		}
+		if capturedDTO.Offset != 20 {
+			t.Errorf("expected Offset=20, got %d", capturedDTO.Offset)
+		}
+		if capturedDTO.ApplicationUUID != appID {
+			t.Errorf("expected ApplicationUUID=%q, got %q", appID, capturedDTO.ApplicationUUID)
+		}
+	})
+
+	t.Run("invalid count (0)", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("chief"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           0,
+			Offset:          0,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid count (101)", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("chief"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           101,
+			Offset:          0,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid offset (-1)", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("chief"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          -1,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("chief"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   "not-a-uuid",
+			ApplicationUuid: appID,
+			Count:           10,
+			Offset:          0,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_application_uuid", func(t *testing.T) {
+		svc := newAppTestService(emptyRepo(), roleClient("chief"))
+		_, err := svc.GetApplicationHistory(context.Background(), &pb.GetApplicationHistoryRequest{
+			InitiatorUuid:   initiatorID,
+			ApplicationUuid: "not-a-uuid",
+			Count:           10,
+			Offset:          0,
+		})
+		assertCode(t, err, codes.InvalidArgument)
+	})
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 func assertCode(t *testing.T, err error, expected codes.Code) {

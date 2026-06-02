@@ -180,6 +180,13 @@ definitions:
           $ref: '#/definitions/entities.TokenInfo'
         type: array
     type: object
+  entities.GetApplicationHistoryResponse:
+    properties:
+      history:
+        items:
+          $ref: '#/definitions/entities.ApplicationResponse'
+        type: array
+    type: object
   entities.GetApplicationResponse:
     properties:
       application:
@@ -653,6 +660,58 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Add application fix log
+      tags:
+      - Application
+  /auth/application/{application_uuid}/history:
+    get:
+      description: Get paginated list of application state snapshots (participants
+        and chief/analytic only)
+      parameters:
+      - description: Application UUID
+        in: path
+        name: application_uuid
+        required: true
+        type: string
+      - default: 10
+        description: Count
+        in: query
+        name: count
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetApplicationHistoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: Get application history
       tags:
       - Application
   /auth/application/{application_uuid}/recall:

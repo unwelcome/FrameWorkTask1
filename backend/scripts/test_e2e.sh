@@ -22,7 +22,7 @@ get_pattern() {
       echo "^(TestCreateCompany|TestGetCompany|TestGetCompaniesList|TestGetMyCompanies|TestUpdateCompanyTitle|TestUpdateCompanyStatus|TestDeleteCompany|TestCreateJoinCode|TestGetJoinCodes|TestJoinCompany|TestDeleteJoinCode|TestCompanyFullWorkflow|TestCreateDepartment|TestGetDepartment|TestGetCompanyDepartments|TestUpdateDepartmentTitle|TestDeleteDepartment|TestAddEmployeeToDepartment|TestRemoveEmployeeFromDepartment|TestDepartmentFullWorkflow|TestGetCompanyEmployee|TestGetCompanyEmployees|TestGetCompanyEmployeesSummary|TestUpdateEmployeeRole|TestRemoveCompanyEmployee|TestEmployeeFullWorkflow)"
       ;;
     application)
-      echo "^(TestCreateApplication|TestGetApplication|TestGetApplications|TestUpdateApplicationStatus|TestAssignApplication|TestRedirectApplication|TestRecallApplication|TestTakeApplicationToVerification|TestReleaseApplicationVerification|TestAddApplicationFixLog|TestDeleteApplication)"
+      echo "^(TestCreateApplication|TestGetApplication|TestGetApplications|TestUpdateApplicationStatus|TestAssignApplication|TestRedirectApplication|TestRecallApplication|TestTakeApplicationToVerification|TestReleaseApplicationVerification|TestAddApplicationFixLog|TestDeleteApplication|TestGetApplicationHistory)"
       ;;
     *)
       echo "^Test"

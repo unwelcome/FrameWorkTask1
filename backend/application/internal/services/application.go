@@ -694,6 +694,78 @@ func (s *ApplicationService) DeleteApplication(ctx context.Context, req *pb.Dele
 	return &emptypb.Empty{}, nil
 }
 
+// GetApplicationHistory Получение истории изменения заявки
+func (s *ApplicationService) GetApplicationHistory(ctx context.Context, req *pb.GetApplicationHistoryRequest) (*pb.GetApplicationHistoryResponse, error) {
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetApplicationUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid application uuid")
+	}
+	if req.GetCount() <= 0 || req.GetCount() > 100 {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid count (1..100)")
+	}
+	if req.GetOffset() < 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid offset")
+	}
+
+	application, getErr := s.db.ApplicationRepository.GetApplication(ctx, entities.GetApplicationDTO{
+		ApplicationUUID: req.GetApplicationUuid(),
+	})
+	if err := getErr.GRPCError(); err != nil {
+		return nil, err
+	}
+
+	// Если инициатор не связан с заявкой - проверяем его роль в компании
+	if !helpers.Contains([]string{application.CreatedBy, application.ManagedBy, application.ExecutedBy, application.InspectedBy}, req.GetInitiatorUuid()) {
+		initiator, err := s.getEmployeeInfo(ctx, application.CompanyUUID, req.GetInitiatorUuid(), req.GetInitiatorUuid())
+		if err != nil {
+			return nil, err
+		}
+
+		if !helpers.Contains([]string{"chief", "analytic"}, initiator.Role) {
+			return nil, status.Error(codes.PermissionDenied, "not enough rights to get application history")
+		}
+	}
+
+	history, getErr := s.db.ApplicationRepository.GetApplicationHistory(ctx, entities.GetApplicationHistoryDTO{
+		ApplicationUUID: req.GetApplicationUuid(),
+		Offset:          req.GetOffset(),
+		Count:           req.GetCount(),
+	})
+	if err := getErr.GRPCError(); err != nil {
+		return nil, err
+	}
+
+	res := make([]*pb.Application, 0)
+	for _, app := range history {
+		res = append(res, &pb.Application{
+			ApplicationUuid: app.ApplicationUUID,
+			CompanyUuid:     app.CompanyUUID,
+			DepartmentUuid:  app.DepartmentUUID,
+			Version:         int64(app.Version),
+			Title:           app.Title,
+			Description:     app.Description,
+			Status:          app.Status,
+			RevisionCount:   int64(app.RevisionCount),
+			CreatedAt:       app.CreatedAt,
+			CreatedBy:       app.CreatedBy,
+			UpdatedAt:       app.UpdatedAt,
+			UpdatedBy:       app.UpdatedBy,
+			ManagedBy:       app.ManagedBy,
+			ExecutedBy:      app.ExecutedBy,
+			InspectedBy:     app.InspectedBy,
+			ClosedAt:        app.ClosedAt,
+			DeletedAt:       app.DeletedAt,
+			DeletedBy:       app.DeletedBy,
+		})
+	}
+
+	return &pb.GetApplicationHistoryResponse{
+		History: res,
+	}, nil
+}
+
 // ─── Вспомогательные функции ──────────────────────────────────────────────────
 
 // getEmployeeInfo Получает роль сотрудника из company сервиса

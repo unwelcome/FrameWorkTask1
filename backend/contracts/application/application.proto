@@ -18,6 +18,7 @@ service ApplicationService {
   rpc ReleaseApplicationVerification(ReleaseApplicationVerificationRequest) returns (google.protobuf.Empty);
   rpc AddApplicationFixLog(AddApplicationFixLogRequest) returns (google.protobuf.Empty);
   rpc DeleteApplication(DeleteApplicationRequest) returns (google.protobuf.Empty);
+  rpc GetApplicationHistory(GetApplicationHistoryRequest) returns (GetApplicationHistoryResponse);
 }
 
 
@@ -174,3 +175,15 @@ message DeleteApplicationRequest {
   string message = 3;
 }
 // Empty response
+
+
+// GetApplicationHistory
+message GetApplicationHistoryRequest {
+  string initiator_uuid = 1;
+  string application_uuid = 2;
+  int64 offset = 3;
+  int64 count = 4;
+}
+message GetApplicationHistoryResponse {
+  repeated Application history = 1;
+}

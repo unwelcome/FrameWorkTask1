@@ -32,6 +32,7 @@ const (
 	ApplicationService_ReleaseApplicationVerification_FullMethodName = "/application.ApplicationService/ReleaseApplicationVerification"
 	ApplicationService_AddApplicationFixLog_FullMethodName           = "/application.ApplicationService/AddApplicationFixLog"
 	ApplicationService_DeleteApplication_FullMethodName              = "/application.ApplicationService/DeleteApplication"
+	ApplicationService_GetApplicationHistory_FullMethodName          = "/application.ApplicationService/GetApplicationHistory"
 )
 
 // ApplicationServiceClient is the client API for ApplicationService service.
@@ -50,6 +51,7 @@ type ApplicationServiceClient interface {
 	ReleaseApplicationVerification(ctx context.Context, in *ReleaseApplicationVerificationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AddApplicationFixLog(ctx context.Context, in *AddApplicationFixLogRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteApplication(ctx context.Context, in *DeleteApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetApplicationHistory(ctx context.Context, in *GetApplicationHistoryRequest, opts ...grpc.CallOption) (*GetApplicationHistoryResponse, error)
 }
 
 type applicationServiceClient struct {
@@ -180,6 +182,16 @@ func (c *applicationServiceClient) DeleteApplication(ctx context.Context, in *De
 	return out, nil
 }
 
+func (c *applicationServiceClient) GetApplicationHistory(ctx context.Context, in *GetApplicationHistoryRequest, opts ...grpc.CallOption) (*GetApplicationHistoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetApplicationHistoryResponse)
+	err := c.cc.Invoke(ctx, ApplicationService_GetApplicationHistory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApplicationServiceServer is the server API for ApplicationService service.
 // All implementations must embed UnimplementedApplicationServiceServer
 // for forward compatibility.
@@ -196,6 +208,7 @@ type ApplicationServiceServer interface {
 	ReleaseApplicationVerification(context.Context, *ReleaseApplicationVerificationRequest) (*emptypb.Empty, error)
 	AddApplicationFixLog(context.Context, *AddApplicationFixLogRequest) (*emptypb.Empty, error)
 	DeleteApplication(context.Context, *DeleteApplicationRequest) (*emptypb.Empty, error)
+	GetApplicationHistory(context.Context, *GetApplicationHistoryRequest) (*GetApplicationHistoryResponse, error)
 	mustEmbedUnimplementedApplicationServiceServer()
 }
 
@@ -241,6 +254,9 @@ func (UnimplementedApplicationServiceServer) AddApplicationFixLog(context.Contex
 }
 func (UnimplementedApplicationServiceServer) DeleteApplication(context.Context, *DeleteApplicationRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteApplication not implemented")
+}
+func (UnimplementedApplicationServiceServer) GetApplicationHistory(context.Context, *GetApplicationHistoryRequest) (*GetApplicationHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetApplicationHistory not implemented")
 }
 func (UnimplementedApplicationServiceServer) mustEmbedUnimplementedApplicationServiceServer() {}
 func (UnimplementedApplicationServiceServer) testEmbeddedByValue()                            {}
@@ -479,6 +495,24 @@ func _ApplicationService_DeleteApplication_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApplicationService_GetApplicationHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetApplicationHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServiceServer).GetApplicationHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ApplicationService_GetApplicationHistory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServiceServer).GetApplicationHistory(ctx, req.(*GetApplicationHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ApplicationService_ServiceDesc is the grpc.ServiceDesc for ApplicationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -533,6 +567,10 @@ var ApplicationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteApplication",
 			Handler:    _ApplicationService_DeleteApplication_Handler,
+		},
+		{
+			MethodName: "GetApplicationHistory",
+			Handler:    _ApplicationService_GetApplicationHistory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

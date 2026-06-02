@@ -28,6 +28,7 @@ type ApplicationRepository interface {
 	TakeApplicationToVerification(ctx context.Context, dto entities.TakeApplicationToVerificationDTO) Error.CodeError
 	ReleaseApplicationVerification(ctx context.Context, dto entities.ReleaseApplicationVerificationDTO) Error.CodeError
 	DeleteApplication(ctx context.Context, dto entities.DeleteApplicationDTO) Error.CodeError
+	GetApplicationHistory(ctx context.Context, dto entities.GetApplicationHistoryDTO) ([]*entities.Application, Error.CodeError)
 }
 
 type applicationRepository struct {
@@ -640,6 +641,43 @@ func (r *applicationRepository) DeleteApplication(ctx context.Context, dto entit
 	}
 
 	return Error.CodeError{}
+}
+
+// GetApplicationHistory Получение истории изменения заявки
+func (r *applicationRepository) GetApplicationHistory(ctx context.Context, dto entities.GetApplicationHistoryDTO) ([]*entities.Application, Error.CodeError) {
+	query := `SELECT body FROM application_versions WHERE application_uuid = $1 ORDER BY version DESC OFFSET $2 LIMIT $3;`
+
+	res, err := r.db.QueryContext(ctx, query, dto.ApplicationUUID, dto.Offset, dto.Count)
+	if err != nil {
+		return nil, Error.Internal(err)
+	}
+	defer res.Close()
+
+	applications := make([]*entities.Application, 0)
+	buf := struct {
+		Body string
+	}{}
+
+	for res.Next() {
+		err = res.Scan(&buf.Body)
+		if err != nil {
+			return nil, Error.Internal(err)
+		}
+
+		application := &entities.Application{}
+		err = json.Unmarshal([]byte(buf.Body), application)
+		if err != nil {
+			return nil, Error.Internal(err)
+		}
+
+		applications = append(applications, application)
+	}
+
+	if err := res.Err(); err != nil {
+		return nil, Error.Internal(err)
+	}
+
+	return applications, Error.CodeError{}
 }
 
 // saveVersion сохраняет снапшот текущего состояния заявки в application_versions внутри транзакции.

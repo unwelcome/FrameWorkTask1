@@ -44,6 +44,7 @@ func main() {
 		privateKey,
 		cfg.JWT.AccessTokenLifetime,
 		cfg.JWT.RefreshTokenLifetime,
+		cfg.AppEnv,
 	))
 
 	log.Info().Int("port", cfg.Port).Msg("auth service started")

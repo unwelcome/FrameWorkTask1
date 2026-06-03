@@ -31,16 +31,18 @@ type AuthService struct {
 	jwtPrivateKey   *ecdsa.PrivateKey
 	accessTokenTTL  time.Duration
 	refreshTokenTTL time.Duration
+	appEnv          string
 	pb.UnimplementedAuthServiceServer
 }
 
-func NewAuthService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRepository, jwtPrivateKey *ecdsa.PrivateKey, accessTokenTTL, refreshTokenTTL time.Duration) *AuthService {
+func NewAuthService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRepository, jwtPrivateKey *ecdsa.PrivateKey, accessTokenTTL, refreshTokenTTL time.Duration, appEnv string) *AuthService {
 	return &AuthService{
 		db:              db,
 		cache:           cache,
 		jwtPrivateKey:   jwtPrivateKey,
 		accessTokenTTL:  accessTokenTTL,
 		refreshTokenTTL: refreshTokenTTL,
+		appEnv:          appEnv,
 	}
 }
 
@@ -445,4 +447,23 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 	// TODO: опубликовать событие в RabbitMQ для отправки письма с кодом на user.Email
 
 	return &emptypb.Empty{}, nil
+}
+
+// GetVerificationCode Отладочный метод — возвращает активный код верификации.
+// Доступен только при APP_ENV=test; в production возвращает Unimplemented.
+func (s *AuthService) GetVerificationCode(ctx context.Context, req *pb.GetVerificationCodeRequest) (*pb.GetVerificationCodeResponse, error) {
+	if s.appEnv != "test" {
+		return nil, status.Errorf(codes.Unimplemented, "not available")
+	}
+
+	if err := validate.UUID(req.GetUserUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
+	}
+
+	code, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: req.GetUserUuid()})
+	if err := codeErr.GRPCError(); err != nil {
+		return nil, err
+	}
+
+	return &pb.GetVerificationCodeResponse{Code: code}, nil
 }

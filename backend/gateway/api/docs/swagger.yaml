@@ -2378,6 +2378,40 @@ paths:
       summary: GetAllActiveTokens
       tags:
       - Auth
+  /debug/user/{user_uuid}/verification-code:
+    get:
+      description: 'Debug endpoint: returns the active verification code. Available
+        only when APP_ENV=test.'
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: GetVerificationCode
+      tags:
+      - Debug
   /health:
     get:
       description: Get all services health status

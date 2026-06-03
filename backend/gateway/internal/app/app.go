@@ -21,6 +21,8 @@ const (
 )
 
 type App struct {
+	AppEnv string
+
 	AuthServiceClient        auth_proto.AuthServiceClient
 	CompanyServiceClient     company_proto.CompanyServiceClient
 	ApplicationServiceClient application_proto.ApplicationServiceClient
@@ -42,7 +44,7 @@ func InitApp(cfg *config.Config, httpLogger zerolog.Logger) *App {
 		log.Fatal().Err(err).Str("path", cfg.JWT.PublicKeyPath).Msg("failed to load JWT public key")
 	}
 
-	application := &App{}
+	application := &App{AppEnv: cfg.AppEnv}
 
 	application.AuthServiceClient = auth_proto.NewAuthServiceClient(dial(cfg.Auth.Addr()))
 	application.CompanyServiceClient = company_proto.NewCompanyServiceClient(dial(cfg.Company.Addr()))

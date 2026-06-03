@@ -31,6 +31,11 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	api.Post("/refresh", app.AuthHandler.RefreshToken)
 	api.Post("/user/:user_uuid/verify", app.AuthHandler.VerifyAccount)
 	api.Post("/user/:user_uuid/verify/resend", app.AuthHandler.ResendVerificationCode)
+
+	// Debug-only routes — доступны только при APP_ENV=test
+	if app.AppEnv == "test" {
+		api.Get("/debug/user/:user_uuid/verification-code", app.AuthHandler.GetVerificationCode)
+	}
 	auth.Get("/user/tokens", app.AuthHandler.GetAllActiveTokens)
 	auth.Delete("/user/revoke/token", app.AuthHandler.RevokeToken)
 	auth.Delete("/user/revoke/all", app.AuthHandler.RevokeAllTokens)

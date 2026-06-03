@@ -138,6 +138,43 @@ func mustRegister(t *testing.T, c *apiClient, email, password string) registerRe
 	return resp
 }
 
+// mustGetVerificationCode fetches the active verification code for a user via debug endpoint.
+// Only works when APP_ENV=test (gateway registers the route only in test mode).
+func mustGetVerificationCode(t *testing.T, c *apiClient, userUUID string) string {
+	t.Helper()
+	code, body := c.get(fmt.Sprintf("/api/debug/user/%s/verification-code", userUUID))
+	require.Equalf(t, http.StatusOK, code, "get verification code failed (body: %s)", body)
+
+	var resp struct {
+		Code string `json:"code"`
+	}
+	require.NoError(t, json.Unmarshal(body, &resp))
+	require.NotEmpty(t, resp.Code, "verification code is empty")
+	return resp.Code
+}
+
+// mustVerifyAccount verifies a user account using the 6-digit code.
+func mustVerifyAccount(t *testing.T, c *apiClient, userUUID, verificationCode string) {
+	t.Helper()
+	code, body := c.post(
+		fmt.Sprintf("/api/user/%s/verify", userUUID),
+		map[string]string{"code": verificationCode},
+	)
+	require.Equalf(t, http.StatusOK, code, "verify account failed (body: %s)", body)
+}
+
+// mustRegisterVerifyAndLogin registers a user, verifies the account via the debug endpoint,
+// and logs in — returning the email and login response.
+func mustRegisterVerifyAndLogin(t *testing.T, c *apiClient) (string, loginResp) {
+	t.Helper()
+	email := randomEmail()
+	reg := mustRegister(t, c, email, "Password123")
+	verificationCode := mustGetVerificationCode(t, c, reg.UserUUID)
+	mustVerifyAccount(t, c, reg.UserUUID, verificationCode)
+	login := mustLogin(t, c, email, "Password123")
+	return email, login
+}
+
 // mustLogin logs in a user and fails the test immediately if login fails.
 func mustLogin(t *testing.T, c *apiClient, email, password string) loginResp {
 	t.Helper()
@@ -154,13 +191,11 @@ func mustLogin(t *testing.T, c *apiClient, email, password string) loginResp {
 	return resp
 }
 
-// mustRegisterAndLogin registers a user and immediately logs in, returning the login response.
+// mustRegisterAndLogin registers, verifies, and logs in a user.
+// Alias for mustRegisterVerifyAndLogin — kept for backward compatibility.
 func mustRegisterAndLogin(t *testing.T, c *apiClient) (string, loginResp) {
 	t.Helper()
-	email := randomEmail()
-	mustRegister(t, c, email, "Password123")
-	login := mustLogin(t, c, email, "Password123")
-	return email, login
+	return mustRegisterVerifyAndLogin(t, c)
 }
 
 // ─── Department response types ────────────────────────────────────────────────

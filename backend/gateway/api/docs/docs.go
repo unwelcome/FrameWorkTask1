@@ -2939,6 +2939,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/debug/user/{user_uuid}/verification-code": {
+            "get": {
+                "description": "Debug endpoint: returns the active verification code. Available only when APP_ENV=test.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Debug"
+                ],
+                "summary": "GetVerificationCode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "user_uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "501": {
+                        "description": "Not Implemented",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Get all services health status",

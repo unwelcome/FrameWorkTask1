@@ -19,6 +19,7 @@ service AuthService {
   rpc RevokeAllTokens(RevokeAllTokensRequest) returns (google.protobuf.Empty);
   rpc VerifyAccount(VerifyAccountRequest) returns (google.protobuf.Empty);
   rpc ResendVerificationCode(ResendVerificationCodeRequest) returns (google.protobuf.Empty);
+  rpc GetVerificationCode(GetVerificationCodeRequest) returns (GetVerificationCodeResponse);
 }
 
 
@@ -150,3 +151,12 @@ message ResendVerificationCodeRequest {
   string user_uuid = 1;
 }
 // Empty response
+
+
+// Get verification code (debug only)
+message GetVerificationCodeRequest {
+  string user_uuid = 1;
+}
+message GetVerificationCodeResponse {
+  string code = 1;
+}

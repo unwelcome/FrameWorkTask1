@@ -127,7 +127,7 @@ const (
 func newTestService(userRepo postgresDB.UserRepository, authRepo redisDB.AuthRepository) *AuthService {
 	db := &postgresDB.DatabaseRepository{User: userRepo}
 	cache := &redisDB.CacheRepository{Auth: authRepo, Verification: emptyVerificationRepo()}
-	return NewAuthService(db, cache, testPrivateKey, testAccessTTL, testRefreshTTL)
+	return NewAuthService(db, cache, testPrivateKey, testAccessTTL, testRefreshTTL, "test")
 }
 
 // emptyUserRepo — заглушка для тестов, где UserRepository не должен вызываться

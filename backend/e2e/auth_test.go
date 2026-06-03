@@ -65,7 +65,9 @@ func TestLogin(t *testing.T) {
 	t.Run("happy_path", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
-		mustRegister(t, c, email, "Password123")
+		reg := mustRegister(t, c, email, "Password123")
+		verificationCode := mustGetVerificationCode(t, c, reg.UserUUID)
+		mustVerifyAccount(t, c, reg.UserUUID, verificationCode)
 
 		code, body := c.post("/api/login", map[string]string{
 			"email":    email,
@@ -341,19 +343,23 @@ func TestAuthFullFlow(t *testing.T) {
 	var reg registerResp
 	require.NoError(t, json.Unmarshal(regBody, &reg))
 
-	// 2. Login
+	// 2. Verify account
+	verificationCode := mustGetVerificationCode(t, c, reg.UserUUID)
+	mustVerifyAccount(t, c, reg.UserUUID, verificationCode)
+
+	// 3. Login
 	login := mustLogin(t, c, email, "Password123")
 	assert.Equal(t, reg.UserUUID, login.UserUUID)
 	auth := c.withToken(login.AccessToken)
 
-	// 3. Get user info
+	// 4. Get user info
 	code, body := auth.get("/api/auth/user/" + login.UserUUID + "/info")
 	require.Equal(t, http.StatusOK, code, "get user: %s", body)
 	var user getUserResp
 	require.NoError(t, json.Unmarshal(body, &user))
 	assert.Equal(t, email, user.Email)
 
-	// 4. Update bio
+	// 5. Update bio
 	code, body = auth.patch("/api/auth/user/bio", map[string]string{
 		"first_name": "UpdatedFirstName",
 		"last_name":  "UpdatedLastName",
@@ -361,7 +367,7 @@ func TestAuthFullFlow(t *testing.T) {
 	})
 	assert.Equal(t, http.StatusOK, code, "update bio: %s", body)
 
-	// 5. Refresh token
+	// 6. Refresh token
 	code, body = c.post("/api/refresh", map[string]string{
 		"refresh_token": login.RefreshToken,
 	})
@@ -370,22 +376,22 @@ func TestAuthFullFlow(t *testing.T) {
 	require.NoError(t, json.Unmarshal(body, &newTokens))
 	auth = c.withToken(newTokens.AccessToken)
 
-	// 6. New access token работает
+	// 7. New access token работает
 	code, _ = auth.get("/api/auth/user/" + login.UserUUID + "/info")
 	assert.Equal(t, http.StatusOK, code, "new access token should work")
 
-	// 7. Проверяем активные токены
+	// 8. Проверяем активные токены
 	code, body = auth.get("/api/auth/user/tokens")
 	require.Equal(t, http.StatusOK, code)
 	var activeTokens tokensResp
 	require.NoError(t, json.Unmarshal(body, &activeTokens))
 	assert.GreaterOrEqual(t, len(activeTokens.Tokens), 1)
 
-	// 8. Revoke all
+	// 9. Revoke all
 	code, body = auth.delete("/api/auth/user/revoke/all", nil)
 	assert.Equal(t, http.StatusOK, code, "revoke all: %s", body)
 
-	// 9. Refresh с новым токеном должен упасть
+	// 10. Refresh с новым токеном должен упасть
 	code, _ = c.post("/api/refresh", map[string]string{
 		"refresh_token": newTokens.RefreshToken,
 	})

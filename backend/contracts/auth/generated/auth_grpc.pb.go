@@ -33,6 +33,7 @@ const (
 	AuthService_RevokeAllTokens_FullMethodName        = "/auth.AuthService/RevokeAllTokens"
 	AuthService_VerifyAccount_FullMethodName          = "/auth.AuthService/VerifyAccount"
 	AuthService_ResendVerificationCode_FullMethodName = "/auth.AuthService/ResendVerificationCode"
+	AuthService_GetVerificationCode_FullMethodName    = "/auth.AuthService/GetVerificationCode"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -52,6 +53,7 @@ type AuthServiceClient interface {
 	RevokeAllTokens(ctx context.Context, in *RevokeAllTokensRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	VerifyAccount(ctx context.Context, in *VerifyAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ResendVerificationCode(ctx context.Context, in *ResendVerificationCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetVerificationCode(ctx context.Context, in *GetVerificationCodeRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error)
 }
 
 type authServiceClient struct {
@@ -192,6 +194,16 @@ func (c *authServiceClient) ResendVerificationCode(ctx context.Context, in *Rese
 	return out, nil
 }
 
+func (c *authServiceClient) GetVerificationCode(ctx context.Context, in *GetVerificationCodeRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetVerificationCodeResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetVerificationCode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -209,6 +221,7 @@ type AuthServiceServer interface {
 	RevokeAllTokens(context.Context, *RevokeAllTokensRequest) (*emptypb.Empty, error)
 	VerifyAccount(context.Context, *VerifyAccountRequest) (*emptypb.Empty, error)
 	ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error)
+	GetVerificationCode(context.Context, *GetVerificationCodeRequest) (*GetVerificationCodeResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -257,6 +270,9 @@ func (UnimplementedAuthServiceServer) VerifyAccount(context.Context, *VerifyAcco
 }
 func (UnimplementedAuthServiceServer) ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResendVerificationCode not implemented")
+}
+func (UnimplementedAuthServiceServer) GetVerificationCode(context.Context, *GetVerificationCodeRequest) (*GetVerificationCodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVerificationCode not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -513,6 +529,24 @@ func _AuthService_ResendVerificationCode_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GetVerificationCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVerificationCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetVerificationCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetVerificationCode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetVerificationCode(ctx, req.(*GetVerificationCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -571,6 +605,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResendVerificationCode",
 			Handler:    _AuthService_ResendVerificationCode_Handler,
+		},
+		{
+			MethodName: "GetVerificationCode",
+			Handler:    _AuthService_GetVerificationCode_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

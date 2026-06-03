@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	Port     int
+	AppEnv   string
 	Log      LogConfig
 	Postgres sharedConfig.PostgresConfig
 	Redis    sharedConfig.RedisConfig
@@ -27,7 +28,8 @@ type JWTConfig struct {
 
 func NewConfig() *Config {
 	return &Config{
-		Port: sharedConfig.MustParseInt("AUTH_SERVICE_PORT"),
+		Port:   sharedConfig.MustParseInt("AUTH_SERVICE_PORT"),
+		AppEnv: sharedConfig.GetEnvOrDefault("APP_ENV", "production"),
 		Log: LogConfig{
 			Path:       sharedConfig.MustGetEnv("LOG_PATH"),
 			ConsoleOut: sharedConfig.MustParseBool("LOG_CONSOLE_OUT"),

@@ -193,3 +193,35 @@ func (e *RevokeTokenRequest) Validate() error {
 
 type RevokeAllTokensRequest struct{}
 type RevokeAllTokensResponse struct{}
+
+// ─── VerifyAccount ────────────────────────────────────────────────────────────
+
+type VerifyAccountRequest struct {
+	UserUUID string `json:"-"`
+	Code     string `json:"code"`
+}
+type VerifyAccountResponse struct{}
+
+func (e *VerifyAccountRequest) Validate() error {
+	e.UserUUID = strings.TrimSpace(e.UserUUID)
+	if err := validate.UUID(e.UserUUID); err != nil {
+		return err
+	}
+	e.Code = strings.TrimSpace(e.Code)
+	if err := validate.UserVerificationCode(e.Code); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ─── ResendVerificationCode ───────────────────────────────────────────────────
+
+type ResendVerificationCodeRequest struct {
+	UserUUID string `json:"-"`
+}
+type ResendVerificationCodeResponse struct{}
+
+func (e *ResendVerificationCodeRequest) Validate() error {
+	e.UserUUID = strings.TrimSpace(e.UserUUID)
+	return validate.UUID(e.UserUUID)
+}

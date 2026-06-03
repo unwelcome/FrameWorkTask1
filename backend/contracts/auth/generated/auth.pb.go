@@ -966,6 +966,104 @@ func (x *RevokeAllTokensRequest) GetUserUuid() string {
 	return ""
 }
 
+// Verify account
+type VerifyAccountRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyAccountRequest) Reset() {
+	*x = VerifyAccountRequest{}
+	mi := &file_auth_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyAccountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyAccountRequest) ProtoMessage() {}
+
+func (x *VerifyAccountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyAccountRequest.ProtoReflect.Descriptor instead.
+func (*VerifyAccountRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *VerifyAccountRequest) GetUserUuid() string {
+	if x != nil {
+		return x.UserUuid
+	}
+	return ""
+}
+
+func (x *VerifyAccountRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+// Resend verification code
+type ResendVerificationCodeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResendVerificationCodeRequest) Reset() {
+	*x = ResendVerificationCodeRequest{}
+	mi := &file_auth_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResendVerificationCodeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResendVerificationCodeRequest) ProtoMessage() {}
+
+func (x *ResendVerificationCodeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResendVerificationCodeRequest.ProtoReflect.Descriptor instead.
+func (*ResendVerificationCodeRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ResendVerificationCodeRequest) GetUserUuid() string {
+	if x != nil {
+		return x.UserUuid
+	}
+	return ""
+}
+
 var File_auth_proto protoreflect.FileDescriptor
 
 const file_auth_proto_rawDesc = "" +
@@ -1039,7 +1137,12 @@ const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"token_hash\x18\x02 \x01(\tR\ttokenHash\"5\n" +
 	"\x16RevokeAllTokensRequest\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid2\xdf\x05\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"G\n" +
+	"\x14VerifyAccountRequest\x12\x1b\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\"<\n" +
+	"\x1dResendVerificationCodeRequest\x12\x1b\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid2\xfb\x06\n" +
 	"\vAuthService\x126\n" +
 	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x14.auth.HealthResponse\x129\n" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.auth.RegisterResponse\x120\n" +
@@ -1052,7 +1155,9 @@ const file_auth_proto_rawDesc = "" +
 	"\fRefreshToken\x12\x19.auth.RefreshTokenRequest\x1a\x1a.auth.RefreshTokenResponse\x12W\n" +
 	"\x12GetAllActiveTokens\x12\x1f.auth.GetAllActiveTokensRequest\x1a .auth.GetAllActiveTokensResponse\x12?\n" +
 	"\vRevokeToken\x12\x18.auth.RevokeTokenRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
-	"\x0fRevokeAllTokens\x12\x1c.auth.RevokeAllTokensRequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated;auth_protob\x06proto3"
+	"\x0fRevokeAllTokens\x12\x1c.auth.RevokeAllTokensRequest\x1a\x16.google.protobuf.Empty\x12C\n" +
+	"\rVerifyAccount\x12\x1a.auth.VerifyAccountRequest\x1a\x16.google.protobuf.Empty\x12U\n" +
+	"\x16ResendVerificationCode\x12#.auth.ResendVerificationCodeRequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated;auth_protob\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once
@@ -1066,30 +1171,32 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_auth_proto_goTypes = []any{
-	(*Token)(nil),                      // 0: auth.Token
-	(*HealthResponse)(nil),             // 1: auth.HealthResponse
-	(*RegisterRequest)(nil),            // 2: auth.RegisterRequest
-	(*RegisterResponse)(nil),           // 3: auth.RegisterResponse
-	(*LoginRequest)(nil),               // 4: auth.LoginRequest
-	(*LoginResponse)(nil),              // 5: auth.LoginResponse
-	(*GetUserRequest)(nil),             // 6: auth.GetUserRequest
-	(*GetUserResponse)(nil),            // 7: auth.GetUserResponse
-	(*ChangePasswordRequest)(nil),      // 8: auth.ChangePasswordRequest
-	(*UpdateUserBioRequest)(nil),       // 9: auth.UpdateUserBioRequest
-	(*DeleteUserRequest)(nil),          // 10: auth.DeleteUserRequest
-	(*RefreshTokenRequest)(nil),        // 11: auth.RefreshTokenRequest
-	(*RefreshTokenResponse)(nil),       // 12: auth.RefreshTokenResponse
-	(*GetAllActiveTokensRequest)(nil),  // 13: auth.GetAllActiveTokensRequest
-	(*GetAllActiveTokensResponse)(nil), // 14: auth.GetAllActiveTokensResponse
-	(*RevokeTokenRequest)(nil),         // 15: auth.RevokeTokenRequest
-	(*RevokeAllTokensRequest)(nil),     // 16: auth.RevokeAllTokensRequest
-	(*emptypb.Empty)(nil),              // 17: google.protobuf.Empty
+	(*Token)(nil),                         // 0: auth.Token
+	(*HealthResponse)(nil),                // 1: auth.HealthResponse
+	(*RegisterRequest)(nil),               // 2: auth.RegisterRequest
+	(*RegisterResponse)(nil),              // 3: auth.RegisterResponse
+	(*LoginRequest)(nil),                  // 4: auth.LoginRequest
+	(*LoginResponse)(nil),                 // 5: auth.LoginResponse
+	(*GetUserRequest)(nil),                // 6: auth.GetUserRequest
+	(*GetUserResponse)(nil),               // 7: auth.GetUserResponse
+	(*ChangePasswordRequest)(nil),         // 8: auth.ChangePasswordRequest
+	(*UpdateUserBioRequest)(nil),          // 9: auth.UpdateUserBioRequest
+	(*DeleteUserRequest)(nil),             // 10: auth.DeleteUserRequest
+	(*RefreshTokenRequest)(nil),           // 11: auth.RefreshTokenRequest
+	(*RefreshTokenResponse)(nil),          // 12: auth.RefreshTokenResponse
+	(*GetAllActiveTokensRequest)(nil),     // 13: auth.GetAllActiveTokensRequest
+	(*GetAllActiveTokensResponse)(nil),    // 14: auth.GetAllActiveTokensResponse
+	(*RevokeTokenRequest)(nil),            // 15: auth.RevokeTokenRequest
+	(*RevokeAllTokensRequest)(nil),        // 16: auth.RevokeAllTokensRequest
+	(*VerifyAccountRequest)(nil),          // 17: auth.VerifyAccountRequest
+	(*ResendVerificationCodeRequest)(nil), // 18: auth.ResendVerificationCodeRequest
+	(*emptypb.Empty)(nil),                 // 19: google.protobuf.Empty
 }
 var file_auth_proto_depIdxs = []int32{
 	0,  // 0: auth.GetAllActiveTokensResponse.tokens:type_name -> auth.Token
-	17, // 1: auth.AuthService.Health:input_type -> google.protobuf.Empty
+	19, // 1: auth.AuthService.Health:input_type -> google.protobuf.Empty
 	2,  // 2: auth.AuthService.Register:input_type -> auth.RegisterRequest
 	4,  // 3: auth.AuthService.Login:input_type -> auth.LoginRequest
 	6,  // 4: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
@@ -1100,19 +1207,23 @@ var file_auth_proto_depIdxs = []int32{
 	13, // 9: auth.AuthService.GetAllActiveTokens:input_type -> auth.GetAllActiveTokensRequest
 	15, // 10: auth.AuthService.RevokeToken:input_type -> auth.RevokeTokenRequest
 	16, // 11: auth.AuthService.RevokeAllTokens:input_type -> auth.RevokeAllTokensRequest
-	1,  // 12: auth.AuthService.Health:output_type -> auth.HealthResponse
-	3,  // 13: auth.AuthService.Register:output_type -> auth.RegisterResponse
-	5,  // 14: auth.AuthService.Login:output_type -> auth.LoginResponse
-	7,  // 15: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
-	17, // 16: auth.AuthService.ChangePassword:output_type -> google.protobuf.Empty
-	17, // 17: auth.AuthService.UpdateUserBio:output_type -> google.protobuf.Empty
-	17, // 18: auth.AuthService.DeleteUser:output_type -> google.protobuf.Empty
-	12, // 19: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
-	14, // 20: auth.AuthService.GetAllActiveTokens:output_type -> auth.GetAllActiveTokensResponse
-	17, // 21: auth.AuthService.RevokeToken:output_type -> google.protobuf.Empty
-	17, // 22: auth.AuthService.RevokeAllTokens:output_type -> google.protobuf.Empty
-	12, // [12:23] is the sub-list for method output_type
-	1,  // [1:12] is the sub-list for method input_type
+	17, // 12: auth.AuthService.VerifyAccount:input_type -> auth.VerifyAccountRequest
+	18, // 13: auth.AuthService.ResendVerificationCode:input_type -> auth.ResendVerificationCodeRequest
+	1,  // 14: auth.AuthService.Health:output_type -> auth.HealthResponse
+	3,  // 15: auth.AuthService.Register:output_type -> auth.RegisterResponse
+	5,  // 16: auth.AuthService.Login:output_type -> auth.LoginResponse
+	7,  // 17: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
+	19, // 18: auth.AuthService.ChangePassword:output_type -> google.protobuf.Empty
+	19, // 19: auth.AuthService.UpdateUserBio:output_type -> google.protobuf.Empty
+	19, // 20: auth.AuthService.DeleteUser:output_type -> google.protobuf.Empty
+	12, // 21: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
+	14, // 22: auth.AuthService.GetAllActiveTokens:output_type -> auth.GetAllActiveTokensResponse
+	19, // 23: auth.AuthService.RevokeToken:output_type -> google.protobuf.Empty
+	19, // 24: auth.AuthService.RevokeAllTokens:output_type -> google.protobuf.Empty
+	19, // 25: auth.AuthService.VerifyAccount:output_type -> google.protobuf.Empty
+	19, // 26: auth.AuthService.ResendVerificationCode:output_type -> google.protobuf.Empty
+	14, // [14:27] is the sub-list for method output_type
+	1,  // [1:14] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -1129,7 +1240,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

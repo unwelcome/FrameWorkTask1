@@ -20,17 +20,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Health_FullMethodName             = "/auth.AuthService/Health"
-	AuthService_Register_FullMethodName           = "/auth.AuthService/Register"
-	AuthService_Login_FullMethodName              = "/auth.AuthService/Login"
-	AuthService_GetUser_FullMethodName            = "/auth.AuthService/GetUser"
-	AuthService_ChangePassword_FullMethodName     = "/auth.AuthService/ChangePassword"
-	AuthService_UpdateUserBio_FullMethodName      = "/auth.AuthService/UpdateUserBio"
-	AuthService_DeleteUser_FullMethodName         = "/auth.AuthService/DeleteUser"
-	AuthService_RefreshToken_FullMethodName       = "/auth.AuthService/RefreshToken"
-	AuthService_GetAllActiveTokens_FullMethodName = "/auth.AuthService/GetAllActiveTokens"
-	AuthService_RevokeToken_FullMethodName        = "/auth.AuthService/RevokeToken"
-	AuthService_RevokeAllTokens_FullMethodName    = "/auth.AuthService/RevokeAllTokens"
+	AuthService_Health_FullMethodName                 = "/auth.AuthService/Health"
+	AuthService_Register_FullMethodName               = "/auth.AuthService/Register"
+	AuthService_Login_FullMethodName                  = "/auth.AuthService/Login"
+	AuthService_GetUser_FullMethodName                = "/auth.AuthService/GetUser"
+	AuthService_ChangePassword_FullMethodName         = "/auth.AuthService/ChangePassword"
+	AuthService_UpdateUserBio_FullMethodName          = "/auth.AuthService/UpdateUserBio"
+	AuthService_DeleteUser_FullMethodName             = "/auth.AuthService/DeleteUser"
+	AuthService_RefreshToken_FullMethodName           = "/auth.AuthService/RefreshToken"
+	AuthService_GetAllActiveTokens_FullMethodName     = "/auth.AuthService/GetAllActiveTokens"
+	AuthService_RevokeToken_FullMethodName            = "/auth.AuthService/RevokeToken"
+	AuthService_RevokeAllTokens_FullMethodName        = "/auth.AuthService/RevokeAllTokens"
+	AuthService_VerifyAccount_FullMethodName          = "/auth.AuthService/VerifyAccount"
+	AuthService_ResendVerificationCode_FullMethodName = "/auth.AuthService/ResendVerificationCode"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -48,6 +50,8 @@ type AuthServiceClient interface {
 	GetAllActiveTokens(ctx context.Context, in *GetAllActiveTokensRequest, opts ...grpc.CallOption) (*GetAllActiveTokensResponse, error)
 	RevokeToken(ctx context.Context, in *RevokeTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RevokeAllTokens(ctx context.Context, in *RevokeAllTokensRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	VerifyAccount(ctx context.Context, in *VerifyAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ResendVerificationCode(ctx context.Context, in *ResendVerificationCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type authServiceClient struct {
@@ -168,6 +172,26 @@ func (c *authServiceClient) RevokeAllTokens(ctx context.Context, in *RevokeAllTo
 	return out, nil
 }
 
+func (c *authServiceClient) VerifyAccount(ctx context.Context, in *VerifyAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AuthService_VerifyAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) ResendVerificationCode(ctx context.Context, in *ResendVerificationCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AuthService_ResendVerificationCode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
@@ -183,6 +207,8 @@ type AuthServiceServer interface {
 	GetAllActiveTokens(context.Context, *GetAllActiveTokensRequest) (*GetAllActiveTokensResponse, error)
 	RevokeToken(context.Context, *RevokeTokenRequest) (*emptypb.Empty, error)
 	RevokeAllTokens(context.Context, *RevokeAllTokensRequest) (*emptypb.Empty, error)
+	VerifyAccount(context.Context, *VerifyAccountRequest) (*emptypb.Empty, error)
+	ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -225,6 +251,12 @@ func (UnimplementedAuthServiceServer) RevokeToken(context.Context, *RevokeTokenR
 }
 func (UnimplementedAuthServiceServer) RevokeAllTokens(context.Context, *RevokeAllTokensRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RevokeAllTokens not implemented")
+}
+func (UnimplementedAuthServiceServer) VerifyAccount(context.Context, *VerifyAccountRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyAccount not implemented")
+}
+func (UnimplementedAuthServiceServer) ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResendVerificationCode not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
@@ -445,6 +477,42 @@ func _AuthService_RevokeAllTokens_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_VerifyAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).VerifyAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_VerifyAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).VerifyAccount(ctx, req.(*VerifyAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_ResendVerificationCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResendVerificationCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ResendVerificationCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_ResendVerificationCode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ResendVerificationCode(ctx, req.(*ResendVerificationCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -495,6 +563,14 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeAllTokens",
 			Handler:    _AuthService_RevokeAllTokens_Handler,
+		},
+		{
+			MethodName: "VerifyAccount",
+			Handler:    _AuthService_VerifyAccount_Handler,
+		},
+		{
+			MethodName: "ResendVerificationCode",
+			Handler:    _AuthService_ResendVerificationCode_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

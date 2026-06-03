@@ -18,6 +18,7 @@ type UserRepository interface {
 	UpdateUserPassword(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError
 	UpdateUserBio(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError
 	DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError
+	SetUserVerified(ctx context.Context, dto entities.SetUserVerifiedDTO) Error.CodeError
 }
 
 type userRepository struct {
@@ -47,11 +48,11 @@ func (r *userRepository) CreateUser(ctx context.Context, dto entities.User) Erro
 
 // GetUserByEmail Возвращает частичные данные пользователя по его email
 func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-	query := `SELECT uuid, password_hash FROM users WHERE email = $1;`
+	query := `SELECT uuid, password_hash, is_verified FROM users WHERE email = $1;`
 
 	userGetByEmail := &entities.UserGetByEmail{}
 
-	err := r.db.QueryRowContext(ctx, query, dto.Email).Scan(&userGetByEmail.UserUUID, &userGetByEmail.PasswordHash)
+	err := r.db.QueryRowContext(ctx, query, dto.Email).Scan(&userGetByEmail.UserUUID, &userGetByEmail.PasswordHash, &userGetByEmail.IsVerified)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Error.Public(codes.NotFound, "user not found")
@@ -63,11 +64,11 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUse
 
 // GetUser Возвращает данные пользователя по его uuid
 func (r *userRepository) GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
-	query := `SELECT email, first_name, last_name, patronymic, created_at FROM users WHERE uuid = $1;`
+	query := `SELECT email, first_name, last_name, patronymic, created_at, is_verified FROM users WHERE uuid = $1;`
 
 	userGet := &entities.UserGet{UserUUID: dto.UserUUID}
 
-	err := r.db.QueryRowContext(ctx, query, dto.UserUUID).Scan(&userGet.Email, &userGet.FirstName, &userGet.LastName, &userGet.Patronymic, &userGet.CreatedAt)
+	err := r.db.QueryRowContext(ctx, query, dto.UserUUID).Scan(&userGet.Email, &userGet.FirstName, &userGet.LastName, &userGet.Patronymic, &userGet.CreatedAt, &userGet.IsVerified)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Error.Public(codes.NotFound, "user not found")
@@ -102,6 +103,26 @@ func (r *userRepository) UpdateUserBio(ctx context.Context, dto entities.UserUpd
 	query := `UPDATE users SET (first_name, last_name, patronymic) = ($2, $3, $4) WHERE uuid = $1;`
 
 	result, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.FirstName, dto.LastName, dto.Patronymic)
+	if err != nil {
+		return Error.Internal(err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return Error.Internal(err)
+	}
+
+	if rowsAffected == 0 {
+		return Error.Public(codes.NotFound, "user not found")
+	}
+	return Error.CodeError{}
+}
+
+// SetUserVerified Помечает пользователя как верифицированного
+func (r *userRepository) SetUserVerified(ctx context.Context, dto entities.SetUserVerifiedDTO) Error.CodeError {
+	query := `UPDATE users SET is_verified = true WHERE uuid = $1;`
+
+	result, err := r.db.ExecContext(ctx, query, dto.UserUUID)
 	if err != nil {
 		return Error.Internal(err)
 	}

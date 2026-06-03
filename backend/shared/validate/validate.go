@@ -16,15 +16,16 @@ const (
 )
 
 var (
-	reUUID          = regexp.MustCompile(`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
-	reEmail         = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	reWhitespace    = regexp.MustCompile(`\s`)
-	rePasswordLower = regexp.MustCompile(`[a-zа-яё]`)
-	rePasswordUpper = regexp.MustCompile(`[A-ZА-ЯЁ]`)
-	rePasswordDigit = regexp.MustCompile(`[0-9]`)
-	reJoinCode      = regexp.MustCompile(`^[0-9]{6}$`)
-	reTitle         = regexp.MustCompile(`^[a-zA-Zа-яА-ЯёЁ0-9\s\-_&.,№#()'"°+]+$`)
-	reName          = regexp.MustCompile(`^[a-zA-Zа-яА-ЯёЁ]+(['\-][a-zA-Zа-яА-ЯёЁ]+)*$`)
+	reUUID                 = regexp.MustCompile(`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
+	reEmail                = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	reWhitespace           = regexp.MustCompile(`\s`)
+	rePasswordLower        = regexp.MustCompile(`[a-zа-яё]`)
+	rePasswordUpper        = regexp.MustCompile(`[A-ZА-ЯЁ]`)
+	rePasswordDigit        = regexp.MustCompile(`[0-9]`)
+	reJoinCode             = regexp.MustCompile(`^[0-9]{6}$`)
+	reUserVerificationCode = regexp.MustCompile(`^[0-9]{6}$`)
+	reTitle                = regexp.MustCompile(`^[a-zA-Zа-яА-ЯёЁ0-9\s\-_&.,№#()'"°+]+$`)
+	reName                 = regexp.MustCompile(`^[a-zA-Zа-яА-ЯёЁ]+(['\-][a-zA-Zа-яА-ЯёЁ]+)*$`)
 )
 
 func UUID(uuid string) error {
@@ -120,6 +121,16 @@ func CompanyJoinCode(code string) error {
 	}
 	if !reJoinCode.MatchString(code) {
 		return fmt.Errorf("invalid join code")
+	}
+	return nil
+}
+
+func UserVerificationCode(code string) error {
+	if code == "" {
+		return fmt.Errorf("verification code missed")
+	}
+	if !reUserVerificationCode.MatchString(code) {
+		return fmt.Errorf("invalid verification code")
 	}
 	return nil
 }

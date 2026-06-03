@@ -153,6 +153,18 @@ services:
     networks:
       - app-network
 
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_log:/var/log/rabbitmq
+    networks:
+      - app-network
+
 #  minio:
 #   container_name: minio
 #   image: quay.io/minio/minio
@@ -200,5 +212,6 @@ volumes:
   db_data_company_service:
   db_data_application_service:
   redis_data:
+  rabbitmq_log:
 #  mongo_data:
 #  minio_data:

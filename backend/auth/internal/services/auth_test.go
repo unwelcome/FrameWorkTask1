@@ -181,6 +181,9 @@ func TestRegister(t *testing.T) {
 			createUser: func(_ context.Context, _ entities.User) Error.CodeError {
 				return Error.Public(codes.AlreadyExists, "email already registered")
 			},
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID2, IsVerified: true}, ok()
+			},
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
 
@@ -202,7 +205,7 @@ func TestLogin(t *testing.T) {
 		hashedPwd := hashPassword(t, testPassword)
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd}, ok()
+				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd, IsVerified: true}, ok()
 			},
 		}
 		authRepo := &mockAuthRepo{
@@ -283,7 +286,7 @@ func TestLogin(t *testing.T) {
 		hashedPwd := hashPassword(t, testPassword)
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd}, ok()
+				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd, IsVerified: true}, ok()
 			},
 		}
 		authRepo := &mockAuthRepo{

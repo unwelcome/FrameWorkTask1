@@ -21,6 +21,7 @@ type mockUserRepo struct {
 	updateUserPassword func(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError
 	updateUserBio      func(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError
 	deleteUser         func(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError
+	setUserVerified    func(ctx context.Context, dto entities.SetUserVerifiedDTO) Error.CodeError
 }
 
 func (m *mockUserRepo) CreateUser(ctx context.Context, dto entities.User) Error.CodeError {
@@ -40,6 +41,9 @@ func (m *mockUserRepo) UpdateUserBio(ctx context.Context, dto entities.UserUpdat
 }
 func (m *mockUserRepo) DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError {
 	return m.deleteUser(ctx, dto)
+}
+func (m *mockUserRepo) SetUserVerified(ctx context.Context, dto entities.SetUserVerifiedDTO) Error.CodeError {
+	return m.setUserVerified(ctx, dto)
 }
 
 // ─── Mock: AuthRepository ────────────────────────────────────────────────────
@@ -72,6 +76,28 @@ func (m *mockAuthRepo) RefreshToken(ctx context.Context, dto entities.RefreshTok
 	return m.refreshToken(ctx, dto)
 }
 
+// ─── Mock: VerificationRepository ───────────────────────────────────────────
+
+type mockVerificationRepo struct {
+	saveVerificationCode     func(ctx context.Context, dto entities.SaveVerificationCodeDTO) Error.CodeError
+	getVerificationCode      func(ctx context.Context, dto entities.GetVerificationCodeDTO) (string, Error.CodeError)
+	deleteVerificationCode   func(ctx context.Context, dto entities.DeleteVerificationCodeDTO) Error.CodeError
+	incrVerificationAttempts func(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError)
+}
+
+func (m *mockVerificationRepo) SaveVerificationCode(ctx context.Context, dto entities.SaveVerificationCodeDTO) Error.CodeError {
+	return m.saveVerificationCode(ctx, dto)
+}
+func (m *mockVerificationRepo) GetVerificationCode(ctx context.Context, dto entities.GetVerificationCodeDTO) (string, Error.CodeError) {
+	return m.getVerificationCode(ctx, dto)
+}
+func (m *mockVerificationRepo) DeleteVerificationCode(ctx context.Context, dto entities.DeleteVerificationCodeDTO) Error.CodeError {
+	return m.deleteVerificationCode(ctx, dto)
+}
+func (m *mockVerificationRepo) IncrVerificationAttempts(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
+	return m.incrVerificationAttempts(ctx, dto)
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 // testPrivateKey — ECDSA ключ из /keys/test/private.pem для unit-тестов.
@@ -100,7 +126,7 @@ const (
 // newTestService создаёт AuthService с подменёнными зависимостями
 func newTestService(userRepo postgresDB.UserRepository, authRepo redisDB.AuthRepository) *AuthService {
 	db := &postgresDB.DatabaseRepository{User: userRepo}
-	cache := &redisDB.CacheRepository{Auth: authRepo}
+	cache := &redisDB.CacheRepository{Auth: authRepo, Verification: emptyVerificationRepo()}
 	return NewAuthService(db, cache, testPrivateKey, testAccessTTL, testRefreshTTL)
 }
 
@@ -109,6 +135,17 @@ func emptyUserRepo() *mockUserRepo { return &mockUserRepo{} }
 
 // emptyAuthRepo — заглушка для тестов, где AuthRepository не должен вызываться
 func emptyAuthRepo() *mockAuthRepo { return &mockAuthRepo{} }
+
+// emptyVerificationRepo — заглушка для тестов, где VerificationRepository не должен вызываться.
+// Все операции возвращают успех, чтобы не мешать тестам Register.
+func emptyVerificationRepo() *mockVerificationRepo {
+	return &mockVerificationRepo{
+		saveVerificationCode:     func(_ context.Context, _ entities.SaveVerificationCodeDTO) Error.CodeError { return Error.CodeError{} },
+		getVerificationCode:      func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) { return "", Error.CodeError{} },
+		deleteVerificationCode:   func(_ context.Context, _ entities.DeleteVerificationCodeDTO) Error.CodeError { return Error.CodeError{} },
+		incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
+	}
+}
 
 // ok возвращает CodeError без ошибки
 func ok() Error.CodeError { return Error.CodeError{} }

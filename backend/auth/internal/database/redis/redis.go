@@ -9,8 +9,9 @@ import (
 )
 
 type CacheRepository struct {
-	Auth AuthRepository
-	rdb  *redis.Client
+	Auth         AuthRepository
+	Verification VerificationRepository
+	rdb          *redis.Client
 }
 
 func (r *CacheRepository) Ping(ctx context.Context) error {
@@ -21,7 +22,8 @@ func NewCacheInstance(connectOptions *redis.Options, refreshTokenTTL time.Durati
 	rdb := sharedRedis.Connect(connectOptions)
 
 	return &CacheRepository{
-		Auth: NewAuthRepository(rdb, refreshTokenTTL, prefix),
-		rdb:  rdb,
+		Auth:         NewAuthRepository(rdb, refreshTokenTTL, prefix),
+		Verification: NewVerificationRepository(rdb, prefix),
+		rdb:          rdb,
 	}
 }

@@ -393,6 +393,8 @@ definitions:
     type: object
   entities.RemoveEmployeeFromDepartmentResponse:
     type: object
+  entities.ResendVerificationCodeResponse:
+    type: object
   entities.RevokeAllTokensResponse:
     type: object
   entities.RevokeTokenRequest:
@@ -467,6 +469,13 @@ definitions:
         type: string
     type: object
   entities.UpdateUserBioResponse:
+    type: object
+  entities.VerifyAccountRequest:
+    properties:
+      code:
+        type: string
+    type: object
+  entities.VerifyAccountResponse:
     type: object
 host: localhost:8080
 info:
@@ -2480,6 +2489,84 @@ paths:
           schema:
             $ref: '#/definitions/Error.HttpError'
       summary: Register
+      tags:
+      - User
+  /user/{user_uuid}/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify user account with code from email
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_uuid
+        required: true
+        type: string
+      - description: Verification code
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.VerifyAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.VerifyAccountResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: VerifyAccount
+      tags:
+      - User
+  /user/{user_uuid}/verify/resend:
+    post:
+      description: Resend verification code to user's email
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.ResendVerificationCodeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: ResendVerificationCode
       tags:
       - User
 securityDefinitions:

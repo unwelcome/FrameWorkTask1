@@ -2,10 +2,9 @@ package services
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"strings"
 	"time"
-
-	"crypto/ecdsa"
 
 	"github.com/google/uuid"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
@@ -21,7 +20,10 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-const bcryptCost = 12
+const (
+	bcryptCost              = 12
+	maxVerificationAttempts = 5
+)
 
 type AuthService struct {
 	db              *postgresDB.DatabaseRepository
@@ -53,7 +55,7 @@ func (s *AuthService) Health(ctx context.Context, _ *emptypb.Empty) (*pb.HealthR
 	}, nil
 }
 
-// Register Создание нового пользователя
+// Register Создание нового пользователя с отправкой кода верификации на почту
 func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	if err := validate.Email(req.GetEmail()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
@@ -78,16 +80,57 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
-	if err := s.db.User.CreateUser(ctx, entities.User{
+	user := entities.User{
 		UserUUID:     userUUID,
 		Email:        req.GetEmail(),
 		PasswordHash: string(passwordHash),
 		FirstName:    req.GetFirstName(),
 		LastName:     req.GetLastName(),
 		Patronymic:   req.GetPatronymic(),
+	}
+
+	createErr := s.db.User.CreateUser(ctx, user)
+	if createErr.Code != 0 {
+		if createErr.Code != int(codes.AlreadyExists) {
+			return nil, createErr.GRPCError()
+		}
+
+		// Email уже занят — проверяем статус существующего аккаунта
+		existing, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
+		if getErr.Code != 0 {
+			return nil, status.Errorf(codes.Internal, "internal error")
+		}
+
+		if existing.IsVerified {
+			return nil, status.Errorf(codes.AlreadyExists, "email already registered")
+		}
+
+		// Аккаунт не верифицирован — проверяем, активен ли ещё код
+		_, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: existing.UserUUID})
+		if codeErr.Code == 0 {
+			// Код ещё активен — повторная регистрация недоступна
+			return nil, status.Errorf(codes.AlreadyExists, "verification email already sent, please check your inbox")
+		}
+
+		// Код истёк — удаляем старый неверифицированный аккаунт и создаём новый
+		if err := s.db.User.DeleteUser(ctx, entities.DeleteUserDTO{UserUUID: existing.UserUUID}).GRPCError(); err != nil {
+			return nil, err
+		}
+		if err := s.db.User.CreateUser(ctx, user).GRPCError(); err != nil {
+			return nil, err
+		}
+	}
+
+	// Генерируем и сохраняем код верификации
+	code := utils.GenerateVerificationCode()
+	if err := s.cache.Verification.SaveVerificationCode(ctx, entities.SaveVerificationCodeDTO{
+		UserUUID: userUUID,
+		Code:     code,
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
+
+	// TODO: опубликовать событие в RabbitMQ для отправки письма с кодом на req.GetEmail()
 
 	return &pb.RegisterResponse{UserUuid: userUUID}, nil
 }
@@ -108,6 +151,10 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.GetPassword())) != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "wrong password")
+	}
+
+	if !user.IsVerified {
+		return nil, status.Errorf(codes.PermissionDenied, "account not verified")
 	}
 
 	tokenPair, err := utils.CreateTokens(user.UserUUID, s.jwtPrivateKey, s.accessTokenTTL, s.refreshTokenTTL)
@@ -327,6 +374,75 @@ func (s *AuthService) RevokeAllTokens(ctx context.Context, req *pb.RevokeAllToke
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
+
+	return &emptypb.Empty{}, nil
+}
+
+// VerifyAccount Подтверждение аккаунта по коду из письма
+func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRequest) (*emptypb.Empty, error) {
+	if err := validate.UUID(req.GetUserUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
+	}
+	if err := validate.UserVerificationCode(req.GetCode()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid verification code format")
+	}
+
+	// Проверяем наличие активного кода
+	storedCode, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: req.GetUserUuid()})
+	if codeErr.Code != 0 {
+		return nil, status.Errorf(codes.NotFound, "verification code not found or expired, please request a new one")
+	}
+
+	// Увеличиваем счётчик попыток до проверки кода
+	attempts, attemptsErr := s.cache.Verification.IncrVerificationAttempts(ctx, entities.IncrVerificationAttemptsDTO{UserUUID: req.GetUserUuid()})
+	if attemptsErr.Code != 0 {
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+	if attempts > maxVerificationAttempts {
+		_ = s.cache.Verification.DeleteVerificationCode(ctx, entities.DeleteVerificationCodeDTO{UserUUID: req.GetUserUuid()})
+		return nil, status.Errorf(codes.ResourceExhausted, "too many attempts, please request a new verification code")
+	}
+
+	if req.GetCode() != storedCode {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid verification code")
+	}
+
+	// Код верный — удаляем его из Redis
+	_ = s.cache.Verification.DeleteVerificationCode(ctx, entities.DeleteVerificationCodeDTO{UserUUID: req.GetUserUuid()})
+
+	// Помечаем аккаунт верифицированным
+	if err := s.db.User.SetUserVerified(ctx, entities.SetUserVerifiedDTO{UserUUID: req.GetUserUuid()}).GRPCError(); err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+// ResendVerificationCode Повторная отправка кода верификации
+func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.ResendVerificationCodeRequest) (*emptypb.Empty, error) {
+	if err := validate.UUID(req.GetUserUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
+	}
+
+	user, getErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: req.GetUserUuid()})
+	if err := getErr.GRPCError(); err != nil {
+		return nil, err
+	}
+
+	if user.IsVerified {
+		return nil, status.Errorf(codes.AlreadyExists, "account already verified")
+	}
+
+	// Генерируем новый код (перезаписывает старый и сбрасывает счётчик попыток)
+	code := utils.GenerateVerificationCode()
+	if err := s.cache.Verification.SaveVerificationCode(ctx, entities.SaveVerificationCodeDTO{
+		UserUUID: req.GetUserUuid(),
+		Code:     code,
+	}).GRPCError(); err != nil {
+		return nil, err
+	}
+
+	// TODO: опубликовать событие в RabbitMQ для отправки письма с кодом на user.Email
 
 	return &emptypb.Empty{}, nil
 }

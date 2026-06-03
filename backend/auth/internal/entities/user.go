@@ -17,12 +17,14 @@ type UserGet struct {
 	LastName   string `db:"last_name"`
 	Patronymic string `db:"patronymic"`
 	CreatedAt  string `db:"created_at"`
+	IsVerified bool   `db:"is_verified"`
 }
 
 type UserGetByEmail struct {
 	UserUUID     string `db:"uuid"`
 	Email        string `db:"email"`
 	PasswordHash string `db:"password_hash"`
+	IsVerified   bool   `db:"is_verified"`
 }
 
 type UserUpdateBio struct {
@@ -46,5 +48,9 @@ type UpdateUserPasswordDTO struct {
 }
 
 type DeleteUserDTO struct {
+	UserUUID string
+}
+
+type SetUserVerifiedDTO struct {
 	UserUUID string
 }

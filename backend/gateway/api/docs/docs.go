@@ -3111,6 +3111,124 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/user/{user_uuid}/verify": {
+            "post": {
+                "description": "Verify user account with code from email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "VerifyAccount",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "user_uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Verification code",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.VerifyAccountRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.VerifyAccountResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{user_uuid}/verify/resend": {
+            "post": {
+                "description": "Resend verification code to user's email",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "ResendVerificationCode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "user_uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResendVerificationCodeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -3726,6 +3844,9 @@ const docTemplate = `{
         "entities.RemoveEmployeeFromDepartmentResponse": {
             "type": "object"
         },
+        "entities.ResendVerificationCodeResponse": {
+            "type": "object"
+        },
         "entities.RevokeAllTokensResponse": {
             "type": "object"
         },
@@ -3841,6 +3962,17 @@ const docTemplate = `{
             }
         },
         "entities.UpdateUserBioResponse": {
+            "type": "object"
+        },
+        "entities.VerifyAccountRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.VerifyAccountResponse": {
             "type": "object"
         }
     },

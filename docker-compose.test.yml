@@ -74,6 +74,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - app-test-network
 
@@ -152,6 +154,22 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - app-test-network
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq_test
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASSWORD}"
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
     networks:
       - app-test-network
 

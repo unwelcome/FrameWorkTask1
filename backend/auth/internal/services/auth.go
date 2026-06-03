@@ -10,6 +10,7 @@ import (
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/messaging"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/helpers"
@@ -28,6 +29,7 @@ const (
 type AuthService struct {
 	db              *postgresDB.DatabaseRepository
 	cache           *redisDB.CacheRepository
+	publisher       messaging.Publisher
 	jwtPrivateKey   *ecdsa.PrivateKey
 	accessTokenTTL  time.Duration
 	refreshTokenTTL time.Duration
@@ -35,10 +37,11 @@ type AuthService struct {
 	pb.UnimplementedAuthServiceServer
 }
 
-func NewAuthService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRepository, jwtPrivateKey *ecdsa.PrivateKey, accessTokenTTL, refreshTokenTTL time.Duration, appEnv string) *AuthService {
+func NewAuthService(db *postgresDB.DatabaseRepository, cache *redisDB.CacheRepository, publisher messaging.Publisher, jwtPrivateKey *ecdsa.PrivateKey, accessTokenTTL, refreshTokenTTL time.Duration, appEnv string) *AuthService {
 	return &AuthService{
 		db:              db,
 		cache:           cache,
+		publisher:       publisher,
 		jwtPrivateKey:   jwtPrivateKey,
 		accessTokenTTL:  accessTokenTTL,
 		refreshTokenTTL: refreshTokenTTL,
@@ -132,7 +135,13 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		return nil, err
 	}
 
-	// TODO: опубликовать событие в RabbitMQ для отправки письма с кодом на req.GetEmail()
+	// Отправляем сообщение в message broker
+	_ = s.publisher.SendVerificationEmail(ctx, entities.VerificationEmailMsg{
+		UserUUID:  userUUID,
+		Email:     req.GetEmail(),
+		FirstName: req.GetFirstName(),
+		Code:      code,
+	})
 
 	return &pb.RegisterResponse{UserUuid: userUUID}, nil
 }
@@ -444,7 +453,13 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 		return nil, err
 	}
 
-	// TODO: опубликовать событие в RabbitMQ для отправки письма с кодом на user.Email
+	// Отправляем сообщение в message broker
+	_ = s.publisher.SendVerificationEmail(ctx, entities.VerificationEmailMsg{
+		UserUUID:  req.GetUserUuid(),
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		Code:      code,
+	})
 
 	return &emptypb.Empty{}, nil
 }

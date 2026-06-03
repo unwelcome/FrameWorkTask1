@@ -8,6 +8,7 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/messaging"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/services"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
@@ -30,6 +31,7 @@ func main() {
 
 	db := postgresDB.NewDatabaseInstance(cfg.Postgres.ConnectionString())
 	cache := redisDB.NewCacheInstance(cfg.Redis.Options(), cfg.JWT.RefreshTokenLifetime, cfg.Redis.Prefix)
+	rabbitMQ := messaging.NewPublisher(cfg.RabbitMQ.ConnectionString())
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
@@ -40,7 +42,7 @@ func main() {
 		grpc.UnaryInterceptor(interceptors.NewLoggingInterceptor(*httpLogger)),
 	)
 	auth_proto.RegisterAuthServiceServer(grpcServer, services.NewAuthService(
-		db, cache,
+		db, cache, rabbitMQ,
 		privateKey,
 		cfg.JWT.AccessTokenLifetime,
 		cfg.JWT.RefreshTokenLifetime,

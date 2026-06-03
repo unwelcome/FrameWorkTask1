@@ -11,17 +11,33 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-func Connect(connectString string) *mongo.Client {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+const (
+	maxRetries = 10
+	retryDelay = 3 * time.Second
+)
 
+func Connect(connectString string) *mongo.Client {
 	client, err := mongo.Connect(options.Client().ApplyURI(connectString))
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to mongo")
 	}
 
-	if err := client.Ping(ctx, nil); err != nil {
-		log.Fatal().Err(err).Msg("failed to ping mongo")
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		err = client.Ping(ctx, nil)
+		cancel()
+		if err == nil {
+			break
+		}
+		log.Warn().
+			Err(err).
+			Int("attempt", attempt).
+			Int("max", maxRetries).
+			Msgf("failed to ping mongo, retrying in %s...", retryDelay)
+		time.Sleep(retryDelay)
+	}
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to ping mongo after all retries")
 	}
 
 	return client

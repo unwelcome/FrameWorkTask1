@@ -12,6 +12,7 @@ type Config struct {
 	Log      LogConfig
 	Postgres sharedConfig.PostgresConfig
 	Redis    sharedConfig.RedisConfig
+	RabbitMQ sharedConfig.RabbitMQConfig
 	JWT      JWTConfig
 }
 
@@ -36,6 +37,7 @@ func NewConfig() *Config {
 		},
 		Postgres: sharedConfig.NewPostgresConfig(),
 		Redis:    sharedConfig.NewRedisConfig(),
+		RabbitMQ: sharedConfig.NewRabbitMQConfig(),
 		JWT: JWTConfig{
 			PrivateKeyPath:       sharedConfig.MustGetEnv("JWT_PRIVATE_KEY_PATH"),
 			AccessTokenLifetime:  sharedConfig.MustParseDuration("ACCESS_TOKEN_LIFETIME"),

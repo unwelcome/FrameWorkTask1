@@ -115,6 +115,28 @@ func (c MongoDBConfig) ConnectionString() string {
 	return fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", c.User, c.Password, c.Host, c.Port, c.DbName)
 }
 
+// ─── RabbitMQ ───────────────────────────────────────────────────────────────────
+
+type RabbitMQConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+}
+
+func NewRabbitMQConfig() RabbitMQConfig {
+	return RabbitMQConfig{
+		Host:     MustGetEnv("RABBITMQ_HOST"),
+		Port:     MustParseInt("RABBITMQ_PORT"),
+		User:     MustGetEnv("RABBITMQ_USER"),
+		Password: MustGetEnv("RABBITMQ_PASSWORD"),
+	}
+}
+
+func (c RabbitMQConfig) ConnectionString() string {
+	return fmt.Sprintf("amqp://%s:%s@%s:%d/", c.User, c.Password, c.Host, c.Port)
+}
+
 // ─── Утилиты ──────────────────────────────────────────────────────────────────
 
 func MustGetEnv(key string) string {

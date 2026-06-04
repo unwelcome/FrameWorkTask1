@@ -8,6 +8,7 @@ import (
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/messaging"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 )
@@ -83,6 +84,11 @@ type mockVerificationRepo struct {
 	getVerificationCode      func(ctx context.Context, dto entities.GetVerificationCodeDTO) (string, Error.CodeError)
 	deleteVerificationCode   func(ctx context.Context, dto entities.DeleteVerificationCodeDTO) Error.CodeError
 	incrVerificationAttempts func(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError)
+
+	saveRecoveryCode     func(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError
+	getRecoveryCode      func(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError)
+	deleteRecoveryCode   func(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError
+	incrRecoveryAttempts func(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError)
 }
 
 func (m *mockVerificationRepo) SaveVerificationCode(ctx context.Context, dto entities.SaveVerificationCodeDTO) Error.CodeError {
@@ -96,6 +102,40 @@ func (m *mockVerificationRepo) DeleteVerificationCode(ctx context.Context, dto e
 }
 func (m *mockVerificationRepo) IncrVerificationAttempts(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
 	return m.incrVerificationAttempts(ctx, dto)
+}
+func (m *mockVerificationRepo) SaveRecoveryCode(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError {
+	return m.saveRecoveryCode(ctx, dto)
+}
+func (m *mockVerificationRepo) GetRecoveryCode(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
+	return m.getRecoveryCode(ctx, dto)
+}
+func (m *mockVerificationRepo) DeleteRecoveryCode(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError {
+	return m.deleteRecoveryCode(ctx, dto)
+}
+func (m *mockVerificationRepo) IncrRecoveryAttempts(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
+	return m.incrRecoveryAttempts(ctx, dto)
+}
+
+// ─── Mock: Publisher ─────────────────────────────────────────────────────────
+
+type mockPublisher struct {
+	sendVerificationEmail func(ctx context.Context, dto entities.VerificationEmailMsg) Error.CodeError
+	sendRecoveryEmail     func(ctx context.Context, dto entities.RecoveryEmailMsg) Error.CodeError
+}
+
+func (m *mockPublisher) SendVerificationEmail(ctx context.Context, dto entities.VerificationEmailMsg) Error.CodeError {
+	return m.sendVerificationEmail(ctx, dto)
+}
+func (m *mockPublisher) SendRecoveryEmail(ctx context.Context, dto entities.RecoveryEmailMsg) Error.CodeError {
+	return m.sendRecoveryEmail(ctx, dto)
+}
+
+// emptyPublisher — заглушка для тестов, где Publisher не должен вызываться.
+func emptyPublisher() messaging.Publisher {
+	return &mockPublisher{
+		sendVerificationEmail: func(_ context.Context, _ entities.VerificationEmailMsg) Error.CodeError { return Error.CodeError{} },
+		sendRecoveryEmail:     func(_ context.Context, _ entities.RecoveryEmailMsg) Error.CodeError { return Error.CodeError{} },
+	}
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -127,7 +167,7 @@ const (
 func newTestService(userRepo postgresDB.UserRepository, authRepo redisDB.AuthRepository) *AuthService {
 	db := &postgresDB.DatabaseRepository{User: userRepo}
 	cache := &redisDB.CacheRepository{Auth: authRepo, Verification: emptyVerificationRepo()}
-	return NewAuthService(db, cache, testPrivateKey, testAccessTTL, testRefreshTTL, "test")
+	return NewAuthService(db, cache, emptyPublisher(), testPrivateKey, testAccessTTL, testRefreshTTL, "test")
 }
 
 // emptyUserRepo — заглушка для тестов, где UserRepository не должен вызываться
@@ -144,6 +184,10 @@ func emptyVerificationRepo() *mockVerificationRepo {
 		getVerificationCode:      func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) { return "", Error.CodeError{} },
 		deleteVerificationCode:   func(_ context.Context, _ entities.DeleteVerificationCodeDTO) Error.CodeError { return Error.CodeError{} },
 		incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
+		saveRecoveryCode:         func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
+		getRecoveryCode:          func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) { return "", Error.CodeError{} },
+		deleteRecoveryCode:       func(_ context.Context, _ entities.DeleteRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
+		incrRecoveryAttempts:     func(_ context.Context, _ entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
 	}
 }
 

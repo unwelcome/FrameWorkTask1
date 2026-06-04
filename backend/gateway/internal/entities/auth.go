@@ -225,3 +225,37 @@ func (e *ResendVerificationCodeRequest) Validate() error {
 	e.UserUUID = strings.TrimSpace(e.UserUUID)
 	return validate.UUID(e.UserUUID)
 }
+
+// ─── ForgotPassword ───────────────────────────────────────────────────────────
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+type ForgotPasswordResponse struct{}
+
+func (e *ForgotPasswordRequest) Validate() error {
+	e.Email = strings.TrimSpace(e.Email)
+	return validate.Email(e.Email)
+}
+
+// ─── ResetPassword ────────────────────────────────────────────────────────────
+
+type ResetPasswordRequest struct {
+	Email       string `json:"email"`
+	Code        string `json:"code"`
+	NewPassword string `json:"new_password"`
+}
+type ResetPasswordResponse struct{}
+
+func (e *ResetPasswordRequest) Validate() error {
+	e.Email = strings.TrimSpace(e.Email)
+	if err := validate.Email(e.Email); err != nil {
+		return err
+	}
+	e.Code = strings.TrimSpace(e.Code)
+	if err := validate.UserVerificationCode(e.Code); err != nil {
+		return err
+	}
+	e.NewPassword = strings.TrimSpace(e.NewPassword)
+	return validate.Password(e.NewPassword)
+}

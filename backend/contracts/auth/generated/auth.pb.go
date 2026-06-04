@@ -1064,7 +1064,7 @@ func (x *ResendVerificationCodeRequest) GetUserUuid() string {
 	return ""
 }
 
-// Get verification code (debug only — APP_ENV=test)
+// Get verification code (debug only)
 type GetVerificationCodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
@@ -1153,6 +1153,112 @@ func (x *GetVerificationCodeResponse) GetCode() string {
 	return ""
 }
 
+// Forgot password
+type ForgotPasswordRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ForgotPasswordRequest) Reset() {
+	*x = ForgotPasswordRequest{}
+	mi := &file_auth_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ForgotPasswordRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ForgotPasswordRequest) ProtoMessage() {}
+
+func (x *ForgotPasswordRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ForgotPasswordRequest.ProtoReflect.Descriptor instead.
+func (*ForgotPasswordRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *ForgotPasswordRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+// Reset password
+type ResetPasswordRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	NewPassword   string                 `protobuf:"bytes,3,opt,name=new_password,json=newPassword,proto3" json:"new_password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetPasswordRequest) Reset() {
+	*x = ResetPasswordRequest{}
+	mi := &file_auth_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetPasswordRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetPasswordRequest) ProtoMessage() {}
+
+func (x *ResetPasswordRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetPasswordRequest.ProtoReflect.Descriptor instead.
+func (*ResetPasswordRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *ResetPasswordRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *ResetPasswordRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *ResetPasswordRequest) GetNewPassword() string {
+	if x != nil {
+		return x.NewPassword
+	}
+	return ""
+}
+
 var File_auth_proto protoreflect.FileDescriptor
 
 const file_auth_proto_rawDesc = "" +
@@ -1235,7 +1341,13 @@ const file_auth_proto_rawDesc = "" +
 	"\x1aGetVerificationCodeRequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"1\n" +
 	"\x1bGetVerificationCodeResponse\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\tR\x04code2\xd7\a\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\"-\n" +
+	"\x15ForgotPasswordRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\"c\n" +
+	"\x14ResetPasswordRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\x12!\n" +
+	"\fnew_password\x18\x03 \x01(\tR\vnewPassword2\xe3\b\n" +
 	"\vAuthService\x126\n" +
 	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x14.auth.HealthResponse\x129\n" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.auth.RegisterResponse\x120\n" +
@@ -1251,7 +1363,9 @@ const file_auth_proto_rawDesc = "" +
 	"\x0fRevokeAllTokens\x12\x1c.auth.RevokeAllTokensRequest\x1a\x16.google.protobuf.Empty\x12C\n" +
 	"\rVerifyAccount\x12\x1a.auth.VerifyAccountRequest\x1a\x16.google.protobuf.Empty\x12U\n" +
 	"\x16ResendVerificationCode\x12#.auth.ResendVerificationCodeRequest\x1a\x16.google.protobuf.Empty\x12Z\n" +
-	"\x13GetVerificationCode\x12 .auth.GetVerificationCodeRequest\x1a!.auth.GetVerificationCodeResponseBQZOgithub.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated;auth_protob\x06proto3"
+	"\x13GetVerificationCode\x12 .auth.GetVerificationCodeRequest\x1a!.auth.GetVerificationCodeResponse\x12E\n" +
+	"\x0eForgotPassword\x12\x1b.auth.ForgotPasswordRequest\x1a\x16.google.protobuf.Empty\x12C\n" +
+	"\rResetPassword\x12\x1a.auth.ResetPasswordRequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated;auth_protob\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once
@@ -1265,7 +1379,7 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_auth_proto_goTypes = []any{
 	(*Token)(nil),                         // 0: auth.Token
 	(*HealthResponse)(nil),                // 1: auth.HealthResponse
@@ -1288,11 +1402,13 @@ var file_auth_proto_goTypes = []any{
 	(*ResendVerificationCodeRequest)(nil), // 18: auth.ResendVerificationCodeRequest
 	(*GetVerificationCodeRequest)(nil),    // 19: auth.GetVerificationCodeRequest
 	(*GetVerificationCodeResponse)(nil),   // 20: auth.GetVerificationCodeResponse
-	(*emptypb.Empty)(nil),                 // 21: google.protobuf.Empty
+	(*ForgotPasswordRequest)(nil),         // 21: auth.ForgotPasswordRequest
+	(*ResetPasswordRequest)(nil),          // 22: auth.ResetPasswordRequest
+	(*emptypb.Empty)(nil),                 // 23: google.protobuf.Empty
 }
 var file_auth_proto_depIdxs = []int32{
 	0,  // 0: auth.GetAllActiveTokensResponse.tokens:type_name -> auth.Token
-	21, // 1: auth.AuthService.Health:input_type -> google.protobuf.Empty
+	23, // 1: auth.AuthService.Health:input_type -> google.protobuf.Empty
 	2,  // 2: auth.AuthService.Register:input_type -> auth.RegisterRequest
 	4,  // 3: auth.AuthService.Login:input_type -> auth.LoginRequest
 	6,  // 4: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
@@ -1306,22 +1422,26 @@ var file_auth_proto_depIdxs = []int32{
 	17, // 12: auth.AuthService.VerifyAccount:input_type -> auth.VerifyAccountRequest
 	18, // 13: auth.AuthService.ResendVerificationCode:input_type -> auth.ResendVerificationCodeRequest
 	19, // 14: auth.AuthService.GetVerificationCode:input_type -> auth.GetVerificationCodeRequest
-	1,  // 15: auth.AuthService.Health:output_type -> auth.HealthResponse
-	3,  // 16: auth.AuthService.Register:output_type -> auth.RegisterResponse
-	5,  // 17: auth.AuthService.Login:output_type -> auth.LoginResponse
-	7,  // 18: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
-	21, // 19: auth.AuthService.ChangePassword:output_type -> google.protobuf.Empty
-	21, // 20: auth.AuthService.UpdateUserBio:output_type -> google.protobuf.Empty
-	21, // 21: auth.AuthService.DeleteUser:output_type -> google.protobuf.Empty
-	12, // 22: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
-	14, // 23: auth.AuthService.GetAllActiveTokens:output_type -> auth.GetAllActiveTokensResponse
-	21, // 24: auth.AuthService.RevokeToken:output_type -> google.protobuf.Empty
-	21, // 25: auth.AuthService.RevokeAllTokens:output_type -> google.protobuf.Empty
-	21, // 26: auth.AuthService.VerifyAccount:output_type -> google.protobuf.Empty
-	21, // 27: auth.AuthService.ResendVerificationCode:output_type -> google.protobuf.Empty
-	20, // 28: auth.AuthService.GetVerificationCode:output_type -> auth.GetVerificationCodeResponse
-	15, // [15:29] is the sub-list for method output_type
-	1,  // [1:15] is the sub-list for method input_type
+	21, // 15: auth.AuthService.ForgotPassword:input_type -> auth.ForgotPasswordRequest
+	22, // 16: auth.AuthService.ResetPassword:input_type -> auth.ResetPasswordRequest
+	1,  // 17: auth.AuthService.Health:output_type -> auth.HealthResponse
+	3,  // 18: auth.AuthService.Register:output_type -> auth.RegisterResponse
+	5,  // 19: auth.AuthService.Login:output_type -> auth.LoginResponse
+	7,  // 20: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
+	23, // 21: auth.AuthService.ChangePassword:output_type -> google.protobuf.Empty
+	23, // 22: auth.AuthService.UpdateUserBio:output_type -> google.protobuf.Empty
+	23, // 23: auth.AuthService.DeleteUser:output_type -> google.protobuf.Empty
+	12, // 24: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
+	14, // 25: auth.AuthService.GetAllActiveTokens:output_type -> auth.GetAllActiveTokensResponse
+	23, // 26: auth.AuthService.RevokeToken:output_type -> google.protobuf.Empty
+	23, // 27: auth.AuthService.RevokeAllTokens:output_type -> google.protobuf.Empty
+	23, // 28: auth.AuthService.VerifyAccount:output_type -> google.protobuf.Empty
+	23, // 29: auth.AuthService.ResendVerificationCode:output_type -> google.protobuf.Empty
+	20, // 30: auth.AuthService.GetVerificationCode:output_type -> auth.GetVerificationCodeResponse
+	23, // 31: auth.AuthService.ForgotPassword:output_type -> google.protobuf.Empty
+	23, // 32: auth.AuthService.ResetPassword:output_type -> google.protobuf.Empty
+	17, // [17:33] is the sub-list for method output_type
+	1,  // [1:17] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -1338,7 +1458,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   21,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

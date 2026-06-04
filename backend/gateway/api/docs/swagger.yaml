@@ -173,6 +173,13 @@ definitions:
       uuid:
         type: string
     type: object
+  entities.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    type: object
+  entities.ForgotPasswordResponse:
+    type: object
   entities.GetAllActiveTokensResponse:
     properties:
       tokens:
@@ -394,6 +401,17 @@ definitions:
   entities.RemoveEmployeeFromDepartmentResponse:
     type: object
   entities.ResendVerificationCodeResponse:
+    type: object
+  entities.ResetPasswordRequest:
+    properties:
+      code:
+        type: string
+      email:
+        type: string
+      new_password:
+        type: string
+    type: object
+  entities.ResetPasswordResponse:
     type: object
   entities.RevokeAllTokensResponse:
     type: object
@@ -2412,6 +2430,37 @@ paths:
       summary: GetVerificationCode
       tags:
       - Debug
+  /forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Request password recovery — sends a one-time code to the user's
+        email
+      parameters:
+      - description: Email пользователя
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.ForgotPasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: ForgotPassword
+      tags:
+      - User
   /health:
     get:
       description: Get all services health status
@@ -2523,6 +2572,40 @@ paths:
           schema:
             $ref: '#/definitions/Error.HttpError'
       summary: Register
+      tags:
+      - User
+  /reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Reset password using a recovery code from email
+      parameters:
+      - description: Email, код и новый пароль
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.ResetPasswordResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: ResetPassword
       tags:
       - User
   /user/{user_uuid}/verify:

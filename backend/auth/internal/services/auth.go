@@ -464,6 +464,113 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 	return &emptypb.Empty{}, nil
 }
 
+// ForgotPassword Запрашивает восстановление пароля — отправляет код на почту.
+// Всегда возвращает Empty (не раскрывает, существует ли email в системе).
+func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordRequest) (*emptypb.Empty, error) {
+	if err := validate.Email(req.GetEmail()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
+	}
+
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
+	// Не раскрываем, зарегистрирован ли email
+	if getErr.Code != 0 {
+		return &emptypb.Empty{}, nil
+	}
+
+	// Не раскрываем состояние аккаунта
+	if !user.IsVerified {
+		return &emptypb.Empty{}, nil
+	}
+
+	// Получаем имя пользователя для персонализации письма
+	fullUser, getUserErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: user.UserUUID})
+	if getUserErr.Code != 0 {
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+
+	code := utils.GenerateVerificationCode()
+	if err := s.cache.Verification.SaveRecoveryCode(ctx, entities.SaveRecoveryCodeDTO{
+		UserUUID: user.UserUUID,
+		Code:     code,
+	}).GRPCError(); err != nil {
+		return nil, err
+	}
+
+	// Отправляем сообщение в message broker
+	_ = s.publisher.SendRecoveryEmail(ctx, entities.RecoveryEmailMsg{
+		UserUUID:  user.UserUUID,
+		Email:     req.GetEmail(),
+		FirstName: fullUser.FirstName,
+		Code:      code,
+	})
+
+	return &emptypb.Empty{}, nil
+}
+
+// ResetPassword Сбрасывает пароль по коду восстановления
+func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest) (*emptypb.Empty, error) {
+	if err := validate.Email(req.GetEmail()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
+	}
+	if err := validate.UserVerificationCode(req.GetCode()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid code format")
+	}
+	if err := validate.Password(req.GetNewPassword()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid password")
+	}
+
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
+	if getErr.Code != 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
+	}
+
+	if !user.IsVerified {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
+	}
+
+	storedCode, codeErr := s.cache.Verification.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: user.UserUUID})
+	if codeErr.Code != 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired code")
+	}
+
+	attempts, attemptsErr := s.cache.Verification.IncrRecoveryAttempts(ctx, entities.IncrRecoveryAttemptsDTO{UserUUID: user.UserUUID})
+	if attemptsErr.Code != 0 {
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+	if attempts > maxVerificationAttempts {
+		_ = s.cache.Verification.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})
+		return nil, status.Errorf(codes.ResourceExhausted, "too many attempts, please request a new recovery code")
+	}
+
+	if req.GetCode() != storedCode {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired code")
+	}
+
+	_ = s.cache.Verification.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.GetNewPassword()), bcryptCost)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+
+	if err := s.db.User.UpdateUserPassword(ctx, entities.UpdateUserPasswordDTO{
+		UserUUID:     user.UserUUID,
+		PasswordHash: string(passwordHash),
+	}).GRPCError(); err != nil {
+		return nil, err
+	}
+
+	// Отзываем все активные сессии после смены пароля
+	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: user.UserUUID})
+	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
+		if err := revokeErr.GRPCError(); err != nil {
+			return nil, err
+		}
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
 // GetVerificationCode Отладочный метод — возвращает активный код верификации.
 // Доступен только при APP_ENV=test; в production возвращает Unimplemented.
 func (s *AuthService) GetVerificationCode(ctx context.Context, req *pb.GetVerificationCodeRequest) (*pb.GetVerificationCodeResponse, error) {

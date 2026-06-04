@@ -18,6 +18,11 @@ type VerificationRepository interface {
 	GetVerificationCode(ctx context.Context, dto entities.GetVerificationCodeDTO) (string, Error.CodeError)
 	DeleteVerificationCode(ctx context.Context, dto entities.DeleteVerificationCodeDTO) Error.CodeError
 	IncrVerificationAttempts(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError)
+
+	SaveRecoveryCode(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError
+	GetRecoveryCode(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError)
+	DeleteRecoveryCode(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError
+	IncrRecoveryAttempts(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError)
 }
 
 type verificationRepository struct {
@@ -82,4 +87,57 @@ func (r *verificationRepository) getCodeKey(userUUID string) string {
 
 func (r *verificationRepository) getAttemptsKey(userUUID string) string {
 	return fmt.Sprintf("%s:verify:%s:attempts", r.prefix, userUUID)
+}
+
+// SaveRecoveryCode Сохраняет код восстановления и сбрасывает счётчик попыток
+func (r *verificationRepository) SaveRecoveryCode(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError {
+	pipe := r.redis.Pipeline()
+	pipe.Set(ctx, r.getRecoveryCodeKey(dto.UserUUID), dto.Code, verificationCodeTTL)
+	pipe.Set(ctx, r.getRecoveryAttemptsKey(dto.UserUUID), 0, verificationCodeTTL)
+
+	if _, err := pipe.Exec(ctx); err != nil {
+		return Error.Internal(err)
+	}
+	return Error.CodeError{}
+}
+
+// GetRecoveryCode Возвращает код восстановления по UUID пользователя
+func (r *verificationRepository) GetRecoveryCode(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
+	code, err := r.redis.Get(ctx, r.getRecoveryCodeKey(dto.UserUUID)).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return "", Error.Public(codes.NotFound, "recovery code not found or expired")
+		}
+		return "", Error.Internal(err)
+	}
+	return code, Error.CodeError{}
+}
+
+// DeleteRecoveryCode Удаляет код восстановления и счётчик попыток
+func (r *verificationRepository) DeleteRecoveryCode(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError {
+	pipe := r.redis.Pipeline()
+	pipe.Del(ctx, r.getRecoveryCodeKey(dto.UserUUID))
+	pipe.Del(ctx, r.getRecoveryAttemptsKey(dto.UserUUID))
+
+	if _, err := pipe.Exec(ctx); err != nil {
+		return Error.Internal(err)
+	}
+	return Error.CodeError{}
+}
+
+// IncrRecoveryAttempts Увеличивает счётчик неверных попыток восстановления, возвращает текущее значение
+func (r *verificationRepository) IncrRecoveryAttempts(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
+	count, err := r.redis.Incr(ctx, r.getRecoveryAttemptsKey(dto.UserUUID)).Result()
+	if err != nil {
+		return 0, Error.Internal(err)
+	}
+	return count, Error.CodeError{}
+}
+
+func (r *verificationRepository) getRecoveryCodeKey(userUUID string) string {
+	return fmt.Sprintf("%s:recovery:%s:code", r.prefix, userUUID)
+}
+
+func (r *verificationRepository) getRecoveryAttemptsKey(userUUID string) string {
+	return fmt.Sprintf("%s:recovery:%s:attempts", r.prefix, userUUID)
 }

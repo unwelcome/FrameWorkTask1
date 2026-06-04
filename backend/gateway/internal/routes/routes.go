@@ -31,6 +31,8 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	api.Post("/refresh", app.AuthHandler.RefreshToken)
 	api.Post("/user/:user_uuid/verify", app.AuthHandler.VerifyAccount)
 	api.Post("/user/:user_uuid/verify/resend", app.AuthHandler.ResendVerificationCode)
+	api.Post("/forgot-password", app.AuthHandler.ForgotPassword)
+	api.Post("/reset-password", app.AuthHandler.ResetPassword)
 
 	// Debug-only routes — доступны только при APP_ENV=test
 	if app.AppEnv == "test" {

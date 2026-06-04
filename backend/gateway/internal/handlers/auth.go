@@ -27,6 +27,8 @@ type AuthHandler interface {
 	VerifyAccount(c *fiber.Ctx) error
 	ResendVerificationCode(c *fiber.Ctx) error
 	GetVerificationCode(c *fiber.Ctx) error
+	ForgotPassword(c *fiber.Ctx) error
+	ResetPassword(c *fiber.Ctx) error
 }
 
 type authHandler struct {
@@ -632,6 +634,85 @@ func (h *authHandler) GetVerificationCode(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"code": res.GetCode()})
+}
+
+// ForgotPassword
+//
+//	@Summary      ForgotPassword
+//	@Description  Request password recovery — sends a one-time code to the user's email
+//	@Tags         User
+//	@Accept 			json
+//	@Produce 			json
+//	@Param 				data body entities.ForgotPasswordRequest true "Email пользователя"
+//	@Success      200  {object}  entities.ForgotPasswordResponse
+//	@Failure      400  {object}  Error.HttpError
+//	@Failure      500  {object}  Error.HttpError
+//	@Router       /forgot-password [post]
+func (h *authHandler) ForgotPassword(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
+
+	httpReq := &entities.ForgotPasswordRequest{}
+	if err := c.BodyParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+
+	if err := httpReq.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	_, err := h.AuthServiceClient.ForgotPassword(ctx, &auth_proto.ForgotPasswordRequest{
+		Email: httpReq.Email,
+	})
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(&entities.ForgotPasswordResponse{})
+}
+
+// ResetPassword
+//
+//	@Summary      ResetPassword
+//	@Description  Reset password using a recovery code from email
+//	@Tags         User
+//	@Accept 			json
+//	@Produce 			json
+//	@Param 				data body entities.ResetPasswordRequest true "Email, код и новый пароль"
+//	@Success      200  {object}  entities.ResetPasswordResponse
+//	@Failure      400  {object}  Error.HttpError
+//	@Failure      429  {object}  Error.HttpError
+//	@Failure      500  {object}  Error.HttpError
+//	@Router       /reset-password [post]
+func (h *authHandler) ResetPassword(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
+
+	httpReq := &entities.ResetPasswordRequest{}
+	if err := c.BodyParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+
+	if err := httpReq.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	_, err := h.AuthServiceClient.ResetPassword(ctx, &auth_proto.ResetPasswordRequest{
+		Email:       httpReq.Email,
+		Code:        httpReq.Code,
+		NewPassword: httpReq.NewPassword,
+	})
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(&entities.ResetPasswordResponse{})
 }
 
 // RevokeAllTokens

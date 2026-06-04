@@ -45,3 +45,20 @@ type DeleteVerificationCodeDTO struct {
 type IncrVerificationAttemptsDTO struct {
 	UserUUID string
 }
+
+type SaveRecoveryCodeDTO struct {
+	UserUUID string
+	Code     string
+}
+
+type GetRecoveryCodeDTO struct {
+	UserUUID string
+}
+
+type DeleteRecoveryCodeDTO struct {
+	UserUUID string
+}
+
+type IncrRecoveryAttemptsDTO struct {
+	UserUUID string
+}

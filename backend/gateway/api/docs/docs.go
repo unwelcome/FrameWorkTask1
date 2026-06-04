@@ -3260,7 +3260,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/{user_uuid}/verify": {
+        "/user/verify": {
             "post": {
                 "description": "Verify user account with code from email",
                 "consumes": [
@@ -3275,14 +3275,7 @@ const docTemplate = `{
                 "summary": "VerifyAccount",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "User UUID",
-                        "name": "user_uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Verification code",
+                        "description": "Email и код верификации",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -3310,6 +3303,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
@@ -3325,7 +3324,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/{user_uuid}/verify/resend": {
+        "/user/verify/resend": {
             "post": {
                 "description": "Resend verification code to user's email",
                 "produces": [
@@ -3337,11 +3336,13 @@ const docTemplate = `{
                 "summary": "ResendVerificationCode",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "User UUID",
-                        "name": "user_uuid",
-                        "in": "path",
-                        "required": true
+                        "description": "Email пользователя",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResendVerificationCodeRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -3353,12 +3354,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -4003,6 +3998,14 @@ const docTemplate = `{
         "entities.RemoveEmployeeFromDepartmentResponse": {
             "type": "object"
         },
+        "entities.ResendVerificationCodeRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.ResendVerificationCodeResponse": {
             "type": "object"
         },
@@ -4144,6 +4147,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "code": {
+                    "type": "string"
+                },
+                "email": {
                     "type": "string"
                 }
             }

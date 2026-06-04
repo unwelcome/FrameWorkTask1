@@ -24,6 +24,7 @@ type UserGetByEmail struct {
 	UserUUID     string `db:"uuid"`
 	Email        string `db:"email"`
 	PasswordHash string `db:"password_hash"`
+	FirstName    string `db:"first_name"`
 	IsVerified   bool   `db:"is_verified"`
 }
 

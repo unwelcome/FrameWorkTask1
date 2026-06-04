@@ -3253,7 +3253,7 @@
                 }
             }
         },
-        "/user/{user_uuid}/verify": {
+        "/user/verify": {
             "post": {
                 "description": "Verify user account with code from email",
                 "consumes": [
@@ -3268,14 +3268,7 @@
                 "summary": "VerifyAccount",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "User UUID",
-                        "name": "user_uuid",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Verification code",
+                        "description": "Email и код верификации",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -3303,6 +3296,12 @@
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
@@ -3318,7 +3317,7 @@
                 }
             }
         },
-        "/user/{user_uuid}/verify/resend": {
+        "/user/verify/resend": {
             "post": {
                 "description": "Resend verification code to user's email",
                 "produces": [
@@ -3330,11 +3329,13 @@
                 "summary": "ResendVerificationCode",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "User UUID",
-                        "name": "user_uuid",
-                        "in": "path",
-                        "required": true
+                        "description": "Email пользователя",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.ResendVerificationCodeRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -3346,12 +3347,6 @@
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -3996,6 +3991,14 @@
         "entities.RemoveEmployeeFromDepartmentResponse": {
             "type": "object"
         },
+        "entities.ResendVerificationCodeRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
         "entities.ResendVerificationCodeResponse": {
             "type": "object"
         },
@@ -4137,6 +4140,9 @@
             "type": "object",
             "properties": {
                 "code": {
+                    "type": "string"
+                },
+                "email": {
                     "type": "string"
                 }
             }

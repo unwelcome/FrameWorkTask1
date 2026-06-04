@@ -142,7 +142,7 @@ message RevokeAllTokensRequest {
 
 // Verify account
 message VerifyAccountRequest {
-  string user_uuid = 1;
+  string email = 1;
   string code = 2;
 }
 // Empty response
@@ -150,7 +150,7 @@ message VerifyAccountRequest {
 
 // Resend verification code
 message ResendVerificationCodeRequest {
-  string user_uuid = 1;
+  string email = 1;
 }
 // Empty response
 

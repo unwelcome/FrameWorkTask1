@@ -969,7 +969,7 @@ func (x *RevokeAllTokensRequest) GetUserUuid() string {
 // Verify account
 type VerifyAccountRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1005,9 +1005,9 @@ func (*VerifyAccountRequest) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *VerifyAccountRequest) GetUserUuid() string {
+func (x *VerifyAccountRequest) GetEmail() string {
 	if x != nil {
-		return x.UserUuid
+		return x.Email
 	}
 	return ""
 }
@@ -1022,7 +1022,7 @@ func (x *VerifyAccountRequest) GetCode() string {
 // Resend verification code
 type ResendVerificationCodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1057,9 +1057,9 @@ func (*ResendVerificationCodeRequest) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *ResendVerificationCodeRequest) GetUserUuid() string {
+func (x *ResendVerificationCodeRequest) GetEmail() string {
 	if x != nil {
-		return x.UserUuid
+		return x.Email
 	}
 	return ""
 }
@@ -1332,12 +1332,12 @@ const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"token_hash\x18\x02 \x01(\tR\ttokenHash\"5\n" +
 	"\x16RevokeAllTokensRequest\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"G\n" +
-	"\x14VerifyAccountRequest\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x12\n" +
-	"\x04code\x18\x02 \x01(\tR\x04code\"<\n" +
-	"\x1dResendVerificationCodeRequest\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"9\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"@\n" +
+	"\x14VerifyAccountRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\"5\n" +
+	"\x1dResendVerificationCodeRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\"9\n" +
 	"\x1aGetVerificationCodeRequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"1\n" +
 	"\x1bGetVerificationCodeResponse\x12\x12\n" +

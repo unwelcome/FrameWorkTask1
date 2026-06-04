@@ -154,12 +154,12 @@ func mustGetVerificationCode(t *testing.T, c *apiClient, userUUID string) string
 }
 
 // mustVerifyAccount verifies a user account using the 6-digit code.
-func mustVerifyAccount(t *testing.T, c *apiClient, userUUID, verificationCode string) {
+func mustVerifyAccount(t *testing.T, c *apiClient, email, verificationCode string) {
 	t.Helper()
-	code, body := c.post(
-		fmt.Sprintf("/api/user/%s/verify", userUUID),
-		map[string]string{"code": verificationCode},
-	)
+	code, body := c.post("/api/user/verify", map[string]string{
+		"email": email,
+		"code":  verificationCode,
+	})
 	require.Equalf(t, http.StatusOK, code, "verify account failed (body: %s)", body)
 }
 
@@ -170,7 +170,7 @@ func mustRegisterVerifyAndLogin(t *testing.T, c *apiClient) (string, loginResp) 
 	email := randomEmail()
 	reg := mustRegister(t, c, email, "Password123")
 	verificationCode := mustGetVerificationCode(t, c, reg.UserUUID)
-	mustVerifyAccount(t, c, reg.UserUUID, verificationCode)
+	mustVerifyAccount(t, c, email, verificationCode)
 	login := mustLogin(t, c, email, "Password123")
 	return email, login
 }

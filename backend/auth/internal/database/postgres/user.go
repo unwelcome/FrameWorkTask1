@@ -48,11 +48,11 @@ func (r *userRepository) CreateUser(ctx context.Context, dto entities.User) Erro
 
 // GetUserByEmail Возвращает частичные данные пользователя по его email
 func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-	query := `SELECT uuid, password_hash, is_verified FROM users WHERE email = $1;`
+	query := `SELECT uuid, password_hash, first_name, is_verified FROM users WHERE email = $1;`
 
-	userGetByEmail := &entities.UserGetByEmail{}
+	userGetByEmail := &entities.UserGetByEmail{Email: dto.Email}
 
-	err := r.db.QueryRowContext(ctx, query, dto.Email).Scan(&userGetByEmail.UserUUID, &userGetByEmail.PasswordHash, &userGetByEmail.IsVerified)
+	err := r.db.QueryRowContext(ctx, query, dto.Email).Scan(&userGetByEmail.UserUUID, &userGetByEmail.PasswordHash, &userGetByEmail.FirstName, &userGetByEmail.IsVerified)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Error.Public(codes.NotFound, "user not found")

@@ -67,7 +67,7 @@ func TestLogin(t *testing.T) {
 		email := randomEmail()
 		reg := mustRegister(t, c, email, "Password123")
 		verificationCode := mustGetVerificationCode(t, c, reg.UserUUID)
-		mustVerifyAccount(t, c, reg.UserUUID, verificationCode)
+		mustVerifyAccount(t, c, email, verificationCode)
 
 		code, body := c.post("/api/login", map[string]string{
 			"email":    email,
@@ -345,7 +345,7 @@ func TestAuthFullFlow(t *testing.T) {
 
 	// 2. Verify account
 	verificationCode := mustGetVerificationCode(t, c, reg.UserUUID)
-	mustVerifyAccount(t, c, reg.UserUUID, verificationCode)
+	mustVerifyAccount(t, c, email, verificationCode)
 
 	// 3. Login
 	login := mustLogin(t, c, email, "Password123")

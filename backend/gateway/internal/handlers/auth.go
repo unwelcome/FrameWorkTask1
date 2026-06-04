@@ -522,14 +522,14 @@ func (h *authHandler) RevokeToken(c *fiber.Ctx) error {
 //	@Tags         User
 //	@Accept 			json
 //	@Produce 			json
-//	@Param 				user_uuid path string true "User UUID"
-//	@Param 				data body entities.VerifyAccountRequest true "Verification code"
+//	@Param 				data body entities.VerifyAccountRequest true "Email и код верификации"
 //	@Success      200  {object}  entities.VerifyAccountResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
+//	@Failure      409  {object}  Error.HttpError
 //	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
-//	@Router       /user/{user_uuid}/verify [post]
+//	@Router       /user/verify [post]
 func (h *authHandler) VerifyAccount(c *fiber.Ctx) error {
 	operationID := utils.GetLocal[string](c, h.operationIDKey)
 
@@ -537,9 +537,7 @@ func (h *authHandler) VerifyAccount(c *fiber.Ctx) error {
 	defer cancel()
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
-	httpReq := &entities.VerifyAccountRequest{
-		UserUUID: c.Params("user_uuid", ""),
-	}
+	httpReq := &entities.VerifyAccountRequest{}
 	if err := c.BodyParser(httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
@@ -550,8 +548,8 @@ func (h *authHandler) VerifyAccount(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.VerifyAccountRequest{
-		UserUuid: httpReq.UserUUID,
-		Code:     httpReq.Code,
+		Email: httpReq.Email,
+		Code:  httpReq.Code,
 	}
 
 	_, err := h.AuthServiceClient.VerifyAccount(ctx, req)
@@ -569,13 +567,12 @@ func (h *authHandler) VerifyAccount(c *fiber.Ctx) error {
 //	@Description  Resend verification code to user's email
 //	@Tags         User
 //	@Produce 			json
-//	@Param 				user_uuid path string true "User UUID"
+//	@Param 				data body entities.ResendVerificationCodeRequest true "Email пользователя"
 //	@Success      200  {object}  entities.ResendVerificationCodeResponse
 //	@Failure      400  {object}  Error.HttpError
-//	@Failure      404  {object}  Error.HttpError
 //	@Failure      409  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
-//	@Router       /user/{user_uuid}/verify/resend [post]
+//	@Router       /user/verify/resend [post]
 func (h *authHandler) ResendVerificationCode(c *fiber.Ctx) error {
 	operationID := utils.GetLocal[string](c, h.operationIDKey)
 
@@ -583,8 +580,9 @@ func (h *authHandler) ResendVerificationCode(c *fiber.Ctx) error {
 	defer cancel()
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
-	httpReq := &entities.ResendVerificationCodeRequest{
-		UserUUID: c.Params("user_uuid", ""),
+	httpReq := &entities.ResendVerificationCodeRequest{}
+	if err := c.BodyParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
 
 	if err := httpReq.Validate(); err != nil {
@@ -593,7 +591,7 @@ func (h *authHandler) ResendVerificationCode(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.ResendVerificationCodeRequest{
-		UserUuid: httpReq.UserUUID,
+		Email: httpReq.Email,
 	}
 
 	_, err := h.AuthServiceClient.ResendVerificationCode(ctx, req)

@@ -197,14 +197,14 @@ type RevokeAllTokensResponse struct{}
 // ─── VerifyAccount ────────────────────────────────────────────────────────────
 
 type VerifyAccountRequest struct {
-	UserUUID string `json:"-"`
-	Code     string `json:"code"`
+	Email string `json:"email"`
+	Code  string `json:"code"`
 }
 type VerifyAccountResponse struct{}
 
 func (e *VerifyAccountRequest) Validate() error {
-	e.UserUUID = strings.TrimSpace(e.UserUUID)
-	if err := validate.UUID(e.UserUUID); err != nil {
+	e.Email = strings.TrimSpace(e.Email)
+	if err := validate.Email(e.Email); err != nil {
 		return err
 	}
 	e.Code = strings.TrimSpace(e.Code)
@@ -217,13 +217,13 @@ func (e *VerifyAccountRequest) Validate() error {
 // ─── ResendVerificationCode ───────────────────────────────────────────────────
 
 type ResendVerificationCodeRequest struct {
-	UserUUID string `json:"-"`
+	Email string `json:"email"`
 }
 type ResendVerificationCodeResponse struct{}
 
 func (e *ResendVerificationCodeRequest) Validate() error {
-	e.UserUUID = strings.TrimSpace(e.UserUUID)
-	return validate.UUID(e.UserUUID)
+	e.Email = strings.TrimSpace(e.Email)
+	return validate.Email(e.Email)
 }
 
 // ─── ForgotPassword ───────────────────────────────────────────────────────────

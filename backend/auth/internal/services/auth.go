@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
@@ -391,26 +392,35 @@ func (s *AuthService) RevokeAllTokens(ctx context.Context, req *pb.RevokeAllToke
 
 // VerifyAccount Подтверждение аккаунта по коду из письма
 func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRequest) (*emptypb.Empty, error) {
-	if err := validate.UUID(req.GetUserUuid()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
+	if err := validate.Email(req.GetEmail()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
 	}
 	if err := validate.UserVerificationCode(req.GetCode()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid verification code format")
 	}
 
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
+	if getErr.Code != 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
+	}
+
+	if user.IsVerified {
+		return nil, status.Errorf(codes.AlreadyExists, "account already verified")
+	}
+
 	// Проверяем наличие активного кода
-	storedCode, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: req.GetUserUuid()})
+	storedCode, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: user.UserUUID})
 	if codeErr.Code != 0 {
 		return nil, status.Errorf(codes.NotFound, "verification code not found or expired, please request a new one")
 	}
 
 	// Увеличиваем счётчик попыток до проверки кода
-	attempts, attemptsErr := s.cache.Verification.IncrVerificationAttempts(ctx, entities.IncrVerificationAttemptsDTO{UserUUID: req.GetUserUuid()})
+	attempts, attemptsErr := s.cache.Verification.IncrVerificationAttempts(ctx, entities.IncrVerificationAttemptsDTO{UserUUID: user.UserUUID})
 	if attemptsErr.Code != 0 {
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 	if attempts > maxVerificationAttempts {
-		_ = s.cache.Verification.DeleteVerificationCode(ctx, entities.DeleteVerificationCodeDTO{UserUUID: req.GetUserUuid()})
+		_ = s.cache.Verification.DeleteVerificationCode(ctx, entities.DeleteVerificationCodeDTO{UserUUID: user.UserUUID})
 		return nil, status.Errorf(codes.ResourceExhausted, "too many attempts, please request a new verification code")
 	}
 
@@ -419,10 +429,10 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 	}
 
 	// Код верный — удаляем его из Redis
-	_ = s.cache.Verification.DeleteVerificationCode(ctx, entities.DeleteVerificationCodeDTO{UserUUID: req.GetUserUuid()})
+	_ = s.cache.Verification.DeleteVerificationCode(ctx, entities.DeleteVerificationCodeDTO{UserUUID: user.UserUUID})
 
 	// Помечаем аккаунт верифицированным
-	if err := s.db.User.SetUserVerified(ctx, entities.SetUserVerifiedDTO{UserUUID: req.GetUserUuid()}).GRPCError(); err != nil {
+	if err := s.db.User.SetUserVerified(ctx, entities.SetUserVerifiedDTO{UserUUID: user.UserUUID}).GRPCError(); err != nil {
 		return nil, err
 	}
 
@@ -431,13 +441,15 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 
 // ResendVerificationCode Повторная отправка кода верификации
 func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.ResendVerificationCodeRequest) (*emptypb.Empty, error) {
-	if err := validate.UUID(req.GetUserUuid()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
+	if err := validate.Email(req.GetEmail()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
 	}
 
-	user, getErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: req.GetUserUuid()})
-	if err := getErr.GRPCError(); err != nil {
-		return nil, err
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
+	if getErr.Code != 0 {
+		// Не раскрываем, зарегистрирован ли email
+		log.Warn().Time("time", time.Now()).Str("method", "ResendVerificationCode").Msg("user not found")
+		return &emptypb.Empty{}, nil
 	}
 
 	if user.IsVerified {
@@ -447,7 +459,7 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 	// Генерируем новый код (перезаписывает старый и сбрасывает счётчик попыток)
 	code := utils.GenerateVerificationCode()
 	if err := s.cache.Verification.SaveVerificationCode(ctx, entities.SaveVerificationCodeDTO{
-		UserUUID: req.GetUserUuid(),
+		UserUUID: user.UserUUID,
 		Code:     code,
 	}).GRPCError(); err != nil {
 		return nil, err
@@ -455,8 +467,8 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 
 	// Отправляем сообщение в message broker
 	_ = s.publisher.SendVerificationEmail(ctx, entities.VerificationEmailMsg{
-		UserUUID:  req.GetUserUuid(),
-		Email:     user.Email,
+		UserUUID:  user.UserUUID,
+		Email:     req.GetEmail(),
 		FirstName: user.FirstName,
 		Code:      code,
 	})
@@ -474,18 +486,14 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	// Не раскрываем, зарегистрирован ли email
 	if getErr.Code != 0 {
+		log.Warn().Time("time", time.Now()).Str("method", "ForgotPassword").Msg("user not found")
 		return &emptypb.Empty{}, nil
 	}
 
 	// Не раскрываем состояние аккаунта
 	if !user.IsVerified {
+		log.Warn().Time("time", time.Now()).Str("method", "ForgotPassword").Msg("user already verified")
 		return &emptypb.Empty{}, nil
-	}
-
-	// Получаем имя пользователя для персонализации письма
-	fullUser, getUserErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: user.UserUUID})
-	if getUserErr.Code != 0 {
-		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
 	code := utils.GenerateVerificationCode()
@@ -500,7 +508,7 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 	_ = s.publisher.SendRecoveryEmail(ctx, entities.RecoveryEmailMsg{
 		UserUUID:  user.UserUUID,
 		Email:     req.GetEmail(),
-		FirstName: fullUser.FirstName,
+		FirstName: user.FirstName,
 		Code:      code,
 	})
 

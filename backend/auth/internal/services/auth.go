@@ -455,7 +455,7 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 	}
 
 	if req.GetCode() != storedCode {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid verification code")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
 
 	// Код верный — удаляем его из Redis
@@ -636,7 +636,7 @@ func (s *AuthService) Verify2FA(ctx context.Context, req *pb.Verify2FARequest) (
 
 	// Сравниваем code
 	if data.Code != req.GetCode() {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired code")
+		return nil, status.Errorf(codes.PermissionDenied, "invalid or expired code")
 	}
 
 	// Удаляем сессию
@@ -681,6 +681,8 @@ func (s *AuthService) UpdateUser2FA(ctx context.Context, req *pb.UpdateUser2FARe
 
 	return &emptypb.Empty{}, nil
 }
+
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 
 // GetVerificationCode Отладочный метод — возвращает активный код верификации.
 // Доступен только при APP_ENV=test; в production возвращает Unimplemented.

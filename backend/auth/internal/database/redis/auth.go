@@ -39,7 +39,7 @@ func (r *authRepository) SaveRefreshToken(ctx context.Context, dto entities.Save
 
 	pipeline := r.redis.Pipeline()
 	pipeline.Set(ctx, tokenKey, 1, r.refreshTokenTTL)
-	pipeline.SAdd(ctx, userTokensKey, dto.UserUUID)
+	pipeline.SAdd(ctx, userTokensKey, dto.HashedToken)
 
 	_, err := pipeline.Exec(ctx)
 	if err != nil {

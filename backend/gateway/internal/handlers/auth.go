@@ -826,6 +826,7 @@ func (h *authHandler) RevokeAllTokens(c *fiber.Ctx) error {
 //	@Param 				data body entities.Verify2FARequest true "SessionUUID and email code"
 //	@Success      200  {object}  entities.Verify2FAResponse
 //	@Failure      400  {object}  Error.HttpError
+//	@Failure      403  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError

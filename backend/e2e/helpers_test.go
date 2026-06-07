@@ -81,6 +81,7 @@ type loginResp struct {
 	UserUUID     string `json:"user_uuid"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	SessionUUID  string `json:"session_uuid"`
 }
 
 type getUserResp struct {
@@ -636,4 +637,101 @@ func mustGetApplicationDetail(t *testing.T, client *apiClient, appUUID string) a
 	var resp applicationDetailResp
 	require.NoError(t, json.Unmarshal(body, &resp))
 	return resp.Application
+}
+
+// ─── Recovery / password-reset helpers ───────────────────────────────────────
+
+// mustGetRecoveryCode fetches the active password-recovery code for a user via debug endpoint.
+// Only works when APP_ENV=test.
+func mustGetRecoveryCode(t *testing.T, c *apiClient, userUUID string) string {
+	t.Helper()
+	code, body := c.get(fmt.Sprintf("/api/debug/user/%s/recovery-code", userUUID))
+	require.Equalf(t, http.StatusOK, code, "get recovery code failed (body: %s)", body)
+	var resp struct {
+		Code string `json:"code"`
+	}
+	require.NoError(t, json.Unmarshal(body, &resp))
+	require.NotEmpty(t, resp.Code, "recovery code is empty")
+	return resp.Code
+}
+
+// mustForgotPassword triggers the password-recovery flow for the given email.
+func mustForgotPassword(t *testing.T, c *apiClient, email string) {
+	t.Helper()
+	code, body := c.post("/api/forgot-password", map[string]string{"email": email})
+	require.Equalf(t, http.StatusOK, code, "forgot password failed (body: %s)", body)
+}
+
+// mustResetPassword completes the password-reset using a recovery code.
+func mustResetPassword(t *testing.T, c *apiClient, email, recoveryCode, newPassword string) {
+	t.Helper()
+	code, body := c.post("/api/reset-password", map[string]string{
+		"email":        email,
+		"code":         recoveryCode,
+		"new_password": newPassword,
+	})
+	require.Equalf(t, http.StatusOK, code, "reset password failed (body: %s)", body)
+}
+
+// ─── 2FA helpers ──────────────────────────────────────────────────────────────
+
+// mustGet2FACode fetches the active 2FA code for a given session via debug endpoint.
+// Only works when APP_ENV=test.
+func mustGet2FACode(t *testing.T, c *apiClient, sessionUUID string) string {
+	t.Helper()
+	code, body := c.get(fmt.Sprintf("/api/debug/2fa/%s/code", sessionUUID))
+	require.Equalf(t, http.StatusOK, code, "get 2FA code failed (body: %s)", body)
+	var resp struct {
+		Code string `json:"code"`
+	}
+	require.NoError(t, json.Unmarshal(body, &resp))
+	require.NotEmpty(t, resp.Code, "2FA code is empty")
+	return resp.Code
+}
+
+// mustEnable2FA enables two-factor authentication for the authenticated user.
+func mustEnable2FA(t *testing.T, auth *apiClient) {
+	t.Helper()
+	code, body := auth.patch("/api/auth/user/2fa", map[string]bool{"enable_2fa": true})
+	require.Equalf(t, http.StatusOK, code, "enable 2FA failed (body: %s)", body)
+}
+
+// mustDisable2FA disables two-factor authentication for the authenticated user.
+func mustDisable2FA(t *testing.T, auth *apiClient) {
+	t.Helper()
+	code, body := auth.patch("/api/auth/user/2fa", map[string]bool{"enable_2fa": false})
+	require.Equalf(t, http.StatusOK, code, "disable 2FA failed (body: %s)", body)
+}
+
+// mustLoginWith2FA performs step 1 of a 2FA login (password check) and returns the session_uuid.
+// Fails the test if the response does not contain a session_uuid or unexpectedly returns tokens.
+func mustLoginWith2FA(t *testing.T, c *apiClient, email, password string) string {
+	t.Helper()
+	httpCode, body := c.post("/api/login", map[string]string{
+		"email":    email,
+		"password": password,
+	})
+	require.Equalf(t, http.StatusOK, httpCode, "login step-1 (2FA) failed (body: %s)", body)
+
+	var resp loginResp
+	require.NoError(t, json.Unmarshal(body, &resp))
+	require.NotEmpty(t, resp.SessionUUID, "expected session_uuid in 2FA login response")
+	require.Empty(t, resp.AccessToken, "access_token must be empty during 2FA step 1")
+	return resp.SessionUUID
+}
+
+// mustVerify2FA completes step 2 of the 2FA login and returns the resulting token pair.
+func mustVerify2FA(t *testing.T, c *apiClient, sessionUUID, code string) loginResp {
+	t.Helper()
+	httpCode, body := c.post("/api/verify-2fa", map[string]string{
+		"session_uuid": sessionUUID,
+		"code":         code,
+	})
+	require.Equalf(t, http.StatusOK, httpCode, "verify 2FA failed (body: %s)", body)
+
+	var resp loginResp
+	require.NoError(t, json.Unmarshal(body, &resp))
+	require.NotEmpty(t, resp.AccessToken, "verify 2FA returned empty access_token")
+	require.NotEmpty(t, resp.RefreshToken, "verify 2FA returned empty refresh_token")
+	return resp
 }

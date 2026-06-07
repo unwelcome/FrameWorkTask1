@@ -34,6 +34,8 @@ const (
 	AuthService_VerifyAccount_FullMethodName          = "/auth.AuthService/VerifyAccount"
 	AuthService_ResendVerificationCode_FullMethodName = "/auth.AuthService/ResendVerificationCode"
 	AuthService_GetVerificationCode_FullMethodName    = "/auth.AuthService/GetVerificationCode"
+	AuthService_GetRecoveryCode_FullMethodName        = "/auth.AuthService/GetRecoveryCode"
+	AuthService_Get2FACode_FullMethodName             = "/auth.AuthService/Get2FACode"
 	AuthService_ForgotPassword_FullMethodName         = "/auth.AuthService/ForgotPassword"
 	AuthService_ResetPassword_FullMethodName          = "/auth.AuthService/ResetPassword"
 	AuthService_Verify2FA_FullMethodName              = "/auth.AuthService/Verify2FA"
@@ -58,6 +60,8 @@ type AuthServiceClient interface {
 	VerifyAccount(ctx context.Context, in *VerifyAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ResendVerificationCode(ctx context.Context, in *ResendVerificationCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetVerificationCode(ctx context.Context, in *GetVerificationCodeRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error)
+	GetRecoveryCode(ctx context.Context, in *GetRecoveryCodeRequest, opts ...grpc.CallOption) (*GetRecoveryCodeResponse, error)
+	Get2FACode(ctx context.Context, in *Get2FACodeRequest, opts ...grpc.CallOption) (*Get2FACodeResponse, error)
 	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Verify2FA(ctx context.Context, in *Verify2FARequest, opts ...grpc.CallOption) (*Verify2FAResponse, error)
@@ -212,6 +216,26 @@ func (c *authServiceClient) GetVerificationCode(ctx context.Context, in *GetVeri
 	return out, nil
 }
 
+func (c *authServiceClient) GetRecoveryCode(ctx context.Context, in *GetRecoveryCodeRequest, opts ...grpc.CallOption) (*GetRecoveryCodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRecoveryCodeResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetRecoveryCode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) Get2FACode(ctx context.Context, in *Get2FACodeRequest, opts ...grpc.CallOption) (*Get2FACodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Get2FACodeResponse)
+	err := c.cc.Invoke(ctx, AuthService_Get2FACode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *authServiceClient) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -270,6 +294,8 @@ type AuthServiceServer interface {
 	VerifyAccount(context.Context, *VerifyAccountRequest) (*emptypb.Empty, error)
 	ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error)
 	GetVerificationCode(context.Context, *GetVerificationCodeRequest) (*GetVerificationCodeResponse, error)
+	GetRecoveryCode(context.Context, *GetRecoveryCodeRequest) (*GetRecoveryCodeResponse, error)
+	Get2FACode(context.Context, *Get2FACodeRequest) (*Get2FACodeResponse, error)
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*emptypb.Empty, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*emptypb.Empty, error)
 	Verify2FA(context.Context, *Verify2FARequest) (*Verify2FAResponse, error)
@@ -325,6 +351,12 @@ func (UnimplementedAuthServiceServer) ResendVerificationCode(context.Context, *R
 }
 func (UnimplementedAuthServiceServer) GetVerificationCode(context.Context, *GetVerificationCodeRequest) (*GetVerificationCodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVerificationCode not implemented")
+}
+func (UnimplementedAuthServiceServer) GetRecoveryCode(context.Context, *GetRecoveryCodeRequest) (*GetRecoveryCodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRecoveryCode not implemented")
+}
+func (UnimplementedAuthServiceServer) Get2FACode(context.Context, *Get2FACodeRequest) (*Get2FACodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get2FACode not implemented")
 }
 func (UnimplementedAuthServiceServer) ForgotPassword(context.Context, *ForgotPasswordRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ForgotPassword not implemented")
@@ -611,6 +643,42 @@ func _AuthService_GetVerificationCode_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GetRecoveryCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRecoveryCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetRecoveryCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetRecoveryCode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetRecoveryCode(ctx, req.(*GetRecoveryCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_Get2FACode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Get2FACodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).Get2FACode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_Get2FACode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).Get2FACode(ctx, req.(*Get2FACodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_ForgotPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ForgotPasswordRequest)
 	if err := dec(in); err != nil {
@@ -745,6 +813,14 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVerificationCode",
 			Handler:    _AuthService_GetVerificationCode_Handler,
+		},
+		{
+			MethodName: "GetRecoveryCode",
+			Handler:    _AuthService_GetRecoveryCode_Handler,
+		},
+		{
+			MethodName: "Get2FACode",
+			Handler:    _AuthService_Get2FACode_Handler,
 		},
 		{
 			MethodName: "ForgotPassword",

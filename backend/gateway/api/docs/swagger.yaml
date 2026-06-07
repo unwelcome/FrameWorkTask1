@@ -2460,6 +2460,74 @@ paths:
       summary: GetAllActiveTokens
       tags:
       - Auth
+  /debug/2fa/{session_uuid}/code:
+    get:
+      description: 'Debug endpoint: returns the active 2FA code by session UUID. Available
+        only when APP_ENV=test.'
+      parameters:
+      - description: Session UUID
+        in: path
+        name: session_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: Get2FACode
+      tags:
+      - Debug
+  /debug/user/{user_uuid}/recovery-code:
+    get:
+      description: 'Debug endpoint: returns the active recovery code. Available only
+        when APP_ENV=test.'
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: GetRecoveryCode
+      tags:
+      - Debug
   /debug/user/{user_uuid}/verification-code:
     get:
       description: 'Debug endpoint: returns the active verification code. Available

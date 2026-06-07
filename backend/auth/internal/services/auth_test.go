@@ -843,6 +843,86 @@ func TestRevokeToken(t *testing.T) {
 	})
 }
 
+// ─── Login (дополнительные ветки) ────────────────────────────────────────────
+
+func TestLogin_Extra(t *testing.T) {
+	t.Run("account_not_verified", func(t *testing.T) {
+		hashedPwd := hashPassword(t, testPassword)
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd, IsVerified: false}, ok()
+			},
+		}
+		svc := newTestService(userRepo, emptyAuthRepo())
+
+		_, err := svc.Login(context.Background(), &pb.LoginRequest{
+			Email:    "test@example.com",
+			Password: testPassword,
+		})
+
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("two_fa_enabled_returns_session", func(t *testing.T) {
+		hashedPwd := hashPassword(t, testPassword)
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{
+					UserUUID:     testUUID1,
+					PasswordHash: hashedPwd,
+					IsVerified:   true,
+					Enabled2FA:   true,
+					FirstName:    "Ivan",
+				}, ok()
+			},
+		}
+		twoFARepo := &mockTwoFARepo{
+			save2FAData: func(_ context.Context, _ entities.Save2FADataDTO) Error.CodeError { return ok() },
+		}
+		svc := buildSvc(svcDeps{user: userRepo, twoFA: twoFARepo})
+
+		resp, err := svc.Login(context.Background(), &pb.LoginRequest{
+			Email:    "test@example.com",
+			Password: testPassword,
+		})
+
+		assertNoError(t, err)
+		if resp.GetSessionUuid() == "" {
+			t.Error("expected non-empty session_uuid when 2FA is enabled")
+		}
+		if resp.GetAccessToken() != "" || resp.GetRefreshToken() != "" {
+			t.Error("expected empty tokens when 2FA is enabled")
+		}
+	})
+
+	t.Run("two_fa_save_error", func(t *testing.T) {
+		hashedPwd := hashPassword(t, testPassword)
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{
+					UserUUID:     testUUID1,
+					PasswordHash: hashedPwd,
+					IsVerified:   true,
+					Enabled2FA:   true,
+				}, ok()
+			},
+		}
+		twoFARepo := &mockTwoFARepo{
+			save2FAData: func(_ context.Context, _ entities.Save2FADataDTO) Error.CodeError {
+				return Error.Internal(fmt.Errorf("redis error"))
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, twoFA: twoFARepo})
+
+		_, err := svc.Login(context.Background(), &pb.LoginRequest{
+			Email:    "test@example.com",
+			Password: testPassword,
+		})
+
+		assertCode(t, err, codes.Internal)
+	})
+}
+
 // ─── RevokeAllTokens ─────────────────────────────────────────────────────────
 
 func TestRevokeAllTokens(t *testing.T) {
@@ -879,6 +959,887 @@ func TestRevokeAllTokens(t *testing.T) {
 
 		_, err := svc.RevokeAllTokens(context.Background(), &pb.RevokeAllTokensRequest{
 			UserUuid: testUUID1,
+		})
+
+		assertCode(t, err, codes.NotFound)
+	})
+}
+
+// ─── VerifyAccount ────────────────────────────────────────────────────────────
+
+func TestVerifyAccount(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
+			},
+			setUserVerified: func(_ context.Context, _ entities.SetUserVerifiedDTO) Error.CodeError { return ok() },
+		}
+		verRepo := &mockVerificationRepo{
+			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
+				return "123456", ok()
+			},
+			incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
+			deleteVerificationCode: func(_ context.Context, _ entities.DeleteVerificationCodeDTO) Error.CodeError { return ok() },
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+
+		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
+			Email: "test@example.com",
+			Code:  "123456",
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("invalid_email", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
+			Email: "not-an-email",
+			Code:  "123456",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_code_format", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
+			Email: "test@example.com",
+			Code:  "abc",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("user_not_found", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return nil, Error.Public(codes.NotFound, "user not found")
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
+			Email: "unknown@example.com",
+			Code:  "123456",
+		})
+
+		// Сервис возвращает нейтральный InvalidArgument, не раскрывая отсутствие пользователя
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("already_verified", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
+			Email: "test@example.com",
+			Code:  "123456",
+		})
+
+		assertCode(t, err, codes.AlreadyExists)
+	})
+
+	t.Run("code_not_found_or_expired", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
+			},
+		}
+		verRepo := &mockVerificationRepo{
+			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
+				return "", Error.Public(codes.NotFound, "code not found")
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+
+		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
+			Email: "test@example.com",
+			Code:  "123456",
+		})
+
+		assertCode(t, err, codes.NotFound)
+	})
+
+	t.Run("too_many_attempts", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
+			},
+		}
+		verRepo := &mockVerificationRepo{
+			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
+				return "123456", ok()
+			},
+			incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
+				return maxVerificationAttempts + 1, ok()
+			},
+			deleteVerificationCode: func(_ context.Context, _ entities.DeleteVerificationCodeDTO) Error.CodeError { return ok() },
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+
+		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
+			Email: "test@example.com",
+			Code:  "123456",
+		})
+
+		assertCode(t, err, codes.ResourceExhausted)
+	})
+
+	t.Run("wrong_code", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
+			},
+		}
+		verRepo := &mockVerificationRepo{
+			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
+				return "999999", ok()
+			},
+			incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+
+		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
+			Email: "test@example.com",
+			Code:  "123456",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+}
+
+// ─── ResendVerificationCode ───────────────────────────────────────────────────
+
+func TestResendVerificationCode(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false, FirstName: "Ivan"}, ok()
+			},
+		}
+		verRepo := &mockVerificationRepo{
+			saveVerificationCode: func(_ context.Context, _ entities.SaveVerificationCodeDTO) Error.CodeError { return ok() },
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+
+		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
+			Email: "test@example.com",
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("invalid_email", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
+			Email: "not-an-email",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("user_not_found_silent_ok", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return nil, Error.Public(codes.NotFound, "user not found")
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
+			Email: "unknown@example.com",
+		})
+
+		// Тихий 200 — не раскрываем наличие/отсутствие email
+		assertNoError(t, err)
+	})
+
+	t.Run("already_verified", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
+			Email: "test@example.com",
+		})
+
+		assertCode(t, err, codes.AlreadyExists)
+	})
+
+	t.Run("save_code_error", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
+			},
+		}
+		verRepo := &mockVerificationRepo{
+			saveVerificationCode: func(_ context.Context, _ entities.SaveVerificationCodeDTO) Error.CodeError {
+				return Error.Internal(fmt.Errorf("redis error"))
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+
+		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
+			Email: "test@example.com",
+		})
+
+		assertCode(t, err, codes.Internal)
+	})
+}
+
+// ─── ForgotPassword ───────────────────────────────────────────────────────────
+
+func TestForgotPassword(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true, FirstName: "Ivan"}, ok()
+			},
+		}
+		recRepo := &mockRecoveryRepo{
+			saveRecoveryCode: func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError { return ok() },
+		}
+		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
+
+		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
+			Email: "test@example.com",
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("invalid_email", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
+			Email: "not-an-email",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("user_not_found_silent_ok", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return nil, Error.Public(codes.NotFound, "user not found")
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
+			Email: "unknown@example.com",
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("user_not_verified_silent_ok", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
+			Email: "unverified@example.com",
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("save_code_error", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+			},
+		}
+		recRepo := &mockRecoveryRepo{
+			saveRecoveryCode: func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError {
+				return Error.Internal(fmt.Errorf("redis error"))
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
+
+		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
+			Email: "test@example.com",
+		})
+
+		assertCode(t, err, codes.Internal)
+	})
+}
+
+// ─── ResetPassword ────────────────────────────────────────────────────────────
+
+func TestResetPassword(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+			},
+			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError { return ok() },
+		}
+		recRepo := &mockRecoveryRepo{
+			getRecoveryCode: func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
+				return "123456", ok()
+			},
+			incrRecoveryAttempts: func(_ context.Context, _ entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
+			deleteRecoveryCode: func(_ context.Context, _ entities.DeleteRecoveryCodeDTO) Error.CodeError { return ok() },
+		}
+		authRepo := &mockAuthRepo{
+			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError { return ok() },
+		}
+		svc := buildSvc(svcDeps{user: userRepo, auth: authRepo, recovery: recRepo})
+
+		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
+			Email:       "test@example.com",
+			Code:        "123456",
+			NewPassword: testPassword,
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("invalid_email", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
+			Email:       "not-an-email",
+			Code:        "123456",
+			NewPassword: testPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_code_format", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
+			Email:       "test@example.com",
+			Code:        "abc",
+			NewPassword: testPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_new_password", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
+			Email:       "test@example.com",
+			Code:        "123456",
+			NewPassword: "weak",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("user_not_found", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return nil, Error.Public(codes.NotFound, "user not found")
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
+			Email:       "unknown@example.com",
+			Code:        "123456",
+			NewPassword: testPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("user_not_verified", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
+			Email:       "test@example.com",
+			Code:        "123456",
+			NewPassword: testPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("code_not_found", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+			},
+		}
+		recRepo := &mockRecoveryRepo{
+			getRecoveryCode: func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
+				return "", Error.Public(codes.NotFound, "code not found")
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
+
+		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
+			Email:       "test@example.com",
+			Code:        "123456",
+			NewPassword: testPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("too_many_attempts", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+			},
+		}
+		recRepo := &mockRecoveryRepo{
+			getRecoveryCode: func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
+				return "123456", ok()
+			},
+			incrRecoveryAttempts: func(_ context.Context, _ entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
+				return maxRecoveryAttempts + 1, ok()
+			},
+			deleteRecoveryCode: func(_ context.Context, _ entities.DeleteRecoveryCodeDTO) Error.CodeError { return ok() },
+		}
+		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
+
+		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
+			Email:       "test@example.com",
+			Code:        "123456",
+			NewPassword: testPassword,
+		})
+
+		assertCode(t, err, codes.ResourceExhausted)
+	})
+
+	t.Run("wrong_code", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+			},
+		}
+		recRepo := &mockRecoveryRepo{
+			getRecoveryCode: func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
+				return "999999", ok()
+			},
+			incrRecoveryAttempts: func(_ context.Context, _ entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
+
+		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
+			Email:       "test@example.com",
+			Code:        "123456",
+			NewPassword: testPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+}
+
+// ─── Verify2FA ────────────────────────────────────────────────────────────────
+
+func TestVerify2FA(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		twoFARepo := &mockTwoFARepo{
+			get2FAData: func(_ context.Context, _ entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) {
+				return &entities.TwoFAData{UserUUID: testUUID1, Code: "123456"}, ok()
+			},
+			incr2FAAttempts: func(_ context.Context, _ entities.Incr2FAAttemptsDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
+			delete2FAData: func(_ context.Context, _ entities.Delete2FADataDTO) Error.CodeError { return ok() },
+		}
+		authRepo := &mockAuthRepo{
+			saveRefreshToken: func(_ context.Context, _ entities.SaveRefreshTokenDTO) Error.CodeError { return ok() },
+		}
+		svc := buildSvc(svcDeps{auth: authRepo, twoFA: twoFARepo})
+
+		resp, err := svc.Verify2FA(context.Background(), &pb.Verify2FARequest{
+			SessionUuid: testUUID1,
+			Code:        "123456",
+		})
+
+		assertNoError(t, err)
+		if resp.GetUserUuid() != testUUID1 {
+			t.Errorf("expected user UUID %q, got %q", testUUID1, resp.GetUserUuid())
+		}
+		if resp.GetAccessToken() == "" || resp.GetRefreshToken() == "" {
+			t.Error("expected non-empty tokens")
+		}
+	})
+
+	t.Run("invalid_session_uuid", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.Verify2FA(context.Background(), &pb.Verify2FARequest{
+			SessionUuid: "not-a-uuid",
+			Code:        "123456",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("invalid_code_format", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.Verify2FA(context.Background(), &pb.Verify2FARequest{
+			SessionUuid: testUUID1,
+			Code:        "abc",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("session_not_found", func(t *testing.T) {
+		twoFARepo := &mockTwoFARepo{
+			get2FAData: func(_ context.Context, _ entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) {
+				return nil, Error.Public(codes.NotFound, "2FA code not found")
+			},
+		}
+		svc := buildSvc(svcDeps{twoFA: twoFARepo})
+
+		_, err := svc.Verify2FA(context.Background(), &pb.Verify2FARequest{
+			SessionUuid: testUUID1,
+			Code:        "123456",
+		})
+
+		assertCode(t, err, codes.NotFound)
+	})
+
+	t.Run("too_many_attempts", func(t *testing.T) {
+		twoFARepo := &mockTwoFARepo{
+			get2FAData: func(_ context.Context, _ entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) {
+				return &entities.TwoFAData{UserUUID: testUUID1, Code: "123456"}, ok()
+			},
+			incr2FAAttempts: func(_ context.Context, _ entities.Incr2FAAttemptsDTO) (int64, Error.CodeError) {
+				return max2FAAttempts + 1, ok()
+			},
+			delete2FAData: func(_ context.Context, _ entities.Delete2FADataDTO) Error.CodeError { return ok() },
+		}
+		svc := buildSvc(svcDeps{twoFA: twoFARepo})
+
+		_, err := svc.Verify2FA(context.Background(), &pb.Verify2FARequest{
+			SessionUuid: testUUID1,
+			Code:        "123456",
+		})
+
+		assertCode(t, err, codes.ResourceExhausted)
+	})
+
+	t.Run("wrong_code", func(t *testing.T) {
+		twoFARepo := &mockTwoFARepo{
+			get2FAData: func(_ context.Context, _ entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) {
+				return &entities.TwoFAData{UserUUID: testUUID1, Code: "999999"}, ok()
+			},
+			incr2FAAttempts: func(_ context.Context, _ entities.Incr2FAAttemptsDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{twoFA: twoFARepo})
+
+		_, err := svc.Verify2FA(context.Background(), &pb.Verify2FARequest{
+			SessionUuid: testUUID1,
+			Code:        "123456",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("save_token_error", func(t *testing.T) {
+		twoFARepo := &mockTwoFARepo{
+			get2FAData: func(_ context.Context, _ entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) {
+				return &entities.TwoFAData{UserUUID: testUUID1, Code: "123456"}, ok()
+			},
+			incr2FAAttempts: func(_ context.Context, _ entities.Incr2FAAttemptsDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
+			delete2FAData: func(_ context.Context, _ entities.Delete2FADataDTO) Error.CodeError { return ok() },
+		}
+		authRepo := &mockAuthRepo{
+			saveRefreshToken: func(_ context.Context, _ entities.SaveRefreshTokenDTO) Error.CodeError {
+				return Error.Internal(fmt.Errorf("redis error"))
+			},
+		}
+		svc := buildSvc(svcDeps{auth: authRepo, twoFA: twoFARepo})
+
+		_, err := svc.Verify2FA(context.Background(), &pb.Verify2FARequest{
+			SessionUuid: testUUID1,
+			Code:        "123456",
+		})
+
+		assertCode(t, err, codes.Internal)
+	})
+}
+
+// ─── UpdateUser2FA ────────────────────────────────────────────────────────────
+
+func TestUpdateUser2FA(t *testing.T) {
+	t.Run("enable_success", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			updateUser2FA: func(_ context.Context, dto entities.UpdateUser2FADTO) Error.CodeError {
+				if !dto.TwoFAEnabled {
+					return Error.Internal(fmt.Errorf("expected enabled=true"))
+				}
+				return ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.UpdateUser2FA(context.Background(), &pb.UpdateUser2FARequest{
+			UserUuid:   testUUID1,
+			Enable_2Fa: true,
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("disable_success", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			updateUser2FA: func(_ context.Context, dto entities.UpdateUser2FADTO) Error.CodeError {
+				if dto.TwoFAEnabled {
+					return Error.Internal(fmt.Errorf("expected enabled=false"))
+				}
+				return ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.UpdateUser2FA(context.Background(), &pb.UpdateUser2FARequest{
+			UserUuid:   testUUID1,
+			Enable_2Fa: false,
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("invalid_uuid", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.UpdateUser2FA(context.Background(), &pb.UpdateUser2FARequest{
+			UserUuid:   "not-a-uuid",
+			Enable_2Fa: true,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("user_not_found", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			updateUser2FA: func(_ context.Context, _ entities.UpdateUser2FADTO) Error.CodeError {
+				return Error.Public(codes.NotFound, "user not found")
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.UpdateUser2FA(context.Background(), &pb.UpdateUser2FARequest{
+			UserUuid:   testUUID1,
+			Enable_2Fa: true,
+		})
+
+		assertCode(t, err, codes.NotFound)
+	})
+}
+
+// ─── GetVerificationCode ──────────────────────────────────────────────────────
+
+func TestGetVerificationCode(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		verRepo := &mockVerificationRepo{
+			getVerificationCode: func(_ context.Context, dto entities.GetVerificationCodeDTO) (string, Error.CodeError) {
+				if dto.UserUUID != testUUID1 {
+					return "", Error.Internal(fmt.Errorf("unexpected uuid"))
+				}
+				return "123456", ok()
+			},
+		}
+		svc := buildSvc(svcDeps{verification: verRepo})
+
+		resp, err := svc.GetVerificationCode(context.Background(), &pb.GetVerificationCodeRequest{
+			UserUuid: testUUID1,
+		})
+
+		assertNoError(t, err)
+		if resp.GetCode() != "123456" {
+			t.Errorf("expected code '123456', got %q", resp.GetCode())
+		}
+	})
+
+	t.Run("unavailable_in_production", func(t *testing.T) {
+		svc := buildSvc(svcDeps{appEnv: "production"})
+
+		_, err := svc.GetVerificationCode(context.Background(), &pb.GetVerificationCodeRequest{
+			UserUuid: testUUID1,
+		})
+
+		assertCode(t, err, codes.Unimplemented)
+	})
+
+	t.Run("invalid_uuid", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.GetVerificationCode(context.Background(), &pb.GetVerificationCodeRequest{
+			UserUuid: "not-a-uuid",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("code_not_found", func(t *testing.T) {
+		verRepo := &mockVerificationRepo{
+			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
+				return "", Error.Public(codes.NotFound, "code not found")
+			},
+		}
+		svc := buildSvc(svcDeps{verification: verRepo})
+
+		_, err := svc.GetVerificationCode(context.Background(), &pb.GetVerificationCodeRequest{
+			UserUuid: testUUID1,
+		})
+
+		assertCode(t, err, codes.NotFound)
+	})
+}
+
+// ─── GetRecoveryCode ──────────────────────────────────────────────────────────
+
+func TestGetRecoveryCode(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		recRepo := &mockRecoveryRepo{
+			getRecoveryCode: func(_ context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
+				if dto.UserUUID != testUUID1 {
+					return "", Error.Internal(fmt.Errorf("unexpected uuid"))
+				}
+				return "654321", ok()
+			},
+		}
+		svc := buildSvc(svcDeps{recovery: recRepo})
+
+		resp, err := svc.GetRecoveryCode(context.Background(), &pb.GetRecoveryCodeRequest{
+			UserUuid: testUUID1,
+		})
+
+		assertNoError(t, err)
+		if resp.GetCode() != "654321" {
+			t.Errorf("expected code '654321', got %q", resp.GetCode())
+		}
+	})
+
+	t.Run("unavailable_in_production", func(t *testing.T) {
+		svc := buildSvc(svcDeps{appEnv: "production"})
+
+		_, err := svc.GetRecoveryCode(context.Background(), &pb.GetRecoveryCodeRequest{
+			UserUuid: testUUID1,
+		})
+
+		assertCode(t, err, codes.Unimplemented)
+	})
+
+	t.Run("invalid_uuid", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.GetRecoveryCode(context.Background(), &pb.GetRecoveryCodeRequest{
+			UserUuid: "not-a-uuid",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("code_not_found", func(t *testing.T) {
+		recRepo := &mockRecoveryRepo{
+			getRecoveryCode: func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
+				return "", Error.Public(codes.NotFound, "code not found")
+			},
+		}
+		svc := buildSvc(svcDeps{recovery: recRepo})
+
+		_, err := svc.GetRecoveryCode(context.Background(), &pb.GetRecoveryCodeRequest{
+			UserUuid: testUUID1,
+		})
+
+		assertCode(t, err, codes.NotFound)
+	})
+}
+
+// ─── Get2FACode ───────────────────────────────────────────────────────────────
+
+func TestGet2FACode(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		twoFARepo := &mockTwoFARepo{
+			get2FAData: func(_ context.Context, dto entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) {
+				if dto.SessionUUID != testUUID1 {
+					return nil, Error.Internal(fmt.Errorf("unexpected session uuid"))
+				}
+				return &entities.TwoFAData{UserUUID: testUUID2, Code: "111222"}, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{twoFA: twoFARepo})
+
+		resp, err := svc.Get2FACode(context.Background(), &pb.Get2FACodeRequest{
+			SessionUuid: testUUID1,
+		})
+
+		assertNoError(t, err)
+		if resp.GetCode() != "111222" {
+			t.Errorf("expected code '111222', got %q", resp.GetCode())
+		}
+	})
+
+	t.Run("unavailable_in_production", func(t *testing.T) {
+		svc := buildSvc(svcDeps{appEnv: "production"})
+
+		_, err := svc.Get2FACode(context.Background(), &pb.Get2FACodeRequest{
+			SessionUuid: testUUID1,
+		})
+
+		assertCode(t, err, codes.Unimplemented)
+	})
+
+	t.Run("invalid_session_uuid", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.Get2FACode(context.Background(), &pb.Get2FACodeRequest{
+			SessionUuid: "not-a-uuid",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("data_not_found", func(t *testing.T) {
+		twoFARepo := &mockTwoFARepo{
+			get2FAData: func(_ context.Context, _ entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) {
+				return nil, Error.Public(codes.NotFound, "2FA code not found")
+			},
+		}
+		svc := buildSvc(svcDeps{twoFA: twoFARepo})
+
+		_, err := svc.Get2FACode(context.Background(), &pb.Get2FACodeRequest{
+			SessionUuid: testUUID1,
 		})
 
 		assertCode(t, err, codes.NotFound)

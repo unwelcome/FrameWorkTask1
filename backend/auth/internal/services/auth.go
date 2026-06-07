@@ -700,3 +700,41 @@ func (s *AuthService) GetVerificationCode(ctx context.Context, req *pb.GetVerifi
 
 	return &pb.GetVerificationCodeResponse{Code: code}, nil
 }
+
+// GetRecoveryCode Отладочный метод — возвращает активный код восстановления пароля.
+// Доступен только при APP_ENV=test; в production возвращает Unimplemented.
+func (s *AuthService) GetRecoveryCode(ctx context.Context, req *pb.GetRecoveryCodeRequest) (*pb.GetRecoveryCodeResponse, error) {
+	if s.appEnv != "test" {
+		return nil, status.Errorf(codes.Unimplemented, "not available")
+	}
+
+	if err := validate.UUID(req.GetUserUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
+	}
+
+	code, codeErr := s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: req.GetUserUuid()})
+	if err := codeErr.GRPCError(); err != nil {
+		return nil, err
+	}
+
+	return &pb.GetRecoveryCodeResponse{Code: code}, nil
+}
+
+// Get2FACode Отладочный метод — возвращает активный код 2FA по uuid сессии.
+// Доступен только при APP_ENV=test; в production возвращает Unimplemented.
+func (s *AuthService) Get2FACode(ctx context.Context, req *pb.Get2FACodeRequest) (*pb.Get2FACodeResponse, error) {
+	if s.appEnv != "test" {
+		return nil, status.Errorf(codes.Unimplemented, "not available")
+	}
+
+	if err := validate.UUID(req.GetSessionUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid session uuid")
+	}
+
+	data, dataErr := s.cache.TwoFA.Get2FAData(ctx, entities.Get2FADataDTO{SessionUUID: req.GetSessionUuid()})
+	if err := dataErr.GRPCError(); err != nil {
+		return nil, err
+	}
+
+	return &pb.Get2FACodeResponse{Code: data.Code}, nil
+}

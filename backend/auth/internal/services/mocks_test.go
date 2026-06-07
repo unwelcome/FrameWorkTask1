@@ -281,3 +281,50 @@ func emptyVerificationRepo() *mockVerificationRepo {
 
 // ok возвращает CodeError без ошибки
 func ok() Error.CodeError { return Error.CodeError{} }
+
+// ─── Flexible service builder ─────────────────────────────────────────────────
+
+// svcDeps хранит зависимости для сборки тестового AuthService.
+// Любое nil-поле заменяется пустой заглушкой.
+type svcDeps struct {
+	user         postgresDB.UserRepository
+	auth         redisDB.AuthRepository
+	verification redisDB.VerificationRepository
+	recovery     redisDB.RecoveryRepository
+	twoFA        redisDB.TwoFARepository
+	publisher    messaging.Publisher
+	appEnv       string
+}
+
+// buildSvc создаёт AuthService с заданными зависимостями.
+func buildSvc(d svcDeps) *AuthService {
+	if d.user == nil {
+		d.user = emptyUserRepo()
+	}
+	if d.auth == nil {
+		d.auth = emptyAuthRepo()
+	}
+	if d.verification == nil {
+		d.verification = emptyVerificationRepo()
+	}
+	if d.recovery == nil {
+		d.recovery = emptyRecoveryRepo()
+	}
+	if d.twoFA == nil {
+		d.twoFA = emptyTwoFARepo()
+	}
+	if d.publisher == nil {
+		d.publisher = emptyPublisher()
+	}
+	if d.appEnv == "" {
+		d.appEnv = "test"
+	}
+	db := &postgresDB.DatabaseRepository{User: d.user}
+	cache := &redisDB.CacheRepository{
+		Auth:         d.auth,
+		Verification: d.verification,
+		Recovery:     d.recovery,
+		TwoFA:        d.twoFA,
+	}
+	return NewAuthService(db, cache, d.publisher, testPrivateKey, testAccessTTL, testRefreshTTL, d.appEnv)
+}

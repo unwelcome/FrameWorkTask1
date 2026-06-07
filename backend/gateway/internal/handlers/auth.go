@@ -27,6 +27,8 @@ type AuthHandler interface {
 	VerifyAccount(c *fiber.Ctx) error
 	ResendVerificationCode(c *fiber.Ctx) error
 	GetVerificationCode(c *fiber.Ctx) error
+	GetRecoveryCode(c *fiber.Ctx) error
+	Get2FACode(c *fiber.Ctx) error
 	ForgotPassword(c *fiber.Ctx) error
 	ResetPassword(c *fiber.Ctx) error
 	Verify2FA(c *fiber.Ctx) error
@@ -630,6 +632,68 @@ func (h *authHandler) GetVerificationCode(c *fiber.Ctx) error {
 	}
 
 	res, err := h.AuthServiceClient.GetVerificationCode(ctx, req)
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"code": res.GetCode()})
+}
+
+// GetRecoveryCode
+//
+//	@Summary      GetRecoveryCode
+//	@Description  Debug endpoint: returns the active recovery code. Available only when APP_ENV=test.
+//	@Tags         Debug
+//	@Produce 			json
+//	@Param 				user_uuid path string true "User UUID"
+//	@Success      200  {object}  map[string]string
+//	@Failure      400  {object}  Error.HttpError
+//	@Failure      404  {object}  Error.HttpError
+//	@Failure      501  {object}  Error.HttpError
+//	@Router       /debug/user/{user_uuid}/recovery-code [get]
+func (h *authHandler) GetRecoveryCode(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
+
+	req := &auth_proto.GetRecoveryCodeRequest{
+		UserUuid: c.Params("user_uuid", ""),
+	}
+
+	res, err := h.AuthServiceClient.GetRecoveryCode(ctx, req)
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"code": res.GetCode()})
+}
+
+// Get2FACode
+//
+//	@Summary      Get2FACode
+//	@Description  Debug endpoint: returns the active 2FA code by session UUID. Available only when APP_ENV=test.
+//	@Tags         Debug
+//	@Produce 			json
+//	@Param 				session_uuid path string true "Session UUID"
+//	@Success      200  {object}  map[string]string
+//	@Failure      400  {object}  Error.HttpError
+//	@Failure      404  {object}  Error.HttpError
+//	@Failure      501  {object}  Error.HttpError
+//	@Router       /debug/2fa/{session_uuid}/code [get]
+func (h *authHandler) Get2FACode(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
+
+	req := &auth_proto.Get2FACodeRequest{
+		SessionUuid: c.Params("session_uuid", ""),
+	}
+
+	res, err := h.AuthServiceClient.Get2FACode(ctx, req)
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}

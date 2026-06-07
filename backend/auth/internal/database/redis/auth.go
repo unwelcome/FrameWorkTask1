@@ -32,16 +32,14 @@ func NewAuthRepository(redis *redis.Client, refreshTokenTTL time.Duration, prefi
 	return &authRepository{redis: redis, refreshTokenTTL: refreshTokenTTL, prefix: prefix}
 }
 
-// SaveRefreshToken Хеширует и сохраняет refresh пользователя
+// SaveRefreshToken Сохраняет хеш refresh токена пользователя
 func (r *authRepository) SaveRefreshToken(ctx context.Context, dto entities.SaveRefreshTokenDTO) Error.CodeError {
-	hash := utils.HashToken(dto.RawToken)
-
 	userTokensKey := r.getUserTokensKey(dto.UserUUID)
-	tokenKey := r.getRefreshTokenKey(hash)
+	tokenKey := r.getRefreshTokenKey(dto.HashedToken)
 
 	pipeline := r.redis.Pipeline()
 	pipeline.Set(ctx, tokenKey, 1, r.refreshTokenTTL)
-	pipeline.SAdd(ctx, userTokensKey, hash)
+	pipeline.SAdd(ctx, userTokensKey, dto.UserUUID)
 
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
@@ -160,12 +158,9 @@ func (r *authRepository) RevokeAllRefreshTokens(ctx context.Context, dto entitie
 
 // RefreshToken Атомарно заменяет старый refresh токен на новый через Watch + TxPipelined.
 func (r *authRepository) RefreshToken(ctx context.Context, dto entities.RefreshTokenDTO) Error.CodeError {
-	oldHash := utils.HashToken(dto.OldRawToken)
-	newHash := utils.HashToken(dto.NewRawToken)
-
 	userTokensKey := r.getUserTokensKey(dto.UserUUID)
-	oldTokenKey := r.getRefreshTokenKey(oldHash)
-	newTokenKey := r.getRefreshTokenKey(newHash)
+	oldTokenKey := r.getRefreshTokenKey(dto.OldHashToken)
+	newTokenKey := r.getRefreshTokenKey(dto.NewHashToken)
 
 	err := r.redis.Watch(ctx, func(tx *redis.Tx) error {
 		exist, err := tx.Exists(ctx, oldTokenKey).Result()
@@ -178,9 +173,9 @@ func (r *authRepository) RefreshToken(ctx context.Context, dto entities.RefreshT
 
 		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 			pipe.Set(ctx, newTokenKey, 1, r.refreshTokenTTL)
-			pipe.SAdd(ctx, userTokensKey, newHash)
+			pipe.SAdd(ctx, userTokensKey, dto.NewHashToken)
 			pipe.Del(ctx, oldTokenKey)
-			pipe.SRem(ctx, userTokensKey, oldHash)
+			pipe.SRem(ctx, userTokensKey, dto.OldHashToken)
 			return nil
 		})
 		return err
@@ -194,6 +189,8 @@ func (r *authRepository) RefreshToken(ctx context.Context, dto entities.RefreshT
 	}
 	return Error.CodeError{}
 }
+
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 
 func (r *authRepository) getRefreshTokenKey(hash string) string {
 	return fmt.Sprintf("%s:token:%s", r.prefix, hash)

@@ -61,6 +61,7 @@ type LoginResponse struct {
 	UserUUID     string `json:"user_uuid"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	SessionUUID  string `json:"session_uuid"`
 }
 
 func (e *LoginRequest) Validate() error {
@@ -253,9 +254,43 @@ func (e *ResetPasswordRequest) Validate() error {
 		return err
 	}
 	e.Code = strings.TrimSpace(e.Code)
-	if err := validate.UserVerificationCode(e.Code); err != nil {
+	if err := validate.UserRecoveryCode(e.Code); err != nil {
 		return err
 	}
 	e.NewPassword = strings.TrimSpace(e.NewPassword)
 	return validate.Password(e.NewPassword)
+}
+
+// ─── Verify2FA ────────────────────────────────────────────────────────────────
+
+type Verify2FARequest struct {
+	SessionUUID string `json:"session_uuid"`
+	Code        string `json:"code"`
+}
+type Verify2FAResponse struct {
+	UserUUID     string `json:"user_uuid"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (e *Verify2FARequest) Validate() error {
+	e.SessionUUID = strings.TrimSpace(e.SessionUUID)
+	if err := validate.UUID(e.SessionUUID); err != nil {
+		return err
+	}
+	e.Code = strings.TrimSpace(e.Code)
+	return validate.User2FACCode(e.Code)
+}
+
+// ─── UpdateUser2FA ────────────────────────────────────────────────────────────
+
+type UpdateUser2FARequest struct {
+	UserUUID  string `json:"-"`
+	Enable2FA bool   `json:"enable_2fa"`
+}
+type UpdateUser2FAResponse struct{}
+
+func (e *UpdateUser2FARequest) Validate() error {
+	e.UserUUID = strings.TrimSpace(e.UserUUID)
+	return validate.UUID(e.UserUUID)
 }

@@ -340,6 +340,8 @@ definitions:
         type: string
       refresh_token:
         type: string
+      session_uuid:
+        type: string
       user_uuid:
         type: string
     type: object
@@ -482,6 +484,13 @@ definitions:
     type: object
   entities.UpdateEmployeeRoleResponse:
     type: object
+  entities.UpdateUser2FARequest:
+    properties:
+      enable_2fa:
+        type: boolean
+    type: object
+  entities.UpdateUser2FAResponse:
+    type: object
   entities.UpdateUserBioRequest:
     properties:
       first_name:
@@ -492,6 +501,22 @@ definitions:
         type: string
     type: object
   entities.UpdateUserBioResponse:
+    type: object
+  entities.Verify2FARequest:
+    properties:
+      code:
+        type: string
+      session_uuid:
+        type: string
+    type: object
+  entities.Verify2FAResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user_uuid:
+        type: string
     type: object
   entities.VerifyAccountRequest:
     properties:
@@ -2181,6 +2206,38 @@ paths:
       summary: GetUser
       tags:
       - User
+  /auth/user/2fa:
+    patch:
+      description: Enable / disable 2FA
+      parameters:
+      - description: Body
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UpdateUser2FARequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.UpdateUser2FAResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: UpdateUser2FA
+      tags:
+      - User
   /auth/user/account:
     delete:
       consumes:
@@ -2485,7 +2542,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Login user
+      description: Авторизация пользователя. Если включена 2FA - возвращает session_uuid
+        и отправляет письмо на почту, данные необходимо передать в Verify2FA; Если
+        2FA выключена - возвращает user_uuid и пару токенов
       parameters:
       - description: Данные пользователя
         in: body
@@ -2689,6 +2748,42 @@ paths:
       summary: ResendVerificationCode
       tags:
       - User
+  /verify-2fa:
+    post:
+      description: Verification confirmation with 2FA enabled
+      parameters:
+      - description: SessionUUID and email code
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.Verify2FARequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Verify2FAResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: Verify2FA
+      tags:
+      - Auth
 securityDefinitions:
   ApiKeyAuth:
     in: header

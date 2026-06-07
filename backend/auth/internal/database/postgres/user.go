@@ -16,7 +16,8 @@ type UserRepository interface {
 	GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError)
 	GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError)
 	UpdateUserPassword(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError
-	UpdateUserBio(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError
+	UpdateUserBio(ctx context.Context, dto entities.UserUpdateBioDTO) Error.CodeError
+	UpdateUser2FA(ctx context.Context, dto entities.UpdateUser2FADTO) Error.CodeError
 	DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError
 	SetUserVerified(ctx context.Context, dto entities.SetUserVerifiedDTO) Error.CodeError
 }
@@ -48,11 +49,11 @@ func (r *userRepository) CreateUser(ctx context.Context, dto entities.User) Erro
 
 // GetUserByEmail Возвращает частичные данные пользователя по его email
 func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-	query := `SELECT uuid, password_hash, first_name, is_verified FROM users WHERE email = $1;`
+	query := `SELECT uuid, password_hash, first_name, is_verified, two_factor_enabled FROM users WHERE email = $1;`
 
 	userGetByEmail := &entities.UserGetByEmail{Email: dto.Email}
 
-	err := r.db.QueryRowContext(ctx, query, dto.Email).Scan(&userGetByEmail.UserUUID, &userGetByEmail.PasswordHash, &userGetByEmail.FirstName, &userGetByEmail.IsVerified)
+	err := r.db.QueryRowContext(ctx, query, dto.Email).Scan(&userGetByEmail.UserUUID, &userGetByEmail.PasswordHash, &userGetByEmail.FirstName, &userGetByEmail.IsVerified, &userGetByEmail.Enabled2FA)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Error.Public(codes.NotFound, "user not found")
@@ -64,11 +65,11 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUse
 
 // GetUser Возвращает данные пользователя по его uuid
 func (r *userRepository) GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
-	query := `SELECT email, first_name, last_name, patronymic, created_at, is_verified FROM users WHERE uuid = $1;`
+	query := `SELECT email, first_name, last_name, patronymic, created_at, is_verified, two_factor_enabled FROM users WHERE uuid = $1;`
 
 	userGet := &entities.UserGet{UserUUID: dto.UserUUID}
 
-	err := r.db.QueryRowContext(ctx, query, dto.UserUUID).Scan(&userGet.Email, &userGet.FirstName, &userGet.LastName, &userGet.Patronymic, &userGet.CreatedAt, &userGet.IsVerified)
+	err := r.db.QueryRowContext(ctx, query, dto.UserUUID).Scan(&userGet.Email, &userGet.FirstName, &userGet.LastName, &userGet.Patronymic, &userGet.CreatedAt, &userGet.IsVerified, &userGet.Enabled2FA)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Error.Public(codes.NotFound, "user not found")
@@ -99,7 +100,7 @@ func (r *userRepository) UpdateUserPassword(ctx context.Context, dto entities.Up
 }
 
 // UpdateUserBio Обновляет данные пользователя (ФИО)
-func (r *userRepository) UpdateUserBio(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError {
+func (r *userRepository) UpdateUserBio(ctx context.Context, dto entities.UserUpdateBioDTO) Error.CodeError {
 	query := `UPDATE users SET (first_name, last_name, patronymic) = ($2, $3, $4) WHERE uuid = $1;`
 
 	result, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.FirstName, dto.LastName, dto.Patronymic)
@@ -108,6 +109,26 @@ func (r *userRepository) UpdateUserBio(ctx context.Context, dto entities.UserUpd
 	}
 
 	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return Error.Internal(err)
+	}
+
+	if rowsAffected == 0 {
+		return Error.Public(codes.NotFound, "user not found")
+	}
+	return Error.CodeError{}
+}
+
+// UpdateUser2FA Обновляет двухфакторную авторизацию пользователя
+func (r *userRepository) UpdateUser2FA(ctx context.Context, dto entities.UpdateUser2FADTO) Error.CodeError {
+	query := `UPDATE users SET two_factor_enabled = $2 WHERE uuid = $1;`
+
+	res, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.TwoFAEnabled)
+	if err != nil {
+		return Error.Internal(err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
 	if err != nil {
 		return Error.Internal(err)
 	}

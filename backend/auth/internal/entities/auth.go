@@ -1,8 +1,8 @@
 package entities
 
 type SaveRefreshTokenDTO struct {
-	UserUUID string
-	RawToken string
+	UserUUID    string
+	HashedToken string
 }
 
 type GetAllRefreshTokensDTO struct {
@@ -24,41 +24,7 @@ type RevokeAllRefreshTokensDTO struct {
 }
 
 type RefreshTokenDTO struct {
-	UserUUID    string
-	OldRawToken string
-	NewRawToken string
-}
-
-type SaveVerificationCodeDTO struct {
-	UserUUID string
-	Code     string
-}
-
-type GetVerificationCodeDTO struct {
-	UserUUID string
-}
-
-type DeleteVerificationCodeDTO struct {
-	UserUUID string
-}
-
-type IncrVerificationAttemptsDTO struct {
-	UserUUID string
-}
-
-type SaveRecoveryCodeDTO struct {
-	UserUUID string
-	Code     string
-}
-
-type GetRecoveryCodeDTO struct {
-	UserUUID string
-}
-
-type DeleteRecoveryCodeDTO struct {
-	UserUUID string
-}
-
-type IncrRecoveryAttemptsDTO struct {
-	UserUUID string
+	UserUUID     string
+	OldHashToken string
+	NewHashToken string
 }

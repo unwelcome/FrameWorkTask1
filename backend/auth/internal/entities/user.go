@@ -7,6 +7,7 @@ type User struct {
 	FirstName    string `db:"first_name"`
 	LastName     string `db:"last_name"`
 	Patronymic   string `db:"patronymic"`
+	Enabled2FA   bool   `db:"two_factor_enabled"`
 	CreatedAt    string `db:"created_at"`
 }
 
@@ -17,6 +18,7 @@ type UserGet struct {
 	LastName   string `db:"last_name"`
 	Patronymic string `db:"patronymic"`
 	CreatedAt  string `db:"created_at"`
+	Enabled2FA bool   `db:"two_factor_enabled"`
 	IsVerified bool   `db:"is_verified"`
 }
 
@@ -25,10 +27,11 @@ type UserGetByEmail struct {
 	Email        string `db:"email"`
 	PasswordHash string `db:"password_hash"`
 	FirstName    string `db:"first_name"`
+	Enabled2FA   bool   `db:"two_factor_enabled"`
 	IsVerified   bool   `db:"is_verified"`
 }
 
-type UserUpdateBio struct {
+type UserUpdateBioDTO struct {
 	UserUUID   string `db:"uuid"`
 	FirstName  string `db:"first_name"`
 	LastName   string `db:"last_name"`
@@ -54,4 +57,9 @@ type DeleteUserDTO struct {
 
 type SetUserVerifiedDTO struct {
 	UserUUID string
+}
+
+type UpdateUser2FADTO struct {
+	UserUUID     string
+	TwoFAEnabled bool
 }

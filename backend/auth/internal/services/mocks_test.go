@@ -20,7 +20,8 @@ type mockUserRepo struct {
 	getUserByEmail     func(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError)
 	getUser            func(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError)
 	updateUserPassword func(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError
-	updateUserBio      func(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError
+	updateUserBio      func(ctx context.Context, dto entities.UserUpdateBioDTO) Error.CodeError
+	updateUser2FA      func(ctx context.Context, dto entities.UpdateUser2FADTO) Error.CodeError
 	deleteUser         func(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError
 	setUserVerified    func(ctx context.Context, dto entities.SetUserVerifiedDTO) Error.CodeError
 }
@@ -37,11 +38,14 @@ func (m *mockUserRepo) GetUser(ctx context.Context, dto entities.GetUserDTO) (*e
 func (m *mockUserRepo) UpdateUserPassword(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError {
 	return m.updateUserPassword(ctx, dto)
 }
-func (m *mockUserRepo) UpdateUserBio(ctx context.Context, dto entities.UserUpdateBio) Error.CodeError {
+func (m *mockUserRepo) UpdateUserBio(ctx context.Context, dto entities.UserUpdateBioDTO) Error.CodeError {
 	return m.updateUserBio(ctx, dto)
 }
 func (m *mockUserRepo) DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError {
 	return m.deleteUser(ctx, dto)
+}
+func (m *mockUserRepo) UpdateUser2FA(ctx context.Context, dto entities.UpdateUser2FADTO) Error.CodeError {
+	return m.updateUser2FA(ctx, dto)
 }
 func (m *mockUserRepo) SetUserVerified(ctx context.Context, dto entities.SetUserVerifiedDTO) Error.CodeError {
 	return m.setUserVerified(ctx, dto)
@@ -116,11 +120,76 @@ func (m *mockVerificationRepo) IncrRecoveryAttempts(ctx context.Context, dto ent
 	return m.incrRecoveryAttempts(ctx, dto)
 }
 
+// ─── Mock: RecoveryRepository ────────────────────────────────────────────────
+
+type mockRecoveryRepo struct {
+	saveRecoveryCode     func(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError
+	getRecoveryCode      func(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError)
+	deleteRecoveryCode   func(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError
+	incrRecoveryAttempts func(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError)
+}
+
+func (m *mockRecoveryRepo) SaveRecoveryCode(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError {
+	return m.saveRecoveryCode(ctx, dto)
+}
+func (m *mockRecoveryRepo) GetRecoveryCode(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
+	return m.getRecoveryCode(ctx, dto)
+}
+func (m *mockRecoveryRepo) DeleteRecoveryCode(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError {
+	return m.deleteRecoveryCode(ctx, dto)
+}
+func (m *mockRecoveryRepo) IncrRecoveryAttempts(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
+	return m.incrRecoveryAttempts(ctx, dto)
+}
+
+// emptyRecoveryRepo — заглушка для тестов, где RecoveryRepository не должен вызываться.
+func emptyRecoveryRepo() *mockRecoveryRepo {
+	return &mockRecoveryRepo{
+		saveRecoveryCode:     func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
+		getRecoveryCode:      func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) { return "", Error.CodeError{} },
+		deleteRecoveryCode:   func(_ context.Context, _ entities.DeleteRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
+		incrRecoveryAttempts: func(_ context.Context, _ entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
+	}
+}
+
+// ─── Mock: TwoFARepository ───────────────────────────────────────────────────
+
+type mockTwoFARepo struct {
+	save2FAData     func(ctx context.Context, dto entities.Save2FADataDTO) Error.CodeError
+	get2FAData      func(ctx context.Context, dto entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError)
+	delete2FAData   func(ctx context.Context, dto entities.Delete2FADataDTO) Error.CodeError
+	incr2FAAttempts func(ctx context.Context, dto entities.Incr2FAAttemptsDTO) (int64, Error.CodeError)
+}
+
+func (m *mockTwoFARepo) Save2FAData(ctx context.Context, dto entities.Save2FADataDTO) Error.CodeError {
+	return m.save2FAData(ctx, dto)
+}
+func (m *mockTwoFARepo) Get2FAData(ctx context.Context, dto entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) {
+	return m.get2FAData(ctx, dto)
+}
+func (m *mockTwoFARepo) Delete2FAData(ctx context.Context, dto entities.Delete2FADataDTO) Error.CodeError {
+	return m.delete2FAData(ctx, dto)
+}
+func (m *mockTwoFARepo) Incr2FAAttempts(ctx context.Context, dto entities.Incr2FAAttemptsDTO) (int64, Error.CodeError) {
+	return m.incr2FAAttempts(ctx, dto)
+}
+
+// emptyTwoFARepo — заглушка для тестов, где TwoFARepository не должен вызываться.
+func emptyTwoFARepo() *mockTwoFARepo {
+	return &mockTwoFARepo{
+		save2FAData:     func(_ context.Context, _ entities.Save2FADataDTO) Error.CodeError { return Error.CodeError{} },
+		get2FAData:      func(_ context.Context, _ entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) { return nil, Error.CodeError{} },
+		delete2FAData:   func(_ context.Context, _ entities.Delete2FADataDTO) Error.CodeError { return Error.CodeError{} },
+		incr2FAAttempts: func(_ context.Context, _ entities.Incr2FAAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
+	}
+}
+
 // ─── Mock: Publisher ─────────────────────────────────────────────────────────
 
 type mockPublisher struct {
 	sendVerificationEmail func(ctx context.Context, dto entities.VerificationEmailMsg) Error.CodeError
 	sendRecoveryEmail     func(ctx context.Context, dto entities.RecoveryEmailMsg) Error.CodeError
+	send2FAEmail          func(ctx context.Context, dto entities.TwoFAEmailMsg) Error.CodeError
 }
 
 func (m *mockPublisher) SendVerificationEmail(ctx context.Context, dto entities.VerificationEmailMsg) Error.CodeError {
@@ -129,12 +198,16 @@ func (m *mockPublisher) SendVerificationEmail(ctx context.Context, dto entities.
 func (m *mockPublisher) SendRecoveryEmail(ctx context.Context, dto entities.RecoveryEmailMsg) Error.CodeError {
 	return m.sendRecoveryEmail(ctx, dto)
 }
+func (m *mockPublisher) Send2FAEmail(ctx context.Context, dto entities.TwoFAEmailMsg) Error.CodeError {
+	return m.send2FAEmail(ctx, dto)
+}
 
 // emptyPublisher — заглушка для тестов, где Publisher не должен вызываться.
 func emptyPublisher() messaging.Publisher {
 	return &mockPublisher{
 		sendVerificationEmail: func(_ context.Context, _ entities.VerificationEmailMsg) Error.CodeError { return Error.CodeError{} },
 		sendRecoveryEmail:     func(_ context.Context, _ entities.RecoveryEmailMsg) Error.CodeError { return Error.CodeError{} },
+		send2FAEmail:          func(_ context.Context, _ entities.TwoFAEmailMsg) Error.CodeError { return Error.CodeError{} },
 	}
 }
 
@@ -166,7 +239,12 @@ const (
 // newTestService создаёт AuthService с подменёнными зависимостями
 func newTestService(userRepo postgresDB.UserRepository, authRepo redisDB.AuthRepository) *AuthService {
 	db := &postgresDB.DatabaseRepository{User: userRepo}
-	cache := &redisDB.CacheRepository{Auth: authRepo, Verification: emptyVerificationRepo()}
+	cache := &redisDB.CacheRepository{
+		Auth:         authRepo,
+		Verification: emptyVerificationRepo(),
+		Recovery:     emptyRecoveryRepo(),
+		TwoFA:        emptyTwoFARepo(),
+	}
 	return NewAuthService(db, cache, emptyPublisher(), testPrivateKey, testAccessTTL, testRefreshTTL, "test")
 }
 
@@ -180,14 +258,24 @@ func emptyAuthRepo() *mockAuthRepo { return &mockAuthRepo{} }
 // Все операции возвращают успех, чтобы не мешать тестам Register.
 func emptyVerificationRepo() *mockVerificationRepo {
 	return &mockVerificationRepo{
-		saveVerificationCode:     func(_ context.Context, _ entities.SaveVerificationCodeDTO) Error.CodeError { return Error.CodeError{} },
-		getVerificationCode:      func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) { return "", Error.CodeError{} },
-		deleteVerificationCode:   func(_ context.Context, _ entities.DeleteVerificationCodeDTO) Error.CodeError { return Error.CodeError{} },
-		incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
-		saveRecoveryCode:         func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
-		getRecoveryCode:          func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) { return "", Error.CodeError{} },
-		deleteRecoveryCode:       func(_ context.Context, _ entities.DeleteRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
-		incrRecoveryAttempts:     func(_ context.Context, _ entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
+		saveVerificationCode: func(_ context.Context, _ entities.SaveVerificationCodeDTO) Error.CodeError { return Error.CodeError{} },
+		getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
+			return "", Error.CodeError{}
+		},
+		deleteVerificationCode: func(_ context.Context, _ entities.DeleteVerificationCodeDTO) Error.CodeError {
+			return Error.CodeError{}
+		},
+		incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
+			return 0, Error.CodeError{}
+		},
+		saveRecoveryCode: func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
+		getRecoveryCode: func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
+			return "", Error.CodeError{}
+		},
+		deleteRecoveryCode: func(_ context.Context, _ entities.DeleteRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
+		incrRecoveryAttempts: func(_ context.Context, _ entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
+			return 0, Error.CodeError{}
+		},
 	}
 }
 

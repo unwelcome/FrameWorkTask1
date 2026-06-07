@@ -2531,6 +2531,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/user/2fa": {
+            "patch": {
+                "description": "Enable / disable 2FA",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "UpdateUser2FA",
+                "parameters": [
+                    {
+                        "description": "Body",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.UpdateUser2FARequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.UpdateUser2FAResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/user/account": {
             "delete": {
                 "security": [
@@ -3057,7 +3106,7 @@ const docTemplate = `{
         },
         "/login": {
             "post": {
-                "description": "Login user",
+                "description": "Авторизация пользователя. Если включена 2FA - возвращает session_uuid и отправляет письмо на почту, данные необходимо передать в Verify2FA; Если 2FA выключена - возвращает user_uuid и пару токенов",
                 "consumes": [
                     "application/json"
                 ],
@@ -3360,6 +3409,61 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            }
+        },
+        "/verify-2fa": {
+            "post": {
+                "description": "Verification confirmation with 2FA enabled",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Verify2FA",
+                "parameters": [
+                    {
+                        "description": "SessionUUID and email code",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.Verify2FARequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.Verify2FAResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -3904,6 +4008,9 @@ const docTemplate = `{
                 "refresh_token": {
                     "type": "string"
                 },
+                "session_uuid": {
+                    "type": "string"
+                },
                 "user_uuid": {
                     "type": "string"
                 }
@@ -4126,6 +4233,17 @@ const docTemplate = `{
         "entities.UpdateEmployeeRoleResponse": {
             "type": "object"
         },
+        "entities.UpdateUser2FARequest": {
+            "type": "object",
+            "properties": {
+                "enable_2fa": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "entities.UpdateUser2FAResponse": {
+            "type": "object"
+        },
         "entities.UpdateUserBioRequest": {
             "type": "object",
             "properties": {
@@ -4142,6 +4260,31 @@ const docTemplate = `{
         },
         "entities.UpdateUserBioResponse": {
             "type": "object"
+        },
+        "entities.Verify2FARequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "session_uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "entities.Verify2FAResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "user_uuid": {
+                    "type": "string"
+                }
+            }
         },
         "entities.VerifyAccountRequest": {
             "type": "object",

@@ -77,7 +77,7 @@ func generateToken(userUUID string, privateKey *ecdsa.PrivateKey, tokenType stri
 	return tokenString, nil
 }
 
-// HashToken Хеширование refresh токена
+// HashToken Хеширует refresh токен
 func HashToken(rawToken string) string {
 	hash := sha256.Sum256([]byte(rawToken))
 	return hex.EncodeToString(hash[:])

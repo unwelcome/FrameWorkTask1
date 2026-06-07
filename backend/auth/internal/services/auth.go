@@ -25,6 +25,8 @@ import (
 const (
 	bcryptCost              = 12
 	maxVerificationAttempts = 5
+	maxRecoveryAttempts     = 5
+	max2FAAttempts          = 5
 )
 
 type AuthService struct {
@@ -169,18 +171,46 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		return nil, status.Errorf(codes.PermissionDenied, "account not verified")
 	}
 
+	// Если у пользователя включена 2FA
+	if user.Enabled2FA {
+		sessionUUID := uuid.Must(uuid.NewV7()).String()
+		code := utils.GenerateTwoFACode()
+
+		// Сохраняем данные для 2FA авторизации
+		if err := s.cache.TwoFA.Save2FAData(ctx, entities.Save2FADataDTO{
+			SessionUUID: sessionUUID,
+			UserUUID:    user.UserUUID,
+			Code:        code,
+		}).GRPCError(); err != nil {
+			return nil, err
+		}
+
+		// Отправляем сообщение в message broker
+		_ = s.publisher.Send2FAEmail(ctx, entities.TwoFAEmailMsg{
+			UserUUID:  user.UserUUID,
+			Email:     req.GetEmail(),
+			FirstName: user.FirstName,
+			Code:      code,
+		})
+
+		// Возвращаем ответ для включенной 2FA
+		return &pb.LoginResponse{SessionUuid: sessionUUID}, nil
+	}
+
+	// Если 2FA выключена, создаем токены
 	tokenPair, err := utils.CreateTokens(user.UserUUID, s.jwtPrivateKey, s.accessTokenTTL, s.refreshTokenTTL)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
 	if err := s.cache.Auth.SaveRefreshToken(ctx, entities.SaveRefreshTokenDTO{
-		UserUUID: user.UserUUID,
-		RawToken: tokenPair.RefreshToken,
+		UserUUID:    user.UserUUID,
+		HashedToken: utils.HashToken(tokenPair.RefreshToken),
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
 
+	// Возвращаем ответ для выключенной 2FA
 	return &pb.LoginResponse{
 		UserUuid:     user.UserUUID,
 		AccessToken:  tokenPair.AccessToken,
@@ -256,7 +286,7 @@ func (s *AuthService) UpdateUserBio(ctx context.Context, req *pb.UpdateUserBioRe
 		return nil, status.Errorf(codes.InvalidArgument, "invalid patronymic")
 	}
 
-	if err := s.db.User.UpdateUserBio(ctx, entities.UserUpdateBio{
+	if err := s.db.User.UpdateUserBio(ctx, entities.UserUpdateBioDTO{
 		UserUUID:   req.GetUserUuid(),
 		FirstName:  req.GetFirstName(),
 		LastName:   req.GetLastName(),
@@ -343,9 +373,9 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	}
 
 	if err = s.cache.Auth.RefreshToken(ctx, entities.RefreshTokenDTO{
-		UserUUID:    tokenClaims.UserUUID,
-		OldRawToken: req.GetRefreshToken(),
-		NewRawToken: tokenPair.RefreshToken,
+		UserUUID:     tokenClaims.UserUUID,
+		OldHashToken: utils.HashToken(req.GetRefreshToken()),
+		NewHashToken: utils.HashToken(tokenPair.RefreshToken),
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
@@ -477,7 +507,6 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 }
 
 // ForgotPassword Запрашивает восстановление пароля — отправляет код на почту.
-// Всегда возвращает Empty (не раскрывает, существует ли email в системе).
 func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordRequest) (*emptypb.Empty, error) {
 	if err := validate.Email(req.GetEmail()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
@@ -492,12 +521,12 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 
 	// Не раскрываем состояние аккаунта
 	if !user.IsVerified {
-		log.Warn().Time("time", time.Now()).Str("method", "ForgotPassword").Msg("user already verified")
+		log.Warn().Time("time", time.Now()).Str("method", "ForgotPassword").Msg("user not verified")
 		return &emptypb.Empty{}, nil
 	}
 
-	code := utils.GenerateVerificationCode()
-	if err := s.cache.Verification.SaveRecoveryCode(ctx, entities.SaveRecoveryCodeDTO{
+	code := utils.GenerateRecoveryCode()
+	if err := s.cache.Recovery.SaveRecoveryCode(ctx, entities.SaveRecoveryCodeDTO{
 		UserUUID: user.UserUUID,
 		Code:     code,
 	}).GRPCError(); err != nil {
@@ -520,7 +549,7 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 	if err := validate.Email(req.GetEmail()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
 	}
-	if err := validate.UserVerificationCode(req.GetCode()); err != nil {
+	if err := validate.UserRecoveryCode(req.GetCode()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid code format")
 	}
 	if err := validate.Password(req.GetNewPassword()); err != nil {
@@ -536,17 +565,17 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
 
-	storedCode, codeErr := s.cache.Verification.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: user.UserUUID})
+	storedCode, codeErr := s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: user.UserUUID})
 	if codeErr.Code != 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired code")
 	}
 
-	attempts, attemptsErr := s.cache.Verification.IncrRecoveryAttempts(ctx, entities.IncrRecoveryAttemptsDTO{UserUUID: user.UserUUID})
+	attempts, attemptsErr := s.cache.Recovery.IncrRecoveryAttempts(ctx, entities.IncrRecoveryAttemptsDTO{UserUUID: user.UserUUID})
 	if attemptsErr.Code != 0 {
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
-	if attempts > maxVerificationAttempts {
-		_ = s.cache.Verification.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})
+	if attempts > maxRecoveryAttempts {
+		_ = s.cache.Recovery.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})
 		return nil, status.Errorf(codes.ResourceExhausted, "too many attempts, please request a new recovery code")
 	}
 
@@ -554,14 +583,14 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired code")
 	}
 
-	_ = s.cache.Verification.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})
+	_ = s.cache.Recovery.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.GetNewPassword()), bcryptCost)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
-	if err := s.db.User.UpdateUserPassword(ctx, entities.UpdateUserPasswordDTO{
+	if err = s.db.User.UpdateUserPassword(ctx, entities.UpdateUserPasswordDTO{
 		UserUUID:     user.UserUUID,
 		PasswordHash: string(passwordHash),
 	}).GRPCError(); err != nil {
@@ -571,9 +600,83 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 	// Отзываем все активные сессии после смены пароля
 	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: user.UserUUID})
 	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
-		if err := revokeErr.GRPCError(); err != nil {
+		if err = revokeErr.GRPCError(); err != nil {
 			return nil, err
 		}
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+// Verify2FA Подтверждение 2FA авторизации
+func (s *AuthService) Verify2FA(ctx context.Context, req *pb.Verify2FARequest) (*pb.Verify2FAResponse, error) {
+	// Валидации
+	if err := validate.UUID(req.SessionUuid); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid session uuid")
+	}
+	if err := validate.UserRecoveryCode(req.GetCode()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid code format")
+	}
+
+	// Получаем данные по sessionUUID
+	data, getErr := s.cache.TwoFA.Get2FAData(ctx, entities.Get2FADataDTO{SessionUUID: req.GetSessionUuid()})
+	if err := getErr.GRPCError(); err != nil {
+		return nil, err
+	}
+
+	// Увеличиваем счётчик попыток
+	attempts, attemptsErr := s.cache.TwoFA.Incr2FAAttempts(ctx, entities.Incr2FAAttemptsDTO{SessionUUID: req.GetSessionUuid()})
+	if err := attemptsErr.GRPCError(); err != nil {
+		return nil, err
+	}
+	if attempts > max2FAAttempts {
+		_ = s.cache.TwoFA.Delete2FAData(ctx, entities.Delete2FADataDTO{SessionUUID: req.GetSessionUuid()})
+		return nil, status.Errorf(codes.ResourceExhausted, "too many attempts, please try login again")
+	}
+
+	// Сравниваем code
+	if data.Code != req.GetCode() {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired code")
+	}
+
+	// Удаляем сессию
+	_ = s.cache.TwoFA.Delete2FAData(ctx, entities.Delete2FADataDTO{SessionUUID: req.GetSessionUuid()})
+
+	// Генерируем пару токенов
+	tokenPair, err := utils.CreateTokens(data.UserUUID, s.jwtPrivateKey, s.accessTokenTTL, s.refreshTokenTTL)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+
+	// Сохраняем refresh токен
+	if err := s.cache.Auth.SaveRefreshToken(ctx, entities.SaveRefreshTokenDTO{
+		UserUUID:    data.UserUUID,
+		HashedToken: utils.HashToken(tokenPair.RefreshToken),
+	}).GRPCError(); err != nil {
+		return nil, err
+	}
+
+	// Возвращаем токены и userUUID
+	return &pb.Verify2FAResponse{
+		UserUuid:     data.UserUUID,
+		AccessToken:  tokenPair.AccessToken,
+		RefreshToken: tokenPair.RefreshToken,
+	}, nil
+}
+
+// UpdateUser2FA Включение / выключение 2FA авторизации
+func (s *AuthService) UpdateUser2FA(ctx context.Context, req *pb.UpdateUser2FARequest) (*emptypb.Empty, error) {
+	// Валидации
+	if err := validate.UUID(req.GetUserUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
+	}
+
+	// Обновляем данные пользователя
+	if err := s.db.User.UpdateUser2FA(ctx, entities.UpdateUser2FADTO{
+		UserUUID:     req.GetUserUuid(),
+		TwoFAEnabled: req.GetEnable_2Fa(),
+	}).GRPCError(); err != nil {
+		return nil, err
 	}
 
 	return &emptypb.Empty{}, nil

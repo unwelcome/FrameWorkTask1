@@ -29,6 +29,8 @@ type AuthHandler interface {
 	GetVerificationCode(c *fiber.Ctx) error
 	ForgotPassword(c *fiber.Ctx) error
 	ResetPassword(c *fiber.Ctx) error
+	Verify2FA(c *fiber.Ctx) error
+	UpdateUser2FA(c *fiber.Ctx) error
 }
 
 type authHandler struct {
@@ -99,7 +101,7 @@ func (h *authHandler) Register(c *fiber.Ctx) error {
 // Login
 //
 //	@Summary      Login
-//	@Description  Login user
+//	@Description  Авторизация пользователя. Если включена 2FA - возвращает session_uuid и отправляет письмо на почту, данные необходимо передать в Verify2FA; Если 2FA выключена - возвращает user_uuid и пару токенов
 //	@Tags         Auth
 //	@Accept 			json
 //	@Produce 			json
@@ -145,6 +147,7 @@ func (h *authHandler) Login(c *fiber.Ctx) error {
 		UserUUID:     res.GetUserUuid(),
 		AccessToken:  res.GetAccessToken(),
 		RefreshToken: res.GetRefreshToken(),
+		SessionUUID:  res.GetSessionUuid(),
 	}
 
 	return c.Status(fiber.StatusOK).JSON(httpRes)
@@ -748,4 +751,90 @@ func (h *authHandler) RevokeAllTokens(c *fiber.Ctx) error {
 	httpRes := &entities.RevokeAllTokensResponse{}
 
 	return c.Status(fiber.StatusOK).JSON(httpRes)
+}
+
+// Verify2FA
+//
+//	@Summary      Verify2FA
+//	@Description  Verification confirmation with 2FA enabled
+//	@Tags         Auth
+//	@Produce 			json
+//	@Param 				data body entities.Verify2FARequest true "SessionUUID and email code"
+//	@Success      200  {object}  entities.Verify2FAResponse
+//	@Failure      400  {object}  Error.HttpError
+//	@Failure      404  {object}  Error.HttpError
+//	@Failure      429  {object}  Error.HttpError
+//	@Failure      500  {object}  Error.HttpError
+//	@Router       /verify-2fa [post]
+func (h *authHandler) Verify2FA(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
+
+	httpReq := &entities.Verify2FARequest{}
+	if err := c.BodyParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+
+	if err := httpReq.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	// Формируем тело запроса
+	res, err := h.AuthServiceClient.Verify2FA(ctx, &auth_proto.Verify2FARequest{
+		SessionUuid: httpReq.SessionUUID,
+		Code:        httpReq.Code,
+	})
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(&entities.Verify2FAResponse{
+		UserUUID:     res.UserUuid,
+		AccessToken:  res.AccessToken,
+		RefreshToken: res.RefreshToken,
+	})
+}
+
+// UpdateUser2FA
+//
+//	@Summary      UpdateUser2FA
+//	@Description  Enable / disable 2FA
+//	@Tags         User
+//	@Produce 			json
+//	@Param 				data body entities.UpdateUser2FARequest true "Body"
+//	@Success      200  {object}  entities.UpdateUser2FAResponse
+//	@Failure      400  {object}  Error.HttpError
+//	@Failure      404  {object}  Error.HttpError
+//	@Failure      500  {object}  Error.HttpError
+//	@Router       /auth/user/2fa [patch]
+func (h *authHandler) UpdateUser2FA(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
+
+	httpReq := &entities.UpdateUser2FARequest{}
+	if err := c.BodyParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+
+	httpReq.UserUUID = utils.GetLocal[string](c, h.userUUIDKey)
+	if err := httpReq.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	// Формируем тело запроса
+	_, err := h.AuthServiceClient.UpdateUser2FA(ctx, &auth_proto.UpdateUser2FARequest{
+		UserUuid:   httpReq.UserUUID,
+		Enable_2Fa: httpReq.Enable2FA,
+	})
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(&entities.UpdateUser2FAResponse{})
 }

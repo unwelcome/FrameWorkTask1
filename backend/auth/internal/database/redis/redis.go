@@ -11,6 +11,8 @@ import (
 type CacheRepository struct {
 	Auth         AuthRepository
 	Verification VerificationRepository
+	Recovery     RecoveryRepository
+	TwoFA        TwoFARepository
 	rdb          *redis.Client
 }
 
@@ -24,6 +26,8 @@ func NewCacheInstance(connectOptions *redis.Options, refreshTokenTTL time.Durati
 	return &CacheRepository{
 		Auth:         NewAuthRepository(rdb, refreshTokenTTL, prefix),
 		Verification: NewVerificationRepository(rdb, prefix),
+		Recovery:     NewRecoveryRepository(rdb, prefix),
+		TwoFA:        NewTwoFARepository(rdb, prefix),
 		rdb:          rdb,
 	}
 }

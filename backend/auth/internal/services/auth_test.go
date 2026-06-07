@@ -471,7 +471,7 @@ func TestChangePassword(t *testing.T) {
 func TestUpdateUserBio(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			updateUserBio: func(_ context.Context, _ entities.UserUpdateBio) Error.CodeError { return ok() },
+			updateUserBio: func(_ context.Context, _ entities.UserUpdateBioDTO) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
 
@@ -510,7 +510,7 @@ func TestUpdateUserBio(t *testing.T) {
 
 	t.Run("not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			updateUserBio: func(_ context.Context, _ entities.UserUpdateBio) Error.CodeError {
+			updateUserBio: func(_ context.Context, _ entities.UserUpdateBioDTO) Error.CodeError {
 				return Error.Public(codes.NotFound, "user not found")
 			},
 		}

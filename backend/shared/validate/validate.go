@@ -24,6 +24,8 @@ var (
 	rePasswordDigit        = regexp.MustCompile(`[0-9]`)
 	reJoinCode             = regexp.MustCompile(`^[0-9]{6}$`)
 	reUserVerificationCode = regexp.MustCompile(`^[0-9]{6}$`)
+	reUserRecoveryCode     = regexp.MustCompile(`^[0-9]{6}$`)
+	reUser2FACode          = regexp.MustCompile(`^[0-9]{6}$`)
 	reTitle                = regexp.MustCompile(`^[a-zA-Zа-яА-ЯёЁ0-9\s\-_&.,№#()'"°+]+$`)
 	reName                 = regexp.MustCompile(`^[a-zA-Zа-яА-ЯёЁ]+(['\-][a-zA-Zа-яА-ЯёЁ]+)*$`)
 )
@@ -131,6 +133,26 @@ func UserVerificationCode(code string) error {
 	}
 	if !reUserVerificationCode.MatchString(code) {
 		return fmt.Errorf("invalid verification code")
+	}
+	return nil
+}
+
+func UserRecoveryCode(code string) error {
+	if code == "" {
+		return fmt.Errorf("recovery code missed")
+	}
+	if !reUserRecoveryCode.MatchString(code) {
+		return fmt.Errorf("invalid recovery code")
+	}
+	return nil
+}
+
+func User2FACCode(code string) error {
+	if code == "" {
+		return fmt.Errorf("2FA code missed")
+	}
+	if !reUser2FACode.MatchString(code) {
+		return fmt.Errorf("invalid 2FA code")
 	}
 	return nil
 }

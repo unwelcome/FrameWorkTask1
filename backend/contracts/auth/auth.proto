@@ -22,6 +22,8 @@ service AuthService {
   rpc GetVerificationCode(GetVerificationCodeRequest) returns (GetVerificationCodeResponse);
   rpc ForgotPassword(ForgotPasswordRequest) returns (google.protobuf.Empty);
   rpc ResetPassword(ResetPasswordRequest) returns (google.protobuf.Empty);
+  rpc Verify2FA(Verify2FARequest) returns (Verify2FAResponse);
+  rpc UpdateUser2FA(UpdateUser2FARequest) returns (google.protobuf.Empty);
 }
 
 
@@ -63,6 +65,7 @@ message LoginResponse {
   string user_uuid = 1;
   string access_token = 2;
   string refresh_token = 3;
+  string session_uuid = 4;
 }
 
 
@@ -176,5 +179,25 @@ message ResetPasswordRequest {
   string email = 1;
   string code = 2;
   string new_password = 3;
+}
+// Empty response
+
+
+// Verify2FA
+message Verify2FARequest {
+  string session_uuid = 1;
+  string code = 2;
+}
+message Verify2FAResponse {
+  string user_uuid = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+}
+
+
+// UpdateUser2FA
+message UpdateUser2FARequest {
+  string user_uuid = 1;
+  bool enable_2fa = 2;
 }
 // Empty response

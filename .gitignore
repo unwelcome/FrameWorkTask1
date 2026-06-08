@@ -12,3 +12,6 @@ backend/go.work.sum
 # JWT RSA keys (prod) — test keys in backend/keys/test/ are committed
 backend/keys/private.pem
 backend/keys/public.pem
+
+# MaxMind GeoLite2 databases — download via scripts/download-geo.sh
+backend/geo/

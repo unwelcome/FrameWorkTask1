@@ -47,6 +47,8 @@ services:
     volumes:
       - ./backend/keys/test/public.pem:/run/secrets/jwt_public.pem:ro
       - ./logs/tests:/var/log/app
+      - ./backend/geo/GeoLite2-City.mmdb:/etc/geoip/GeoLite2-City.mmdb:ro
+      - ./backend/geo/GeoLite2-ASN.mmdb:/etc/geoip/GeoLite2-ASN.mmdb:ro
     healthcheck:
       test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8080/api/health" ]
       interval: 5s

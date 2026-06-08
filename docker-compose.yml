@@ -45,6 +45,8 @@ services:
     volumes:
       - ./logs:/var/log/app
       - ./backend/keys/public.pem:/run/secrets/jwt_public.pem:ro
+      - ./backend/geo/GeoLite2-City.mmdb:/etc/geoip/GeoLite2-City.mmdb:ro
+      - ./backend/geo/GeoLite2-ASN.mmdb:/etc/geoip/GeoLite2-ASN.mmdb:ro
     networks:
       - app-network
 

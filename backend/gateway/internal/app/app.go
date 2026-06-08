@@ -55,7 +55,7 @@ func InitApp(cfg *config.Config, httpLogger zerolog.Logger) *App {
 	application.LoggerMiddleware = middlewares.NewRequestLoggerMiddleware(OperationIDKey, UserUUIDKey, httpLogger)
 	application.AuthMiddleware = middlewares.NewAuthMiddleware(publicKey, UserUUIDKey)
 
-	sessionProvider := session.New(cfg.GeoIP.CityDBPath, cfg.GeoIP.ASNDBPath)
+	sessionProvider := session.New(cfg.GeoIP.CityDBPath, cfg.GeoIP.ASNDBPath, log.Logger)
 
 	application.HealthHandler = handlers.NewHealthHandler(application.AuthServiceClient, application.CompanyServiceClient, application.ApplicationServiceClient, OperationIDKey)
 	application.AuthHandler = handlers.NewAuthHandler(application.AuthServiceClient, OperationIDKey, UserUUIDKey, sessionProvider)

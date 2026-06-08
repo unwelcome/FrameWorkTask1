@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/mssola/useragent"
 	"github.com/oschwald/geoip2-golang"
+	"github.com/rs/zerolog"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 )
 
@@ -17,24 +18,36 @@ import (
 type Provider struct {
 	cityDB *geoip2.Reader
 	asnDB  *geoip2.Reader
+	logger zerolog.Logger
 }
 
 // New создаёт Provider.
 // cityDBPath — путь к GeoLite2-City.mmdb (пустая строка → геолокация отключена).
 // asnDBPath  — путь к GeoLite2-ASN.mmdb  (пустая строка → ISP отключён).
-func New(cityDBPath, asnDBPath string) *Provider {
-	p := &Provider{}
+func New(cityDBPath, asnDBPath string, logger zerolog.Logger) *Provider {
+	p := &Provider{logger: logger}
 
-	if cityDBPath != "" {
+	if cityDBPath == "" {
+		logger.Warn().Msg("GeoIP city DB path is not set — country/city/timezone will be empty")
+	} else {
 		db, err := geoip2.Open(cityDBPath)
-		if err == nil {
+		if err != nil {
+			logger.Error().Err(err).Str("path", cityDBPath).Msg("failed to open GeoLite2-City DB — country/city/timezone will be empty")
+		} else {
 			p.cityDB = db
+			logger.Info().Str("path", cityDBPath).Msg("GeoLite2-City DB loaded")
 		}
 	}
-	if asnDBPath != "" {
+
+	if asnDBPath == "" {
+		logger.Warn().Msg("GeoIP ASN DB path is not set — ISP will be empty")
+	} else {
 		db, err := geoip2.Open(asnDBPath)
-		if err == nil {
+		if err != nil {
+			logger.Error().Err(err).Str("path", asnDBPath).Msg("failed to open GeoLite2-ASN DB — ISP will be empty")
+		} else {
 			p.asnDB = db
+			logger.Info().Str("path", asnDBPath).Msg("GeoLite2-ASN DB loaded")
 		}
 	}
 
@@ -62,6 +75,8 @@ func (p *Provider) Extract(c *fiber.Ctx) *auth_proto.SessionInfo {
 
 	deviceType, os, osVersion, browser, browserVersion := parseUA(rawUA)
 
+	p.logger.Debug().Str("ip", ip).Str("user_agent", rawUA).Msg("session: extracted request metadata")
+
 	s := &auth_proto.SessionInfo{
 		Ip:             ip,
 		LastIp:         ip,
@@ -75,7 +90,7 @@ func (p *Provider) Extract(c *fiber.Ctx) *auth_proto.SessionInfo {
 		LastActiveAt:   now,
 	}
 
-	p.fillGeo(s, ip)
+	p.fillGeo(s, ip, p.logger)
 	return s
 }
 
@@ -103,14 +118,23 @@ func ClientIP(c *fiber.Ctx) string {
 
 // fillGeo обогащает SessionInfo данными геолокации и ISP.
 // Ничего не делает, если базы данных не инициализированы.
-func (p *Provider) fillGeo(s *auth_proto.SessionInfo, rawIP string) {
+func (p *Provider) fillGeo(s *auth_proto.SessionInfo, rawIP string, logger zerolog.Logger) {
 	ip := net.ParseIP(rawIP)
 	if ip == nil {
+		logger.Warn().Str("raw_ip", rawIP).Msg("GeoIP: failed to parse IP address")
+		return
+	}
+
+	if ip.IsLoopback() || ip.IsPrivate() {
+		logger.Debug().Str("ip", rawIP).Msg("GeoIP: skipping private/loopback IP — no geo data available")
 		return
 	}
 
 	if p.cityDB != nil {
-		if record, err := p.cityDB.City(ip); err == nil {
+		record, err := p.cityDB.City(ip)
+		if err != nil {
+			logger.Warn().Err(err).Str("ip", rawIP).Msg("GeoIP: city lookup failed")
+		} else {
 			s.CountryCode = record.Country.IsoCode
 			if name, ok := record.Country.Names["en"]; ok {
 				s.CountryName = name
@@ -119,12 +143,17 @@ func (p *Provider) fillGeo(s *auth_proto.SessionInfo, rawIP string) {
 				s.City = name
 			}
 			s.Timezone = record.Location.TimeZone
+			logger.Debug().Str("ip", rawIP).Str("country", s.CountryCode).Str("city", s.City).Msg("GeoIP: city lookup ok")
 		}
 	}
 
 	if p.asnDB != nil {
-		if record, err := p.asnDB.ASN(ip); err == nil {
+		record, err := p.asnDB.ASN(ip)
+		if err != nil {
+			logger.Warn().Err(err).Str("ip", rawIP).Msg("GeoIP: ASN lookup failed")
+		} else {
 			s.Isp = record.AutonomousSystemOrganization
+			logger.Debug().Str("ip", rawIP).Str("isp", s.Isp).Msg("GeoIP: ASN lookup ok")
 		}
 	}
 }

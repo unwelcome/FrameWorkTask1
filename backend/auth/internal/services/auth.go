@@ -27,7 +27,25 @@ const (
 	maxVerificationAttempts = 5
 	maxRecoveryAttempts     = 5
 	max2FAAttempts          = 5
+
+	// dummyUUID — nil UUID, используется как заглушка в Redis-запросах при выравнивании времени ответа
+	dummyUUID = "00000000-0000-0000-0000-000000000000"
 )
+
+// dummyPasswordHash вычисляется один раз при старте сервиса и используется
+// в Login для выравнивания времени ответа, когда запрошенный email не найден.
+// bcrypt.CompareHashAndPassword против этого хеша занимает столько же времени,
+// сколько реальная проверка пароля, — атакующий не может различить "неверный пароль"
+// и "email не зарегистрирован" по времени ответа.
+var dummyPasswordHash []byte
+
+func init() {
+	h, err := bcrypt.GenerateFromPassword([]byte("$timing-protection-dummy$"), bcryptCost)
+	if err != nil {
+		panic("auth: failed to pre-compute dummy bcrypt hash: " + err.Error())
+	}
+	dummyPasswordHash = h
+}
 
 type AuthService struct {
 	db              *postgresDB.DatabaseRepository
@@ -159,12 +177,16 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	}
 
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
-	if err := getErr.GRPCError(); err != nil {
-		return nil, err
+	if getErr.Code != 0 {
+		// Защита от timing-атаки: запускаем bcrypt на фиктивном хеше, чтобы
+		// путь "email не найден" занимал столько же времени, что и "неверный пароль".
+		// Без этого атакующий различает зарегистрированные email по разнице ~200 мс.
+		_ = bcrypt.CompareHashAndPassword(dummyPasswordHash, []byte(req.GetPassword()))
+		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.GetPassword())) != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "wrong password")
+		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
 	}
 
 	if !user.IsVerified {
@@ -431,6 +453,10 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	if getErr.Code != 0 {
+		// Защита от timing-атаки: выполняем Redis-запрос, аналогичный тому,
+		// что делается при нахождении пользователя, чтобы выровнять время ответа.
+		// dummyUUID никогда не существует в Redis — запрос всегда промахивается.
+		_, _ = s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: dummyUUID})
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
 
@@ -558,10 +584,16 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	if getErr.Code != 0 {
+		// Защита от timing-атаки: выполняем Redis-запрос, аналогичный тому,
+		// что делается при нахождении пользователя, чтобы выровнять время ответа.
+		// dummyUUID никогда не существует в Redis — запрос всегда промахивается.
+		_, _ = s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: dummyUUID})
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
 
 	if !user.IsVerified {
+		// Аналогично: выравниваем время ответа для не верифицированного пользователя.
+		_, _ = s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: dummyUUID})
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
 

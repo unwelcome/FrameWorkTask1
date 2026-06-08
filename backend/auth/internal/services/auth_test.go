@@ -262,7 +262,10 @@ func TestLogin(t *testing.T) {
 			Password: testPassword,
 		})
 
-		assertCode(t, err, codes.NotFound)
+		// После исправления timing-атаки сервис запускает bcrypt на фиктивном хеше
+		// и возвращает тот же код, что и при неверном пароле — чтобы не раскрывать
+		// существование email по разнице в ~200 мс или по HTTP-статусу.
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("wrong_password", func(t *testing.T) {

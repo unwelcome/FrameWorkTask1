@@ -103,8 +103,11 @@ func TestLogin(t *testing.T) {
 			"password": "Password123",
 		})
 
-		assert.True(t, code == http.StatusUnauthorized || code == http.StatusNotFound,
-			"non-existent user should return 401 or 404, got %d (body: %s)", code, body)
+		// После исправления timing-атаки несуществующий email возвращает 400
+		// (тот же статус и сообщение, что и неверный пароль) — чтобы
+		// атакующий не мог различить эти два случая по HTTP-статусу.
+		assert.Equal(t, http.StatusBadRequest, code,
+			"non-existent user should return 400 (same as wrong password), got %d (body: %s)", code, body)
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {

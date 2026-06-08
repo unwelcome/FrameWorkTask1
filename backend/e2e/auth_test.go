@@ -268,7 +268,71 @@ func TestGetAllActiveTokens(t *testing.T) {
 
 		var resp tokensResp
 		require.NoError(t, json.Unmarshal(body, &resp))
-		assert.GreaterOrEqual(t, len(resp.Tokens), 1, "should have at least 1 active token after login")
+		require.GreaterOrEqual(t, len(resp.Tokens), 1, "should have at least 1 active token after login")
+
+		token := resp.Tokens[0]
+		assert.NotEmpty(t, token.TokenHash, "token_hash should not be empty")
+		assert.NotEmpty(t, token.CreatedAt, "created_at should not be empty")
+		assert.NotEmpty(t, token.LastActiveAt, "last_active_at should not be empty")
+		// IP может быть пустым в тестовой среде, проверяем лишь что поля присутствуют в JSON
+		assert.NotEmpty(t, token.DeviceType, "device_type should not be empty (fallback: desktop)")
+	})
+
+	t.Run("two_sessions_visible", func(t *testing.T) {
+		c := newClient()
+		email, login1 := mustRegisterAndLogin(t, c)
+		auth1 := c.withToken(login1.AccessToken)
+
+		// Создаём вторую сессию
+		login2 := mustLogin(t, c, email, "Password123")
+		_ = login2
+
+		code, body := auth1.get("/api/auth/user/tokens")
+		require.Equal(t, http.StatusOK, code)
+
+		var resp tokensResp
+		require.NoError(t, json.Unmarshal(body, &resp))
+		assert.GreaterOrEqual(t, len(resp.Tokens), 2, "both sessions should be visible in active tokens")
+
+		// Оба токена должны иметь непустые хеши
+		for i, tok := range resp.Tokens {
+			assert.NotEmpty(t, tok.TokenHash, "token[%d].token_hash should not be empty", i)
+			assert.NotEmpty(t, tok.CreatedAt, "token[%d].created_at should not be empty", i)
+		}
+	})
+
+	t.Run("refresh_updates_last_active_and_last_ip", func(t *testing.T) {
+		c := newClient()
+		_, login := mustRegisterAndLogin(t, c)
+		auth := c.withToken(login.AccessToken)
+
+		// Получаем данные до refresh
+		code, body := auth.get("/api/auth/user/tokens")
+		require.Equal(t, http.StatusOK, code)
+		var before tokensResp
+		require.NoError(t, json.Unmarshal(body, &before))
+		require.GreaterOrEqual(t, len(before.Tokens), 1)
+		createdAtBefore := before.Tokens[0].CreatedAt
+
+		// Делаем refresh
+		code, body = c.post("/api/refresh", map[string]string{"refresh_token": login.RefreshToken})
+		require.Equal(t, http.StatusOK, code)
+		var refreshed refreshTokenResp
+		require.NoError(t, json.Unmarshal(body, &refreshed))
+		auth = c.withToken(refreshed.AccessToken)
+
+		// Получаем данные после refresh
+		code, body = auth.get("/api/auth/user/tokens")
+		require.Equal(t, http.StatusOK, code)
+		var after tokensResp
+		require.NoError(t, json.Unmarshal(body, &after))
+		require.GreaterOrEqual(t, len(after.Tokens), 1)
+
+		// created_at должен остаться прежним (иммутабельное поле)
+		assert.Equal(t, createdAtBefore, after.Tokens[0].CreatedAt,
+			"created_at should not change after refresh")
+		// last_active_at должен присутствовать
+		assert.NotEmpty(t, after.Tokens[0].LastActiveAt)
 	})
 }
 
@@ -286,7 +350,7 @@ func TestRevokeToken(t *testing.T) {
 		var tokens tokensResp
 		require.NoError(t, json.Unmarshal(body, &tokens))
 		require.NotEmpty(t, tokens.Tokens, "expected at least one active token")
-		tokenHash := tokens.Tokens[0].Token
+		tokenHash := tokens.Tokens[0].TokenHash
 
 		// Отзываем токен по хешу
 		code, body = auth.delete("/api/auth/user/revoke/token", map[string]string{

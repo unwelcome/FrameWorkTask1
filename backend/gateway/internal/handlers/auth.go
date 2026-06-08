@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/errors"
+	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/session"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
 	"google.golang.org/grpc/metadata"
@@ -39,10 +41,16 @@ type authHandler struct {
 	AuthServiceClient auth_proto.AuthServiceClient
 	operationIDKey    string
 	userUUIDKey       string
+	session           *session.Provider
 }
 
-func NewAuthHandler(authServiceClient auth_proto.AuthServiceClient, operationIDKey, userUUIDKey string) AuthHandler {
-	return &authHandler{AuthServiceClient: authServiceClient, operationIDKey: operationIDKey, userUUIDKey: userUUIDKey}
+func NewAuthHandler(authServiceClient auth_proto.AuthServiceClient, operationIDKey, userUUIDKey string, sessionProvider *session.Provider) AuthHandler {
+	return &authHandler{
+		AuthServiceClient: authServiceClient,
+		operationIDKey:    operationIDKey,
+		userUUIDKey:       userUUIDKey,
+		session:           sessionProvider,
+	}
 }
 
 // Register
@@ -136,6 +144,7 @@ func (h *authHandler) Login(c *fiber.Ctx) error {
 	req := &auth_proto.LoginRequest{
 		Email:    httpReq.Email,
 		Password: httpReq.Password,
+		Session:  h.session.Extract(c),
 	}
 
 	// Запрос в auth сервис
@@ -402,18 +411,29 @@ func (h *authHandler) GetAllActiveTokens(c *fiber.Ctx) error {
 	}
 
 	// Формируем тело ответа
-	httpRes := &entities.GetAllActiveTokensResponse{}
-	tokens := make([]*entities.TokenInfo, 0)
-
+	tokens := make([]*entities.TokenInfo, 0, len(res.GetTokens()))
 	for _, token := range res.GetTokens() {
+		s := token.GetSession()
 		tokens = append(tokens, &entities.TokenInfo{
-			Token: token.GetToken(),
+			TokenHash:      token.GetToken(),
+			IP:             s.GetIp(),
+			LastIP:         s.GetLastIp(),
+			ISP:            s.GetIsp(),
+			CountryCode:    s.GetCountryCode(),
+			CountryName:    s.GetCountryName(),
+			City:           s.GetCity(),
+			Timezone:       s.GetTimezone(),
+			DeviceType:     s.GetDeviceType(),
+			OS:             s.GetOs(),
+			OSVersion:      s.GetOsVersion(),
+			Browser:        s.GetBrowser(),
+			BrowserVersion: s.GetBrowserVersion(),
+			CreatedAt:      formatUnixTimestamp(s.GetCreatedAt()),
+			LastActiveAt:   formatUnixTimestamp(s.GetLastActiveAt()),
 		})
 	}
 
-	httpRes.Tokens = tokens
-
-	return c.Status(fiber.StatusOK).JSON(httpRes)
+	return c.Status(fiber.StatusOK).JSON(&entities.GetAllActiveTokensResponse{Tokens: tokens})
 }
 
 // RefreshToken
@@ -450,6 +470,7 @@ func (h *authHandler) RefreshToken(c *fiber.Ctx) error {
 	// Формируем тело запроса
 	req := &auth_proto.RefreshTokenRequest{
 		RefreshToken: httpReq.RefreshToken,
+		Ip:           session.ClientIP(c),
 	}
 
 	// Запрос в auth сервис
@@ -851,6 +872,7 @@ func (h *authHandler) Verify2FA(c *fiber.Ctx) error {
 	res, err := h.AuthServiceClient.Verify2FA(ctx, &auth_proto.Verify2FARequest{
 		SessionUuid: httpReq.SessionUUID,
 		Code:        httpReq.Code,
+		Session:     h.session.Extract(c),
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
@@ -903,4 +925,15 @@ func (h *authHandler) UpdateUser2FA(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(&entities.UpdateUser2FAResponse{})
+}
+
+// ── Вспомогательные функции ───────────────────────────────────────────────────
+
+// formatUnixTimestamp форматирует Unix-метку в читаемый RFC3339.
+// Если ts == 0, возвращает пустую строку.
+func formatUnixTimestamp(ts int64) string {
+	if ts == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s", time.Unix(ts, 0).UTC().Format(time.RFC3339))
 }

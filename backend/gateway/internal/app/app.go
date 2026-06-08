@@ -10,6 +10,7 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/handlers"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/middlewares"
+	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/session"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -54,8 +55,10 @@ func InitApp(cfg *config.Config, httpLogger zerolog.Logger) *App {
 	application.LoggerMiddleware = middlewares.NewRequestLoggerMiddleware(OperationIDKey, UserUUIDKey, httpLogger)
 	application.AuthMiddleware = middlewares.NewAuthMiddleware(publicKey, UserUUIDKey)
 
+	sessionProvider := session.New(cfg.GeoIP.CityDBPath, cfg.GeoIP.ASNDBPath)
+
 	application.HealthHandler = handlers.NewHealthHandler(application.AuthServiceClient, application.CompanyServiceClient, application.ApplicationServiceClient, OperationIDKey)
-	application.AuthHandler = handlers.NewAuthHandler(application.AuthServiceClient, OperationIDKey, UserUUIDKey)
+	application.AuthHandler = handlers.NewAuthHandler(application.AuthServiceClient, OperationIDKey, UserUUIDKey, sessionProvider)
 	application.CompanyHandler = handlers.NewCompanyHandler(application.CompanyServiceClient, OperationIDKey, UserUUIDKey)
 	application.ApplicationHandler = handlers.NewApplicationHandler(application.ApplicationServiceClient, OperationIDKey, UserUUIDKey)
 

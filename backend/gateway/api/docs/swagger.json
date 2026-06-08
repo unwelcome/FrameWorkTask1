@@ -4278,7 +4278,49 @@
         "entities.TokenInfo": {
             "type": "object",
             "properties": {
-                "token": {
+                "browser": {
+                    "type": "string"
+                },
+                "browser_version": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "country_code": {
+                    "type": "string"
+                },
+                "country_name": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "device_type": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "isp": {
+                    "type": "string"
+                },
+                "last_active_at": {
+                    "type": "string"
+                },
+                "last_ip": {
+                    "type": "string"
+                },
+                "os": {
+                    "type": "string"
+                },
+                "os_version": {
+                    "type": "string"
+                },
+                "timezone": {
+                    "type": "string"
+                },
+                "token_hash": {
                     "type": "string"
                 }
             }

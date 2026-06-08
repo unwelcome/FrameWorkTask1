@@ -31,6 +31,25 @@ service AuthService {
 
 message Token {
   string token = 1;
+  SessionInfo session = 2;
+}
+
+message SessionInfo {
+  string ip = 1;
+  string last_ip = 2;
+  string isp = 3;
+  string country_code = 4;
+  string country_name = 5;
+  string city = 6;
+  string timezone = 7;
+  string device_type = 8;
+  string os = 9;
+  string os_version = 10;
+  string browser = 11;
+  string browser_version = 12;
+  string user_agent_raw = 13;
+  int64 created_at = 14;
+  int64 last_active_at = 15;
 }
 
 
@@ -62,6 +81,7 @@ message RegisterResponse {
 message LoginRequest {
   string email = 1;
   string password = 2;
+  SessionInfo session = 3;
 }
 message LoginResponse {
   string user_uuid = 1;
@@ -114,6 +134,7 @@ message DeleteUserRequest {
 // Refresh token
 message RefreshTokenRequest {
   string refresh_token = 1;
+  string ip = 2;
 }
 message RefreshTokenResponse {
   string access_token = 1;
@@ -207,6 +228,7 @@ message ResetPasswordRequest {
 message Verify2FARequest {
   string session_uuid = 1;
   string code = 2;
+  SessionInfo session = 3;
 }
 message Verify2FAResponse {
   string user_uuid = 1;

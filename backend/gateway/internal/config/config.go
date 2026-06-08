@@ -11,9 +11,18 @@ type Config struct {
 	AppEnv  string
 	Log     LogConfig
 	JWT     JWTConfig
+	GeoIP   GeoIPConfig
 	Auth    ServiceAddress
 	Company ServiceAddress
 	App     ServiceAddress
+}
+
+// GeoIPConfig содержит пути к базам данных MaxMind GeoLite2.
+// Оба поля опциональны: если файл не указан или не найден,
+// соответствующие поля сессии останутся пустыми.
+type GeoIPConfig struct {
+	CityDBPath string // Путь к GeoLite2-City.mmdb
+	ASNDBPath  string // Путь к GeoLite2-ASN.mmdb
 }
 
 type LogConfig struct {
@@ -44,6 +53,10 @@ func NewConfig() *Config {
 		},
 		JWT: JWTConfig{
 			PublicKeyPath: sharedConfig.MustGetEnv("JWT_PUBLIC_KEY_PATH"),
+		},
+		GeoIP: GeoIPConfig{
+			CityDBPath: sharedConfig.GetEnvOrDefault("GEOIP_CITY_DB_PATH", ""),
+			ASNDBPath:  sharedConfig.GetEnvOrDefault("GEOIP_ASN_DB_PATH", ""),
 		},
 		Auth: ServiceAddress{
 			Host: sharedConfig.MustGetEnv("AUTH_SERVICE_HOST"),

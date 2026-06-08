@@ -98,10 +98,26 @@ type refreshTokenResp struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type tokenInfoResp struct {
+	TokenHash      string `json:"token_hash"`
+	IP             string `json:"ip"`
+	LastIP         string `json:"last_ip"`
+	ISP            string `json:"isp"`
+	CountryCode    string `json:"country_code"`
+	CountryName    string `json:"country_name"`
+	City           string `json:"city"`
+	Timezone       string `json:"timezone"`
+	DeviceType     string `json:"device_type"`
+	OS             string `json:"os"`
+	OSVersion      string `json:"os_version"`
+	Browser        string `json:"browser"`
+	BrowserVersion string `json:"browser_version"`
+	CreatedAt      string `json:"created_at"`
+	LastActiveAt   string `json:"last_active_at"`
+}
+
 type tokensResp struct {
-	Tokens []struct {
-		Token string `json:"token"`
-	} `json:"tokens"`
+	Tokens []tokenInfoResp `json:"tokens"`
 }
 
 type httpErrResp struct {

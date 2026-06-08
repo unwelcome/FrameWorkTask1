@@ -626,8 +626,12 @@ func TestDeleteUser(t *testing.T) {
 func TestGetAllActiveTokens(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
-			getAllRefreshTokens: func(_ context.Context, _ entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError) {
-				return []string{"hash1", "hash2", "hash3"}, ok()
+			getAllRefreshTokens: func(_ context.Context, _ entities.GetAllRefreshTokensDTO) ([]entities.RefreshTokenEntry, Error.CodeError) {
+				return []entities.RefreshTokenEntry{
+					{TokenHash: "hash1", Session: entities.SessionInfo{IP: "1.1.1.1", Browser: "Chrome"}},
+					{TokenHash: "hash2", Session: entities.SessionInfo{IP: "2.2.2.2", Browser: "Firefox"}},
+					{TokenHash: "hash3", Session: entities.SessionInfo{IP: "3.3.3.3", Browser: "Safari"}},
+				}, ok()
 			},
 		}
 		svc := newTestService(emptyUserRepo(), authRepo)
@@ -640,12 +644,16 @@ func TestGetAllActiveTokens(t *testing.T) {
 		if len(resp.GetTokens()) != 3 {
 			t.Errorf("expected 3 tokens, got %d", len(resp.GetTokens()))
 		}
+		// Проверяем, что данные сессии передались в ответ
+		if resp.GetTokens()[0].GetSession().GetBrowser() != "Chrome" {
+			t.Errorf("expected browser Chrome, got %s", resp.GetTokens()[0].GetSession().GetBrowser())
+		}
 	})
 
 	t.Run("empty", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
-			getAllRefreshTokens: func(_ context.Context, _ entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError) {
-				return []string{}, ok()
+			getAllRefreshTokens: func(_ context.Context, _ entities.GetAllRefreshTokensDTO) ([]entities.RefreshTokenEntry, Error.CodeError) {
+				return []entities.RefreshTokenEntry{}, ok()
 			},
 		}
 		svc := newTestService(emptyUserRepo(), authRepo)
@@ -672,7 +680,7 @@ func TestGetAllActiveTokens(t *testing.T) {
 
 	t.Run("cache_error", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
-			getAllRefreshTokens: func(_ context.Context, _ entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError) {
+			getAllRefreshTokens: func(_ context.Context, _ entities.GetAllRefreshTokensDTO) ([]entities.RefreshTokenEntry, Error.CodeError) {
 				return nil, Error.Internal(fmt.Errorf("redis error"))
 			},
 		}

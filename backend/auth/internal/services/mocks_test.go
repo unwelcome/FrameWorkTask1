@@ -55,7 +55,7 @@ func (m *mockUserRepo) SetUserVerified(ctx context.Context, dto entities.SetUser
 
 type mockAuthRepo struct {
 	saveRefreshToken        func(ctx context.Context, dto entities.SaveRefreshTokenDTO) Error.CodeError
-	getAllRefreshTokens     func(ctx context.Context, dto entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError)
+	getAllRefreshTokens     func(ctx context.Context, dto entities.GetAllRefreshTokensDTO) ([]entities.RefreshTokenEntry, Error.CodeError)
 	checkRefreshTokenExists func(ctx context.Context, dto entities.CheckRefreshTokenExistsDTO) Error.CodeError
 	revokeRefreshToken      func(ctx context.Context, dto entities.RevokeRefreshTokenDTO) Error.CodeError
 	revokeAllRefreshTokens  func(ctx context.Context, dto entities.RevokeAllRefreshTokensDTO) Error.CodeError
@@ -65,7 +65,7 @@ type mockAuthRepo struct {
 func (m *mockAuthRepo) SaveRefreshToken(ctx context.Context, dto entities.SaveRefreshTokenDTO) Error.CodeError {
 	return m.saveRefreshToken(ctx, dto)
 }
-func (m *mockAuthRepo) GetAllRefreshTokens(ctx context.Context, dto entities.GetAllRefreshTokensDTO) ([]string, Error.CodeError) {
+func (m *mockAuthRepo) GetAllRefreshTokens(ctx context.Context, dto entities.GetAllRefreshTokensDTO) ([]entities.RefreshTokenEntry, Error.CodeError) {
 	return m.getAllRefreshTokens(ctx, dto)
 }
 func (m *mockAuthRepo) CheckRefreshTokenExists(ctx context.Context, dto entities.CheckRefreshTokenExistsDTO) Error.CodeError {

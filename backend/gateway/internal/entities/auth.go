@@ -10,8 +10,25 @@ import (
 
 // ─── Shared response types ────────────────────────────────────────────────────
 
+// TokenInfo описывает активную сессию пользователя.
+// Возвращается в GetAllActiveTokens и позволяет пользователю видеть
+// откуда, когда и с какого устройства был создан каждый токен.
 type TokenInfo struct {
-	Token string `json:"token"`
+	TokenHash      string `json:"token_hash"`
+	IP             string `json:"ip"`
+	LastIP         string `json:"last_ip"`
+	ISP            string `json:"isp,omitempty"`
+	CountryCode    string `json:"country_code,omitempty"`
+	CountryName    string `json:"country_name,omitempty"`
+	City           string `json:"city,omitempty"`
+	Timezone       string `json:"timezone,omitempty"`
+	DeviceType     string `json:"device_type,omitempty"`
+	OS             string `json:"os,omitempty"`
+	OSVersion      string `json:"os_version,omitempty"`
+	Browser        string `json:"browser,omitempty"`
+	BrowserVersion string `json:"browser_version,omitempty"`
+	CreatedAt      string `json:"created_at"`
+	LastActiveAt   string `json:"last_active_at"`
 }
 
 // ─── Register ─────────────────────────────────────────────────────────────────

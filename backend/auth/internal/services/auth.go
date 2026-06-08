@@ -464,10 +464,10 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 		return nil, status.Errorf(codes.AlreadyExists, "account already verified")
 	}
 
-	// Проверяем наличие активного кода
+	// Проверяем наличие активного кода.
 	storedCode, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: user.UserUUID})
 	if codeErr.Code != 0 {
-		return nil, status.Errorf(codes.NotFound, "verification code not found or expired, please request a new one")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired verification code")
 	}
 
 	// Увеличиваем счётчик попыток до проверки кода
@@ -481,10 +481,10 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 	}
 
 	if req.GetCode() != storedCode {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired verification code")
 	}
 
-	// Код верный — удаляем его из Redis
+	// Код верный - удаляем его из Redis
 	_ = s.cache.Verification.DeleteVerificationCode(ctx, entities.DeleteVerificationCodeDTO{UserUUID: user.UserUUID})
 
 	// Помечаем аккаунт верифицированным
@@ -646,7 +646,7 @@ func (s *AuthService) Verify2FA(ctx context.Context, req *pb.Verify2FARequest) (
 	if err := validate.UUID(req.SessionUuid); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid session uuid")
 	}
-	if err := validate.UserRecoveryCode(req.GetCode()); err != nil {
+	if err := validate.User2FACCode(req.GetCode()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid code format")
 	}
 

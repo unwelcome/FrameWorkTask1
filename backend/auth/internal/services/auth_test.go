@@ -1070,7 +1070,9 @@ func TestVerifyAccount(t *testing.T) {
 			Code:  "123456",
 		})
 
-		assertCode(t, err, codes.NotFound)
+		// Код не найден/истёк должен возвращать InvalidArgument (400), а не NotFound (404),
+		// чтобы атакующий не мог по HTTP-статусу определить наличие активного кода для email.
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("too_many_attempts", func(t *testing.T) {
@@ -1571,7 +1573,7 @@ func TestVerify2FA(t *testing.T) {
 			Code:        "123456",
 		})
 
-		assertCode(t, err, codes.InvalidArgument)
+		assertCode(t, err, codes.PermissionDenied)
 	})
 
 	t.Run("save_token_error", func(t *testing.T) {

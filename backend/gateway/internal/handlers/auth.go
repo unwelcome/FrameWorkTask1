@@ -110,7 +110,7 @@ func (h *authHandler) Register(c *fiber.Ctx) error {
 //	@Param 				data body entities.LoginRequest true "Данные пользователя"
 //	@Success      200  {object}  entities.LoginResponse
 //	@Failure      400  {object}  Error.HttpError
-//	@Failure      404  {object}  Error.HttpError
+//	@Failure      403  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /login [post]
 func (h *authHandler) Login(c *fiber.Ctx) error {
@@ -329,6 +329,7 @@ func (h *authHandler) UpdateUserBio(c *fiber.Ctx) error {
 //	@Success      200  {object}  entities.DeleteUserResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
+//	@Failure      403  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /auth/user/account [delete]
@@ -530,7 +531,6 @@ func (h *authHandler) RevokeToken(c *fiber.Ctx) error {
 //	@Param 				data body entities.VerifyAccountRequest true "Email и код верификации"
 //	@Success      200  {object}  entities.VerifyAccountResponse
 //	@Failure      400  {object}  Error.HttpError
-//	@Failure      404  {object}  Error.HttpError
 //	@Failure      409  {object}  Error.HttpError
 //	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
@@ -872,6 +872,7 @@ func (h *authHandler) Verify2FA(c *fiber.Ctx) error {
 //	@Param 				data body entities.UpdateUser2FARequest true "Body"
 //	@Success      200  {object}  entities.UpdateUser2FAResponse
 //	@Failure      400  {object}  Error.HttpError
+//	@Failure      401  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /auth/user/2fa [patch]

@@ -2565,6 +2565,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -2624,6 +2630,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -3241,8 +3253,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -3446,12 +3458,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
                     "409": {
                         "description": "Conflict",
                         "schema": {
@@ -3552,6 +3558,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }

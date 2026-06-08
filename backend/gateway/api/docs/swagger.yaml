@@ -2227,6 +2227,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
         "404":
           description: Not Found
           schema:
@@ -2263,6 +2267,10 @@ paths:
             $ref: '#/definitions/Error.HttpError'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
           schema:
             $ref: '#/definitions/Error.HttpError'
         "404":
@@ -2631,8 +2639,8 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/Error.HttpError'
-        "404":
-          description: Not Found
+        "403":
+          description: Forbidden
           schema:
             $ref: '#/definitions/Error.HttpError'
         "500":
@@ -2765,10 +2773,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/Error.HttpError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/Error.HttpError'
         "409":
           description: Conflict
           schema:
@@ -2835,6 +2839,10 @@ paths:
             $ref: '#/definitions/entities.Verify2FAResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
           schema:
             $ref: '#/definitions/Error.HttpError'
         "404":

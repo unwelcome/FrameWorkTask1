@@ -741,6 +741,6 @@ func TestAuthFullFlow(t *testing.T) {
 
 	// 25. Login должен упасть — пользователь удалён
 	code, _ = c.post("/api/login", map[string]string{"email": email, "password": resetPassword})
-	assert.True(t, code == http.StatusNotFound || code == http.StatusUnauthorized,
+	assert.True(t, code == http.StatusBadRequest,
 		"login after deletion should fail, got %d", code)
 }

@@ -11,8 +11,6 @@ import (
 // ─── Shared response types ────────────────────────────────────────────────────
 
 // TokenInfo описывает активную сессию пользователя.
-// Возвращается в GetAllActiveTokens и позволяет пользователю видеть
-// откуда, когда и с какого устройства был создан каждый токен.
 type TokenInfo struct {
 	TokenHash      string `json:"token_hash"`
 	IP             string `json:"ip"`

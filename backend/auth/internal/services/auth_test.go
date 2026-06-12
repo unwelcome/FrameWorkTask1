@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/password"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
@@ -39,13 +39,13 @@ func assertNoError(t *testing.T, err error) {
 	}
 }
 
-func hashPassword(t *testing.T, password string) string {
+func hashPassword(t *testing.T, pwd string) string {
 	t.Helper()
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
+	hash, err := password.Hash(pwd)
 	if err != nil {
 		t.Fatalf("failed to hash password: %v", err)
 	}
-	return string(hash)
+	return hash
 }
 
 func validRefreshToken(t *testing.T) string {
@@ -66,10 +66,10 @@ func validAccessToken(t *testing.T) string {
 	return tokens.AccessToken
 }
 
-// maxLenPassword возвращает валидный пароль длиной ровно 72 байта.
+// maxLenPassword возвращает валидный пароль длиной ровно 128 байт.
 // Содержит uppercase, lowercase и цифру — проходит все проверки.
 func maxLenPassword() string {
-	return "Password1" + strings.Repeat("a", 63) // 9 + 63 = 72 байта
+	return "Password1" + strings.Repeat("a", 119) // 9 + 119 = 128 байт
 }
 
 // ─── Register ────────────────────────────────────────────────────────────────
@@ -128,13 +128,13 @@ func TestRegister(t *testing.T) {
 
 		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
 			Email:    "test@example.com",
-			Password: "Password1" + strings.Repeat("a", 64), // 73 байта
+			Password: "Password1" + strings.Repeat("a", 120), // 129 байт
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("password_exactly_72_bytes_allowed", func(t *testing.T) {
+	t.Run("password_exactly_128_bytes_allowed", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			createUser: func(_ context.Context, _ entities.User) Error.CodeError { return ok() },
 		}
@@ -262,7 +262,7 @@ func TestLogin(t *testing.T) {
 			Password: testPassword,
 		})
 
-		// После исправления timing-атаки сервис запускает bcrypt на фиктивном хеше
+		// После исправления timing-атаки сервис запускает Argon2id на фиктивном хеше
 		// и возвращает тот же код, что и при неверном пароле — чтобы не раскрывать
 		// существование email по разнице в ~200 мс или по HTTP-статусу.
 		assertCode(t, err, codes.InvalidArgument)
@@ -427,7 +427,7 @@ func TestChangePassword(t *testing.T) {
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
 			UserUuid: testUUID1,
-			Password: "Password1" + strings.Repeat("a", 64), // 73 байта
+			Password: "Password1" + strings.Repeat("a", 120), // 129 байт
 		})
 
 		assertCode(t, err, codes.InvalidArgument)

@@ -12,18 +12,17 @@ import (
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/messaging"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/password"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/helpers"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/validate"
-	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
-	bcryptCost              = 12
 	maxVerificationAttempts = 5
 	maxRecoveryAttempts     = 5
 	max2FAAttempts          = 5
@@ -34,14 +33,10 @@ const (
 
 // dummyPasswordHash вычисляется один раз при старте сервиса и используется
 // в Login для выравнивания времени ответа, когда запрошенный email не найден.
-var dummyPasswordHash []byte
+var dummyPasswordHash string
 
 func init() {
-	h, err := bcrypt.GenerateFromPassword([]byte("$timing-protection-dummy$"), bcryptCost)
-	if err != nil {
-		panic("auth: failed to pre-compute dummy bcrypt hash: " + err.Error())
-	}
-	dummyPasswordHash = h
+	dummyPasswordHash = password.DummyHash()
 }
 
 type AuthService struct {
@@ -98,7 +93,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 
 	userUUID := uuid.Must(uuid.NewV7()).String()
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.GetPassword()), bcryptCost)
+	passwordHash, err := password.Hash(req.GetPassword())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
@@ -106,7 +101,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	user := entities.User{
 		UserUUID:     userUUID,
 		Email:        req.GetEmail(),
-		PasswordHash: string(passwordHash),
+		PasswordHash: passwordHash,
 		FirstName:    req.GetFirstName(),
 		LastName:     req.GetLastName(),
 		Patronymic:   req.GetPatronymic(),
@@ -175,14 +170,15 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	if getErr.Code != 0 {
-		// Защита от timing-атаки: запускаем bcrypt на фиктивном хеше, чтобы
+		// Защита от timing-атаки: запускаем Argon2id на фиктивном хеше, чтобы
 		// путь "email не найден" занимал столько же времени, что и "неверный пароль".
 		// Без этого атакующий различает зарегистрированные email по разнице ~200 мс.
-		_ = bcrypt.CompareHashAndPassword(dummyPasswordHash, []byte(req.GetPassword()))
+		_, _ = password.Verify(dummyPasswordHash, req.GetPassword())
 		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.GetPassword())) != nil {
+	ok, err := password.Verify(user.PasswordHash, req.GetPassword())
+	if err != nil || !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
 	}
 
@@ -271,14 +267,14 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 		return nil, status.Errorf(codes.InvalidArgument, "invalid password")
 	}
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.GetPassword()), bcryptCost)
+	passwordHash, err := password.Hash(req.GetPassword())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
 	if err := s.db.User.UpdateUserPassword(ctx, entities.UpdateUserPasswordDTO{
 		UserUUID:     req.GetUserUuid(),
-		PasswordHash: string(passwordHash),
+		PasswordHash: passwordHash,
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
@@ -623,14 +619,14 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 
 	_ = s.cache.Recovery.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.GetNewPassword()), bcryptCost)
+	passwordHash, err := password.Hash(req.GetNewPassword())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
 	if err = s.db.User.UpdateUserPassword(ctx, entities.UpdateUserPasswordDTO{
 		UserUUID:     user.UserUUID,
-		PasswordHash: string(passwordHash),
+		PasswordHash: passwordHash,
 	}).GRPCError(); err != nil {
 		return nil, err
 	}

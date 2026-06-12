@@ -7,7 +7,7 @@ import (
 
 const (
 	PasswordMinLen         = 8
-	PasswordMaxLen         = 72
+	PasswordMaxLen         = 128
 	NameMinLen             = 2
 	NameMaxLen             = 30
 	CompanyTitleMaxLen     = 255

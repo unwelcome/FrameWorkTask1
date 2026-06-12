@@ -364,18 +364,38 @@ func TestGetUser(t *testing.T) {
 // ─── ChangePassword ──────────────────────────────────────────────────────────
 
 func TestChangePassword(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		userRepo := &mockUserRepo{
+	const newPassword = "NewPassword456"
+
+	// userRepoWithHash возвращает mockUserRepo, у которого GetUser отдаёт хеш текущего пароля.
+	userRepoWithHash := func(extraOpts ...*mockUserRepo) *mockUserRepo {
+		hash := hashPassword(t, testPassword)
+		repo := &mockUserRepo{
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return &entities.UserGet{
+					UserUUID:     testUUID1,
+					Email:        "user@example.com",
+					FirstName:    "Ivan",
+					PasswordHash: hash,
+				}, ok()
+			},
 			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError { return ok() },
 		}
+		if len(extraOpts) > 0 && extraOpts[0].updateUserPassword != nil {
+			repo.updateUserPassword = extraOpts[0].updateUserPassword
+		}
+		return repo
+	}
+
+	t.Run("success", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError { return ok() },
 		}
-		svc := newTestService(userRepo, authRepo)
+		svc := newTestService(userRepoWithHash(), authRepo)
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
-			UserUuid: testUUID1,
-			Password: testPassword,
+			UserUuid:    testUUID1,
+			OldPassword: testPassword,
+			Password:    newPassword,
 		})
 
 		assertNoError(t, err)
@@ -383,52 +403,77 @@ func TestChangePassword(t *testing.T) {
 
 	t.Run("success_no_active_tokens", func(t *testing.T) {
 		// Если у пользователя нет токенов — ошибка NotFound из RevokeAll игнорируется
-		userRepo := &mockUserRepo{
-			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError { return ok() },
-		}
 		authRepo := &mockAuthRepo{
 			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError {
 				return Error.Public(codes.NotFound, "no tokens")
 			},
 		}
-		svc := newTestService(userRepo, authRepo)
+		svc := newTestService(userRepoWithHash(), authRepo)
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
-			UserUuid: testUUID1,
-			Password: testPassword,
+			UserUuid:    testUUID1,
+			OldPassword: testPassword,
+			Password:    newPassword,
 		})
 
 		assertNoError(t, err)
+	})
+
+	t.Run("wrong_old_password", func(t *testing.T) {
+		svc := newTestService(userRepoWithHash(), emptyAuthRepo())
+
+		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
+			UserUuid:    testUUID1,
+			OldPassword: "WrongPassword1",
+			Password:    newPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("invalid_uuid", func(t *testing.T) {
 		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
-			UserUuid: "not-a-uuid",
-			Password: testPassword,
+			UserUuid:    "not-a-uuid",
+			OldPassword: testPassword,
+			Password:    newPassword,
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("password_too_short", func(t *testing.T) {
+	t.Run("old_password_too_short", func(t *testing.T) {
 		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
-			UserUuid: testUUID1,
-			Password: "Ab1",
+			UserUuid:    testUUID1,
+			OldPassword: "Ab1",
+			Password:    newPassword,
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("password_too_long", func(t *testing.T) {
+	t.Run("new_password_too_short", func(t *testing.T) {
 		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
-			UserUuid: testUUID1,
-			Password: "Password1" + strings.Repeat("a", 120), // 129 байт
+			UserUuid:    testUUID1,
+			OldPassword: testPassword,
+			Password:    "Ab1",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("new_password_too_long", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
+			UserUuid:    testUUID1,
+			OldPassword: testPassword,
+			Password:    "Password1" + strings.Repeat("a", 120), // 129 байт
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
@@ -436,34 +481,33 @@ func TestChangePassword(t *testing.T) {
 
 	t.Run("user_not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError {
-				return Error.Public(codes.NotFound, "user not found")
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return nil, Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
-			UserUuid: testUUID1,
-			Password: testPassword,
+			UserUuid:    testUUID1,
+			OldPassword: testPassword,
+			Password:    newPassword,
 		})
 
 		assertCode(t, err, codes.NotFound)
 	})
 
 	t.Run("revoke_tokens_error", func(t *testing.T) {
-		userRepo := &mockUserRepo{
-			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError { return ok() },
-		}
 		authRepo := &mockAuthRepo{
 			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError {
 				return Error.Internal(fmt.Errorf("redis error"))
 			},
 		}
-		svc := newTestService(userRepo, authRepo)
+		svc := newTestService(userRepoWithHash(), authRepo)
 
 		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
-			UserUuid: testUUID1,
-			Password: testPassword,
+			UserUuid:    testUUID1,
+			OldPassword: testPassword,
+			Password:    newPassword,
 		})
 
 		assertCode(t, err, codes.Internal)

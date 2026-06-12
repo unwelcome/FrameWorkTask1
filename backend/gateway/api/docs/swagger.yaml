@@ -81,6 +81,8 @@ definitions:
     type: object
   entities.ChangePasswordRequest:
     properties:
+      old_password:
+        type: string
       password:
         type: string
     type: object
@@ -2369,7 +2371,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Change user password
+      description: Change user password (requires current password verification)
       parameters:
       - description: Новый пароль
         in: body

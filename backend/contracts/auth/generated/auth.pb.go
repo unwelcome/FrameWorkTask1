@@ -699,7 +699,8 @@ func (x *GetUserResponse) GetDeletedAt() string {
 type ChangePasswordRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
-	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	OldPassword   string                 `protobuf:"bytes,2,opt,name=old_password,json=oldPassword,proto3" json:"old_password,omitempty"`
+	Password      string                 `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -737,6 +738,13 @@ func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {
 func (x *ChangePasswordRequest) GetUserUuid() string {
 	if x != nil {
 		return x.UserUuid
+	}
+	return ""
+}
+
+func (x *ChangePasswordRequest) GetOldPassword() string {
+	if x != nil {
+		return x.OldPassword
 	}
 	return ""
 }
@@ -1929,10 +1937,11 @@ const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"deleted_at\x18\a \x01(\tR\tdeletedAt\"P\n" +
+	"deleted_at\x18\a \x01(\tR\tdeletedAt\"s\n" +
 	"\x15ChangePasswordRequest\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"\x8f\x01\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12!\n" +
+	"\fold_password\x18\x02 \x01(\tR\voldPassword\x12\x1a\n" +
+	"\bpassword\x18\x03 \x01(\tR\bpassword\"\x8f\x01\n" +
 	"\x14UpdateUserBioRequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x1d\n" +
 	"\n" +

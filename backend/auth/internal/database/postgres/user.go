@@ -50,7 +50,7 @@ func (r *userRepository) CreateUser(ctx context.Context, dto entities.User) Erro
 	return Error.CodeError{}
 }
 
-// GetUserByEmail Возвращает частичные данные пользователя по его email.
+// GetUserByEmail Возвращает частичные данные пользователя по его email
 func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
 	query := `SELECT uuid, password_hash, first_name, is_verified, two_factor_enabled, deleted_at FROM users WHERE email = $1;`
 
@@ -80,17 +80,16 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUse
 	return userGetByEmail, Error.CodeError{}
 }
 
-// GetUser Возвращает данные пользователя по его uuid.
-// Корректно обрабатывает анонимизированные аккаунты (email, имя и пр. могут быть NULL).
+// GetUser Возвращает данные пользователя по его uuid
 func (r *userRepository) GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
-	query := `SELECT email, first_name, last_name, patronymic, created_at, is_verified, two_factor_enabled, deleted_at FROM users WHERE uuid = $1;`
+	query := `SELECT email, password_hash, first_name, last_name, patronymic, created_at, is_verified, two_factor_enabled, deleted_at FROM users WHERE uuid = $1;`
 
 	userGet := &entities.UserGet{UserUUID: dto.UserUUID}
-	var email, firstName, lastName, patronymic sql.NullString
+	var email, passwordHash, firstName, lastName, patronymic sql.NullString
 	var deletedAt sql.NullTime
 
 	err := r.db.QueryRowContext(ctx, query, dto.UserUUID).Scan(
-		&email, &firstName, &lastName, &patronymic,
+		&email, &passwordHash, &firstName, &lastName, &patronymic,
 		&userGet.CreatedAt, &userGet.IsVerified, &userGet.Enabled2FA,
 		&deletedAt,
 	)
@@ -102,6 +101,7 @@ func (r *userRepository) GetUser(ctx context.Context, dto entities.GetUserDTO) (
 	}
 
 	userGet.Email = email.String
+	userGet.PasswordHash = passwordHash.String
 	userGet.FirstName = firstName.String
 	userGet.LastName = lastName.String
 	userGet.Patronymic = patronymic.String

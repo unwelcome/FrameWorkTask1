@@ -14,15 +14,16 @@ type User struct {
 }
 
 type UserGet struct {
-	UserUUID   string     `db:"uuid"`
-	Email      string     `db:"email"`      // Пустая строка если аккаунт удалён
-	FirstName  string     `db:"first_name"` // Пустая строка если аккаунт удалён
-	LastName   string     `db:"last_name"`  // Пустая строка если аккаунт удалён
-	Patronymic string     `db:"patronymic"` // Пустая строка если аккаунт удалён
-	CreatedAt  string     `db:"created_at"`
-	Enabled2FA bool       `db:"two_factor_enabled"`
-	IsVerified bool       `db:"is_verified"`
-	DeletedAt  *time.Time `db:"deleted_at"` // nil если аккаунт активен
+	UserUUID     string     `db:"uuid"`
+	Email        string     `db:"email"`          // Пустая строка если аккаунт анонимизирован
+	PasswordHash string     `db:"password_hash"`  // Пустая строка если аккаунт анонимизирован
+	FirstName    string     `db:"first_name"`     // Пустая строка если аккаунт анонимизирован
+	LastName     string     `db:"last_name"`      // Пустая строка если аккаунт анонимизирован
+	Patronymic   string     `db:"patronymic"`     // Пустая строка если аккаунт анонимизирован
+	CreatedAt    string     `db:"created_at"`
+	Enabled2FA   bool       `db:"two_factor_enabled"`
+	IsVerified   bool       `db:"is_verified"`
+	DeletedAt    *time.Time `db:"deleted_at"` // nil если аккаунт активен
 }
 
 type UserGetByEmail struct {

@@ -2725,7 +2725,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Change user password",
+                "description": "Change user password (requires current password verification)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3767,6 +3767,9 @@ const docTemplate = `{
         "entities.ChangePasswordRequest": {
             "type": "object",
             "properties": {
+                "old_password": {
+                    "type": "string"
+                },
                 "password": {
                     "type": "string"
                 }

@@ -270,26 +270,47 @@ func (s *AuthService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	}, nil
 }
 
-// ChangePassword Обновление пароля пользователя
+// ChangePassword Обновление пароля пользователя с проверкой старого пароля
 func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*emptypb.Empty, error) {
 	if err := validate.UUID(req.GetUserUuid()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
 	}
+	if err := validate.Password(req.GetOldPassword()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid old password")
+	}
 	if err := validate.Password(req.GetPassword()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid password")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid new password")
 	}
 
-	passwordHash, err := password.Hash(req.GetPassword())
+	// Получаем пользователя для проверки старого пароля и отправки уведомления
+	user, getErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: req.GetUserUuid()})
+	if getErr.Code != 0 {
+		return nil, getErr.GRPCError()
+	}
+
+	// Проверяем старый пароль
+	if ok, err := password.Verify(user.PasswordHash, req.GetOldPassword()); err != nil || !ok {
+		return nil, status.Errorf(codes.InvalidArgument, "wrong old password")
+	}
+
+	newPasswordHash, err := password.Hash(req.GetPassword())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
 	if err := s.db.User.UpdateUserPassword(ctx, entities.UpdateUserPasswordDTO{
 		UserUUID:     req.GetUserUuid(),
-		PasswordHash: passwordHash,
+		PasswordHash: newPasswordHash,
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
+
+	// Уведомляем пользователя о смене пароля (fire and forget)
+	_ = s.publisher.SendPasswordChangedEmail(ctx, entities.PasswordChangedEmailMsg{
+		UserUUID:  req.GetUserUuid(),
+		Email:     user.Email,
+		FirstName: user.FirstName,
+	})
 
 	// Отзываем все токены после смены пароля
 	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: req.GetUserUuid()})

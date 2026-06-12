@@ -110,7 +110,8 @@ message GetUserResponse {
 // Change user password
 message ChangePasswordRequest {
   string user_uuid = 1;
-  string password = 2;
+  string old_password = 2;
+  string password = 3;
 }
 // Empty response
 

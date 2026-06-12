@@ -114,14 +114,19 @@ func (e *GetUserRequest) Validate() error {
 // ─── ChangePassword ───────────────────────────────────────────────────────────
 
 type ChangePasswordRequest struct {
-	Password string `json:"password"`
+	OldPassword string `json:"old_password"`
+	Password    string `json:"password"`
 }
 type ChangePasswordResponse struct{}
 
 func (e *ChangePasswordRequest) Validate() error {
+	e.OldPassword = strings.TrimSpace(e.OldPassword)
+	if err := validate.Password(e.OldPassword); err != nil {
+		return fmt.Errorf("old_password: %w", err)
+	}
 	e.Password = strings.TrimSpace(e.Password)
 	if err := validate.Password(e.Password); err != nil {
-		return err
+		return fmt.Errorf("password: %w", err)
 	}
 	return nil
 }

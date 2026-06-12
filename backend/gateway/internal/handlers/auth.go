@@ -225,7 +225,7 @@ func (h *authHandler) GetUser(c *fiber.Ctx) error {
 // ChangePassword
 //
 //	@Summary      ChangePassword
-//	@Description  Change user password
+//	@Description  Change user password (requires current password verification)
 //	@Tags         User
 //	@Accept 			json
 //	@Produce 			json
@@ -258,8 +258,9 @@ func (h *authHandler) ChangePassword(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.ChangePasswordRequest{
-		UserUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		Password: httpReq.Password,
+		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
+		OldPassword: httpReq.OldPassword,
+		Password:    httpReq.Password,
 	}
 
 	// Запрос в auth сервис

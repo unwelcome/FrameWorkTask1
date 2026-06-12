@@ -195,10 +195,11 @@ func emptyTwoFARepo() *mockTwoFARepo {
 // ─── Mock: Publisher ─────────────────────────────────────────────────────────
 
 type mockPublisher struct {
-	sendVerificationEmail    func(ctx context.Context, dto entities.VerificationEmailMsg) Error.CodeError
-	sendRecoveryEmail        func(ctx context.Context, dto entities.RecoveryEmailMsg) Error.CodeError
-	send2FAEmail             func(ctx context.Context, dto entities.TwoFAEmailMsg) Error.CodeError
-	sendPasswordChangedEmail func(ctx context.Context, dto entities.PasswordChangedEmailMsg) Error.CodeError
+	sendVerificationEmail        func(ctx context.Context, dto entities.VerificationEmailMsg) Error.CodeError
+	sendRecoveryEmail            func(ctx context.Context, dto entities.RecoveryEmailMsg) Error.CodeError
+	send2FAEmail                 func(ctx context.Context, dto entities.TwoFAEmailMsg) Error.CodeError
+	sendPasswordChangedEmail     func(ctx context.Context, dto entities.PasswordChangedEmailMsg) Error.CodeError
+	sendRegistrationAttemptEmail func(ctx context.Context, dto entities.RegistrationAttemptEmailMsg) Error.CodeError
 }
 
 func (m *mockPublisher) SendVerificationEmail(ctx context.Context, dto entities.VerificationEmailMsg) Error.CodeError {
@@ -213,14 +214,18 @@ func (m *mockPublisher) Send2FAEmail(ctx context.Context, dto entities.TwoFAEmai
 func (m *mockPublisher) SendPasswordChangedEmail(ctx context.Context, dto entities.PasswordChangedEmailMsg) Error.CodeError {
 	return m.sendPasswordChangedEmail(ctx, dto)
 }
+func (m *mockPublisher) SendRegistrationAttemptEmail(ctx context.Context, dto entities.RegistrationAttemptEmailMsg) Error.CodeError {
+	return m.sendRegistrationAttemptEmail(ctx, dto)
+}
 
 // emptyPublisher — заглушка для тестов, где Publisher не должен вызываться.
 func emptyPublisher() messaging.Publisher {
 	return &mockPublisher{
-		sendVerificationEmail:    func(_ context.Context, _ entities.VerificationEmailMsg) Error.CodeError { return Error.CodeError{} },
-		sendRecoveryEmail:        func(_ context.Context, _ entities.RecoveryEmailMsg) Error.CodeError { return Error.CodeError{} },
-		send2FAEmail:             func(_ context.Context, _ entities.TwoFAEmailMsg) Error.CodeError { return Error.CodeError{} },
-		sendPasswordChangedEmail: func(_ context.Context, _ entities.PasswordChangedEmailMsg) Error.CodeError { return Error.CodeError{} },
+		sendVerificationEmail:        func(_ context.Context, _ entities.VerificationEmailMsg) Error.CodeError { return Error.CodeError{} },
+		sendRecoveryEmail:            func(_ context.Context, _ entities.RecoveryEmailMsg) Error.CodeError { return Error.CodeError{} },
+		send2FAEmail:                 func(_ context.Context, _ entities.TwoFAEmailMsg) Error.CodeError { return Error.CodeError{} },
+		sendPasswordChangedEmail:     func(_ context.Context, _ entities.PasswordChangedEmailMsg) Error.CodeError { return Error.CodeError{} },
+		sendRegistrationAttemptEmail: func(_ context.Context, _ entities.RegistrationAttemptEmailMsg) Error.CodeError { return Error.CodeError{} },
 	}
 }
 

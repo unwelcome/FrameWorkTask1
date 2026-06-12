@@ -197,6 +197,48 @@ func TestRegister(t *testing.T) {
 
 		assertCode(t, err, codes.AlreadyExists)
 	})
+
+	t.Run("email_already_exists_notifies_owner", func(t *testing.T) {
+		const targetEmail = "owner@example.com"
+		notified := false
+
+		userRepo := &mockUserRepo{
+			createUser: func(_ context.Context, _ entities.User) Error.CodeError {
+				return Error.Public(codes.AlreadyExists, "email already registered")
+			},
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{
+					UserUUID: testUUID2, Email: targetEmail, FirstName: "Petr", IsVerified: true,
+				}, ok()
+			},
+		}
+		pub := &mockPublisher{
+			sendVerificationEmail:        func(_ context.Context, _ entities.VerificationEmailMsg) Error.CodeError { return ok() },
+			sendRecoveryEmail:            func(_ context.Context, _ entities.RecoveryEmailMsg) Error.CodeError { return ok() },
+			send2FAEmail:                 func(_ context.Context, _ entities.TwoFAEmailMsg) Error.CodeError { return ok() },
+			sendPasswordChangedEmail:     func(_ context.Context, _ entities.PasswordChangedEmailMsg) Error.CodeError { return ok() },
+			sendRegistrationAttemptEmail: func(_ context.Context, dto entities.RegistrationAttemptEmailMsg) Error.CodeError {
+				notified = true
+				if dto.Email != targetEmail {
+					t.Errorf("notification sent to wrong email: got %q, want %q", dto.Email, targetEmail)
+				}
+				return ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, publisher: pub})
+
+		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
+			Email:     targetEmail,
+			Password:  testPassword,
+			FirstName: "Ivan",
+			LastName:  "Ivanov",
+		})
+
+		assertCode(t, err, codes.AlreadyExists)
+		if !notified {
+			t.Error("expected registration attempt notification to be sent, but it was not")
+		}
+	})
 }
 
 // ─── Login ───────────────────────────────────────────────────────────────────

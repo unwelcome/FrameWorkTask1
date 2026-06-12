@@ -125,6 +125,11 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		}
 
 		if existing.IsVerified {
+			// Уведомляем владельца почты о попытке регистрации
+			_ = s.publisher.SendRegistrationAttemptEmail(ctx, entities.RegistrationAttemptEmailMsg{
+				Email:     existing.Email,
+				FirstName: existing.FirstName,
+			})
 			return nil, status.Errorf(codes.AlreadyExists, "email already registered")
 		}
 

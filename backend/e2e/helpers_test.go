@@ -91,6 +91,7 @@ type getUserResp struct {
 	LastName   string `json:"last_name"`
 	Patronymic string `json:"patronymic"`
 	CreatedAt  string `json:"created_at"`
+	DeletedAt  string `json:"deleted_at"`
 }
 
 type refreshTokenResp struct {
@@ -676,6 +677,23 @@ func mustForgotPassword(t *testing.T, c *apiClient, email string) {
 	t.Helper()
 	code, body := c.post("/api/forgot-password", map[string]string{"email": email})
 	require.Equalf(t, http.StatusOK, code, "forgot password failed (body: %s)", body)
+}
+
+// mustDeleteAccount soft-deletes the authenticated user's own account.
+func mustDeleteAccount(t *testing.T, auth *apiClient, userUUID string) {
+	t.Helper()
+	code, body := auth.delete("/api/auth/user/account", map[string]string{"target_uuid": userUUID})
+	require.Equalf(t, http.StatusOK, code, "delete account failed (body: %s)", body)
+}
+
+// mustRestoreAccount restores a soft-deleted account using email and password.
+func mustRestoreAccount(t *testing.T, c *apiClient, email, password string) {
+	t.Helper()
+	code, body := c.post("/api/restore-account", map[string]string{
+		"email":    email,
+		"password": password,
+	})
+	require.Equalf(t, http.StatusOK, code, "restore account failed (body: %s)", body)
 }
 
 // mustResetPassword completes the password-reset using a recovery code.

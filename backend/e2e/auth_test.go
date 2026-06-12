@@ -397,17 +397,89 @@ func TestRevokeAllTokens(t *testing.T) {
 func TestDeleteUser(t *testing.T) {
 	t.Run("self_delete", func(t *testing.T) {
 		c := newClient()
-		_, login := mustRegisterAndLogin(t, c)
+		email, login := mustRegisterAndLogin(t, c)
 		auth := c.withToken(login.AccessToken)
 
 		code, body := auth.delete("/api/auth/user/account", map[string]string{
 			"target_uuid": login.UserUUID,
 		})
-		assert.Equal(t, http.StatusOK, code, "delete user failed (body: %s)", body)
+		require.Equal(t, http.StatusOK, code, "delete user failed (body: %s)", body)
 
-		code, _ = auth.get("/api/auth/user/" + login.UserUUID + "/info")
-		assert.True(t, code == http.StatusNotFound || code == http.StatusUnauthorized,
-			"deleted user should not be accessible, got %d", code)
+		// Soft delete: пользователь всё ещё существует в БД, GetUser возвращает 200 с deleted_at
+		code, body = auth.get("/api/auth/user/" + login.UserUUID + "/info")
+		require.Equal(t, http.StatusOK, code, "soft-deleted user should still be visible via GetUser (body: %s)", body)
+		var user getUserResp
+		require.NoError(t, json.Unmarshal(body, &user))
+		assert.NotEmpty(t, user.DeletedAt, "deleted_at must be set after deletion")
+
+		// Login заблокирован для удалённого аккаунта → 403
+		code, _ = c.post("/api/login", map[string]string{
+			"email":    email,
+			"password": "Password123",
+		})
+		assert.Equal(t, http.StatusForbidden, code,
+			"login after soft delete should return 403, got %d", code)
+
+		// Refresh-токен отозван при удалении → 401/404
+		code, _ = c.post("/api/refresh", map[string]string{"refresh_token": login.RefreshToken})
+		assert.True(t, code == http.StatusUnauthorized || code == http.StatusNotFound,
+			"refresh token should be revoked after deletion, got %d", code)
+	})
+}
+
+// ─── RestoreAccount ───────────────────────────────────────────────────────────
+
+func TestRestoreAccount(t *testing.T) {
+	t.Run("happy_path", func(t *testing.T) {
+		c := newClient()
+		email, login := mustRegisterAndLogin(t, c)
+		auth := c.withToken(login.AccessToken)
+
+		mustDeleteAccount(t, auth, login.UserUUID)
+
+		// Восстанавливаем аккаунт
+		code, body := c.post("/api/restore-account", map[string]string{
+			"email":    email,
+			"password": "Password123",
+		})
+		assert.Equal(t, http.StatusOK, code, "restore account failed (body: %s)", body)
+
+		// После восстановления login должен работать
+		restored := mustLogin(t, c, email, "Password123")
+		assert.NotEmpty(t, restored.AccessToken, "login after restore should return access_token")
+
+		// GetUser должен отдавать пустой deleted_at
+		restoredAuth := c.withToken(restored.AccessToken)
+		code, body = restoredAuth.get("/api/auth/user/" + login.UserUUID + "/info")
+		require.Equal(t, http.StatusOK, code, "get user after restore (body: %s)", body)
+		var user getUserResp
+		require.NoError(t, json.Unmarshal(body, &user))
+		assert.Empty(t, user.DeletedAt, "deleted_at must be empty after restore")
+	})
+
+	t.Run("wrong_password", func(t *testing.T) {
+		c := newClient()
+		email, login := mustRegisterAndLogin(t, c)
+		auth := c.withToken(login.AccessToken)
+		mustDeleteAccount(t, auth, login.UserUUID)
+
+		code, body := c.post("/api/restore-account", map[string]string{
+			"email":    email,
+			"password": "WrongPassword1",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "wrong password should return 400 (body: %s)", body)
+	})
+
+	t.Run("account_not_deleted", func(t *testing.T) {
+		c := newClient()
+		email, _ := mustRegisterAndLogin(t, c)
+
+		// Аккаунт активен — восстановление недопустимо
+		code, body := c.post("/api/restore-account", map[string]string{
+			"email":    email,
+			"password": "Password123",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "restore for active account should return 400 (body: %s)", body)
 	})
 }
 
@@ -799,12 +871,24 @@ func TestAuthFullFlow(t *testing.T) {
 	login = mustLogin(t, c, email, resetPassword)
 	auth = c.withToken(login.AccessToken)
 
-	// 24. DeleteUser
+	// 24. DeleteUser (soft delete)
 	code, body = auth.delete("/api/auth/user/account", map[string]string{"target_uuid": userUUID})
 	require.Equal(t, http.StatusOK, code, "delete user: %s", body)
 
-	// 25. Login должен упасть — пользователь удалён
+	// 25. Login заблокирован — аккаунт мягко удалён → 403
 	code, _ = c.post("/api/login", map[string]string{"email": email, "password": resetPassword})
-	assert.True(t, code == http.StatusBadRequest,
-		"login after deletion should fail, got %d", code)
+	assert.Equal(t, http.StatusForbidden, code,
+		"login after soft delete should return 403, got %d", code)
+
+	// 26. Restore account
+	code, body = c.post("/api/restore-account", map[string]string{
+		"email":    email,
+		"password": resetPassword,
+	})
+	require.Equal(t, http.StatusOK, code, "restore account: %s", body)
+
+	// 27. Login после восстановления — успех
+	login = mustLogin(t, c, email, resetPassword)
+	assert.NotEmpty(t, login.AccessToken, "login after restore should return access_token")
+	assert.Empty(t, login.SessionUUID, "2FA is disabled — no session_uuid expected")
 }

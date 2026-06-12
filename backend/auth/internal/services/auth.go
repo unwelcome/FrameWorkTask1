@@ -15,6 +15,7 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/password"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/format"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/helpers"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/validate"
 	"google.golang.org/grpc/codes"
@@ -264,7 +265,7 @@ func (s *AuthService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		LastName:   user.LastName,
 		Patronymic: user.Patronymic,
 		CreatedAt:  user.CreatedAt,
-		DeletedAt:  formatDeletedAt(user.DeletedAt),
+		DeletedAt:  format.TimePtr(user.DeletedAt),
 	}, nil
 }
 
@@ -731,6 +732,41 @@ func (s *AuthService) UpdateUser2FA(ctx context.Context, req *pb.UpdateUser2FARe
 	return &emptypb.Empty{}, nil
 }
 
+// RestoreAccount Восстанавливает мягко удалённый аккаунт в течение 30 дней после удаления
+func (s *AuthService) RestoreAccount(ctx context.Context, req *pb.RestoreAccountRequest) (*emptypb.Empty, error) {
+	if err := validate.Email(req.GetEmail()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
+	}
+	if err := validate.Password(req.GetPassword()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid password")
+	}
+
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
+	if getErr.Code != 0 {
+		_, _ = password.Verify(dummyPasswordHash, req.GetPassword())
+		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
+	}
+
+	ok, err := password.Verify(user.PasswordHash, req.GetPassword())
+	if err != nil || !ok {
+		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
+	}
+
+	if user.DeletedAt == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "account is not deleted")
+	}
+
+	if time.Since(*user.DeletedAt) > accountDeletionRetention {
+		return nil, status.Errorf(codes.PermissionDenied, "restoration period has expired")
+	}
+
+	if err := s.db.User.RestoreUser(ctx, entities.RestoreUserDTO{UserUUID: user.UserUUID}).GRPCError(); err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 
 // GetVerificationCode Отладочный метод — возвращает активный код верификации.
@@ -788,50 +824,4 @@ func (s *AuthService) Get2FACode(ctx context.Context, req *pb.Get2FACodeRequest)
 	}
 
 	return &pb.Get2FACodeResponse{Code: data.Code}, nil
-}
-
-// RestoreAccount Восстанавливает мягко удалённый аккаунт в течение 30 дней после удаления
-func (s *AuthService) RestoreAccount(ctx context.Context, req *pb.RestoreAccountRequest) (*emptypb.Empty, error) {
-	if err := validate.Email(req.GetEmail()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
-	}
-	if err := validate.Password(req.GetPassword()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid password")
-	}
-
-	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
-	if getErr.Code != 0 {
-		_, _ = password.Verify(dummyPasswordHash, req.GetPassword())
-		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
-	}
-
-	ok, err := password.Verify(user.PasswordHash, req.GetPassword())
-	if err != nil || !ok {
-		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
-	}
-
-	if user.DeletedAt == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "account is not deleted")
-	}
-
-	if time.Since(*user.DeletedAt) > accountDeletionRetention {
-		return nil, status.Errorf(codes.PermissionDenied, "restoration period has expired")
-	}
-
-	if err := s.db.User.RestoreUser(ctx, entities.RestoreUserDTO{UserUUID: user.UserUUID}).GRPCError(); err != nil {
-		return nil, err
-	}
-
-	return &emptypb.Empty{}, nil
-}
-
-// ── Хелперы ───────────────────────────────────────────────────────────────────
-
-// formatDeletedAt форматирует время удаления в строку RFC3339.
-// Возвращает пустую строку если аккаунт активен.
-func formatDeletedAt(t *time.Time) string {
-	if t == nil {
-		return ""
-	}
-	return t.Format(time.RFC3339)
 }

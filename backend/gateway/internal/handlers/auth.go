@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,6 +10,7 @@ import (
 	Error "github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/errors"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/session"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/format"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
 	"google.golang.org/grpc/metadata"
 )
@@ -430,8 +430,8 @@ func (h *authHandler) GetAllActiveTokens(c *fiber.Ctx) error {
 			OSVersion:      s.GetOsVersion(),
 			Browser:        s.GetBrowser(),
 			BrowserVersion: s.GetBrowserVersion(),
-			CreatedAt:      formatUnixTimestamp(s.GetCreatedAt()),
-			LastActiveAt:   formatUnixTimestamp(s.GetLastActiveAt()),
+			CreatedAt:      format.UnixTimestamp(s.GetCreatedAt()),
+			LastActiveAt:   format.UnixTimestamp(s.GetLastActiveAt()),
 		})
 	}
 
@@ -966,15 +966,4 @@ func (h *authHandler) RestoreAccount(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(&entities.RestoreAccountResponse{})
-}
-
-// ── Вспомогательные функции ───────────────────────────────────────────────────
-
-// formatUnixTimestamp форматирует Unix-метку в читаемый RFC3339.
-// Если ts == 0, возвращает пустую строку.
-func formatUnixTimestamp(ts int64) string {
-	if ts == 0 {
-		return ""
-	}
-	return fmt.Sprintf("%s", time.Unix(ts, 0).UTC().Format(time.RFC3339))
 }

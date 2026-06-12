@@ -20,6 +20,7 @@ type UserGet struct {
 	FirstName    string     `db:"first_name"`     // Пустая строка если аккаунт анонимизирован
 	LastName     string     `db:"last_name"`      // Пустая строка если аккаунт анонимизирован
 	Patronymic   string     `db:"patronymic"`     // Пустая строка если аккаунт анонимизирован
+	Description  string     `db:"description"`
 	CreatedAt    string     `db:"created_at"`
 	Enabled2FA   bool       `db:"two_factor_enabled"`
 	IsVerified   bool       `db:"is_verified"`
@@ -37,10 +38,11 @@ type UserGetByEmail struct {
 }
 
 type UserUpdateBioDTO struct {
-	UserUUID   string `db:"uuid"`
-	FirstName  string `db:"first_name"`
-	LastName   string `db:"last_name"`
-	Patronymic string `db:"patronymic"`
+	UserUUID    string `db:"uuid"`
+	FirstName   string `db:"first_name"`
+	LastName    string `db:"last_name"`
+	Patronymic  string `db:"patronymic"`
+	Description string `db:"description"`
 }
 
 type GetUserByEmailDTO struct {

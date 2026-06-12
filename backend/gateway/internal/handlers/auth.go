@@ -210,13 +210,14 @@ func (h *authHandler) GetUser(c *fiber.Ctx) error {
 
 	// Формируем тело ответа
 	httpRes := &entities.GetUserResponse{
-		UserUUID:   res.GetUserUuid(),
-		Email:      res.GetEmail(),
-		FirstName:  res.GetFirstName(),
-		LastName:   res.GetLastName(),
-		Patronymic: res.GetPatronymic(),
-		CreatedAt:  res.GetCreatedAt(),
-		DeletedAt:  res.GetDeletedAt(),
+		UserUUID:    res.GetUserUuid(),
+		Email:       res.GetEmail(),
+		FirstName:   res.GetFirstName(),
+		LastName:    res.GetLastName(),
+		Patronymic:  res.GetPatronymic(),
+		Description: res.GetDescription(),
+		CreatedAt:   res.GetCreatedAt(),
+		DeletedAt:   res.GetDeletedAt(),
 	}
 
 	return c.Status(fiber.StatusOK).JSON(httpRes)
@@ -311,10 +312,11 @@ func (h *authHandler) UpdateUserBio(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.UpdateUserBioRequest{
-		UserUuid:   utils.GetLocal[string](c, h.userUUIDKey),
-		FirstName:  httpReq.FirstName,
-		LastName:   httpReq.LastName,
-		Patronymic: httpReq.Patronymic,
+		UserUuid:    utils.GetLocal[string](c, h.userUUIDKey),
+		FirstName:   httpReq.FirstName,
+		LastName:    httpReq.LastName,
+		Patronymic:  httpReq.Patronymic,
+		Description: httpReq.Description,
 	}
 
 	// Запрос в auth сервис

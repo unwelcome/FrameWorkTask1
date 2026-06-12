@@ -316,10 +316,11 @@ func TestGetUser(t *testing.T) {
 		userRepo := &mockUserRepo{
 			getUser: func(_ context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
 				return &entities.UserGet{
-					UserUUID:  dto.UserUUID,
-					Email:     "test@example.com",
-					FirstName: "Ivan",
-					LastName:  "Ivanov",
+					UserUUID:    dto.UserUUID,
+					Email:       "test@example.com",
+					FirstName:   "Ivan",
+					LastName:    "Ivanov",
+					Description: "Software developer",
 				}, ok()
 			},
 		}
@@ -332,6 +333,9 @@ func TestGetUser(t *testing.T) {
 		assertNoError(t, err)
 		if resp.GetEmail() != "test@example.com" {
 			t.Errorf("expected email 'test@example.com', got %q", resp.GetEmail())
+		}
+		if resp.GetDescription() != "Software developer" {
+			t.Errorf("expected description 'Software developer', got %q", resp.GetDescription())
 		}
 	})
 
@@ -518,6 +522,29 @@ func TestChangePassword(t *testing.T) {
 
 func TestUpdateUserBio(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		var captured entities.UserUpdateBioDTO
+		userRepo := &mockUserRepo{
+			updateUserBio: func(_ context.Context, dto entities.UserUpdateBioDTO) Error.CodeError {
+				captured = dto
+				return ok()
+			},
+		}
+		svc := newTestService(userRepo, emptyAuthRepo())
+
+		_, err := svc.UpdateUserBio(context.Background(), &pb.UpdateUserBioRequest{
+			UserUuid:    testUUID1,
+			FirstName:   "Petr",
+			LastName:    "Petrov",
+			Description: "Go developer",
+		})
+
+		assertNoError(t, err)
+		if captured.Description != "Go developer" {
+			t.Errorf("expected description 'Go developer', got %q", captured.Description)
+		}
+	})
+
+	t.Run("success_no_description", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			updateUserBio: func(_ context.Context, _ entities.UserUpdateBioDTO) Error.CodeError { return ok() },
 		}
@@ -551,6 +578,19 @@ func TestUpdateUserBio(t *testing.T) {
 			UserUuid:  testUUID1,
 			FirstName: "Petr123",
 			LastName:  "Petrov",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("description_too_long", func(t *testing.T) {
+		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
+
+		_, err := svc.UpdateUserBio(context.Background(), &pb.UpdateUserBioRequest{
+			UserUuid:    testUUID1,
+			FirstName:   "Petr",
+			LastName:    "Petrov",
+			Description: strings.Repeat("а", 501),
 		})
 
 		assertCode(t, err, codes.InvalidArgument)

@@ -3,6 +3,7 @@ package e2e
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -224,6 +225,40 @@ func TestUpdateUserBio(t *testing.T) {
 		assert.Equal(t, "Petr", user.FirstName)
 		assert.Equal(t, "Petrov", user.LastName)
 		assert.Equal(t, "Petrovich", user.Patronymic)
+		assert.Empty(t, user.Description, "description should be empty when not provided")
+	})
+
+	t.Run("with_description", func(t *testing.T) {
+		c := newClient()
+		_, login := mustRegisterAndLogin(t, c)
+		auth := c.withToken(login.AccessToken)
+
+		code, body := auth.patch("/api/auth/user/bio", map[string]string{
+			"first_name":  "Petr",
+			"last_name":   "Petrov",
+			"description": "Go backend developer",
+		})
+		assert.Equal(t, http.StatusOK, code, "update bio with description failed (body: %s)", body)
+
+		code, body = auth.get("/api/auth/user/" + login.UserUUID + "/info")
+		require.Equal(t, http.StatusOK, code)
+
+		var user getUserResp
+		require.NoError(t, json.Unmarshal(body, &user))
+		assert.Equal(t, "Go backend developer. Loves clean code.", user.Description)
+	})
+
+	t.Run("description_too_long", func(t *testing.T) {
+		c := newClient()
+		_, login := mustRegisterAndLogin(t, c)
+		auth := c.withToken(login.AccessToken)
+
+		code, body := auth.patch("/api/auth/user/bio", map[string]string{
+			"first_name":  "Petr",
+			"last_name":   "Petrov",
+			"description": strings.Repeat("а", 501),
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "over-limit description should return 400 (body: %s)", body)
 	})
 }
 
@@ -825,11 +860,12 @@ func TestAuthFullFlow(t *testing.T) {
 	require.NoError(t, json.Unmarshal(body, &user))
 	assert.Equal(t, email, user.Email)
 
-	// 6. Update bio
+	// 6. Update bio (including description)
 	code, body = auth.patch("/api/auth/user/bio", map[string]string{
-		"first_name": "UpdatedFirstName",
-		"last_name":  "UpdatedLastName",
-		"patronymic": "UpdatedPatronymic",
+		"first_name":  "UpdatedFirstName",
+		"last_name":   "UpdatedLastName",
+		"patronymic":  "UpdatedPatronymic",
+		"description": "Full flow test user",
 	})
 	assert.Equal(t, http.StatusOK, code, "update bio: %s", body)
 

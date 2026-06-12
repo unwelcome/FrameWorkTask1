@@ -260,13 +260,14 @@ func (s *AuthService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	}
 
 	return &pb.GetUserResponse{
-		UserUuid:   user.UserUUID,
-		Email:      user.Email,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Patronymic: user.Patronymic,
-		CreatedAt:  user.CreatedAt,
-		DeletedAt:  format.TimePtr(user.DeletedAt),
+		UserUuid:    user.UserUUID,
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		Patronymic:  user.Patronymic,
+		Description: user.Description,
+		CreatedAt:   user.CreatedAt,
+		DeletedAt:   format.TimePtr(user.DeletedAt),
 	}, nil
 }
 
@@ -323,7 +324,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 	return &emptypb.Empty{}, nil
 }
 
-// UpdateUserBio Обновление ФИО пользователя
+// UpdateUserBio Обновление ФИО и описания пользователя
 func (s *AuthService) UpdateUserBio(ctx context.Context, req *pb.UpdateUserBioRequest) (*emptypb.Empty, error) {
 	if err := validate.UUID(req.GetUserUuid()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
@@ -337,12 +338,16 @@ func (s *AuthService) UpdateUserBio(ctx context.Context, req *pb.UpdateUserBioRe
 	if err := validate.Patronymic(req.GetPatronymic()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid patronymic")
 	}
+	if err := validate.UserDescription(req.GetDescription()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid description")
+	}
 
 	if err := s.db.User.UpdateUserBio(ctx, entities.UserUpdateBioDTO{
-		UserUUID:   req.GetUserUuid(),
-		FirstName:  req.GetFirstName(),
-		LastName:   req.GetLastName(),
-		Patronymic: req.GetPatronymic(),
+		UserUUID:    req.GetUserUuid(),
+		FirstName:   req.GetFirstName(),
+		LastName:    req.GetLastName(),
+		Patronymic:  req.GetPatronymic(),
+		Description: req.GetDescription(),
 	}).GRPCError(); err != nil {
 		return nil, err
 	}

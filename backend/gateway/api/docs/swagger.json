@@ -4098,6 +4098,9 @@
                 "deleted_at": {
                     "type": "string"
                 },
+                "description": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -4466,6 +4469,9 @@
         "entities.UpdateUserBioRequest": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "first_name": {
                     "type": "string"
                 },

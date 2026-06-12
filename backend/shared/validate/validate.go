@@ -6,13 +6,14 @@ import (
 )
 
 const (
-	PasswordMinLen         = 8
-	PasswordMaxLen         = 128
-	NameMinLen             = 2
-	NameMaxLen             = 30
-	CompanyTitleMaxLen     = 255
-	DepartmentTitleMaxLen  = 255
-	ApplicationTitleMaxLen = 255
+	PasswordMinLen            = 8
+	PasswordMaxLen            = 128
+	NameMinLen                = 2
+	NameMaxLen                = 30
+	UserDescriptionMaxLen     = 500
+	CompanyTitleMaxLen        = 255
+	DepartmentTitleMaxLen     = 255
+	ApplicationTitleMaxLen    = 255
 )
 
 var (
@@ -113,6 +114,14 @@ func Patronymic(s string) error {
 	}
 	if !reName.MatchString(s) {
 		return fmt.Errorf("patronymic contains incorrect characters")
+	}
+	return nil
+}
+
+// UserDescription validates a user's "about me" text (optional, max 500 runes).
+func UserDescription(s string) error {
+	if len([]rune(s)) > UserDescriptionMaxLen {
+		return fmt.Errorf("description must be %d characters or less", UserDescriptionMaxLen)
 	}
 	return nil
 }

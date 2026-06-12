@@ -612,6 +612,7 @@ type GetUserResponse struct {
 	Patronymic    string                 `protobuf:"bytes,5,opt,name=patronymic,proto3" json:"patronymic,omitempty"`
 	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	DeletedAt     string                 `protobuf:"bytes,7,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"` // пустая строка если аккаунт активен
+	Description   string                 `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -695,6 +696,13 @@ func (x *GetUserResponse) GetDeletedAt() string {
 	return ""
 }
 
+func (x *GetUserResponse) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
 // Change user password
 type ChangePasswordRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -763,6 +771,7 @@ type UpdateUserBioRequest struct {
 	FirstName     string                 `protobuf:"bytes,2,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
 	LastName      string                 `protobuf:"bytes,3,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
 	Patronymic    string                 `protobuf:"bytes,4,opt,name=patronymic,proto3" json:"patronymic,omitempty"`
+	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -821,6 +830,13 @@ func (x *UpdateUserBioRequest) GetLastName() string {
 func (x *UpdateUserBioRequest) GetPatronymic() string {
 	if x != nil {
 		return x.Patronymic
+	}
+	return ""
+}
+
+func (x *UpdateUserBioRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
 	}
 	return ""
 }
@@ -1924,7 +1940,7 @@ const file_auth_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x12!\n" +
 	"\fsession_uuid\x18\x04 \x01(\tR\vsessionUuid\"-\n" +
 	"\x0eGetUserRequest\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"\xde\x01\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"\x80\x02\n" +
 	"\x0fGetUserResponse\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1d\n" +
@@ -1937,11 +1953,12 @@ const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"deleted_at\x18\a \x01(\tR\tdeletedAt\"s\n" +
+	"deleted_at\x18\a \x01(\tR\tdeletedAt\x12 \n" +
+	"\vdescription\x18\b \x01(\tR\vdescription\"s\n" +
 	"\x15ChangePasswordRequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12!\n" +
 	"\fold_password\x18\x02 \x01(\tR\voldPassword\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\"\x8f\x01\n" +
+	"\bpassword\x18\x03 \x01(\tR\bpassword\"\xb1\x01\n" +
 	"\x14UpdateUserBioRequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x1d\n" +
 	"\n" +
@@ -1949,7 +1966,8 @@ const file_auth_proto_rawDesc = "" +
 	"\tlast_name\x18\x03 \x01(\tR\blastName\x12\x1e\n" +
 	"\n" +
 	"patronymic\x18\x04 \x01(\tR\n" +
-	"patronymic\"m\n" +
+	"patronymic\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\"m\n" +
 	"\x11DeleteUserRequest\x12.\n" +
 	"\x13initiator_user_uuid\x18\x01 \x01(\tR\x11initiatorUserUuid\x12(\n" +
 	"\x10target_user_uuid\x18\x02 \x01(\tR\x0etargetUserUuid\"J\n" +

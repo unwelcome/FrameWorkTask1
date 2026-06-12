@@ -85,13 +85,14 @@ type loginResp struct {
 }
 
 type getUserResp struct {
-	UserUUID   string `json:"user_uuid"`
-	Email      string `json:"email"`
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	Patronymic string `json:"patronymic"`
-	CreatedAt  string `json:"created_at"`
-	DeletedAt  string `json:"deleted_at"`
+	UserUUID    string `json:"user_uuid"`
+	Email       string `json:"email"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Patronymic  string `json:"patronymic"`
+	Description string `json:"description"`
+	CreatedAt   string `json:"created_at"`
+	DeletedAt   string `json:"deleted_at"`
 }
 
 type refreshTokenResp struct {

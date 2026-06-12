@@ -297,6 +297,8 @@ definitions:
         type: string
       deleted_at:
         type: string
+      description:
+        type: string
       email:
         type: string
       first_name:
@@ -534,6 +536,8 @@ definitions:
     type: object
   entities.UpdateUserBioRequest:
     properties:
+      description:
+        type: string
       first_name:
         type: string
       last_name:

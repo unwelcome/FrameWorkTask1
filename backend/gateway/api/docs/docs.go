@@ -4105,6 +4105,9 @@ const docTemplate = `{
                 "deleted_at": {
                     "type": "string"
                 },
+                "description": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -4473,6 +4476,9 @@ const docTemplate = `{
         "entities.UpdateUserBioRequest": {
             "type": "object",
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "first_name": {
                     "type": "string"
                 },

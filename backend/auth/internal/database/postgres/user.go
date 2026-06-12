@@ -82,14 +82,14 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUse
 
 // GetUser Возвращает данные пользователя по его uuid
 func (r *userRepository) GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
-	query := `SELECT email, password_hash, first_name, last_name, patronymic, created_at, is_verified, two_factor_enabled, deleted_at FROM users WHERE uuid = $1;`
+	query := `SELECT email, password_hash, first_name, last_name, patronymic, description, created_at, is_verified, two_factor_enabled, deleted_at FROM users WHERE uuid = $1;`
 
 	userGet := &entities.UserGet{UserUUID: dto.UserUUID}
-	var email, passwordHash, firstName, lastName, patronymic sql.NullString
+	var email, passwordHash, firstName, lastName, patronymic, description sql.NullString
 	var deletedAt sql.NullTime
 
 	err := r.db.QueryRowContext(ctx, query, dto.UserUUID).Scan(
-		&email, &passwordHash, &firstName, &lastName, &patronymic,
+		&email, &passwordHash, &firstName, &lastName, &patronymic, &description,
 		&userGet.CreatedAt, &userGet.IsVerified, &userGet.Enabled2FA,
 		&deletedAt,
 	)
@@ -105,6 +105,7 @@ func (r *userRepository) GetUser(ctx context.Context, dto entities.GetUserDTO) (
 	userGet.FirstName = firstName.String
 	userGet.LastName = lastName.String
 	userGet.Patronymic = patronymic.String
+	userGet.Description = description.String
 	if deletedAt.Valid {
 		t := deletedAt.Time
 		userGet.DeletedAt = &t
@@ -132,11 +133,11 @@ func (r *userRepository) UpdateUserPassword(ctx context.Context, dto entities.Up
 	return Error.CodeError{}
 }
 
-// UpdateUserBio Обновляет данные пользователя (ФИО)
+// UpdateUserBio Обновляет данные пользователя (ФИО и описание)
 func (r *userRepository) UpdateUserBio(ctx context.Context, dto entities.UserUpdateBioDTO) Error.CodeError {
-	query := `UPDATE users SET (first_name, last_name, patronymic) = ($2, $3, $4) WHERE uuid = $1;`
+	query := `UPDATE users SET first_name = $2, last_name = $3, patronymic = $4, description = $5 WHERE uuid = $1;`
 
-	result, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.FirstName, dto.LastName, dto.Patronymic)
+	result, err := r.db.ExecContext(ctx, query, dto.UserUUID, dto.FirstName, dto.LastName, dto.Patronymic, dto.Description)
 	if err != nil {
 		return Error.Internal(err)
 	}

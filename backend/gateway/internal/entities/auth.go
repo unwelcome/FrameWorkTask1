@@ -97,13 +97,14 @@ type GetUserRequest struct {
 	UserUUID string `json:"-"`
 }
 type GetUserResponse struct {
-	UserUUID   string `json:"user_uuid"`
-	Email      string `json:"email"`
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	Patronymic string `json:"patronymic"`
-	CreatedAt  string `json:"created_at"`
-	DeletedAt  string `json:"deleted_at,omitempty"`
+	UserUUID    string `json:"user_uuid"`
+	Email       string `json:"email"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Patronymic  string `json:"patronymic"`
+	Description string `json:"description,omitempty"`
+	CreatedAt   string `json:"created_at"`
+	DeletedAt   string `json:"deleted_at,omitempty"`
 }
 
 func (e *GetUserRequest) Validate() error {
@@ -134,9 +135,10 @@ func (e *ChangePasswordRequest) Validate() error {
 // ─── UpdateUserBio ────────────────────────────────────────────────────────────
 
 type UpdateUserBioRequest struct {
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	Patronymic string `json:"patronymic"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Patronymic  string `json:"patronymic"`
+	Description string `json:"description"`
 }
 type UpdateUserBioResponse struct{}
 
@@ -152,6 +154,10 @@ func (e *UpdateUserBioRequest) Validate() error {
 	e.Patronymic = utils.FCapitalize(strings.TrimSpace(e.Patronymic))
 	if err := validate.Patronymic(e.Patronymic); err != nil {
 		return err
+	}
+	e.Description = strings.TrimSpace(e.Description)
+	if err := validate.UserDescription(e.Description); err != nil {
+		return fmt.Errorf("description: %w", err)
 	}
 	return nil
 }

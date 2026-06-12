@@ -679,6 +679,16 @@ func mustForgotPassword(t *testing.T, c *apiClient, email string) {
 	require.Equalf(t, http.StatusOK, code, "forgot password failed (body: %s)", body)
 }
 
+// mustChangePassword changes the authenticated user's password, verifying the old one first.
+func mustChangePassword(t *testing.T, auth *apiClient, oldPassword, newPassword string) {
+	t.Helper()
+	code, body := auth.patch("/api/auth/user/password", map[string]string{
+		"old_password": oldPassword,
+		"password":     newPassword,
+	})
+	require.Equalf(t, http.StatusOK, code, "change password failed (body: %s)", body)
+}
+
 // mustDeleteAccount soft-deletes the authenticated user's own account.
 func mustDeleteAccount(t *testing.T, auth *apiClient, userUUID string) {
 	t.Helper()

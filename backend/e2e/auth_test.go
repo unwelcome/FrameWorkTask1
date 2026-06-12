@@ -236,21 +236,60 @@ func TestChangePassword(t *testing.T) {
 		auth := c.withToken(login.AccessToken)
 
 		code, body := auth.patch("/api/auth/user/password", map[string]string{
-			"password": "NewPassword456",
+			"old_password": "Password123",
+			"password":     "NewPassword456",
 		})
 		assert.Equal(t, http.StatusOK, code, "change password failed (body: %s)", body)
 
+		// Новый пароль работает
 		code, _ = c.post("/api/login", map[string]string{
 			"email":    email,
 			"password": "NewPassword456",
 		})
 		assert.Equal(t, http.StatusOK, code, "login with new password should succeed")
 
+		// Старый пароль отклонён
 		code, _ = c.post("/api/login", map[string]string{
 			"email":    email,
 			"password": "Password123",
 		})
 		assert.Equal(t, http.StatusBadRequest, code, "login with old password should fail after change")
+	})
+
+	t.Run("wrong_old_password", func(t *testing.T) {
+		c := newClient()
+		_, login := mustRegisterAndLogin(t, c)
+		auth := c.withToken(login.AccessToken)
+
+		code, body := auth.patch("/api/auth/user/password", map[string]string{
+			"old_password": "WrongPassword1",
+			"password":     "NewPassword456",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "wrong old password should return 400 (body: %s)", body)
+	})
+
+	t.Run("missing_old_password", func(t *testing.T) {
+		c := newClient()
+		_, login := mustRegisterAndLogin(t, c)
+		auth := c.withToken(login.AccessToken)
+
+		// old_password не передан → gateway вернёт 400 при валидации
+		code, body := auth.patch("/api/auth/user/password", map[string]string{
+			"password": "NewPassword456",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "missing old_password should return 400 (body: %s)", body)
+	})
+
+	t.Run("invalid_new_password", func(t *testing.T) {
+		c := newClient()
+		_, login := mustRegisterAndLogin(t, c)
+		auth := c.withToken(login.AccessToken)
+
+		code, body := auth.patch("/api/auth/user/password", map[string]string{
+			"old_password": "Password123",
+			"password":     "weak",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "weak new password should return 400 (body: %s)", body)
 	})
 }
 
@@ -794,9 +833,12 @@ func TestAuthFullFlow(t *testing.T) {
 	})
 	assert.Equal(t, http.StatusOK, code, "update bio: %s", body)
 
-	// 7. Change password
+	// 7. Change password (передаём текущий пароль для верификации)
 	const newPassword = "NewPassword456"
-	code, body = auth.patch("/api/auth/user/password", map[string]string{"password": newPassword})
+	code, body = auth.patch("/api/auth/user/password", map[string]string{
+		"old_password": password,
+		"password":     newPassword,
+	})
 	require.Equal(t, http.StatusOK, code, "change password: %s", body)
 
 	// 8. Login со старым паролем не работает

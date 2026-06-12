@@ -34,9 +34,6 @@ const (
 
 // dummyPasswordHash вычисляется один раз при старте сервиса и используется
 // в Login для выравнивания времени ответа, когда запрошенный email не найден.
-// bcrypt.CompareHashAndPassword против этого хеша занимает столько же времени,
-// сколько реальная проверка пароля, — атакующий не может различить "неверный пароль"
-// и "email не зарегистрирован" по времени ответа.
 var dummyPasswordHash []byte
 
 func init() {
@@ -225,10 +222,13 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
+	session := &entities.SessionInfo{}
+	session.FromProto(req.GetSession())
+
 	if err := s.cache.Auth.SaveRefreshToken(ctx, entities.SaveRefreshTokenDTO{
 		UserUUID:    user.UserUUID,
 		HashedToken: utils.HashToken(tokenPair.RefreshToken),
-		Session:     sessionInfoFromProto(req.GetSession()),
+		Session:     session,
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
@@ -364,7 +364,7 @@ func (s *AuthService) GetAllActiveTokens(ctx context.Context, req *pb.GetAllActi
 	for _, entry := range userTokens {
 		tokens = append(tokens, &pb.Token{
 			Token:   entry.TokenHash,
-			Session: sessionInfoToProto(entry.Session),
+			Session: entry.Session.ToProto(),
 		})
 	}
 
@@ -686,11 +686,14 @@ func (s *AuthService) Verify2FA(ctx context.Context, req *pb.Verify2FARequest) (
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
+	session := &entities.SessionInfo{}
+	session.FromProto(req.GetSession())
+
 	// Сохраняем refresh токен
 	if err := s.cache.Auth.SaveRefreshToken(ctx, entities.SaveRefreshTokenDTO{
 		UserUUID:    data.UserUUID,
 		HashedToken: utils.HashToken(tokenPair.RefreshToken),
-		Session:     sessionInfoFromProto(req.GetSession()),
+		Session:     session,
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
@@ -778,62 +781,4 @@ func (s *AuthService) Get2FACode(ctx context.Context, req *pb.Get2FACodeRequest)
 	}
 
 	return &pb.Get2FACodeResponse{Code: data.Code}, nil
-}
-
-// ── Конверторы SessionInfo ←→ proto ───────────────────────────────────────────
-
-// sessionInfoFromProto конвертирует proto SessionInfo в доменную структуру.
-// Если session == nil (клиент не передал данные), возвращает пустую структуру
-// с CreatedAt/LastActiveAt = time.Now(), чтобы Redis хранил хотя бы метки времени.
-func sessionInfoFromProto(s *pb.SessionInfo) entities.SessionInfo {
-	now := time.Now()
-	if s == nil {
-		return entities.SessionInfo{CreatedAt: now, LastActiveAt: now}
-	}
-	createdAt := now
-	if s.GetCreatedAt() != 0 {
-		createdAt = time.Unix(s.GetCreatedAt(), 0)
-	}
-	lastActiveAt := now
-	if s.GetLastActiveAt() != 0 {
-		lastActiveAt = time.Unix(s.GetLastActiveAt(), 0)
-	}
-	return entities.SessionInfo{
-		IP:             s.GetIp(),
-		LastIP:         s.GetLastIp(),
-		ISP:            s.GetIsp(),
-		CountryCode:    s.GetCountryCode(),
-		CountryName:    s.GetCountryName(),
-		City:           s.GetCity(),
-		Timezone:       s.GetTimezone(),
-		DeviceType:     s.GetDeviceType(),
-		OS:             s.GetOs(),
-		OSVersion:      s.GetOsVersion(),
-		Browser:        s.GetBrowser(),
-		BrowserVersion: s.GetBrowserVersion(),
-		UserAgentRaw:   s.GetUserAgentRaw(),
-		CreatedAt:      createdAt,
-		LastActiveAt:   lastActiveAt,
-	}
-}
-
-// sessionInfoToProto конвертирует доменную структуру SessionInfo в proto-сообщение.
-func sessionInfoToProto(s entities.SessionInfo) *pb.SessionInfo {
-	return &pb.SessionInfo{
-		Ip:             s.IP,
-		LastIp:         s.LastIP,
-		Isp:            s.ISP,
-		CountryCode:    s.CountryCode,
-		CountryName:    s.CountryName,
-		City:           s.City,
-		Timezone:       s.Timezone,
-		DeviceType:     s.DeviceType,
-		Os:             s.OS,
-		OsVersion:      s.OSVersion,
-		Browser:        s.Browser,
-		BrowserVersion: s.BrowserVersion,
-		UserAgentRaw:   s.UserAgentRaw,
-		CreatedAt:      s.CreatedAt.Unix(),
-		LastActiveAt:   s.LastActiveAt.Unix(),
-	}
 }

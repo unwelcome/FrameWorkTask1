@@ -5,7 +5,7 @@ import "time"
 type SaveRefreshTokenDTO struct {
 	UserUUID    string
 	HashedToken string
-	Session     SessionInfo
+	Session     *SessionInfo
 }
 
 type GetAllRefreshTokensDTO struct {
@@ -15,7 +15,7 @@ type GetAllRefreshTokensDTO struct {
 // RefreshTokenEntry — один активный токен с данными сессии.
 type RefreshTokenEntry struct {
 	TokenHash string
-	Session   SessionInfo
+	Session   *SessionInfo
 }
 
 type CheckRefreshTokenExistsDTO struct {

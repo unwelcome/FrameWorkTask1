@@ -41,7 +41,7 @@ func (r *authRepository) SaveRefreshToken(ctx context.Context, dto entities.Save
 	tokenKey := r.getRefreshTokenKey(dto.HashedToken)
 
 	pipeline := r.redis.Pipeline()
-	pipeline.HSet(ctx, tokenKey, sessionToFields(dto.Session))
+	pipeline.HSet(ctx, tokenKey, dto.Session.ToMap())
 	pipeline.Expire(ctx, tokenKey, r.refreshTokenTTL)
 	pipeline.SAdd(ctx, userTokensKey, dto.HashedToken)
 
@@ -85,9 +85,13 @@ func (r *authRepository) GetAllRefreshTokens(ctx context.Context, dto entities.G
 			expiredHashes = append(expiredHashes, hash)
 			continue
 		}
+
+		session := &entities.SessionInfo{}
+		session.FromMap(fields)
+
 		activeEntries = append(activeEntries, entities.RefreshTokenEntry{
 			TokenHash: hash,
-			Session:   sessionFromFields(fields),
+			Session:   session,
 		})
 	}
 
@@ -221,51 +225,4 @@ func (r *authRepository) getRefreshTokenKey(hash string) string {
 
 func (r *authRepository) getUserTokensKey(userUUID string) string {
 	return fmt.Sprintf("%s:user:%s:tokens", r.prefix, userUUID)
-}
-
-// sessionToFields конвертирует SessionInfo в плоский map для HSET.
-func sessionToFields(s entities.SessionInfo) map[string]interface{} {
-	return map[string]interface{}{
-		"ip":           s.IP,
-		"last_ip":      s.LastIP,
-		"isp":          s.ISP,
-		"country_code": s.CountryCode,
-		"country_name": s.CountryName,
-		"city":         s.City,
-		"timezone":     s.Timezone,
-		"device_type":  s.DeviceType,
-		"os":           s.OS,
-		"os_version":   s.OSVersion,
-		"browser":      s.Browser,
-		"browser_ver":  s.BrowserVersion,
-		"ua":           s.UserAgentRaw,
-		"created_at":   strconv.FormatInt(s.CreatedAt.Unix(), 10),
-		"last_active":  strconv.FormatInt(s.LastActiveAt.Unix(), 10),
-	}
-}
-
-// sessionFromFields восстанавливает SessionInfo из результата HGETALL.
-func sessionFromFields(fields map[string]string) entities.SessionInfo {
-	s := entities.SessionInfo{
-		IP:             fields["ip"],
-		LastIP:         fields["last_ip"],
-		ISP:            fields["isp"],
-		CountryCode:    fields["country_code"],
-		CountryName:    fields["country_name"],
-		City:           fields["city"],
-		Timezone:       fields["timezone"],
-		DeviceType:     fields["device_type"],
-		OS:             fields["os"],
-		OSVersion:      fields["os_version"],
-		Browser:        fields["browser"],
-		BrowserVersion: fields["browser_ver"],
-		UserAgentRaw:   fields["ua"],
-	}
-	if ts, err := strconv.ParseInt(fields["created_at"], 10, 64); err == nil {
-		s.CreatedAt = time.Unix(ts, 0)
-	}
-	if ts, err := strconv.ParseInt(fields["last_active"], 10, 64); err == nil {
-		s.LastActiveAt = time.Unix(ts, 0)
-	}
-	return s
 }

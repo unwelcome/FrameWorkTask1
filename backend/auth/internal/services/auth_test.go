@@ -628,9 +628,9 @@ func TestGetAllActiveTokens(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			getAllRefreshTokens: func(_ context.Context, _ entities.GetAllRefreshTokensDTO) ([]entities.RefreshTokenEntry, Error.CodeError) {
 				return []entities.RefreshTokenEntry{
-					{TokenHash: "hash1", Session: entities.SessionInfo{IP: "1.1.1.1", Browser: "Chrome"}},
-					{TokenHash: "hash2", Session: entities.SessionInfo{IP: "2.2.2.2", Browser: "Firefox"}},
-					{TokenHash: "hash3", Session: entities.SessionInfo{IP: "3.3.3.3", Browser: "Safari"}},
+					{TokenHash: "hash1", Session: &entities.SessionInfo{IP: "1.1.1.1", Browser: "Chrome"}},
+					{TokenHash: "hash2", Session: &entities.SessionInfo{IP: "2.2.2.2", Browser: "Firefox"}},
+					{TokenHash: "hash3", Session: &entities.SessionInfo{IP: "3.3.3.3", Browser: "Safari"}},
 				}, ok()
 			},
 		}

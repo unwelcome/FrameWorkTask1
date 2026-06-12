@@ -17,6 +17,7 @@ import (
 	pb "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/format"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/helpers"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/validate"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -518,7 +519,7 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	if getErr.Code != 0 {
 		// Не раскрываем, зарегистрирован ли email
-		log.Warn().Time("time", time.Now()).Str("method", "ResendVerificationCode").Msg("user not found")
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ResendVerificationCode").Msg("user not found")
 		return &emptypb.Empty{}, nil
 	}
 
@@ -555,13 +556,13 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	// Не раскрываем, зарегистрирован ли email
 	if getErr.Code != 0 {
-		log.Warn().Time("time", time.Now()).Str("method", "ForgotPassword").Msg("user not found")
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("user not found")
 		return &emptypb.Empty{}, nil
 	}
 
 	// Не раскрываем состояние аккаунта
 	if !user.IsVerified {
-		log.Warn().Time("time", time.Now()).Str("method", "ForgotPassword").Msg("user not verified")
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("user not verified")
 		return &emptypb.Empty{}, nil
 	}
 

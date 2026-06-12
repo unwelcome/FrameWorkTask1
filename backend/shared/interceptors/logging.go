@@ -43,12 +43,7 @@ func NewLoggingInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor {
 		duration := time.Since(start).Milliseconds()
 
 		// Read operation ID from incoming metadata set by the gateway.
-		operationID := ""
-		if md, ok := metadata.FromIncomingContext(ctx); ok {
-			if vals := md.Get(OperationIDMetaKey); len(vals) > 0 {
-				operationID = vals[0]
-			}
-		}
+		operationID := OperationIDFromContext(ctx)
 
 		// info.FullMethod is "/package.Service/Method" — take only "Method".
 		method := path.Base(info.FullMethod)
@@ -71,6 +66,16 @@ func NewLoggingInterceptor(logger zerolog.Logger) grpc.UnaryServerInterceptor {
 
 		return resp, err
 	}
+}
+
+// OperationIDFromContext извлекает operation ID из входящих gRPC-метаданных
+func OperationIDFromContext(ctx context.Context) string {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get(OperationIDMetaKey); len(vals) > 0 {
+			return vals[0]
+		}
+	}
+	return ""
 }
 
 func grpcCodeToZerologLevel(code codes.Code) zerolog.Level {

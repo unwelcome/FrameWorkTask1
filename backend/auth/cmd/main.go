@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
+	"os/signal"
+	"syscall"
 
 	"github.com/rs/zerolog/log"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/config"
@@ -32,6 +35,13 @@ func main() {
 	db := postgresDB.NewDatabaseInstance(cfg.Postgres.ConnectionString())
 	cache := redisDB.NewCacheInstance(cfg.Redis.Options(), cfg.JWT.RefreshTokenLifetime, cfg.Redis.Prefix)
 	rabbitMQ := messaging.NewPublisher(cfg.RabbitMQ.ConnectionString())
+
+	// Контекст для graceful shutdown, отменяется по SIGINT / SIGTERM
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// Фоновая горутина анонимизации удалённых аккаунтов
+	go services.StartCleanupWorker(ctx, db)
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {

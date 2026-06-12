@@ -103,6 +103,7 @@ type GetUserResponse struct {
 	LastName   string `json:"last_name"`
 	Patronymic string `json:"patronymic"`
 	CreatedAt  string `json:"created_at"`
+	DeletedAt  string `json:"deleted_at,omitempty"`
 }
 
 func (e *GetUserRequest) Validate() error {
@@ -295,6 +296,23 @@ func (e *Verify2FARequest) Validate() error {
 	}
 	e.Code = strings.TrimSpace(e.Code)
 	return validate.User2FACCode(e.Code)
+}
+
+// ─── RestoreAccount ───────────────────────────────────────────────────────────
+
+type RestoreAccountRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+type RestoreAccountResponse struct{}
+
+func (e *RestoreAccountRequest) Validate() error {
+	e.Email = strings.TrimSpace(e.Email)
+	if err := validate.Email(e.Email); err != nil {
+		return err
+	}
+	e.Password = strings.TrimSpace(e.Password)
+	return validate.Password(e.Password)
 }
 
 // ─── UpdateUser2FA ────────────────────────────────────────────────────────────

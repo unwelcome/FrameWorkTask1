@@ -3,6 +3,7 @@ package postgresDB
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/lib/pq"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
@@ -19,6 +20,8 @@ type UserRepository interface {
 	UpdateUserBio(ctx context.Context, dto entities.UserUpdateBioDTO) Error.CodeError
 	UpdateUser2FA(ctx context.Context, dto entities.UpdateUser2FADTO) Error.CodeError
 	DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError
+	RestoreUser(ctx context.Context, dto entities.RestoreUserDTO) Error.CodeError
+	AnonymizeExpiredUsers(ctx context.Context, before time.Time) (int64, error)
 	SetUserVerified(ctx context.Context, dto entities.SetUserVerifiedDTO) Error.CodeError
 }
 
@@ -47,34 +50,64 @@ func (r *userRepository) CreateUser(ctx context.Context, dto entities.User) Erro
 	return Error.CodeError{}
 }
 
-// GetUserByEmail Возвращает частичные данные пользователя по его email
+// GetUserByEmail Возвращает частичные данные пользователя по его email.
 func (r *userRepository) GetUserByEmail(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-	query := `SELECT uuid, password_hash, first_name, is_verified, two_factor_enabled FROM users WHERE email = $1;`
+	query := `SELECT uuid, password_hash, first_name, is_verified, two_factor_enabled, deleted_at FROM users WHERE email = $1;`
 
 	userGetByEmail := &entities.UserGetByEmail{Email: dto.Email}
+	var passwordHash, firstName sql.NullString
+	var deletedAt sql.NullTime
 
-	err := r.db.QueryRowContext(ctx, query, dto.Email).Scan(&userGetByEmail.UserUUID, &userGetByEmail.PasswordHash, &userGetByEmail.FirstName, &userGetByEmail.IsVerified, &userGetByEmail.Enabled2FA)
+	err := r.db.QueryRowContext(ctx, query, dto.Email).Scan(
+		&userGetByEmail.UserUUID,
+		&passwordHash, &firstName,
+		&userGetByEmail.IsVerified, &userGetByEmail.Enabled2FA,
+		&deletedAt,
+	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Error.Public(codes.NotFound, "user not found")
 		}
 		return nil, Error.Internal(err)
 	}
+
+	userGetByEmail.PasswordHash = passwordHash.String
+	userGetByEmail.FirstName = firstName.String
+	if deletedAt.Valid {
+		t := deletedAt.Time
+		userGetByEmail.DeletedAt = &t
+	}
 	return userGetByEmail, Error.CodeError{}
 }
 
-// GetUser Возвращает данные пользователя по его uuid
+// GetUser Возвращает данные пользователя по его uuid.
+// Корректно обрабатывает анонимизированные аккаунты (email, имя и пр. могут быть NULL).
 func (r *userRepository) GetUser(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
-	query := `SELECT email, first_name, last_name, patronymic, created_at, is_verified, two_factor_enabled FROM users WHERE uuid = $1;`
+	query := `SELECT email, first_name, last_name, patronymic, created_at, is_verified, two_factor_enabled, deleted_at FROM users WHERE uuid = $1;`
 
 	userGet := &entities.UserGet{UserUUID: dto.UserUUID}
+	var email, firstName, lastName, patronymic sql.NullString
+	var deletedAt sql.NullTime
 
-	err := r.db.QueryRowContext(ctx, query, dto.UserUUID).Scan(&userGet.Email, &userGet.FirstName, &userGet.LastName, &userGet.Patronymic, &userGet.CreatedAt, &userGet.IsVerified, &userGet.Enabled2FA)
+	err := r.db.QueryRowContext(ctx, query, dto.UserUUID).Scan(
+		&email, &firstName, &lastName, &patronymic,
+		&userGet.CreatedAt, &userGet.IsVerified, &userGet.Enabled2FA,
+		&deletedAt,
+	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, Error.Public(codes.NotFound, "user not found")
 		}
 		return nil, Error.Internal(err)
+	}
+
+	userGet.Email = email.String
+	userGet.FirstName = firstName.String
+	userGet.LastName = lastName.String
+	userGet.Patronymic = patronymic.String
+	if deletedAt.Valid {
+		t := deletedAt.Time
+		userGet.DeletedAt = &t
 	}
 	return userGet, Error.CodeError{}
 }
@@ -159,9 +192,9 @@ func (r *userRepository) SetUserVerified(ctx context.Context, dto entities.SetUs
 	return Error.CodeError{}
 }
 
-// DeleteUser Удаляет данные пользователя
+// DeleteUser Мягко удаляет пользователя — проставляет deleted_at = NOW()
 func (r *userRepository) DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError {
-	query := `DELETE FROM users WHERE uuid = $1;`
+	query := `UPDATE users SET deleted_at = NOW() WHERE uuid = $1 AND deleted_at IS NULL;`
 
 	result, err := r.db.ExecContext(ctx, query, dto.UserUUID)
 	if err != nil {
@@ -177,4 +210,46 @@ func (r *userRepository) DeleteUser(ctx context.Context, dto entities.DeleteUser
 		return Error.Public(codes.NotFound, "user not found")
 	}
 	return Error.CodeError{}
+}
+
+// RestoreUser Восстанавливает мягко удалённый аккаунт.
+func (r *userRepository) RestoreUser(ctx context.Context, dto entities.RestoreUserDTO) Error.CodeError {
+	query := `UPDATE users SET deleted_at = NULL WHERE uuid = $1 AND deleted_at IS NOT NULL;`
+
+	result, err := r.db.ExecContext(ctx, query, dto.UserUUID)
+	if err != nil {
+		return Error.Internal(err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return Error.Internal(err)
+	}
+
+	if rowsAffected == 0 {
+		return Error.Public(codes.NotFound, "user not found or already active")
+	}
+	return Error.CodeError{}
+}
+
+// AnonymizeExpiredUsers Обнуляет персональные данные пользователей, возвращает количество анонимизированных записей.
+func (r *userRepository) AnonymizeExpiredUsers(ctx context.Context, before time.Time) (int64, error) {
+	query := `
+		UPDATE users SET
+			email              = NULL,
+			password_hash      = NULL,
+			first_name         = NULL,
+			last_name          = NULL,
+			patronymic         = NULL,
+			two_factor_enabled = false
+		WHERE deleted_at IS NOT NULL
+		  AND deleted_at < $1
+		  AND email IS NOT NULL;`
+
+	result, err := r.db.ExecContext(ctx, query, before)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.RowsAffected()
 }

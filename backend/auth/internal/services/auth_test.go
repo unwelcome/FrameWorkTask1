@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -931,6 +932,124 @@ func TestLogin_Extra(t *testing.T) {
 		})
 
 		assertCode(t, err, codes.Internal)
+	})
+
+	t.Run("account_deleted", func(t *testing.T) {
+		hashedPwd := hashPassword(t, testPassword)
+		deletedAt := time.Now().Add(-time.Hour)
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{
+					UserUUID:     testUUID1,
+					PasswordHash: hashedPwd,
+					IsVerified:   true,
+					DeletedAt:    &deletedAt,
+				}, ok()
+			},
+		}
+		svc := newTestService(userRepo, emptyAuthRepo())
+
+		_, err := svc.Login(context.Background(), &pb.LoginRequest{
+			Email:    "test@example.com",
+			Password: testPassword,
+		})
+
+		assertCode(t, err, codes.PermissionDenied)
+	})
+}
+
+// ─── RestoreAccount ──────────────────────────────────────────────────────────
+
+func TestRestoreAccount(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		hashedPwd := hashPassword(t, testPassword)
+		deletedAt := time.Now().Add(-time.Hour)
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{
+					UserUUID:     testUUID1,
+					PasswordHash: hashedPwd,
+					IsVerified:   true,
+					DeletedAt:    &deletedAt,
+				}, ok()
+			},
+			restoreUser: func(_ context.Context, _ entities.RestoreUserDTO) Error.CodeError { return ok() },
+		}
+		svc := newTestService(userRepo, emptyAuthRepo())
+
+		_, err := svc.RestoreAccount(context.Background(), &pb.RestoreAccountRequest{
+			Email:    "test@example.com",
+			Password: testPassword,
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("wrong_password", func(t *testing.T) {
+		hashedPwd := hashPassword(t, testPassword)
+		deletedAt := time.Now().Add(-time.Hour)
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{
+					UserUUID:     testUUID1,
+					PasswordHash: hashedPwd,
+					DeletedAt:    &deletedAt,
+				}, ok()
+			},
+		}
+		svc := newTestService(userRepo, emptyAuthRepo())
+
+		_, err := svc.RestoreAccount(context.Background(), &pb.RestoreAccountRequest{
+			Email:    "test@example.com",
+			Password: "WrongPassword1",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("account_not_deleted", func(t *testing.T) {
+		hashedPwd := hashPassword(t, testPassword)
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{
+					UserUUID:     testUUID1,
+					PasswordHash: hashedPwd,
+					IsVerified:   true,
+					DeletedAt:    nil, // активный аккаунт
+				}, ok()
+			},
+		}
+		svc := newTestService(userRepo, emptyAuthRepo())
+
+		_, err := svc.RestoreAccount(context.Background(), &pb.RestoreAccountRequest{
+			Email:    "test@example.com",
+			Password: testPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("restoration_period_expired", func(t *testing.T) {
+		hashedPwd := hashPassword(t, testPassword)
+		deletedAt := time.Now().Add(-31 * 24 * time.Hour) // 31 день назад
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{
+					UserUUID:     testUUID1,
+					PasswordHash: hashedPwd,
+					IsVerified:   true,
+					DeletedAt:    &deletedAt,
+				}, ok()
+			},
+		}
+		svc := newTestService(userRepo, emptyAuthRepo())
+
+		_, err := svc.RestoreAccount(context.Background(), &pb.RestoreAccountRequest{
+			Email:    "test@example.com",
+			Password: testPassword,
+		})
+
+		assertCode(t, err, codes.PermissionDenied)
 	})
 }
 

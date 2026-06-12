@@ -16,14 +16,16 @@ import (
 // ─── Mock: UserRepository ────────────────────────────────────────────────────
 
 type mockUserRepo struct {
-	createUser         func(ctx context.Context, dto entities.User) Error.CodeError
-	getUserByEmail     func(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError)
-	getUser            func(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError)
-	updateUserPassword func(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError
-	updateUserBio      func(ctx context.Context, dto entities.UserUpdateBioDTO) Error.CodeError
-	updateUser2FA      func(ctx context.Context, dto entities.UpdateUser2FADTO) Error.CodeError
-	deleteUser         func(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError
-	setUserVerified    func(ctx context.Context, dto entities.SetUserVerifiedDTO) Error.CodeError
+	createUser           func(ctx context.Context, dto entities.User) Error.CodeError
+	getUserByEmail       func(ctx context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError)
+	getUser              func(ctx context.Context, dto entities.GetUserDTO) (*entities.UserGet, Error.CodeError)
+	updateUserPassword   func(ctx context.Context, dto entities.UpdateUserPasswordDTO) Error.CodeError
+	updateUserBio        func(ctx context.Context, dto entities.UserUpdateBioDTO) Error.CodeError
+	updateUser2FA        func(ctx context.Context, dto entities.UpdateUser2FADTO) Error.CodeError
+	deleteUser           func(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError
+	restoreUser          func(ctx context.Context, dto entities.RestoreUserDTO) Error.CodeError
+	anonymizeExpiredUsers func(ctx context.Context, before time.Time) (int64, error)
+	setUserVerified      func(ctx context.Context, dto entities.SetUserVerifiedDTO) Error.CodeError
 }
 
 func (m *mockUserRepo) CreateUser(ctx context.Context, dto entities.User) Error.CodeError {
@@ -43,6 +45,12 @@ func (m *mockUserRepo) UpdateUserBio(ctx context.Context, dto entities.UserUpdat
 }
 func (m *mockUserRepo) DeleteUser(ctx context.Context, dto entities.DeleteUserDTO) Error.CodeError {
 	return m.deleteUser(ctx, dto)
+}
+func (m *mockUserRepo) RestoreUser(ctx context.Context, dto entities.RestoreUserDTO) Error.CodeError {
+	return m.restoreUser(ctx, dto)
+}
+func (m *mockUserRepo) AnonymizeExpiredUsers(ctx context.Context, before time.Time) (int64, error) {
+	return m.anonymizeExpiredUsers(ctx, before)
 }
 func (m *mockUserRepo) UpdateUser2FA(ctx context.Context, dto entities.UpdateUser2FADTO) Error.CodeError {
 	return m.updateUser2FA(ctx, dto)

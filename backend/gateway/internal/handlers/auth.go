@@ -35,6 +35,7 @@ type AuthHandler interface {
 	ResetPassword(c *fiber.Ctx) error
 	Verify2FA(c *fiber.Ctx) error
 	UpdateUser2FA(c *fiber.Ctx) error
+	RestoreAccount(c *fiber.Ctx) error
 }
 
 type authHandler struct {
@@ -215,6 +216,7 @@ func (h *authHandler) GetUser(c *fiber.Ctx) error {
 		LastName:   res.GetLastName(),
 		Patronymic: res.GetPatronymic(),
 		CreatedAt:  res.GetCreatedAt(),
+		DeletedAt:  res.GetDeletedAt(),
 	}
 
 	return c.Status(fiber.StatusOK).JSON(httpRes)
@@ -925,6 +927,45 @@ func (h *authHandler) UpdateUser2FA(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(&entities.UpdateUser2FAResponse{})
+}
+
+// RestoreAccount
+//
+//	@Summary      RestoreAccount
+//	@Description  Restore a soft-deleted account within 30 days of deletion
+//	@Tags         User
+//	@Accept       json
+//	@Produce      json
+//	@Param        data body entities.RestoreAccountRequest true "Email и пароль"
+//	@Success      200  {object}  entities.RestoreAccountResponse
+//	@Failure      400  {object}  Error.HttpError
+//	@Failure      403  {object}  Error.HttpError
+//	@Failure      500  {object}  Error.HttpError
+//	@Router       /restore-account [post]
+func (h *authHandler) RestoreAccount(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
+
+	httpReq := &entities.RestoreAccountRequest{}
+	if err := c.BodyParser(httpReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
+	}
+	if err := httpReq.Validate(); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
+	}
+
+	_, err := h.AuthServiceClient.RestoreAccount(ctx, &auth_proto.RestoreAccountRequest{
+		Email:    httpReq.Email,
+		Password: httpReq.Password,
+	})
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(&entities.RestoreAccountResponse{})
 }
 
 // ── Вспомогательные функции ───────────────────────────────────────────────────

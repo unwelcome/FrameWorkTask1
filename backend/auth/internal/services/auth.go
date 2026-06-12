@@ -27,6 +27,9 @@ const (
 	maxRecoveryAttempts     = 5
 	max2FAAttempts          = 5
 
+	// accountDeletionRetention — срок хранения данных мягко удалённого аккаунта
+	accountDeletionRetention = 30 * 24 * time.Hour
+
 	// dummyUUID — nil UUID, используется как заглушка в Redis-запросах при выравнивании времени ответа
 	dummyUUID = "00000000-0000-0000-0000-000000000000"
 )
@@ -170,9 +173,7 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	if getErr.Code != 0 {
-		// Защита от timing-атаки: запускаем Argon2id на фиктивном хеше, чтобы
-		// путь "email не найден" занимал столько же времени, что и "неверный пароль".
-		// Без этого атакующий различает зарегистрированные email по разнице ~200 мс.
+		// Запускаем Argon2id на фиктивном хеше, чтобы путь "email не найден" занимал столько же времени, что и "неверный пароль".
 		_, _ = password.Verify(dummyPasswordHash, req.GetPassword())
 		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
 	}
@@ -182,6 +183,14 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
 	}
 
+	// Проверяем, что аккаунт не удалён
+	if user.DeletedAt != nil {
+		hoursLeft := hoursUntilAnonymization(*user.DeletedAt)
+		return nil, status.Errorf(codes.PermissionDenied,
+			"account is deleted, you have %d hours to restore it", hoursLeft)
+	}
+
+	// Проверяем статус аккаунта
 	if !user.IsVerified {
 		return nil, status.Errorf(codes.PermissionDenied, "account not verified")
 	}
@@ -255,6 +264,7 @@ func (s *AuthService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		LastName:   user.LastName,
 		Patronymic: user.Patronymic,
 		CreatedAt:  user.CreatedAt,
+		DeletedAt:  formatDeletedAt(user.DeletedAt),
 	}, nil
 }
 
@@ -330,16 +340,17 @@ func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 		return nil, status.Errorf(codes.PermissionDenied, "not enough rights")
 	}
 
-	// Отзываем все токены пользователя (если они есть)
+	// Мягкое удаление - проставляем deleted_at = NOW()
+	if err := s.db.User.DeleteUser(ctx, entities.DeleteUserDTO{UserUUID: req.GetTargetUserUuid()}).GRPCError(); err != nil {
+		return nil, err
+	}
+
+	// Отзываем все активные сессии - удалённый аккаунт не должен оставаться авторизованным
 	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: req.GetTargetUserUuid()})
 	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
 		if err := revokeErr.GRPCError(); err != nil {
 			return nil, err
 		}
-	}
-
-	if err := s.db.User.DeleteUser(ctx, entities.DeleteUserDTO{UserUUID: req.GetTargetUserUuid()}).GRPCError(); err != nil {
-		return nil, err
 	}
 
 	return &emptypb.Empty{}, nil
@@ -777,4 +788,50 @@ func (s *AuthService) Get2FACode(ctx context.Context, req *pb.Get2FACodeRequest)
 	}
 
 	return &pb.Get2FACodeResponse{Code: data.Code}, nil
+}
+
+// RestoreAccount Восстанавливает мягко удалённый аккаунт в течение 30 дней после удаления
+func (s *AuthService) RestoreAccount(ctx context.Context, req *pb.RestoreAccountRequest) (*emptypb.Empty, error) {
+	if err := validate.Email(req.GetEmail()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
+	}
+	if err := validate.Password(req.GetPassword()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid password")
+	}
+
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
+	if getErr.Code != 0 {
+		_, _ = password.Verify(dummyPasswordHash, req.GetPassword())
+		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
+	}
+
+	ok, err := password.Verify(user.PasswordHash, req.GetPassword())
+	if err != nil || !ok {
+		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
+	}
+
+	if user.DeletedAt == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "account is not deleted")
+	}
+
+	if time.Since(*user.DeletedAt) > accountDeletionRetention {
+		return nil, status.Errorf(codes.PermissionDenied, "restoration period has expired")
+	}
+
+	if err := s.db.User.RestoreUser(ctx, entities.RestoreUserDTO{UserUUID: user.UserUUID}).GRPCError(); err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+// ── Хелперы ───────────────────────────────────────────────────────────────────
+
+// formatDeletedAt форматирует время удаления в строку RFC3339.
+// Возвращает пустую строку если аккаунт активен.
+func formatDeletedAt(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format(time.RFC3339)
 }

@@ -1,5 +1,7 @@
 package entities
 
+import "time"
+
 type User struct {
 	UserUUID     string `db:"uuid"`
 	Email        string `db:"email"`
@@ -12,23 +14,25 @@ type User struct {
 }
 
 type UserGet struct {
-	UserUUID   string `db:"uuid"`
-	Email      string `db:"email"`
-	FirstName  string `db:"first_name"`
-	LastName   string `db:"last_name"`
-	Patronymic string `db:"patronymic"`
-	CreatedAt  string `db:"created_at"`
-	Enabled2FA bool   `db:"two_factor_enabled"`
-	IsVerified bool   `db:"is_verified"`
+	UserUUID   string     `db:"uuid"`
+	Email      string     `db:"email"`      // Пустая строка если аккаунт удалён
+	FirstName  string     `db:"first_name"` // Пустая строка если аккаунт удалён
+	LastName   string     `db:"last_name"`  // Пустая строка если аккаунт удалён
+	Patronymic string     `db:"patronymic"` // Пустая строка если аккаунт удалён
+	CreatedAt  string     `db:"created_at"`
+	Enabled2FA bool       `db:"two_factor_enabled"`
+	IsVerified bool       `db:"is_verified"`
+	DeletedAt  *time.Time `db:"deleted_at"` // nil если аккаунт активен
 }
 
 type UserGetByEmail struct {
-	UserUUID     string `db:"uuid"`
-	Email        string `db:"email"`
-	PasswordHash string `db:"password_hash"`
-	FirstName    string `db:"first_name"`
-	Enabled2FA   bool   `db:"two_factor_enabled"`
-	IsVerified   bool   `db:"is_verified"`
+	UserUUID     string     `db:"uuid"`
+	Email        string     `db:"email"`
+	PasswordHash string     `db:"password_hash"`
+	FirstName    string     `db:"first_name"`
+	Enabled2FA   bool       `db:"two_factor_enabled"`
+	IsVerified   bool       `db:"is_verified"`
+	DeletedAt    *time.Time `db:"deleted_at"` // nil если аккаунт активен
 }
 
 type UserUpdateBioDTO struct {
@@ -52,6 +56,10 @@ type UpdateUserPasswordDTO struct {
 }
 
 type DeleteUserDTO struct {
+	UserUUID string
+}
+
+type RestoreUserDTO struct {
 	UserUUID string
 }
 

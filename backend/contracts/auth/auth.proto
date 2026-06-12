@@ -26,6 +26,7 @@ service AuthService {
   rpc ResetPassword(ResetPasswordRequest) returns (google.protobuf.Empty);
   rpc Verify2FA(Verify2FARequest) returns (Verify2FAResponse);
   rpc UpdateUser2FA(UpdateUser2FARequest) returns (google.protobuf.Empty);
+  rpc RestoreAccount(RestoreAccountRequest) returns (google.protobuf.Empty);
 }
 
 
@@ -102,6 +103,7 @@ message GetUserResponse {
   string last_name = 4;
   string patronymic = 5;
   string created_at = 6;
+  string deleted_at = 7; // пустая строка если аккаунт активен
 }
 
 
@@ -241,5 +243,13 @@ message Verify2FAResponse {
 message UpdateUser2FARequest {
   string user_uuid = 1;
   bool enable_2fa = 2;
+}
+// Empty response
+
+
+// RestoreAccount
+message RestoreAccountRequest {
+  string email = 1;
+  string password = 2;
 }
 // Empty response

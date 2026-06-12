@@ -46,6 +46,7 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	auth.Delete("/user/revoke/all", app.AuthHandler.RevokeAllTokens)
 	// User
 	api.Post("/register", app.AuthHandler.Register)
+	api.Post("/restore-account", app.AuthHandler.RestoreAccount)
 	auth.Get("/user/:user_uuid/info", app.AuthHandler.GetUser)
 	auth.Patch("/user/password", app.AuthHandler.ChangePassword)
 	auth.Patch("/user/bio", app.AuthHandler.UpdateUserBio)

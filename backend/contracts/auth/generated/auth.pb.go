@@ -611,6 +611,7 @@ type GetUserResponse struct {
 	LastName      string                 `protobuf:"bytes,4,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
 	Patronymic    string                 `protobuf:"bytes,5,opt,name=patronymic,proto3" json:"patronymic,omitempty"`
 	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	DeletedAt     string                 `protobuf:"bytes,7,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"` // пустая строка если аккаунт активен
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -683,6 +684,13 @@ func (x *GetUserResponse) GetPatronymic() string {
 func (x *GetUserResponse) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *GetUserResponse) GetDeletedAt() string {
+	if x != nil {
+		return x.DeletedAt
 	}
 	return ""
 }
@@ -1799,6 +1807,59 @@ func (x *UpdateUser2FARequest) GetEnable_2Fa() bool {
 	return false
 }
 
+// RestoreAccount
+type RestoreAccountRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreAccountRequest) Reset() {
+	*x = RestoreAccountRequest{}
+	mi := &file_auth_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreAccountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreAccountRequest) ProtoMessage() {}
+
+func (x *RestoreAccountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_auth_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreAccountRequest.ProtoReflect.Descriptor instead.
+func (*RestoreAccountRequest) Descriptor() ([]byte, []int) {
+	return file_auth_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *RestoreAccountRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *RestoreAccountRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
 var File_auth_proto protoreflect.FileDescriptor
 
 const file_auth_proto_rawDesc = "" +
@@ -1855,7 +1916,7 @@ const file_auth_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x12!\n" +
 	"\fsession_uuid\x18\x04 \x01(\tR\vsessionUuid\"-\n" +
 	"\x0eGetUserRequest\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"\xbf\x01\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"\xde\x01\n" +
 	"\x0fGetUserResponse\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1d\n" +
@@ -1866,7 +1927,9 @@ const file_auth_proto_rawDesc = "" +
 	"patronymic\x18\x05 \x01(\tR\n" +
 	"patronymic\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\tR\tcreatedAt\"P\n" +
+	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"deleted_at\x18\a \x01(\tR\tdeletedAt\"P\n" +
 	"\x15ChangePasswordRequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"\x8f\x01\n" +
@@ -1931,8 +1994,10 @@ const file_auth_proto_rawDesc = "" +
 	"\x14UpdateUser2FARequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x1d\n" +
 	"\n" +
-	"enable_2fa\x18\x02 \x01(\bR\tenable2fa2\xf7\n" +
-	"\n" +
+	"enable_2fa\x18\x02 \x01(\bR\tenable2fa\"I\n" +
+	"\x15RestoreAccountRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword2\xbe\v\n" +
 	"\vAuthService\x126\n" +
 	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x14.auth.HealthResponse\x129\n" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.auth.RegisterResponse\x120\n" +
@@ -1955,7 +2020,8 @@ const file_auth_proto_rawDesc = "" +
 	"\x0eForgotPassword\x12\x1b.auth.ForgotPasswordRequest\x1a\x16.google.protobuf.Empty\x12C\n" +
 	"\rResetPassword\x12\x1a.auth.ResetPasswordRequest\x1a\x16.google.protobuf.Empty\x12<\n" +
 	"\tVerify2FA\x12\x16.auth.Verify2FARequest\x1a\x17.auth.Verify2FAResponse\x12C\n" +
-	"\rUpdateUser2FA\x12\x1a.auth.UpdateUser2FARequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated;auth_protob\x06proto3"
+	"\rUpdateUser2FA\x12\x1a.auth.UpdateUser2FARequest\x1a\x16.google.protobuf.Empty\x12E\n" +
+	"\x0eRestoreAccount\x12\x1b.auth.RestoreAccountRequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated;auth_protob\x06proto3"
 
 var (
 	file_auth_proto_rawDescOnce sync.Once
@@ -1969,7 +2035,7 @@ func file_auth_proto_rawDescGZIP() []byte {
 	return file_auth_proto_rawDescData
 }
 
-var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
 var file_auth_proto_goTypes = []any{
 	(*Token)(nil),                         // 0: auth.Token
 	(*SessionInfo)(nil),                   // 1: auth.SessionInfo
@@ -2002,14 +2068,15 @@ var file_auth_proto_goTypes = []any{
 	(*Verify2FARequest)(nil),              // 28: auth.Verify2FARequest
 	(*Verify2FAResponse)(nil),             // 29: auth.Verify2FAResponse
 	(*UpdateUser2FARequest)(nil),          // 30: auth.UpdateUser2FARequest
-	(*emptypb.Empty)(nil),                 // 31: google.protobuf.Empty
+	(*RestoreAccountRequest)(nil),         // 31: auth.RestoreAccountRequest
+	(*emptypb.Empty)(nil),                 // 32: google.protobuf.Empty
 }
 var file_auth_proto_depIdxs = []int32{
 	1,  // 0: auth.Token.session:type_name -> auth.SessionInfo
 	1,  // 1: auth.LoginRequest.session:type_name -> auth.SessionInfo
 	0,  // 2: auth.GetAllActiveTokensResponse.tokens:type_name -> auth.Token
 	1,  // 3: auth.Verify2FARequest.session:type_name -> auth.SessionInfo
-	31, // 4: auth.AuthService.Health:input_type -> google.protobuf.Empty
+	32, // 4: auth.AuthService.Health:input_type -> google.protobuf.Empty
 	3,  // 5: auth.AuthService.Register:input_type -> auth.RegisterRequest
 	5,  // 6: auth.AuthService.Login:input_type -> auth.LoginRequest
 	7,  // 7: auth.AuthService.GetUser:input_type -> auth.GetUserRequest
@@ -2029,28 +2096,30 @@ var file_auth_proto_depIdxs = []int32{
 	27, // 21: auth.AuthService.ResetPassword:input_type -> auth.ResetPasswordRequest
 	28, // 22: auth.AuthService.Verify2FA:input_type -> auth.Verify2FARequest
 	30, // 23: auth.AuthService.UpdateUser2FA:input_type -> auth.UpdateUser2FARequest
-	2,  // 24: auth.AuthService.Health:output_type -> auth.HealthResponse
-	4,  // 25: auth.AuthService.Register:output_type -> auth.RegisterResponse
-	6,  // 26: auth.AuthService.Login:output_type -> auth.LoginResponse
-	8,  // 27: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
-	31, // 28: auth.AuthService.ChangePassword:output_type -> google.protobuf.Empty
-	31, // 29: auth.AuthService.UpdateUserBio:output_type -> google.protobuf.Empty
-	31, // 30: auth.AuthService.DeleteUser:output_type -> google.protobuf.Empty
-	13, // 31: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
-	15, // 32: auth.AuthService.GetAllActiveTokens:output_type -> auth.GetAllActiveTokensResponse
-	31, // 33: auth.AuthService.RevokeToken:output_type -> google.protobuf.Empty
-	31, // 34: auth.AuthService.RevokeAllTokens:output_type -> google.protobuf.Empty
-	31, // 35: auth.AuthService.VerifyAccount:output_type -> google.protobuf.Empty
-	31, // 36: auth.AuthService.ResendVerificationCode:output_type -> google.protobuf.Empty
-	21, // 37: auth.AuthService.GetVerificationCode:output_type -> auth.GetVerificationCodeResponse
-	23, // 38: auth.AuthService.GetRecoveryCode:output_type -> auth.GetRecoveryCodeResponse
-	25, // 39: auth.AuthService.Get2FACode:output_type -> auth.Get2FACodeResponse
-	31, // 40: auth.AuthService.ForgotPassword:output_type -> google.protobuf.Empty
-	31, // 41: auth.AuthService.ResetPassword:output_type -> google.protobuf.Empty
-	29, // 42: auth.AuthService.Verify2FA:output_type -> auth.Verify2FAResponse
-	31, // 43: auth.AuthService.UpdateUser2FA:output_type -> google.protobuf.Empty
-	24, // [24:44] is the sub-list for method output_type
-	4,  // [4:24] is the sub-list for method input_type
+	31, // 24: auth.AuthService.RestoreAccount:input_type -> auth.RestoreAccountRequest
+	2,  // 25: auth.AuthService.Health:output_type -> auth.HealthResponse
+	4,  // 26: auth.AuthService.Register:output_type -> auth.RegisterResponse
+	6,  // 27: auth.AuthService.Login:output_type -> auth.LoginResponse
+	8,  // 28: auth.AuthService.GetUser:output_type -> auth.GetUserResponse
+	32, // 29: auth.AuthService.ChangePassword:output_type -> google.protobuf.Empty
+	32, // 30: auth.AuthService.UpdateUserBio:output_type -> google.protobuf.Empty
+	32, // 31: auth.AuthService.DeleteUser:output_type -> google.protobuf.Empty
+	13, // 32: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
+	15, // 33: auth.AuthService.GetAllActiveTokens:output_type -> auth.GetAllActiveTokensResponse
+	32, // 34: auth.AuthService.RevokeToken:output_type -> google.protobuf.Empty
+	32, // 35: auth.AuthService.RevokeAllTokens:output_type -> google.protobuf.Empty
+	32, // 36: auth.AuthService.VerifyAccount:output_type -> google.protobuf.Empty
+	32, // 37: auth.AuthService.ResendVerificationCode:output_type -> google.protobuf.Empty
+	21, // 38: auth.AuthService.GetVerificationCode:output_type -> auth.GetVerificationCodeResponse
+	23, // 39: auth.AuthService.GetRecoveryCode:output_type -> auth.GetRecoveryCodeResponse
+	25, // 40: auth.AuthService.Get2FACode:output_type -> auth.Get2FACodeResponse
+	32, // 41: auth.AuthService.ForgotPassword:output_type -> google.protobuf.Empty
+	32, // 42: auth.AuthService.ResetPassword:output_type -> google.protobuf.Empty
+	29, // 43: auth.AuthService.Verify2FA:output_type -> auth.Verify2FAResponse
+	32, // 44: auth.AuthService.UpdateUser2FA:output_type -> google.protobuf.Empty
+	32, // 45: auth.AuthService.RestoreAccount:output_type -> google.protobuf.Empty
+	25, // [25:46] is the sub-list for method output_type
+	4,  // [4:25] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -2067,7 +2136,7 @@ func file_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_auth_proto_rawDesc), len(file_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   31,
+			NumMessages:   32,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

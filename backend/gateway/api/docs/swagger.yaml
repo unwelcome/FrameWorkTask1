@@ -293,6 +293,8 @@ definitions:
     properties:
       created_at:
         type: string
+      deleted_at:
+        type: string
       email:
         type: string
       first_name:
@@ -419,6 +421,15 @@ definitions:
         type: string
     type: object
   entities.ResetPasswordResponse:
+    type: object
+  entities.RestoreAccountRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  entities.RestoreAccountResponse:
     type: object
   entities.RevokeAllTokensResponse:
     type: object
@@ -2776,6 +2787,40 @@ paths:
           schema:
             $ref: '#/definitions/Error.HttpError'
       summary: ResetPassword
+      tags:
+      - User
+  /restore-account:
+    post:
+      consumes:
+      - application/json
+      description: Restore a soft-deleted account within 30 days of deletion
+      parameters:
+      - description: Email и пароль
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/entities.RestoreAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.RestoreAccountResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: RestoreAccount
       tags:
       - User
   /user/verify:

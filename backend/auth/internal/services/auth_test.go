@@ -542,6 +542,29 @@ func TestChangePassword(t *testing.T) {
 		assertCode(t, err, codes.NotFound)
 	})
 
+	t.Run("account_deleted", func(t *testing.T) {
+		hash := hashPassword(t, testPassword)
+		deletedAt := time.Now().Add(-time.Hour)
+		userRepo := &mockUserRepo{
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return &entities.UserGet{
+					UserUUID:     testUUID1,
+					PasswordHash: hash,
+					DeletedAt:    &deletedAt,
+				}, ok()
+			},
+		}
+		svc := newTestService(userRepo, emptyAuthRepo())
+
+		_, err := svc.ChangePassword(context.Background(), &pb.ChangePasswordRequest{
+			UserUuid:    testUUID1,
+			OldPassword: testPassword,
+			Password:    newPassword,
+		})
+
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
 	t.Run("revoke_tokens_error", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError {
@@ -563,9 +586,14 @@ func TestChangePassword(t *testing.T) {
 // ─── UpdateUserBio ───────────────────────────────────────────────────────────
 
 func TestUpdateUserBio(t *testing.T) {
+	activeUser := func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+		return &entities.UserGet{UserUUID: testUUID1}, ok()
+	}
+
 	t.Run("success", func(t *testing.T) {
 		var captured entities.UserUpdateBioDTO
 		userRepo := &mockUserRepo{
+			getUser: activeUser,
 			updateUserBio: func(_ context.Context, dto entities.UserUpdateBioDTO) Error.CodeError {
 				captured = dto
 				return ok()
@@ -588,6 +616,7 @@ func TestUpdateUserBio(t *testing.T) {
 
 	t.Run("success_no_description", func(t *testing.T) {
 		userRepo := &mockUserRepo{
+			getUser:       activeUser,
 			updateUserBio: func(_ context.Context, _ entities.UserUpdateBioDTO) Error.CodeError { return ok() },
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
@@ -640,8 +669,8 @@ func TestUpdateUserBio(t *testing.T) {
 
 	t.Run("not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			updateUserBio: func(_ context.Context, _ entities.UserUpdateBioDTO) Error.CodeError {
-				return Error.Public(codes.NotFound, "user not found")
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return nil, Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
@@ -653,6 +682,24 @@ func TestUpdateUserBio(t *testing.T) {
 		})
 
 		assertCode(t, err, codes.NotFound)
+	})
+
+	t.Run("account_deleted", func(t *testing.T) {
+		deletedAt := time.Now().Add(-time.Hour)
+		userRepo := &mockUserRepo{
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return &entities.UserGet{UserUUID: testUUID1, DeletedAt: &deletedAt}, ok()
+			},
+		}
+		svc := newTestService(userRepo, emptyAuthRepo())
+
+		_, err := svc.UpdateUserBio(context.Background(), &pb.UpdateUserBioRequest{
+			UserUuid:  testUUID1,
+			FirstName: "Petr",
+			LastName:  "Petrov",
+		})
+
+		assertCode(t, err, codes.PermissionDenied)
 	})
 }
 
@@ -1522,6 +1569,22 @@ func TestForgotPassword(t *testing.T) {
 		assertNoError(t, err)
 	})
 
+	t.Run("account_deleted_silent_ok", func(t *testing.T) {
+		deletedAt := time.Now().Add(-time.Hour)
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true, DeletedAt: &deletedAt}, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
+			Email: "deleted@example.com",
+		})
+
+		assertNoError(t, err)
+	})
+
 	t.Run("save_code_error", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
@@ -1639,6 +1702,24 @@ func TestResetPassword(t *testing.T) {
 
 		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
 			Email:       "test@example.com",
+			Code:        "123456",
+			NewPassword: testPassword,
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("account_deleted", func(t *testing.T) {
+		deletedAt := time.Now().Add(-time.Hour)
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true, DeletedAt: &deletedAt}, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
+			Email:       "deleted@example.com",
 			Code:        "123456",
 			NewPassword: testPassword,
 		})
@@ -1858,8 +1939,13 @@ func TestVerify2FA(t *testing.T) {
 // ─── UpdateUser2FA ────────────────────────────────────────────────────────────
 
 func TestUpdateUser2FA(t *testing.T) {
+	activeUser := func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+		return &entities.UserGet{UserUUID: testUUID1}, ok()
+	}
+
 	t.Run("enable_success", func(t *testing.T) {
 		userRepo := &mockUserRepo{
+			getUser: activeUser,
 			updateUser2FA: func(_ context.Context, dto entities.UpdateUser2FADTO) Error.CodeError {
 				if !dto.TwoFAEnabled {
 					return Error.Internal(fmt.Errorf("expected enabled=true"))
@@ -1879,6 +1965,7 @@ func TestUpdateUser2FA(t *testing.T) {
 
 	t.Run("disable_success", func(t *testing.T) {
 		userRepo := &mockUserRepo{
+			getUser: activeUser,
 			updateUser2FA: func(_ context.Context, dto entities.UpdateUser2FADTO) Error.CodeError {
 				if dto.TwoFAEnabled {
 					return Error.Internal(fmt.Errorf("expected enabled=false"))
@@ -1909,8 +1996,8 @@ func TestUpdateUser2FA(t *testing.T) {
 
 	t.Run("user_not_found", func(t *testing.T) {
 		userRepo := &mockUserRepo{
-			updateUser2FA: func(_ context.Context, _ entities.UpdateUser2FADTO) Error.CodeError {
-				return Error.Public(codes.NotFound, "user not found")
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return nil, Error.Public(codes.NotFound, "user not found")
 			},
 		}
 		svc := buildSvc(svcDeps{user: userRepo})
@@ -1921,6 +2008,23 @@ func TestUpdateUser2FA(t *testing.T) {
 		})
 
 		assertCode(t, err, codes.NotFound)
+	})
+
+	t.Run("account_deleted", func(t *testing.T) {
+		deletedAt := time.Now().Add(-time.Hour)
+		userRepo := &mockUserRepo{
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return &entities.UserGet{UserUUID: testUUID1, DeletedAt: &deletedAt}, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.UpdateUser2FA(context.Background(), &pb.UpdateUser2FARequest{
+			UserUuid:   testUUID1,
+			Enable_2Fa: true,
+		})
+
+		assertCode(t, err, codes.PermissionDenied)
 	})
 }
 

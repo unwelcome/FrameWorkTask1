@@ -294,6 +294,10 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 		return nil, getErr.GRPCError()
 	}
 
+	if user.DeletedAt != nil {
+		return nil, status.Errorf(codes.PermissionDenied, "account is deleted, you have %d hours to restore it", hoursUntilAnonymization(*user.DeletedAt))
+	}
+
 	// Проверяем старый пароль
 	if ok, err := password.Verify(user.PasswordHash, req.GetOldPassword()); err != nil || !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "wrong old password")
@@ -345,6 +349,14 @@ func (s *AuthService) UpdateUserBio(ctx context.Context, req *pb.UpdateUserBioRe
 	}
 	if err := validate.UserDescription(req.GetDescription()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid description")
+	}
+
+	user, getErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: req.GetUserUuid()})
+	if err := getErr.GRPCError(); err != nil {
+		return nil, err
+	}
+	if user.DeletedAt != nil {
+		return nil, status.Errorf(codes.PermissionDenied, "account is deleted, you have %d hours to restore it", hoursUntilAnonymization(*user.DeletedAt))
 	}
 
 	if err := s.db.User.UpdateUserBio(ctx, entities.UserUpdateBioDTO{
@@ -578,7 +590,7 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 	return &emptypb.Empty{}, nil
 }
 
-// ForgotPassword Запрашивает восстановление пароля — отправляет код на почту.
+// ForgotPassword Запрос восстановления пароля
 func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPasswordRequest) (*emptypb.Empty, error) {
 	if err := validate.Email(req.GetEmail()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
@@ -594,6 +606,10 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 	// Не раскрываем состояние аккаунта
 	if !user.IsVerified {
 		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("user not verified")
+		return &emptypb.Empty{}, nil
+	}
+	if user.DeletedAt != nil {
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("account is deleted")
 		return &emptypb.Empty{}, nil
 	}
 
@@ -630,15 +646,18 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	if getErr.Code != 0 {
-		// Защита от timing-атаки: выполняем Redis-запрос, аналогичный тому,
-		// что делается при нахождении пользователя, чтобы выровнять время ответа.
-		// dummyUUID никогда не существует в Redis — запрос всегда промахивается.
+		// Защита от timing-атаки
 		_, _ = s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: dummyUUID})
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
 
 	if !user.IsVerified {
-		// Аналогично: выравниваем время ответа для не верифицированного пользователя.
+		// Защита от timing-атаки
+		_, _ = s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: dummyUUID})
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
+	}
+	if user.DeletedAt != nil {
+		// Защита от timing-атаки
 		_, _ = s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: dummyUUID})
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
@@ -751,6 +770,14 @@ func (s *AuthService) UpdateUser2FA(ctx context.Context, req *pb.UpdateUser2FARe
 	// Валидации
 	if err := validate.UUID(req.GetUserUuid()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
+	}
+
+	user, getErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: req.GetUserUuid()})
+	if err := getErr.GRPCError(); err != nil {
+		return nil, err
+	}
+	if user.DeletedAt != nil {
+		return nil, status.Errorf(codes.PermissionDenied, "account is deleted, you have %d hours to restore it", hoursUntilAnonymization(*user.DeletedAt))
 	}
 
 	// Обновляем данные пользователя

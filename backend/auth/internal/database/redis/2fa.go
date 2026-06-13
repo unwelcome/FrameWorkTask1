@@ -13,13 +13,21 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-const twoFACodeTTL = 15 * time.Minute
+const (
+	twoFACodeTTL          = 15 * time.Minute
+	twoFAEmailCooldownTTL = 60 * time.Second
+	twoFAEmailDailyTTL    = 24 * time.Hour
+)
 
 type TwoFARepository interface {
 	Save2FAData(ctx context.Context, dto entities.Save2FADataDTO) Error.CodeError
 	Get2FAData(ctx context.Context, dto entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError)
 	Delete2FAData(ctx context.Context, dto entities.Delete2FADataDTO) Error.CodeError
 	Incr2FAAttempts(ctx context.Context, dto entities.Incr2FAAttemptsDTO) (int64, Error.CodeError)
+	// Acquire2FAEmailCooldown устанавливает cooldown-ключ (SetNX). Возвращает true, если разрешено отправить письмо.
+	Acquire2FAEmailCooldown(ctx context.Context, dto entities.Acquire2FAEmailCooldownDTO) (bool, Error.CodeError)
+	// Incr2FAEmailDailyCount увеличивает суточный счётчик отправок 2FA писем и возвращает новое значение.
+	Incr2FAEmailDailyCount(ctx context.Context, dto entities.Incr2FAEmailDailyCountDTO) (int64, Error.CodeError)
 }
 
 type twoFARepository struct {
@@ -92,7 +100,30 @@ func (r *twoFARepository) Incr2FAAttempts(ctx context.Context, dto entities.Incr
 	return count, Error.CodeError{}
 }
 
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// Acquire2FAEmailCooldown Устанавливает cooldown-ключ. Возвращает true, если ключ создан (разрешено отправить),
+// false — если ключ уже существует (cooldown ещё активен).
+func (r *twoFARepository) Acquire2FAEmailCooldown(ctx context.Context, dto entities.Acquire2FAEmailCooldownDTO) (bool, Error.CodeError) {
+	set, err := r.redis.SetNX(ctx, r.get2FAEmailCooldownKey(dto.UserUUID), 1, twoFAEmailCooldownTTL).Result()
+	if err != nil {
+		return false, Error.Internal(err)
+	}
+	return set, Error.CodeError{}
+}
+
+// Incr2FAEmailDailyCount Увеличивает суточный счётчик отправок 2FA писем
+func (r *twoFARepository) Incr2FAEmailDailyCount(ctx context.Context, dto entities.Incr2FAEmailDailyCountDTO) (int64, Error.CodeError) {
+	key := r.get2FAEmailDailyKey(dto.UserUUID)
+	count, err := r.redis.Incr(ctx, key).Result()
+	if err != nil {
+		return 0, Error.Internal(err)
+	}
+	if count == 1 {
+		r.redis.Expire(ctx, key, twoFAEmailDailyTTL)
+	}
+	return count, Error.CodeError{}
+}
+
+// ─── Вспомогательные функции ──────────────────────────────────────────────────
 
 func (r *twoFARepository) get2FADataKey(sessionUUID string) string {
 	return fmt.Sprintf("%s:2fa:%s:data", r.prefix, sessionUUID)
@@ -100,4 +131,12 @@ func (r *twoFARepository) get2FADataKey(sessionUUID string) string {
 
 func (r *twoFARepository) get2FAAttemptsKey(sessionUUID string) string {
 	return fmt.Sprintf("%s:2fa:%s:attempts", r.prefix, sessionUUID)
+}
+
+func (r *twoFARepository) get2FAEmailCooldownKey(userUUID string) string {
+	return fmt.Sprintf("%s:2fa:%s:email:cooldown", r.prefix, userUUID)
+}
+
+func (r *twoFARepository) get2FAEmailDailyKey(userUUID string) string {
+	return fmt.Sprintf("%s:2fa:%s:email:daily", r.prefix, userUUID)
 }

@@ -20,6 +20,14 @@ type Incr2FAAttemptsDTO struct {
 	SessionUUID string
 }
 
+type Acquire2FAEmailCooldownDTO struct {
+	UserUUID string
+}
+
+type Incr2FAEmailDailyCountDTO struct {
+	UserUUID string
+}
+
 type TwoFAData struct {
 	UserUUID  string `json:"user_uuid"`
 	Email     string `json:"email"`

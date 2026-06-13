@@ -28,6 +28,7 @@ const (
 	maxVerificationAttempts     = 5
 	maxRecoveryAttempts         = 5
 	max2FAAttempts              = 5
+	max2FAEmailDailyCount       = 5
 	maxResendDailyCount         = 5
 	maxForgotPasswordDailyCount = 3
 
@@ -192,6 +193,24 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 
 	// Если у пользователя включена 2FA
 	if user.Enabled2FA {
+		// Rate limiting: cooldown между отправками 2FA писем
+		allowed, rateLimitErr := s.cache.TwoFA.Acquire2FAEmailCooldown(ctx, entities.Acquire2FAEmailCooldownDTO{UserUUID: user.UserUUID})
+		if err := rateLimitErr.GRPCError(); err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, status.Errorf(codes.ResourceExhausted, "please wait before requesting a new 2FA code")
+		}
+
+		// Rate limiting: суточный лимит отправок 2FA писем
+		count, countErr := s.cache.TwoFA.Incr2FAEmailDailyCount(ctx, entities.Incr2FAEmailDailyCountDTO{UserUUID: user.UserUUID})
+		if err := countErr.GRPCError(); err != nil {
+			return nil, err
+		}
+		if count > max2FAEmailDailyCount {
+			return nil, status.Errorf(codes.ResourceExhausted, "daily 2FA email limit reached")
+		}
+
 		sessionUUID := uuid.Must(uuid.NewV7()).String()
 		code := utils.GenerateTwoFACode()
 

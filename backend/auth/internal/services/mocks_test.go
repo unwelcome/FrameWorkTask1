@@ -96,6 +96,8 @@ type mockVerificationRepo struct {
 	getVerificationCode      func(ctx context.Context, dto entities.GetVerificationCodeDTO) (string, Error.CodeError)
 	deleteVerificationCode   func(ctx context.Context, dto entities.DeleteVerificationCodeDTO) Error.CodeError
 	incrVerificationAttempts func(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError)
+	acquireResendCooldown    func(ctx context.Context, dto entities.CheckResendCooldownDTO) (bool, Error.CodeError)
+	incrResendDailyCount     func(ctx context.Context, dto entities.IncrResendDailyCountDTO) (int64, Error.CodeError)
 
 	saveRecoveryCode     func(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError
 	getRecoveryCode      func(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError)
@@ -114,6 +116,12 @@ func (m *mockVerificationRepo) DeleteVerificationCode(ctx context.Context, dto e
 }
 func (m *mockVerificationRepo) IncrVerificationAttempts(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
 	return m.incrVerificationAttempts(ctx, dto)
+}
+func (m *mockVerificationRepo) AcquireResendCooldown(ctx context.Context, dto entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
+	return m.acquireResendCooldown(ctx, dto)
+}
+func (m *mockVerificationRepo) IncrResendDailyCount(ctx context.Context, dto entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
+	return m.incrResendDailyCount(ctx, dto)
 }
 func (m *mockVerificationRepo) SaveRecoveryCode(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError {
 	return m.saveRecoveryCode(ctx, dto)
@@ -290,6 +298,12 @@ func emptyVerificationRepo() *mockVerificationRepo {
 		},
 		incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
 			return 0, Error.CodeError{}
+		},
+		acquireResendCooldown: func(_ context.Context, _ entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
+			return true, Error.CodeError{}
+		},
+		incrResendDailyCount: func(_ context.Context, _ entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
+			return 1, Error.CodeError{}
 		},
 		saveRecoveryCode: func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
 		getRecoveryCode: func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) {

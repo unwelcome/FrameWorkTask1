@@ -12,13 +12,22 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-const verificationCodeTTL = 15 * time.Minute
+const (
+	verificationCodeTTL = 15 * time.Minute
+	resendCooldownTTL   = 60 * time.Second
+	resendDailyTTL      = 24 * time.Hour
+)
 
 type VerificationRepository interface {
 	SaveVerificationCode(ctx context.Context, dto entities.SaveVerificationCodeDTO) Error.CodeError
 	GetVerificationCode(ctx context.Context, dto entities.GetVerificationCodeDTO) (string, Error.CodeError)
 	DeleteVerificationCode(ctx context.Context, dto entities.DeleteVerificationCodeDTO) Error.CodeError
 	IncrVerificationAttempts(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError)
+	// AcquireResendCooldown устанавливает ключ cooldown (SetNX). Возвращает true, если cooldown
+	// успешно установлен (отправка разрешена), false — если cooldown ещё активен.
+	AcquireResendCooldown(ctx context.Context, dto entities.CheckResendCooldownDTO) (bool, Error.CodeError)
+	// IncrResendDailyCount увеличивает суточный счётчик повторных отправок и возвращает новое значение.
+	IncrResendDailyCount(ctx context.Context, dto entities.IncrResendDailyCountDTO) (int64, Error.CodeError)
 }
 
 type verificationRepository struct {
@@ -75,6 +84,29 @@ func (r *verificationRepository) IncrVerificationAttempts(ctx context.Context, d
 	return count, Error.CodeError{}
 }
 
+// AcquireResendCooldown Устанавливает cooldown-ключ. Возвращает true, если ключ создан (разрешено отправить),
+// false — если ключ уже существует (cooldown ещё активен).
+func (r *verificationRepository) AcquireResendCooldown(ctx context.Context, dto entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
+	set, err := r.redis.SetNX(ctx, r.getResendCooldownKey(dto.UserUUID), 1, resendCooldownTTL).Result()
+	if err != nil {
+		return false, Error.Internal(err)
+	}
+	return set, Error.CodeError{}
+}
+
+// IncrResendDailyCount Увеличивает суточный счётчик повторных отправок
+func (r *verificationRepository) IncrResendDailyCount(ctx context.Context, dto entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
+	key := r.getResendDailyKey(dto.UserUUID)
+	count, err := r.redis.Incr(ctx, key).Result()
+	if err != nil {
+		return 0, Error.Internal(err)
+	}
+	if count == 1 {
+		r.redis.Expire(ctx, key, resendDailyTTL)
+	}
+	return count, Error.CodeError{}
+}
+
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 
 func (r *verificationRepository) getCodeKey(userUUID string) string {
@@ -83,4 +115,12 @@ func (r *verificationRepository) getCodeKey(userUUID string) string {
 
 func (r *verificationRepository) getAttemptsKey(userUUID string) string {
 	return fmt.Sprintf("%s:verify:%s:attempts", r.prefix, userUUID)
+}
+
+func (r *verificationRepository) getResendCooldownKey(userUUID string) string {
+	return fmt.Sprintf("%s:verify:%s:resend:cooldown", r.prefix, userUUID)
+}
+
+func (r *verificationRepository) getResendDailyKey(userUUID string) string {
+	return fmt.Sprintf("%s:verify:%s:resend:daily", r.prefix, userUUID)
 }

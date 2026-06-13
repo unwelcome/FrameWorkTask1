@@ -28,6 +28,7 @@ const (
 	maxVerificationAttempts = 5
 	maxRecoveryAttempts     = 5
 	max2FAAttempts          = 5
+	maxResendDailyCount     = 5
 
 	// accountDeletionRetention — срок хранения данных мягко удалённого аккаунта
 	accountDeletionRetention = 30 * 24 * time.Hour
@@ -552,6 +553,24 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 	if user.IsVerified {
 		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ResendVerificationCode").Msg("user already verified")
 		return &emptypb.Empty{}, nil
+	}
+
+	// Rate limiting: cooldown между повторными отправками
+	allowed, rateLimitErr := s.cache.Verification.AcquireResendCooldown(ctx, entities.CheckResendCooldownDTO{UserUUID: user.UserUUID})
+	if rateLimitErr.Code != 0 {
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+	if !allowed {
+		return nil, status.Errorf(codes.ResourceExhausted, "please wait before requesting a new verification code")
+	}
+
+	// Rate limiting: суточный лимит отправок
+	count, countErr := s.cache.Verification.IncrResendDailyCount(ctx, entities.IncrResendDailyCountDTO{UserUUID: user.UserUUID})
+	if countErr.Code != 0 {
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+	if count > maxResendDailyCount {
+		return nil, status.Errorf(codes.ResourceExhausted, "daily verification email limit reached")
 	}
 
 	// Генерируем новый код (перезаписывает старый и сбрасывает счётчик попыток)

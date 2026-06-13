@@ -16,3 +16,11 @@ type DeleteVerificationCodeDTO struct {
 type IncrVerificationAttemptsDTO struct {
 	UserUUID string
 }
+
+type CheckResendCooldownDTO struct {
+	UserUUID string
+}
+
+type IncrResendDailyCountDTO struct {
+	UserUUID string
+}

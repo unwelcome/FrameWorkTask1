@@ -1427,6 +1427,12 @@ func TestResendVerificationCode(t *testing.T) {
 			},
 		}
 		verRepo := &mockVerificationRepo{
+			acquireResendCooldown: func(_ context.Context, _ entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
+				return true, ok()
+			},
+			incrResendDailyCount: func(_ context.Context, _ entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
 			saveVerificationCode: func(_ context.Context, _ entities.SaveVerificationCodeDTO) Error.CodeError { return ok() },
 		}
 		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
@@ -1479,6 +1485,49 @@ func TestResendVerificationCode(t *testing.T) {
 		assertNoError(t, err)
 	})
 
+	t.Run("cooldown_active", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
+			},
+		}
+		verRepo := &mockVerificationRepo{
+			acquireResendCooldown: func(_ context.Context, _ entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
+				return false, ok() // cooldown ещё активен
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+
+		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
+			Email: "test@example.com",
+		})
+
+		assertCode(t, err, codes.ResourceExhausted)
+	})
+
+	t.Run("daily_limit_reached", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
+			},
+		}
+		verRepo := &mockVerificationRepo{
+			acquireResendCooldown: func(_ context.Context, _ entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
+				return true, ok()
+			},
+			incrResendDailyCount: func(_ context.Context, _ entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
+				return maxResendDailyCount + 1, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+
+		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
+			Email: "test@example.com",
+		})
+
+		assertCode(t, err, codes.ResourceExhausted)
+	})
+
 	t.Run("save_code_error", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
@@ -1486,6 +1535,12 @@ func TestResendVerificationCode(t *testing.T) {
 			},
 		}
 		verRepo := &mockVerificationRepo{
+			acquireResendCooldown: func(_ context.Context, _ entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
+				return true, ok()
+			},
+			incrResendDailyCount: func(_ context.Context, _ entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
 			saveVerificationCode: func(_ context.Context, _ entities.SaveVerificationCodeDTO) Error.CodeError {
 				return Error.Internal(fmt.Errorf("redis error"))
 			},

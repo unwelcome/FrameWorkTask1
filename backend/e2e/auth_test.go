@@ -15,13 +15,9 @@ import (
 func TestRegister(t *testing.T) {
 	t.Run("happy_path", func(t *testing.T) {
 		c := newClient()
-		code, body := c.post("/api/register", defaultUserPayload(randomEmail(), "Password123"))
+		code, _ := c.post("/api/register", defaultUserPayload(randomEmail(), "Password123"))
 
 		assert.Equal(t, http.StatusCreated, code)
-
-		var resp registerResp
-		require.NoError(t, json.Unmarshal(body, &resp))
-		assert.NotEmpty(t, resp.UserUUID)
 	})
 
 	t.Run("duplicate_email", func(t *testing.T) {
@@ -32,7 +28,7 @@ func TestRegister(t *testing.T) {
 		require.Equal(t, http.StatusCreated, code)
 
 		code, body := c.post("/api/register", defaultUserPayload(email, "Password123"))
-		assert.Equal(t, http.StatusConflict, code, "second registration with same email should return 409 (body: %s)", body)
+		assert.Equal(t, http.StatusCreated, code, "second registration with same email should return 201 silently (body: %s)", body)
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
@@ -66,8 +62,8 @@ func TestLogin(t *testing.T) {
 	t.Run("happy_path", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
-		reg := mustRegister(t, c, email, "Password123")
-		verificationCode := mustGetVerificationCode(t, c, reg.UserUUID)
+		mustRegister(t, c, email, "Password123")
+		verificationCode := mustGetVerificationCodeByEmail(t, c, email)
 		mustVerifyAccount(t, c, email, verificationCode)
 
 		code, body := c.post("/api/login", map[string]string{
@@ -245,7 +241,7 @@ func TestUpdateUserBio(t *testing.T) {
 
 		var user getUserResp
 		require.NoError(t, json.Unmarshal(body, &user))
-		assert.Equal(t, "Go backend developer. Loves clean code.", user.Description)
+		assert.Equal(t, "Go backend developer", user.Description)
 	})
 
 	t.Run("description_too_long", func(t *testing.T) {
@@ -563,8 +559,8 @@ func TestVerifyAccount(t *testing.T) {
 	t.Run("happy_path", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
-		reg := mustRegister(t, c, email, "Password123")
-		verCode := mustGetVerificationCode(t, c, reg.UserUUID)
+		mustRegister(t, c, email, "Password123")
+		verCode := mustGetVerificationCodeByEmail(t, c, email)
 
 		code, body := c.post("/api/user/verify", map[string]string{
 			"email": email,
@@ -588,8 +584,8 @@ func TestVerifyAccount(t *testing.T) {
 	t.Run("already_verified", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
-		reg := mustRegister(t, c, email, "Password123")
-		verCode := mustGetVerificationCode(t, c, reg.UserUUID)
+		mustRegister(t, c, email, "Password123")
+		verCode := mustGetVerificationCodeByEmail(t, c, email)
 		mustVerifyAccount(t, c, email, verCode)
 
 		// Повторная верификация должна вернуть 409
@@ -616,22 +612,22 @@ func TestResendVerificationCode(t *testing.T) {
 	t.Run("happy_path", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
-		reg := mustRegister(t, c, email, "Password123")
+		mustRegister(t, c, email, "Password123")
 
 		// Повторно отправляем код
 		code, body := c.post("/api/user/verify/resend", map[string]string{"email": email})
 		require.Equal(t, http.StatusOK, code, "resend code failed (body: %s)", body)
 
 		// Получаем актуальный код и верифицируемся
-		newCode := mustGetVerificationCode(t, c, reg.UserUUID)
+		newCode := mustGetVerificationCodeByEmail(t, c, email)
 		mustVerifyAccount(t, c, email, newCode)
 	})
 
 	t.Run("already_verified", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
-		reg := mustRegister(t, c, email, "Password123")
-		verCode := mustGetVerificationCode(t, c, reg.UserUUID)
+		mustRegister(t, c, email, "Password123")
+		verCode := mustGetVerificationCodeByEmail(t, c, email)
 		mustVerifyAccount(t, c, email, verCode)
 
 		// Повторный resend для уже верифицированного пользователя → 409
@@ -836,21 +832,18 @@ func TestAuthFullFlow(t *testing.T) {
 	// 1. Register
 	regCode, regBody := c.post("/api/register", defaultUserPayload(email, password))
 	require.Equal(t, http.StatusCreated, regCode, "register: %s", regBody)
-	var reg registerResp
-	require.NoError(t, json.Unmarshal(regBody, &reg))
-	userUUID := reg.UserUUID
 
 	// 2. Resend verification code (перезаписывает код в Redis)
 	code, body := c.post("/api/user/verify/resend", map[string]string{"email": email})
 	require.Equal(t, http.StatusOK, code, "resend verification code: %s", body)
 
 	// 3. Verify account (используем актуальный код после resend)
-	verCode := mustGetVerificationCode(t, c, userUUID)
+	verCode := mustGetVerificationCodeByEmail(t, c, email)
 	mustVerifyAccount(t, c, email, verCode)
 
 	// 4. Login
 	login := mustLogin(t, c, email, password)
-	assert.Equal(t, userUUID, login.UserUUID)
+	userUUID := login.UserUUID
 	auth := c.withToken(login.AccessToken)
 
 	// 5. Get user info

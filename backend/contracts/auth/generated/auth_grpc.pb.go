@@ -20,27 +20,28 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Health_FullMethodName                 = "/auth.AuthService/Health"
-	AuthService_Register_FullMethodName               = "/auth.AuthService/Register"
-	AuthService_Login_FullMethodName                  = "/auth.AuthService/Login"
-	AuthService_GetUser_FullMethodName                = "/auth.AuthService/GetUser"
-	AuthService_ChangePassword_FullMethodName         = "/auth.AuthService/ChangePassword"
-	AuthService_UpdateUserBio_FullMethodName          = "/auth.AuthService/UpdateUserBio"
-	AuthService_DeleteUser_FullMethodName             = "/auth.AuthService/DeleteUser"
-	AuthService_RefreshToken_FullMethodName           = "/auth.AuthService/RefreshToken"
-	AuthService_GetAllActiveTokens_FullMethodName     = "/auth.AuthService/GetAllActiveTokens"
-	AuthService_RevokeToken_FullMethodName            = "/auth.AuthService/RevokeToken"
-	AuthService_RevokeAllTokens_FullMethodName        = "/auth.AuthService/RevokeAllTokens"
-	AuthService_VerifyAccount_FullMethodName          = "/auth.AuthService/VerifyAccount"
-	AuthService_ResendVerificationCode_FullMethodName = "/auth.AuthService/ResendVerificationCode"
-	AuthService_GetVerificationCode_FullMethodName    = "/auth.AuthService/GetVerificationCode"
-	AuthService_GetRecoveryCode_FullMethodName        = "/auth.AuthService/GetRecoveryCode"
-	AuthService_Get2FACode_FullMethodName             = "/auth.AuthService/Get2FACode"
-	AuthService_ForgotPassword_FullMethodName         = "/auth.AuthService/ForgotPassword"
-	AuthService_ResetPassword_FullMethodName          = "/auth.AuthService/ResetPassword"
-	AuthService_Verify2FA_FullMethodName              = "/auth.AuthService/Verify2FA"
-	AuthService_UpdateUser2FA_FullMethodName          = "/auth.AuthService/UpdateUser2FA"
-	AuthService_RestoreAccount_FullMethodName         = "/auth.AuthService/RestoreAccount"
+	AuthService_Health_FullMethodName                     = "/auth.AuthService/Health"
+	AuthService_Register_FullMethodName                   = "/auth.AuthService/Register"
+	AuthService_Login_FullMethodName                      = "/auth.AuthService/Login"
+	AuthService_GetUser_FullMethodName                    = "/auth.AuthService/GetUser"
+	AuthService_ChangePassword_FullMethodName             = "/auth.AuthService/ChangePassword"
+	AuthService_UpdateUserBio_FullMethodName              = "/auth.AuthService/UpdateUserBio"
+	AuthService_DeleteUser_FullMethodName                 = "/auth.AuthService/DeleteUser"
+	AuthService_RefreshToken_FullMethodName               = "/auth.AuthService/RefreshToken"
+	AuthService_GetAllActiveTokens_FullMethodName         = "/auth.AuthService/GetAllActiveTokens"
+	AuthService_RevokeToken_FullMethodName                = "/auth.AuthService/RevokeToken"
+	AuthService_RevokeAllTokens_FullMethodName            = "/auth.AuthService/RevokeAllTokens"
+	AuthService_VerifyAccount_FullMethodName              = "/auth.AuthService/VerifyAccount"
+	AuthService_ResendVerificationCode_FullMethodName     = "/auth.AuthService/ResendVerificationCode"
+	AuthService_GetVerificationCode_FullMethodName        = "/auth.AuthService/GetVerificationCode"
+	AuthService_GetVerificationCodeByEmail_FullMethodName = "/auth.AuthService/GetVerificationCodeByEmail"
+	AuthService_GetRecoveryCode_FullMethodName            = "/auth.AuthService/GetRecoveryCode"
+	AuthService_Get2FACode_FullMethodName                 = "/auth.AuthService/Get2FACode"
+	AuthService_ForgotPassword_FullMethodName             = "/auth.AuthService/ForgotPassword"
+	AuthService_ResetPassword_FullMethodName              = "/auth.AuthService/ResetPassword"
+	AuthService_Verify2FA_FullMethodName                  = "/auth.AuthService/Verify2FA"
+	AuthService_UpdateUser2FA_FullMethodName              = "/auth.AuthService/UpdateUser2FA"
+	AuthService_RestoreAccount_FullMethodName             = "/auth.AuthService/RestoreAccount"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -48,7 +49,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthServiceClient interface {
 	Health(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HealthResponse, error)
-	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
+	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
 	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -61,6 +62,7 @@ type AuthServiceClient interface {
 	VerifyAccount(ctx context.Context, in *VerifyAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ResendVerificationCode(ctx context.Context, in *ResendVerificationCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetVerificationCode(ctx context.Context, in *GetVerificationCodeRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error)
+	GetVerificationCodeByEmail(ctx context.Context, in *GetVerificationCodeByEmailRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error)
 	GetRecoveryCode(ctx context.Context, in *GetRecoveryCodeRequest, opts ...grpc.CallOption) (*GetRecoveryCodeResponse, error)
 	Get2FACode(ctx context.Context, in *Get2FACodeRequest, opts ...grpc.CallOption) (*Get2FACodeResponse, error)
 	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -88,9 +90,9 @@ func (c *authServiceClient) Health(ctx context.Context, in *emptypb.Empty, opts 
 	return out, nil
 }
 
-func (c *authServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+func (c *authServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RegisterResponse)
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, AuthService_Register_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -218,6 +220,16 @@ func (c *authServiceClient) GetVerificationCode(ctx context.Context, in *GetVeri
 	return out, nil
 }
 
+func (c *authServiceClient) GetVerificationCodeByEmail(ctx context.Context, in *GetVerificationCodeByEmailRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetVerificationCodeResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetVerificationCodeByEmail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *authServiceClient) GetRecoveryCode(ctx context.Context, in *GetRecoveryCodeRequest, opts ...grpc.CallOption) (*GetRecoveryCodeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRecoveryCodeResponse)
@@ -293,7 +305,7 @@ func (c *authServiceClient) RestoreAccount(ctx context.Context, in *RestoreAccou
 // for forward compatibility.
 type AuthServiceServer interface {
 	Health(context.Context, *emptypb.Empty) (*HealthResponse, error)
-	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
+	Register(context.Context, *RegisterRequest) (*emptypb.Empty, error)
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
 	ChangePassword(context.Context, *ChangePasswordRequest) (*emptypb.Empty, error)
@@ -306,6 +318,7 @@ type AuthServiceServer interface {
 	VerifyAccount(context.Context, *VerifyAccountRequest) (*emptypb.Empty, error)
 	ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error)
 	GetVerificationCode(context.Context, *GetVerificationCodeRequest) (*GetVerificationCodeResponse, error)
+	GetVerificationCodeByEmail(context.Context, *GetVerificationCodeByEmailRequest) (*GetVerificationCodeResponse, error)
 	GetRecoveryCode(context.Context, *GetRecoveryCodeRequest) (*GetRecoveryCodeResponse, error)
 	Get2FACode(context.Context, *Get2FACodeRequest) (*Get2FACodeResponse, error)
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*emptypb.Empty, error)
@@ -326,7 +339,7 @@ type UnimplementedAuthServiceServer struct{}
 func (UnimplementedAuthServiceServer) Health(context.Context, *emptypb.Empty) (*HealthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Health not implemented")
 }
-func (UnimplementedAuthServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
+func (UnimplementedAuthServiceServer) Register(context.Context, *RegisterRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
 func (UnimplementedAuthServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
@@ -364,6 +377,9 @@ func (UnimplementedAuthServiceServer) ResendVerificationCode(context.Context, *R
 }
 func (UnimplementedAuthServiceServer) GetVerificationCode(context.Context, *GetVerificationCodeRequest) (*GetVerificationCodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVerificationCode not implemented")
+}
+func (UnimplementedAuthServiceServer) GetVerificationCodeByEmail(context.Context, *GetVerificationCodeByEmailRequest) (*GetVerificationCodeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVerificationCodeByEmail not implemented")
 }
 func (UnimplementedAuthServiceServer) GetRecoveryCode(context.Context, *GetRecoveryCodeRequest) (*GetRecoveryCodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRecoveryCode not implemented")
@@ -659,6 +675,24 @@ func _AuthService_GetVerificationCode_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GetVerificationCodeByEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVerificationCodeByEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetVerificationCodeByEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetVerificationCodeByEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetVerificationCodeByEmail(ctx, req.(*GetVerificationCodeByEmailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_GetRecoveryCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRecoveryCodeRequest)
 	if err := dec(in); err != nil {
@@ -847,6 +881,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetVerificationCode",
 			Handler:    _AuthService_GetVerificationCode_Handler,
+		},
+		{
+			MethodName: "GetVerificationCodeByEmail",
+			Handler:    _AuthService_GetVerificationCodeByEmail_Handler,
 		},
 		{
 			MethodName: "GetRecoveryCode",

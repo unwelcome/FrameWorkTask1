@@ -356,10 +356,10 @@ func TestUpdateEmployeeRole(t *testing.T) {
 		chief := c.withToken(chiefLogin.AccessToken)
 		companyUUID := mustCreateCompany(t, chief, randomTitle())
 
-		outsiderRegResp := mustRegister(t, c, randomEmail(), "Password123")
+		_, outsiderLogin := mustRegisterAndLogin(t, c)
 
 		status, body := chief.patch(
-			fmt.Sprintf("/api/auth/company/%s/employee/%s/role", companyUUID, outsiderRegResp.UserUUID),
+			fmt.Sprintf("/api/auth/company/%s/employee/%s/role", companyUUID, outsiderLogin.UserUUID),
 			map[string]string{"role": "engineer"},
 		)
 		assert.Equal(t, http.StatusNotFound, status, "target not in company should return 404 (body: %s)", body)

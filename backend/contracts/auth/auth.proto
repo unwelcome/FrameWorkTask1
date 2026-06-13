@@ -7,7 +7,7 @@ import "google/protobuf/empty.proto";
 
 service AuthService {
   rpc Health(google.protobuf.Empty) returns (HealthResponse);
-  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Register(RegisterRequest) returns (google.protobuf.Empty);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
   rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty);
@@ -20,6 +20,7 @@ service AuthService {
   rpc VerifyAccount(VerifyAccountRequest) returns (google.protobuf.Empty);
   rpc ResendVerificationCode(ResendVerificationCodeRequest) returns (google.protobuf.Empty);
   rpc GetVerificationCode(GetVerificationCodeRequest) returns (GetVerificationCodeResponse);
+  rpc GetVerificationCodeByEmail(GetVerificationCodeByEmailRequest) returns (GetVerificationCodeResponse);
   rpc GetRecoveryCode(GetRecoveryCodeRequest) returns (GetRecoveryCodeResponse);
   rpc Get2FACode(Get2FACodeRequest) returns (Get2FACodeResponse);
   rpc ForgotPassword(ForgotPasswordRequest) returns (google.protobuf.Empty);
@@ -72,9 +73,6 @@ message RegisterRequest {
   string first_name = 3;
   string last_name = 4;
   string patronymic = 5;
-}
-message RegisterResponse {
-  string user_uuid = 1;
 }
 
 
@@ -189,6 +187,9 @@ message ResendVerificationCodeRequest {
 // Get verification code (debug only)
 message GetVerificationCodeRequest {
   string user_uuid = 1;
+}
+message GetVerificationCodeByEmailRequest {
+  string email = 1;
 }
 message GetVerificationCodeResponse {
   string code = 1;

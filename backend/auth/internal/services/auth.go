@@ -79,7 +79,7 @@ func (s *AuthService) Health(ctx context.Context, _ *emptypb.Empty) (*pb.HealthR
 }
 
 // Register Создание нового пользователя с отправкой кода верификации на почту
-func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*emptypb.Empty, error) {
 	if err := validate.Email(req.GetEmail()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
 	}
@@ -125,19 +125,20 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		}
 
 		if existing.IsVerified {
-			// Уведомляем владельца почты о попытке регистрации
+			// Уведомляем владельца почты о попытке регистрации (fire & forget)
 			_ = s.publisher.SendRegistrationAttemptEmail(ctx, entities.RegistrationAttemptEmailMsg{
 				Email:     existing.Email,
 				FirstName: existing.FirstName,
 			})
-			return nil, status.Errorf(codes.AlreadyExists, "email already registered")
+			// Не раскрываем, что email уже зарегистрирован
+			return &emptypb.Empty{}, nil
 		}
 
 		// Аккаунт не верифицирован — проверяем, активен ли ещё код
 		_, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: existing.UserUUID})
 		if codeErr.Code == 0 {
-			// Код ещё активен — повторная регистрация недоступна
-			return nil, status.Errorf(codes.AlreadyExists, "verification email already sent, please check your inbox")
+			// Код ещё активен — не раскрываем статус, тихий ОК
+			return &emptypb.Empty{}, nil
 		}
 
 		// Код истёк — удаляем старый неверифицированный аккаунт и создаём новый
@@ -166,7 +167,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		Code:      code,
 	})
 
-	return &pb.RegisterResponse{UserUuid: userUUID}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // Login Авторизация пользователя
@@ -192,9 +193,7 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 
 	// Проверяем, что аккаунт не удалён
 	if user.DeletedAt != nil {
-		hoursLeft := hoursUntilAnonymization(*user.DeletedAt)
-		return nil, status.Errorf(codes.PermissionDenied,
-			"account is deleted, you have %d hours to restore it", hoursLeft)
+		return nil, status.Error(codes.PermissionDenied, deletedAccountMessage(*user.DeletedAt))
 	}
 
 	// Проверяем статус аккаунта
@@ -295,7 +294,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 	}
 
 	if user.DeletedAt != nil {
-		return nil, status.Errorf(codes.PermissionDenied, "account is deleted, you have %d hours to restore it", hoursUntilAnonymization(*user.DeletedAt))
+		return nil, status.Error(codes.PermissionDenied, deletedAccountMessage(*user.DeletedAt))
 	}
 
 	// Проверяем старый пароль
@@ -356,7 +355,7 @@ func (s *AuthService) UpdateUserBio(ctx context.Context, req *pb.UpdateUserBioRe
 		return nil, err
 	}
 	if user.DeletedAt != nil {
-		return nil, status.Errorf(codes.PermissionDenied, "account is deleted, you have %d hours to restore it", hoursUntilAnonymization(*user.DeletedAt))
+		return nil, status.Error(codes.PermissionDenied, deletedAccountMessage(*user.DeletedAt))
 	}
 
 	if err := s.db.User.UpdateUserBio(ctx, entities.UserUpdateBioDTO{
@@ -777,7 +776,7 @@ func (s *AuthService) UpdateUser2FA(ctx context.Context, req *pb.UpdateUser2FARe
 		return nil, err
 	}
 	if user.DeletedAt != nil {
-		return nil, status.Errorf(codes.PermissionDenied, "account is deleted, you have %d hours to restore it", hoursUntilAnonymization(*user.DeletedAt))
+		return nil, status.Error(codes.PermissionDenied, deletedAccountMessage(*user.DeletedAt))
 	}
 
 	// Обновляем данные пользователя
@@ -841,6 +840,30 @@ func (s *AuthService) GetVerificationCode(ctx context.Context, req *pb.GetVerifi
 	}
 
 	code, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: req.GetUserUuid()})
+	if err := codeErr.GRPCError(); err != nil {
+		return nil, err
+	}
+
+	return &pb.GetVerificationCodeResponse{Code: code}, nil
+}
+
+// GetVerificationCodeByEmail Отладочный метод — возвращает активный код верификации по email.
+// Доступен только при APP_ENV=test; в production возвращает Unimplemented.
+func (s *AuthService) GetVerificationCodeByEmail(ctx context.Context, req *pb.GetVerificationCodeByEmailRequest) (*pb.GetVerificationCodeResponse, error) {
+	if s.appEnv != "test" {
+		return nil, status.Errorf(codes.Unimplemented, "not available")
+	}
+
+	if err := validate.Email(req.GetEmail()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
+	}
+
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
+	if err := getErr.GRPCError(); err != nil {
+		return nil, err
+	}
+
+	code, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: user.UserUUID})
 	if err := codeErr.GRPCError(); err != nil {
 		return nil, err
 	}

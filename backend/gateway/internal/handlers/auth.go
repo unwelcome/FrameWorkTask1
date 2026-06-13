@@ -29,6 +29,7 @@ type AuthHandler interface {
 	VerifyAccount(c *fiber.Ctx) error
 	ResendVerificationCode(c *fiber.Ctx) error
 	GetVerificationCode(c *fiber.Ctx) error
+	GetVerificationCodeByEmail(c *fiber.Ctx) error
 	GetRecoveryCode(c *fiber.Ctx) error
 	Get2FACode(c *fiber.Ctx) error
 	ForgotPassword(c *fiber.Ctx) error
@@ -62,9 +63,8 @@ func NewAuthHandler(authServiceClient auth_proto.AuthServiceClient, operationIDK
 //	@Accept 			json
 //	@Produce 			json
 //	@Param 				data body entities.RegisterRequest true "Данные пользователя"
-//	@Success      201  {object}  entities.RegisterResponse
+//	@Success      201
 //	@Failure      400  {object}  Error.HttpError
-//	@Failure      409  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /register [post]
 func (h *authHandler) Register(c *fiber.Ctx) error {
@@ -74,39 +74,27 @@ func (h *authHandler) Register(c *fiber.Ctx) error {
 	defer cancel()
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
-	// Парсит тело запроса
 	httpReq := &entities.RegisterRequest{}
 	if err := c.BodyParser(&httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
 
-	// Валидация
-	err := httpReq.Validate()
-	if err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
-	// Формируем тело запроса
-	req := &auth_proto.RegisterRequest{
+	_, err := h.AuthServiceClient.Register(ctx, &auth_proto.RegisterRequest{
 		Email:      httpReq.Email,
 		Password:   httpReq.Password,
 		FirstName:  httpReq.FirstName,
 		LastName:   httpReq.LastName,
 		Patronymic: httpReq.Patronymic,
-	}
-
-	// Запрос в auth сервис
-	res, err := h.AuthServiceClient.Register(ctx, req)
+	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	// Формируем тело ответа
-	httpRes := &entities.RegisterResponse{
-		UserUUID: res.GetUserUuid(),
-	}
-
-	return c.Status(fiber.StatusCreated).JSON(httpRes)
+	return c.SendStatus(fiber.StatusCreated)
 }
 
 // Login
@@ -658,6 +646,35 @@ func (h *authHandler) GetVerificationCode(c *fiber.Ctx) error {
 	}
 
 	res, err := h.AuthServiceClient.GetVerificationCode(ctx, req)
+	if err != nil {
+		return Error.GRPCErrorToHTTP(err, c)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"code": res.GetCode()})
+}
+
+// GetVerificationCodeByEmail
+//
+//	@Summary      GetVerificationCodeByEmail
+//	@Description  Debug endpoint: returns the active verification code by email. Available only when APP_ENV=test.
+//	@Tags         Debug
+//	@Produce 			json
+//	@Param 				email path string true "Email"
+//	@Success      200  {object}  map[string]string
+//	@Failure      400  {object}  Error.HttpError
+//	@Failure      404  {object}  Error.HttpError
+//	@Failure      501  {object}  Error.HttpError
+//	@Router       /debug/user/email/{email}/verification-code [get]
+func (h *authHandler) GetVerificationCodeByEmail(c *fiber.Ctx) error {
+	operationID := utils.GetLocal[string](c, h.operationIDKey)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
+
+	res, err := h.AuthServiceClient.GetVerificationCodeByEmail(ctx, &auth_proto.GetVerificationCodeByEmailRequest{
+		Email: c.Params("email", ""),
+	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}

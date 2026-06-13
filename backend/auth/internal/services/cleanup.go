@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -60,13 +61,20 @@ func runAnonymize(ctx context.Context, db *postgresDB.DatabaseRepository) {
 	log.Info().Int64("anonymized", count).Msg("cleanup")
 }
 
-// hoursUntilAnonymization возвращает точное количество полных часов до анонимизации аккаунта
-func hoursUntilAnonymization(deletedAt time.Time) int {
-	retentionDeadline := deletedAt.Add(accountDeletionRetention)
-	anonymizationTime := nextCleanupTimeAfter(retentionDeadline)
+// deletedAccountMessage формирует сообщение об ошибке для удалённого аккаунта.
+// Показывает оставшееся время до анонимизации с точностью до минут:
+//   - ≥ 1 час  → "you have N hours to restore it"
+//   - ≥ 1 мин  → "you have N minutes to restore it"
+//   - < 1 мин  → "account is deleted" (cleanup уже фактически наступил)
+func deletedAccountMessage(deletedAt time.Time) string {
+	anonymizationTime := nextCleanupTimeAfter(deletedAt.Add(accountDeletionRetention))
 	remaining := time.Until(anonymizationTime)
-	if remaining <= 0 {
-		return 0
+	switch {
+	case remaining >= time.Hour:
+		return fmt.Sprintf("account is deleted, you have %d hours to restore it", int(remaining.Hours()))
+	case remaining >= time.Minute:
+		return fmt.Sprintf("account is deleted, you have %d minutes to restore it", int(remaining.Minutes()))
+	default:
+		return "account is deleted"
 	}
-	return int(remaining.Hours()) // floor: 59m → 0, 61m → 1
 }

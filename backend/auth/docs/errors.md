@@ -42,7 +42,7 @@ gRPC → HTTP mapping (из `gateway/internal/errors/grpcToFiber.go`):
 | Невалидный пароль (формат) | InvalidArgument | 400 | `invalid password`                                   | |
 | Email не найден | InvalidArgument | 400 | `wrong email or password`                            | timing dummy |
 | Неверный пароль | InvalidArgument | 400 | `wrong email or password`                            | |
-| Аккаунт удалён | PermissionDenied | 403 | `account is deleted, you have N hours to restore it` | N = hoursUntilAnonymization |
+| Аккаунт удалён | PermissionDenied | 403 | `account is deleted[, you have N hours/minutes to restore it]` | N округляется вниз; < 1 мин — без счётчика |
 | Аккаунт не верифицирован | PermissionDenied | 403 | `account is not verified`                            | |
 | Ошибка Save2FAData / SaveRefreshToken | … | 500 | `internal error`                                     | |
 | **Успех (2FA включена)** | — | **200** | `{session_uuid}`                                     | → MQ: `2fa.email` |

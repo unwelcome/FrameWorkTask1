@@ -87,7 +87,7 @@ func TestRegister(t *testing.T) {
 		}
 		svc := newTestService(userRepo, emptyAuthRepo())
 
-		resp, err := svc.Register(context.Background(), &pb.RegisterRequest{
+		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
 			Email:     "test@example.com",
 			Password:  testPassword,
 			FirstName: "Ivan",
@@ -95,9 +95,6 @@ func TestRegister(t *testing.T) {
 		})
 
 		assertNoError(t, err)
-		if resp.GetUserUuid() == "" {
-			t.Error("expected non-empty user UUID")
-		}
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
@@ -177,7 +174,7 @@ func TestRegister(t *testing.T) {
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("email_already_exists", func(t *testing.T) {
+	t.Run("email_already_exists_verified_silent_ok", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			createUser: func(_ context.Context, _ entities.User) Error.CodeError {
 				return Error.Public(codes.AlreadyExists, "email already registered")
@@ -195,7 +192,7 @@ func TestRegister(t *testing.T) {
 			LastName:  "Ivanov",
 		})
 
-		assertCode(t, err, codes.AlreadyExists)
+		assertNoError(t, err)
 	})
 
 	t.Run("email_already_exists_notifies_owner", func(t *testing.T) {
@@ -234,10 +231,36 @@ func TestRegister(t *testing.T) {
 			LastName:  "Ivanov",
 		})
 
-		assertCode(t, err, codes.AlreadyExists)
+		assertNoError(t, err)
 		if !notified {
 			t.Error("expected registration attempt notification to be sent, but it was not")
 		}
+	})
+
+	t.Run("email_unverified_code_active_silent_ok", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			createUser: func(_ context.Context, _ entities.User) Error.CodeError {
+				return Error.Public(codes.AlreadyExists, "email already registered")
+			},
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID2, IsVerified: false}, ok()
+			},
+		}
+		verRepo := &mockVerificationRepo{
+			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
+				return "123456", ok() // код активен
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+
+		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
+			Email:     "pending@example.com",
+			Password:  testPassword,
+			FirstName: "Ivan",
+			LastName:  "Ivanov",
+		})
+
+		assertNoError(t, err)
 	})
 }
 

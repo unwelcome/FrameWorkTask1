@@ -377,10 +377,10 @@ func TestAddEmployeeToDepartment(t *testing.T) {
 		deptUUID := mustCreateDepartment(t, chief, companyUUID, "Engineering")
 
 		// Регистрируем пользователя, который НЕ вступил в компанию
-		outsiderRegResp := mustRegister(t, c, randomEmail(), "Password123")
+		_, outsiderLogin := mustRegisterAndLogin(t, c)
 
 		status, body := chief.post(
-			fmt.Sprintf("/api/auth/company/%s/department/%s/employee/%s", companyUUID, deptUUID, outsiderRegResp.UserUUID),
+			fmt.Sprintf("/api/auth/company/%s/department/%s/employee/%s", companyUUID, deptUUID, outsiderLogin.UserUUID),
 			nil,
 		)
 		assert.Equal(t, http.StatusForbidden, status, "target not in company should return 403 (body: %s)", body)

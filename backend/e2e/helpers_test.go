@@ -73,9 +73,6 @@ func (c *apiClient) delete(path string, body any) (int, []byte) {
 
 // ─── Response types ───────────────────────────────────────────────────────────
 
-type registerResp struct {
-	UserUUID string `json:"user_uuid"`
-}
 
 type loginResp struct {
 	UserUUID     string `json:"user_uuid"`
@@ -146,15 +143,25 @@ func defaultUserPayload(email, password string) map[string]string {
 // ─── Flow helpers ─────────────────────────────────────────────────────────────
 
 // mustRegister registers a user and fails the test immediately if registration fails.
-func mustRegister(t *testing.T, c *apiClient, email, password string) registerResp {
+func mustRegister(t *testing.T, c *apiClient, email, password string) {
 	t.Helper()
 	code, body := c.post("/api/register", defaultUserPayload(email, password))
 	require.Equalf(t, http.StatusCreated, code, "register failed (body: %s)", body)
+}
 
-	var resp registerResp
+// mustGetVerificationCodeByEmail fetches the active verification code for a user via debug endpoint (by email).
+// Only works when APP_ENV=test.
+func mustGetVerificationCodeByEmail(t *testing.T, c *apiClient, email string) string {
+	t.Helper()
+	code, body := c.get(fmt.Sprintf("/api/debug/user/email/%s/verification-code", email))
+	require.Equalf(t, http.StatusOK, code, "get verification code by email failed (body: %s)", body)
+
+	var resp struct {
+		Code string `json:"code"`
+	}
 	require.NoError(t, json.Unmarshal(body, &resp))
-	require.NotEmpty(t, resp.UserUUID, "register returned empty user_uuid")
-	return resp
+	require.NotEmpty(t, resp.Code, "verification code is empty")
+	return resp.Code
 }
 
 // mustGetVerificationCode fetches the active verification code for a user via debug endpoint.
@@ -187,8 +194,8 @@ func mustVerifyAccount(t *testing.T, c *apiClient, email, verificationCode strin
 func mustRegisterVerifyAndLogin(t *testing.T, c *apiClient) (string, loginResp) {
 	t.Helper()
 	email := randomEmail()
-	reg := mustRegister(t, c, email, "Password123")
-	verificationCode := mustGetVerificationCode(t, c, reg.UserUUID)
+	mustRegister(t, c, email, "Password123")
+	verificationCode := mustGetVerificationCodeByEmail(t, c, email)
 	mustVerifyAccount(t, c, email, verificationCode)
 	login := mustLogin(t, c, email, "Password123")
 	return email, login

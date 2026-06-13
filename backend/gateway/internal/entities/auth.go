@@ -38,9 +38,6 @@ type RegisterRequest struct {
 	LastName   string `json:"last_name"`
 	Patronymic string `json:"patronymic"`
 }
-type RegisterResponse struct {
-	UserUUID string `json:"user_uuid"`
-}
 
 func (e *RegisterRequest) Validate() error {
 	e.Email = strings.TrimSpace(e.Email)

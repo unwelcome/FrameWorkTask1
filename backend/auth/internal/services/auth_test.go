@@ -1912,7 +1912,7 @@ func TestVerify2FA(t *testing.T) {
 			Code:        "123456",
 		})
 
-		assertCode(t, err, codes.PermissionDenied)
+		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("save_token_error", func(t *testing.T) {

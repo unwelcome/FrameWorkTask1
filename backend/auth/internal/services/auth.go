@@ -724,7 +724,7 @@ func (s *AuthService) Verify2FA(ctx context.Context, req *pb.Verify2FARequest) (
 
 	// Сравниваем code
 	if data.Code != req.GetCode() {
-		return nil, status.Errorf(codes.PermissionDenied, "invalid or expired code")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired code")
 	}
 
 	// Удаляем сессию

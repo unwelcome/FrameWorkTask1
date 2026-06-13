@@ -754,7 +754,7 @@ func TestVerify2FA(t *testing.T) {
 			"session_uuid": sessionUUID,
 			"code":         "000000",
 		})
-		assert.Equal(t, http.StatusForbidden, code, "wrong 2FA code should return 403 (body: %s)", body)
+		assert.Equal(t, http.StatusBadRequest, code, "wrong 2FA code should return 400 (body: %s)", body)
 	})
 
 	t.Run("session_not_found", func(t *testing.T) {

@@ -130,11 +130,9 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*e
 				Email:     existing.Email,
 				FirstName: existing.FirstName,
 			})
-			// Не раскрываем, что email уже зарегистрирован
-			return &emptypb.Empty{}, nil
 		}
 
-		// Аккаунт не верифицирован — пользователь должен запросить новый код
+		// Не раскрываем, что email уже зарегистрирован
 		return &emptypb.Empty{}, nil
 	}
 

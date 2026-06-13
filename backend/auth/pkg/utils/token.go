@@ -60,10 +60,10 @@ func parseTokenWithPublicKey(tokenString string, publicKey *ecdsa.PublicKey) (*e
 // generateToken Создание JWT токена с ES256
 func generateToken(userUUID string, privateKey *ecdsa.PrivateKey, tokenType string, tokenLifetime time.Duration) (string, error) {
 	claims := &entities.TokenClaims{
-		TokenUUID: uuid.Must(uuid.NewV7()).String(),
 		UserUUID:  userUUID,
 		TokenType: tokenType,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.Must(uuid.NewV7()).String(),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenLifetime)),
 		},
 	}

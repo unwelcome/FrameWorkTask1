@@ -17,7 +17,6 @@ type TokenPair struct {
 }
 
 type TokenClaims struct {
-	TokenUUID string `json:"token_uuid"`
 	UserUUID  string `json:"user_uuid"`
 	TokenType string `json:"token_type"`
 	jwt.RegisteredClaims

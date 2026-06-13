@@ -15,7 +15,6 @@ const (
 type TokenClaims struct {
 	UserUUID  string `json:"user_uuid"`
 	TokenType string `json:"token_type"`
-	TokenUUID string `json:"token_uuid"`
 	jwt.RegisteredClaims
 }
 

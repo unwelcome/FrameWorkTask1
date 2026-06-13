@@ -582,7 +582,8 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 		return nil, err
 	}
 	if !allowed {
-		return nil, status.Errorf(codes.ResourceExhausted, "please wait before requesting a new verification code")
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ResendVerificationCode").Msg("cooldown active")
+		return &emptypb.Empty{}, nil
 	}
 
 	// Rate limiting: суточный лимит отправок
@@ -591,7 +592,8 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 		return nil, err
 	}
 	if count > maxResendDailyCount {
-		return nil, status.Errorf(codes.ResourceExhausted, "daily verification email limit reached")
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ResendVerificationCode").Msg("daily limit reached")
+		return &emptypb.Empty{}, nil
 	}
 
 	// Генерируем новый код (перезаписывает старый и сбрасывает счётчик попыток)
@@ -643,7 +645,8 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 		return nil, err
 	}
 	if !allowed {
-		return nil, status.Errorf(codes.ResourceExhausted, "please wait before requesting a new recovery code")
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("cooldown active")
+		return &emptypb.Empty{}, nil
 	}
 
 	// Rate limiting: суточный лимит запросов
@@ -652,7 +655,8 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 		return nil, err
 	}
 	if count > maxForgotPasswordDailyCount {
-		return nil, status.Errorf(codes.ResourceExhausted, "daily recovery email limit reached")
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("daily limit reached")
+		return &emptypb.Empty{}, nil
 	}
 
 	code := utils.GenerateRecoveryCode()

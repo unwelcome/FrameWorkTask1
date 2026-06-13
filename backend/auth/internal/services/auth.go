@@ -435,8 +435,15 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 		return nil, err
 	}
 
-	if _, getErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: tokenClaims.UserUUID}); getErr.Code != 0 {
+	user, getErr := s.db.User.GetUser(ctx, entities.GetUserDTO{UserUUID: tokenClaims.UserUUID})
+	if getErr.Code != 0 {
 		return nil, getErr.GRPCError()
+	}
+	if user.DeletedAt != nil {
+		return nil, status.Error(codes.PermissionDenied, "account deleted")
+	}
+	if !user.IsVerified {
+		return nil, status.Error(codes.PermissionDenied, "account not verified")
 	}
 
 	tokenPair, err := utils.CreateTokens(tokenClaims.UserUUID, s.jwtPrivateKey, s.accessTokenTTL, s.refreshTokenTTL)

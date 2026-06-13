@@ -1565,6 +1565,12 @@ func TestForgotPassword(t *testing.T) {
 			},
 		}
 		recRepo := &mockRecoveryRepo{
+			acquireForgotPasswordCooldown: func(_ context.Context, _ entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError) {
+				return true, ok()
+			},
+			incrForgotPasswordDailyCount: func(_ context.Context, _ entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
 			saveRecoveryCode: func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError { return ok() },
 		}
 		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
@@ -1632,6 +1638,49 @@ func TestForgotPassword(t *testing.T) {
 		assertNoError(t, err)
 	})
 
+	t.Run("cooldown_active", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+			},
+		}
+		recRepo := &mockRecoveryRepo{
+			acquireForgotPasswordCooldown: func(_ context.Context, _ entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError) {
+				return false, ok() // cooldown ещё активен
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
+
+		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
+			Email: "test@example.com",
+		})
+
+		assertCode(t, err, codes.ResourceExhausted)
+	})
+
+	t.Run("daily_limit_reached", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+			},
+		}
+		recRepo := &mockRecoveryRepo{
+			acquireForgotPasswordCooldown: func(_ context.Context, _ entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError) {
+				return true, ok()
+			},
+			incrForgotPasswordDailyCount: func(_ context.Context, _ entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError) {
+				return maxForgotPasswordDailyCount + 1, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
+
+		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
+			Email: "test@example.com",
+		})
+
+		assertCode(t, err, codes.ResourceExhausted)
+	})
+
 	t.Run("save_code_error", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
@@ -1639,6 +1688,12 @@ func TestForgotPassword(t *testing.T) {
 			},
 		}
 		recRepo := &mockRecoveryRepo{
+			acquireForgotPasswordCooldown: func(_ context.Context, _ entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError) {
+				return true, ok()
+			},
+			incrForgotPasswordDailyCount: func(_ context.Context, _ entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError) {
+				return 1, ok()
+			},
 			saveRecoveryCode: func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError {
 				return Error.Internal(fmt.Errorf("redis error"))
 			},

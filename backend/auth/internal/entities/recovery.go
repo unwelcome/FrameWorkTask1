@@ -16,3 +16,11 @@ type DeleteRecoveryCodeDTO struct {
 type IncrRecoveryAttemptsDTO struct {
 	UserUUID string
 }
+
+type CheckForgotPasswordCooldownDTO struct {
+	UserUUID string
+}
+
+type IncrForgotPasswordDailyCountDTO struct {
+	UserUUID string
+}

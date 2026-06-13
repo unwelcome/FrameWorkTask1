@@ -28,7 +28,8 @@ const (
 	maxVerificationAttempts = 5
 	maxRecoveryAttempts     = 5
 	max2FAAttempts          = 5
-	maxResendDailyCount     = 5
+	maxResendDailyCount         = 5
+	maxForgotPasswordDailyCount = 3
 
 	// accountDeletionRetention — срок хранения данных мягко удалённого аккаунта
 	accountDeletionRetention = 30 * 24 * time.Hour
@@ -614,6 +615,24 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 	if user.DeletedAt != nil {
 		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("account is deleted")
 		return &emptypb.Empty{}, nil
+	}
+
+	// Rate limiting: cooldown между повторными запросами
+	allowed, rateLimitErr := s.cache.Recovery.AcquireForgotPasswordCooldown(ctx, entities.CheckForgotPasswordCooldownDTO{UserUUID: user.UserUUID})
+	if rateLimitErr.Code != 0 {
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+	if !allowed {
+		return nil, status.Errorf(codes.ResourceExhausted, "please wait before requesting a new recovery code")
+	}
+
+	// Rate limiting: суточный лимит запросов
+	count, countErr := s.cache.Recovery.IncrForgotPasswordDailyCount(ctx, entities.IncrForgotPasswordDailyCountDTO{UserUUID: user.UserUUID})
+	if countErr.Code != 0 {
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+	if count > maxForgotPasswordDailyCount {
+		return nil, status.Errorf(codes.ResourceExhausted, "daily recovery email limit reached")
 	}
 
 	code := utils.GenerateRecoveryCode()

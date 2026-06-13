@@ -12,13 +12,22 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-const RecoveryCodeTTL = 15 * time.Minute
+const (
+	RecoveryCodeTTL           = 15 * time.Minute
+	forgotPasswordCooldownTTL = 60 * time.Second
+	forgotPasswordDailyTTL    = 24 * time.Hour
+)
 
 type RecoveryRepository interface {
 	SaveRecoveryCode(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError
 	GetRecoveryCode(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError)
 	DeleteRecoveryCode(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError
 	IncrRecoveryAttempts(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError)
+	// AcquireForgotPasswordCooldown устанавливает ключ cooldown (SetNX). Возвращает true, если cooldown
+	// успешно установлен (отправка разрешена), false — если cooldown ещё активен.
+	AcquireForgotPasswordCooldown(ctx context.Context, dto entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError)
+	// IncrForgotPasswordDailyCount увеличивает суточный счётчик запросов восстановления и возвращает новое значение.
+	IncrForgotPasswordDailyCount(ctx context.Context, dto entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError)
 }
 
 type recoveryRepository struct {
@@ -75,6 +84,29 @@ func (r *recoveryRepository) IncrRecoveryAttempts(ctx context.Context, dto entit
 	return count, Error.CodeError{}
 }
 
+// AcquireForgotPasswordCooldown Устанавливает cooldown-ключ. Возвращает true, если ключ создан (разрешено отправить),
+// false — если ключ уже существует (cooldown ещё активен).
+func (r *recoveryRepository) AcquireForgotPasswordCooldown(ctx context.Context, dto entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError) {
+	set, err := r.redis.SetNX(ctx, r.getForgotPasswordCooldownKey(dto.UserUUID), 1, forgotPasswordCooldownTTL).Result()
+	if err != nil {
+		return false, Error.Internal(err)
+	}
+	return set, Error.CodeError{}
+}
+
+// IncrForgotPasswordDailyCount Увеличивает суточный счётчик запросов восстановления пароля
+func (r *recoveryRepository) IncrForgotPasswordDailyCount(ctx context.Context, dto entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError) {
+	key := r.getForgotPasswordDailyKey(dto.UserUUID)
+	count, err := r.redis.Incr(ctx, key).Result()
+	if err != nil {
+		return 0, Error.Internal(err)
+	}
+	if count == 1 {
+		r.redis.Expire(ctx, key, forgotPasswordDailyTTL)
+	}
+	return count, Error.CodeError{}
+}
+
 // ВСПОМОГАТЕЛЬНЫЕ ФУНЦИИ
 
 func (r *recoveryRepository) getRecoveryCodeKey(userUUID string) string {
@@ -83,4 +115,12 @@ func (r *recoveryRepository) getRecoveryCodeKey(userUUID string) string {
 
 func (r *recoveryRepository) getRecoveryAttemptsKey(userUUID string) string {
 	return fmt.Sprintf("%s:recovery:%s:attempts", r.prefix, userUUID)
+}
+
+func (r *recoveryRepository) getForgotPasswordCooldownKey(userUUID string) string {
+	return fmt.Sprintf("%s:recovery:%s:forgot:cooldown", r.prefix, userUUID)
+}
+
+func (r *recoveryRepository) getForgotPasswordDailyKey(userUUID string) string {
+	return fmt.Sprintf("%s:recovery:%s:forgot:daily", r.prefix, userUUID)
 }

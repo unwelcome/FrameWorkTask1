@@ -139,10 +139,12 @@ func (m *mockVerificationRepo) IncrRecoveryAttempts(ctx context.Context, dto ent
 // ─── Mock: RecoveryRepository ────────────────────────────────────────────────
 
 type mockRecoveryRepo struct {
-	saveRecoveryCode     func(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError
-	getRecoveryCode      func(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError)
-	deleteRecoveryCode   func(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError
-	incrRecoveryAttempts func(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError)
+	saveRecoveryCode              func(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError
+	getRecoveryCode               func(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError)
+	deleteRecoveryCode            func(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError
+	incrRecoveryAttempts          func(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError)
+	acquireForgotPasswordCooldown func(ctx context.Context, dto entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError)
+	incrForgotPasswordDailyCount  func(ctx context.Context, dto entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError)
 }
 
 func (m *mockRecoveryRepo) SaveRecoveryCode(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError {
@@ -157,6 +159,12 @@ func (m *mockRecoveryRepo) DeleteRecoveryCode(ctx context.Context, dto entities.
 func (m *mockRecoveryRepo) IncrRecoveryAttempts(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
 	return m.incrRecoveryAttempts(ctx, dto)
 }
+func (m *mockRecoveryRepo) AcquireForgotPasswordCooldown(ctx context.Context, dto entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError) {
+	return m.acquireForgotPasswordCooldown(ctx, dto)
+}
+func (m *mockRecoveryRepo) IncrForgotPasswordDailyCount(ctx context.Context, dto entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError) {
+	return m.incrForgotPasswordDailyCount(ctx, dto)
+}
 
 // emptyRecoveryRepo — заглушка для тестов, где RecoveryRepository не должен вызываться.
 func emptyRecoveryRepo() *mockRecoveryRepo {
@@ -165,6 +173,12 @@ func emptyRecoveryRepo() *mockRecoveryRepo {
 		getRecoveryCode:      func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) { return "", Error.CodeError{} },
 		deleteRecoveryCode:   func(_ context.Context, _ entities.DeleteRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
 		incrRecoveryAttempts: func(_ context.Context, _ entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
+		acquireForgotPasswordCooldown: func(_ context.Context, _ entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError) {
+			return true, Error.CodeError{}
+		},
+		incrForgotPasswordDailyCount: func(_ context.Context, _ entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError) {
+			return 1, Error.CodeError{}
+		},
 	}
 }
 

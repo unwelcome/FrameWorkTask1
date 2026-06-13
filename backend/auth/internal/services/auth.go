@@ -505,7 +505,7 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 	// Проверяем наличие активного кода.
 	storedCode, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: user.UserUUID})
 	if codeErr.Code != 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired verification code")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
 
 	// Увеличиваем счётчик попыток до проверки кода
@@ -519,7 +519,7 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 	}
 
 	if req.GetCode() != storedCode {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired verification code")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
 
 	// Код верный - удаляем его из Redis
@@ -645,7 +645,7 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 
 	storedCode, codeErr := s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: user.UserUUID})
 	if codeErr.Code != 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired code")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
 
 	attempts, attemptsErr := s.cache.Recovery.IncrRecoveryAttempts(ctx, entities.IncrRecoveryAttemptsDTO{UserUUID: user.UserUUID})
@@ -658,7 +658,7 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 	}
 
 	if req.GetCode() != storedCode {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired code")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
 	}
 
 	_ = s.cache.Recovery.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})

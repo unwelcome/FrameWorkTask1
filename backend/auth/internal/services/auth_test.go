@@ -237,7 +237,7 @@ func TestRegister(t *testing.T) {
 		}
 	})
 
-	t.Run("email_unverified_code_active_silent_ok", func(t *testing.T) {
+	t.Run("email_unverified_silent_ok", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			createUser: func(_ context.Context, _ entities.User) Error.CodeError {
 				return Error.Public(codes.AlreadyExists, "email already registered")
@@ -246,12 +246,7 @@ func TestRegister(t *testing.T) {
 				return &entities.UserGetByEmail{UserUUID: testUUID2, IsVerified: false}, ok()
 			},
 		}
-		verRepo := &mockVerificationRepo{
-			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
-				return "123456", ok() // код активен
-			},
-		}
-		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+		svc := buildSvc(svcDeps{user: userRepo})
 
 		_, err := svc.Register(context.Background(), &pb.RegisterRequest{
 			Email:     "pending@example.com",

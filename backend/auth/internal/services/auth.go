@@ -134,20 +134,8 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*e
 			return &emptypb.Empty{}, nil
 		}
 
-		// Аккаунт не верифицирован — проверяем, активен ли ещё код
-		_, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: existing.UserUUID})
-		if codeErr.Code == 0 {
-			// Код ещё активен — не раскрываем статус, тихий ОК
-			return &emptypb.Empty{}, nil
-		}
-
-		// Код истёк — удаляем старый неверифицированный аккаунт и создаём новый
-		if err := s.db.User.DeleteUser(ctx, entities.DeleteUserDTO{UserUUID: existing.UserUUID}).GRPCError(); err != nil {
-			return nil, err
-		}
-		if err := s.db.User.CreateUser(ctx, user).GRPCError(); err != nil {
-			return nil, err
-		}
+		// Аккаунт не верифицирован — пользователь должен запросить новый код
+		return &emptypb.Empty{}, nil
 	}
 
 	// Генерируем и сохраняем код верификации

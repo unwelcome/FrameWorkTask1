@@ -18,16 +18,18 @@ type Publisher interface {
 	SendPasswordChangedEmail(ctx context.Context, dto entities.PasswordChangedEmailMsg) errors.CodeError
 	SendPasswordResetEmail(ctx context.Context, dto entities.PasswordResetEmailMsg) errors.CodeError
 	SendRegistrationAttemptEmail(ctx context.Context, dto entities.RegistrationAttemptEmailMsg) errors.CodeError
+	SendLoginNotificationEmail(ctx context.Context, dto entities.LoginNotificationEmailMsg) errors.CodeError
 }
 
 type publisher struct {
-	ch                               *amqp.Channel
-	emailVerificationQueue           amqp.Queue
-	emailRecoveryQueue               amqp.Queue
-	email2FAQueue                    amqp.Queue
-	emailPasswordChangedQueue        amqp.Queue
-	emailPasswordResetQueue          amqp.Queue
-	emailRegistrationAttemptQueue    amqp.Queue
+	ch                            *amqp.Channel
+	emailVerificationQueue        amqp.Queue
+	emailRecoveryQueue            amqp.Queue
+	email2FAQueue                 amqp.Queue
+	emailPasswordChangedQueue     amqp.Queue
+	emailPasswordResetQueue       amqp.Queue
+	emailRegistrationAttemptQueue amqp.Queue
+	emailLoginNotificationQueue   amqp.Queue
 }
 
 func NewPublisher(connectString string) Publisher {
@@ -124,6 +126,21 @@ func NewPublisher(connectString string) Publisher {
 		log.Fatal().Err(err).Msg("failed to declare registration-attempt.email queue")
 	}
 
+	// Создание очереди для уведомления о входе в аккаунт (идемпотентно)
+	emailLoginNotificationQueue, err := ch.QueueDeclare(
+		"login-notification.email",
+		true,
+		false,
+		false,
+		false,
+		amqp.Table{
+			amqp.QueueTypeArg: amqp.QueueTypeQuorum,
+		},
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to declare login-notification.email queue")
+	}
+
 	return &publisher{
 		ch:                            ch,
 		emailVerificationQueue:        emailVerificationQueue,
@@ -132,6 +149,7 @@ func NewPublisher(connectString string) Publisher {
 		emailPasswordChangedQueue:     emailPasswordChangedQueue,
 		emailPasswordResetQueue:       emailPasswordResetQueue,
 		emailRegistrationAttemptQueue: emailRegistrationAttemptQueue,
+		emailLoginNotificationQueue:   emailLoginNotificationQueue,
 	}
 }
 
@@ -239,6 +257,29 @@ func (p *publisher) SendRegistrationAttemptEmail(ctx context.Context, dto entiti
 	err = p.ch.PublishWithContext(ctx,
 		"",
 		p.emailRegistrationAttemptQueue.Name,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType:  "application/json",
+			DeliveryMode: amqp.Persistent,
+			Body:         body,
+		})
+	if err != nil {
+		return errors.Internal(err)
+	}
+	return errors.CodeError{}
+}
+
+// SendLoginNotificationEmail Отправляет в очередь login-notification.email уведомление об успешном входе
+func (p *publisher) SendLoginNotificationEmail(ctx context.Context, dto entities.LoginNotificationEmailMsg) errors.CodeError {
+	body, err := json.Marshal(dto)
+	if err != nil {
+		return errors.Internal(err)
+	}
+
+	err = p.ch.PublishWithContext(ctx,
+		"",
+		p.emailLoginNotificationQueue.Name,
 		false,
 		false,
 		amqp.Publishing{

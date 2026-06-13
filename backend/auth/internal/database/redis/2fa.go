@@ -34,8 +34,10 @@ func NewTwoFARepository(redis *redis.Client, prefix string) TwoFARepository {
 // Save2FAData Сохраняет 2FA данные по uuid сессии авторизации
 func (r *twoFARepository) Save2FAData(ctx context.Context, dto entities.Save2FADataDTO) Error.CodeError {
 	body, err := json.Marshal(entities.TwoFAData{
-		UserUUID: dto.UserUUID,
-		Code:     dto.Code,
+		UserUUID:  dto.UserUUID,
+		Email:     dto.Email,
+		FirstName: dto.FirstName,
+		Code:      dto.Code,
 	})
 	if err != nil {
 		return Error.Internal(err)

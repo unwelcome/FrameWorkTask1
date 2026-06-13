@@ -3,6 +3,8 @@ package entities
 type Save2FADataDTO struct {
 	SessionUUID string
 	UserUUID    string
+	Email       string
+	FirstName   string
 	Code        string
 }
 
@@ -19,6 +21,8 @@ type Incr2FAAttemptsDTO struct {
 }
 
 type TwoFAData struct {
-	UserUUID string `json:"user_uuid"`
-	Code     string `json:"code"`
+	UserUUID  string `json:"user_uuid"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	Code      string `json:"code"`
 }

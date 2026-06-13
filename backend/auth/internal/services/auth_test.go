@@ -263,16 +263,35 @@ func TestRegister(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		notified := false
 		hashedPwd := hashPassword(t, testPassword)
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, PasswordHash: hashedPwd, IsVerified: true}, ok()
+				return &entities.UserGetByEmail{
+					UserUUID: testUUID1, PasswordHash: hashedPwd, IsVerified: true,
+					Email: "test@example.com", FirstName: "Ivan",
+				}, ok()
 			},
 		}
 		authRepo := &mockAuthRepo{
 			saveRefreshToken: func(_ context.Context, _ entities.SaveRefreshTokenDTO) Error.CodeError { return ok() },
 		}
-		svc := newTestService(userRepo, authRepo)
+		pub := &mockPublisher{
+			sendVerificationEmail:        func(_ context.Context, _ entities.VerificationEmailMsg) Error.CodeError { return ok() },
+			sendRecoveryEmail:            func(_ context.Context, _ entities.RecoveryEmailMsg) Error.CodeError { return ok() },
+			send2FAEmail:                 func(_ context.Context, _ entities.TwoFAEmailMsg) Error.CodeError { return ok() },
+			sendPasswordChangedEmail:     func(_ context.Context, _ entities.PasswordChangedEmailMsg) Error.CodeError { return ok() },
+			sendPasswordResetEmail:       func(_ context.Context, _ entities.PasswordResetEmailMsg) Error.CodeError { return ok() },
+			sendRegistrationAttemptEmail: func(_ context.Context, _ entities.RegistrationAttemptEmailMsg) Error.CodeError { return ok() },
+			sendLoginNotificationEmail: func(_ context.Context, dto entities.LoginNotificationEmailMsg) Error.CodeError {
+				notified = true
+				if dto.Email != "test@example.com" {
+					t.Errorf("notification sent to wrong email: got %q", dto.Email)
+				}
+				return ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, auth: authRepo, publisher: pub})
 
 		resp, err := svc.Login(context.Background(), &pb.LoginRequest{
 			Email:    "test@example.com",
@@ -285,6 +304,9 @@ func TestLogin(t *testing.T) {
 		}
 		if resp.GetUserUuid() != testUUID1 {
 			t.Errorf("expected user UUID %q, got %q", testUUID1, resp.GetUserUuid())
+		}
+		if !notified {
+			t.Error("expected login notification to be sent")
 		}
 	})
 
@@ -1920,9 +1942,12 @@ func TestResetPassword(t *testing.T) {
 
 func TestVerify2FA(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		notified := false
 		twoFARepo := &mockTwoFARepo{
 			get2FAData: func(_ context.Context, _ entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) {
-				return &entities.TwoFAData{UserUUID: testUUID1, Code: "123456"}, ok()
+				return &entities.TwoFAData{
+					UserUUID: testUUID1, Email: "test@example.com", FirstName: "Ivan", Code: "123456",
+				}, ok()
 			},
 			incr2FAAttempts: func(_ context.Context, _ entities.Incr2FAAttemptsDTO) (int64, Error.CodeError) {
 				return 1, ok()
@@ -1932,7 +1957,22 @@ func TestVerify2FA(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			saveRefreshToken: func(_ context.Context, _ entities.SaveRefreshTokenDTO) Error.CodeError { return ok() },
 		}
-		svc := buildSvc(svcDeps{auth: authRepo, twoFA: twoFARepo})
+		pub := &mockPublisher{
+			sendVerificationEmail:        func(_ context.Context, _ entities.VerificationEmailMsg) Error.CodeError { return ok() },
+			sendRecoveryEmail:            func(_ context.Context, _ entities.RecoveryEmailMsg) Error.CodeError { return ok() },
+			send2FAEmail:                 func(_ context.Context, _ entities.TwoFAEmailMsg) Error.CodeError { return ok() },
+			sendPasswordChangedEmail:     func(_ context.Context, _ entities.PasswordChangedEmailMsg) Error.CodeError { return ok() },
+			sendPasswordResetEmail:       func(_ context.Context, _ entities.PasswordResetEmailMsg) Error.CodeError { return ok() },
+			sendRegistrationAttemptEmail: func(_ context.Context, _ entities.RegistrationAttemptEmailMsg) Error.CodeError { return ok() },
+			sendLoginNotificationEmail: func(_ context.Context, dto entities.LoginNotificationEmailMsg) Error.CodeError {
+				notified = true
+				if dto.Email != "test@example.com" {
+					t.Errorf("notification sent to wrong email: got %q", dto.Email)
+				}
+				return ok()
+			},
+		}
+		svc := buildSvc(svcDeps{auth: authRepo, twoFA: twoFARepo, publisher: pub})
 
 		resp, err := svc.Verify2FA(context.Background(), &pb.Verify2FARequest{
 			SessionUuid: testUUID1,
@@ -1945,6 +1985,9 @@ func TestVerify2FA(t *testing.T) {
 		}
 		if resp.GetAccessToken() == "" || resp.GetRefreshToken() == "" {
 			t.Error("expected non-empty tokens")
+		}
+		if !notified {
+			t.Error("expected login notification to be sent")
 		}
 	})
 

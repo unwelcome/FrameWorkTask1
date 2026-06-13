@@ -199,6 +199,8 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		if err := s.cache.TwoFA.Save2FAData(ctx, entities.Save2FADataDTO{
 			SessionUUID: sessionUUID,
 			UserUUID:    user.UserUUID,
+			Email:       user.Email,
+			FirstName:   user.FirstName,
 			Code:        code,
 		}).GRPCError(); err != nil {
 			return nil, err
@@ -232,6 +234,17 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
+
+	// Уведомляем пользователя об успешном входе
+	_ = s.publisher.SendLoginNotificationEmail(ctx, entities.LoginNotificationEmailMsg{
+		UserUUID:  user.UserUUID,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		IP:        session.IP,
+		Browser:   session.Browser,
+		OS:        session.OS,
+		LoginAt:   time.Now().Unix(),
+	})
 
 	// Возвращаем ответ для выключенной 2FA
 	return &pb.LoginResponse{
@@ -785,6 +798,17 @@ func (s *AuthService) Verify2FA(ctx context.Context, req *pb.Verify2FARequest) (
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
+
+	// Уведомляем пользователя об успешном входе
+	_ = s.publisher.SendLoginNotificationEmail(ctx, entities.LoginNotificationEmailMsg{
+		UserUUID:  data.UserUUID,
+		Email:     data.Email,
+		FirstName: data.FirstName,
+		IP:        session.IP,
+		Browser:   session.Browser,
+		OS:        session.OS,
+		LoginAt:   time.Now().Unix(),
+	})
 
 	// Возвращаем токены и userUUID
 	return &pb.Verify2FAResponse{

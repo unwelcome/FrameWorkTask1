@@ -37,3 +37,13 @@ type RegistrationAttemptEmailMsg struct {
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 }
+
+type LoginNotificationEmailMsg struct {
+	UserUUID  string `json:"user_uuid"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	IP        string `json:"ip"`
+	Browser   string `json:"browser"`
+	OS        string `json:"os"`
+	LoginAt   int64  `json:"login_at"`
+}

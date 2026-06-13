@@ -1244,7 +1244,7 @@ func TestRevokeAllTokens(t *testing.T) {
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("not_found", func(t *testing.T) {
+	t.Run("no_tokens_still_ok", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError {
 				return Error.Public(codes.NotFound, "no tokens")
@@ -1256,7 +1256,7 @@ func TestRevokeAllTokens(t *testing.T) {
 			UserUuid: testUUID1,
 		})
 
-		assertCode(t, err, codes.NotFound)
+		assertNoError(t, err)
 	})
 }
 

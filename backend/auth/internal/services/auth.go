@@ -470,10 +470,13 @@ func (s *AuthService) RevokeAllTokens(ctx context.Context, req *pb.RevokeAllToke
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
 	}
 
-	if err := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{
+	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{
 		UserUUID: req.GetUserUuid(),
-	}).GRPCError(); err != nil {
-		return nil, err
+	})
+	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
+		if err := revokeErr.GRPCError(); err != nil {
+			return nil, err
+		}
 	}
 
 	return &emptypb.Empty{}, nil

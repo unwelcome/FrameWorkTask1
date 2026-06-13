@@ -122,8 +122,8 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*e
 
 		// Email уже занят, проверяем, верифицирован ли он
 		existing, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
-		if getErr.Code != 0 {
-			return nil, status.Errorf(codes.Internal, "internal error")
+		if err := getErr.GRPCError(); err != nil {
+			return nil, err
 		}
 
 		if existing.IsVerified {
@@ -515,8 +515,8 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 
 	// Увеличиваем счётчик попыток до проверки кода
 	attempts, attemptsErr := s.cache.Verification.IncrVerificationAttempts(ctx, entities.IncrVerificationAttemptsDTO{UserUUID: user.UserUUID})
-	if attemptsErr.Code != 0 {
-		return nil, status.Errorf(codes.Internal, "internal error")
+	if err := attemptsErr.GRPCError(); err != nil {
+		return nil, err
 	}
 	if attempts > maxVerificationAttempts {
 		_ = s.cache.Verification.DeleteVerificationCode(ctx, entities.DeleteVerificationCodeDTO{UserUUID: user.UserUUID})
@@ -558,8 +558,8 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 
 	// Rate limiting: cooldown между повторными отправками
 	allowed, rateLimitErr := s.cache.Verification.AcquireResendCooldown(ctx, entities.CheckResendCooldownDTO{UserUUID: user.UserUUID})
-	if rateLimitErr.Code != 0 {
-		return nil, status.Errorf(codes.Internal, "internal error")
+	if err := rateLimitErr.GRPCError(); err != nil {
+		return nil, err
 	}
 	if !allowed {
 		return nil, status.Errorf(codes.ResourceExhausted, "please wait before requesting a new verification code")
@@ -567,8 +567,8 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 
 	// Rate limiting: суточный лимит отправок
 	count, countErr := s.cache.Verification.IncrResendDailyCount(ctx, entities.IncrResendDailyCountDTO{UserUUID: user.UserUUID})
-	if countErr.Code != 0 {
-		return nil, status.Errorf(codes.Internal, "internal error")
+	if err := countErr.GRPCError(); err != nil {
+		return nil, err
 	}
 	if count > maxResendDailyCount {
 		return nil, status.Errorf(codes.ResourceExhausted, "daily verification email limit reached")
@@ -619,8 +619,8 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 
 	// Rate limiting: cooldown между повторными запросами
 	allowed, rateLimitErr := s.cache.Recovery.AcquireForgotPasswordCooldown(ctx, entities.CheckForgotPasswordCooldownDTO{UserUUID: user.UserUUID})
-	if rateLimitErr.Code != 0 {
-		return nil, status.Errorf(codes.Internal, "internal error")
+	if err := rateLimitErr.GRPCError(); err != nil {
+		return nil, err
 	}
 	if !allowed {
 		return nil, status.Errorf(codes.ResourceExhausted, "please wait before requesting a new recovery code")
@@ -628,8 +628,8 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 
 	// Rate limiting: суточный лимит запросов
 	count, countErr := s.cache.Recovery.IncrForgotPasswordDailyCount(ctx, entities.IncrForgotPasswordDailyCountDTO{UserUUID: user.UserUUID})
-	if countErr.Code != 0 {
-		return nil, status.Errorf(codes.Internal, "internal error")
+	if err := countErr.GRPCError(); err != nil {
+		return nil, err
 	}
 	if count > maxForgotPasswordDailyCount {
 		return nil, status.Errorf(codes.ResourceExhausted, "daily recovery email limit reached")
@@ -690,8 +690,8 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 	}
 
 	attempts, attemptsErr := s.cache.Recovery.IncrRecoveryAttempts(ctx, entities.IncrRecoveryAttemptsDTO{UserUUID: user.UserUUID})
-	if attemptsErr.Code != 0 {
-		return nil, status.Errorf(codes.Internal, "internal error")
+	if err := attemptsErr.GRPCError(); err != nil {
+		return nil, err
 	}
 	if attempts > maxRecoveryAttempts {
 		_ = s.cache.Recovery.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})

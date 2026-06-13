@@ -1,26 +1,12 @@
 package entities
 
-type SaveRecoveryCodeDTO struct {
-	UserUUID string
-	Code     string
+import "time"
+
+type AddToResetTokenBlacklistDTO struct {
+	TokenID string
+	TTL     time.Duration
 }
 
-type GetRecoveryCodeDTO struct {
-	UserUUID string
-}
-
-type DeleteRecoveryCodeDTO struct {
-	UserUUID string
-}
-
-type IncrRecoveryAttemptsDTO struct {
-	UserUUID string
-}
-
-type CheckForgotPasswordCooldownDTO struct {
-	UserUUID string
-}
-
-type IncrForgotPasswordDailyCountDTO struct {
-	UserUUID string
+type IsResetTokenBlacklistedDTO struct {
+	TokenID string
 }

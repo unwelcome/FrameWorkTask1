@@ -5,8 +5,9 @@ import (
 )
 
 const (
-	AccessTokenType  = "access_token"
-	RefreshTokenType = "refresh_token"
+	AccessTokenType        = "access_token"
+	RefreshTokenType       = "refresh_token"
+	ResetPasswordTokenType = "reset_password_token"
 )
 
 type TokenPair struct {
@@ -17,6 +18,12 @@ type TokenPair struct {
 type TokenClaims struct {
 	TokenUUID string `json:"token_uuid"`
 	UserUUID  string `json:"user_uuid"`
+	TokenType string `json:"token_type"`
+	jwt.RegisteredClaims
+}
+
+type ResetPasswordTokenClaims struct {
+	Email     string `json:"email"`
 	TokenType string `json:"token_type"`
 	jwt.RegisteredClaims
 }

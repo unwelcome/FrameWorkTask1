@@ -25,15 +25,16 @@ import (
 )
 
 const (
-	maxVerificationAttempts     = 5
-	maxRecoveryAttempts         = 5
-	max2FAAttempts              = 5
-	max2FAEmailDailyCount       = 5
-	maxResendDailyCount         = 5
-	maxForgotPasswordDailyCount = 3
+	maxVerificationAttempts = 5
+	max2FAAttempts          = 5
+	max2FAEmailDailyCount   = 5
+	maxResendDailyCount     = 5
 
 	// accountDeletionRetention — срок хранения данных мягко удалённого аккаунта
 	accountDeletionRetention = 30 * 24 * time.Hour
+
+	// resetPasswordTokenTTL — время жизни JWT токена для сброса пароля
+	resetPasswordTokenTTL = 15 * time.Minute
 
 	// dummyUUID — nil UUID, используется как заглушка в Redis-запросах при выравнивании времени ответа
 	dummyUUID = "00000000-0000-0000-0000-000000000000"
@@ -658,97 +659,58 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 		return &emptypb.Empty{}, nil
 	}
 
-	// Rate limiting: cooldown между повторными запросами
-	allowed, rateLimitErr := s.cache.Recovery.AcquireForgotPasswordCooldown(ctx, entities.CheckForgotPasswordCooldownDTO{UserUUID: user.UserUUID})
-	if err := rateLimitErr.GRPCError(); err != nil {
-		return nil, err
-	}
-	if !allowed {
-		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("cooldown active")
-		return &emptypb.Empty{}, nil
-	}
-
-	// Rate limiting: суточный лимит запросов
-	count, countErr := s.cache.Recovery.IncrForgotPasswordDailyCount(ctx, entities.IncrForgotPasswordDailyCountDTO{UserUUID: user.UserUUID})
-	if err := countErr.GRPCError(); err != nil {
-		return nil, err
-	}
-	if count > maxForgotPasswordDailyCount {
-		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("daily limit reached")
-		return &emptypb.Empty{}, nil
-	}
-
-	code := utils.GenerateRecoveryCode()
-	if err := s.cache.Recovery.SaveRecoveryCode(ctx, entities.SaveRecoveryCodeDTO{
-		UserUUID: user.UserUUID,
-		Code:     code,
-	}).GRPCError(); err != nil {
-		return nil, err
+	resetToken, err := utils.CreateResetPasswordToken(user.Email, s.jwtPrivateKey, resetPasswordTokenTTL)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
 	// Отправляем сообщение в message broker
 	_ = s.publisher.SendRecoveryEmail(ctx, entities.RecoveryEmailMsg{
 		UserUUID:  user.UserUUID,
-		Email:     req.GetEmail(),
+		Email:     user.Email,
 		FirstName: user.FirstName,
-		Code:      code,
+		Token:     resetToken,
 	})
 
 	return &emptypb.Empty{}, nil
 }
 
-// ResetPassword Сбрасывает пароль по коду восстановления
+// ResetPassword Сбрасывает пароль по JWT reset-password токену
 func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest) (*emptypb.Empty, error) {
-	if err := validate.Email(req.GetEmail()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
-	}
-	if err := validate.UserRecoveryCode(req.GetCode()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid code format")
-	}
 	if err := validate.Password(req.GetNewPassword()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid password")
 	}
 
-	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
-	if getErr.Code != 0 {
-		// Защита от timing-атаки
-		_, _ = s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: dummyUUID})
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
+	// Верифицируем JWT токен (подпись + срок действия)
+	claims, err := utils.ParseResetPasswordToken(req.GetResetToken(), s.jwtPrivateKey)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired reset token")
 	}
 
-	if !user.IsVerified {
-		// Защита от timing-атаки
-		_, _ = s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: dummyUUID})
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
-	}
-	if user.DeletedAt != nil {
-		// Защита от timing-атаки
-		_, _ = s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: dummyUUID})
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
+	if claims.TokenType != entities.ResetPasswordTokenType {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired reset token")
 	}
 
-	storedCode, codeErr := s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: user.UserUUID})
-	if codeErr.Code != 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
-	}
-
-	attempts, attemptsErr := s.cache.Recovery.IncrRecoveryAttempts(ctx, entities.IncrRecoveryAttemptsDTO{UserUUID: user.UserUUID})
-	if err := attemptsErr.GRPCError(); err != nil {
+	// Проверяем, что токен не был использован ранее
+	blacklisted, blacklistErr := s.cache.Recovery.IsResetTokenBlacklisted(ctx, entities.IsResetTokenBlacklistedDTO{TokenID: claims.ID})
+	if err := blacklistErr.GRPCError(); err != nil {
 		return nil, err
 	}
-	if attempts > maxRecoveryAttempts {
-		_ = s.cache.Recovery.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})
-		return nil, status.Errorf(codes.ResourceExhausted, "too many attempts, please request a new recovery code")
+	if blacklisted {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired reset token")
 	}
 
-	if req.GetCode() != storedCode {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: claims.Email})
+	if getErr.Code != 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired reset token")
 	}
 
-	_ = s.cache.Recovery.DeleteRecoveryCode(ctx, entities.DeleteRecoveryCodeDTO{UserUUID: user.UserUUID})
+	if !user.IsVerified || user.DeletedAt != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired reset token")
+	}
 
-	passwordHash, err := password.Hash(req.GetNewPassword())
-	if err != nil {
+	passwordHash, hashErr := password.Hash(req.GetNewPassword())
+	if hashErr != nil {
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
@@ -759,7 +721,16 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 		return nil, err
 	}
 
-	// Уведомляем пользователя о сбросе пароля через recovery
+	// Добавляем токен в blacklist с TTL равным оставшемуся времени жизни
+	remainingTTL := time.Until(claims.ExpiresAt.Time)
+	if remainingTTL > 0 {
+		_ = s.cache.Recovery.AddToResetTokenBlacklist(ctx, entities.AddToResetTokenBlacklistDTO{
+			TokenID: claims.ID,
+			TTL:     remainingTTL,
+		})
+	}
+
+	// Уведомляем пользователя о сбросе пароля
 	_ = s.publisher.SendPasswordResetEmail(ctx, entities.PasswordResetEmailMsg{
 		UserUUID:  user.UserUUID,
 		Email:     user.Email,
@@ -936,23 +907,28 @@ func (s *AuthService) GetVerificationCodeByEmail(ctx context.Context, req *pb.Ge
 	return &pb.GetVerificationCodeResponse{Code: code}, nil
 }
 
-// GetRecoveryCode Отладочный метод — возвращает активный код восстановления пароля.
+// GetResetPasswordToken Отладочный метод — генерирует и возвращает reset-password токен по email.
 // Доступен только при APP_ENV=test; в production возвращает Unimplemented.
-func (s *AuthService) GetRecoveryCode(ctx context.Context, req *pb.GetRecoveryCodeRequest) (*pb.GetRecoveryCodeResponse, error) {
+func (s *AuthService) GetResetPasswordToken(ctx context.Context, req *pb.GetResetPasswordTokenRequest) (*pb.GetResetPasswordTokenResponse, error) {
 	if s.appEnv != "test" {
 		return nil, status.Errorf(codes.Unimplemented, "not available")
 	}
 
-	if err := validate.UUID(req.GetUserUuid()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
+	if err := validate.Email(req.GetEmail()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
 	}
 
-	code, codeErr := s.cache.Recovery.GetRecoveryCode(ctx, entities.GetRecoveryCodeDTO{UserUUID: req.GetUserUuid()})
-	if err := codeErr.GRPCError(); err != nil {
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
+	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
 
-	return &pb.GetRecoveryCodeResponse{Code: code}, nil
+	token, err := utils.CreateResetPasswordToken(user.Email, s.jwtPrivateKey, resetPasswordTokenTTL)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "internal error")
+	}
+
+	return &pb.GetResetPasswordTokenResponse{Token: token}, nil
 }
 
 // Get2FACode Отладочный метод — возвращает активный код 2FA по uuid сессии.

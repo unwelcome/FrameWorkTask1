@@ -100,6 +100,7 @@ type GetUserResponse struct {
 	Patronymic  string `json:"patronymic"`
 	Description string `json:"description,omitempty"`
 	CreatedAt   string `json:"created_at"`
+	DeletedAt   string `json:"deleted_at,omitempty"`
 }
 
 func (e *GetUserRequest) Validate() error {
@@ -253,20 +254,15 @@ func (e *ForgotPasswordRequest) Validate() error {
 // ─── ResetPassword ────────────────────────────────────────────────────────────
 
 type ResetPasswordRequest struct {
-	Email       string `json:"email"`
-	Code        string `json:"code"`
+	ResetToken  string `json:"reset_token"`
 	NewPassword string `json:"new_password"`
 }
 type ResetPasswordResponse struct{}
 
 func (e *ResetPasswordRequest) Validate() error {
-	e.Email = strings.TrimSpace(e.Email)
-	if err := validate.Email(e.Email); err != nil {
-		return err
-	}
-	e.Code = strings.TrimSpace(e.Code)
-	if err := validate.UserRecoveryCode(e.Code); err != nil {
-		return err
+	e.ResetToken = strings.TrimSpace(e.ResetToken)
+	if err := utils.ValidateJWT(e.ResetToken); err != nil {
+		return fmt.Errorf("reset_token: %w", err)
 	}
 	e.NewPassword = strings.TrimSpace(e.NewPassword)
 	return validate.Password(e.NewPassword)

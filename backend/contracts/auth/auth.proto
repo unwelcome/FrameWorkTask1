@@ -20,7 +20,7 @@ service AuthService {
   rpc VerifyAccount(VerifyAccountRequest) returns (google.protobuf.Empty);
   rpc ResendVerificationCode(ResendVerificationCodeRequest) returns (google.protobuf.Empty);
   rpc GetVerificationCodeByEmail(GetVerificationCodeByEmailRequest) returns (GetVerificationCodeResponse);
-  rpc GetRecoveryCode(GetRecoveryCodeRequest) returns (GetRecoveryCodeResponse);
+  rpc GetResetPasswordToken(GetResetPasswordTokenRequest) returns (GetResetPasswordTokenResponse);
   rpc Get2FACode(Get2FACodeRequest) returns (Get2FACodeResponse);
   rpc ForgotPassword(ForgotPasswordRequest) returns (google.protobuf.Empty);
   rpc ResetPassword(ResetPasswordRequest) returns (google.protobuf.Empty);
@@ -191,12 +191,12 @@ message GetVerificationCodeResponse {
 }
 
 
-// Get recovery code (debug only)
-message GetRecoveryCodeRequest {
-  string user_uuid = 1;
+// Get reset password token (debug only)
+message GetResetPasswordTokenRequest {
+  string email = 1;
 }
-message GetRecoveryCodeResponse {
-  string code = 1;
+message GetResetPasswordTokenResponse {
+  string token = 1;
 }
 
 
@@ -218,9 +218,8 @@ message ForgotPasswordRequest {
 
 // Reset password
 message ResetPasswordRequest {
-  string email = 1;
-  string code = 2;
-  string new_password = 3;
+  string reset_token = 1;
+  string new_password = 2;
 }
 // Empty response
 

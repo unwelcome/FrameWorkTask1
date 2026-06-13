@@ -98,11 +98,6 @@ type mockVerificationRepo struct {
 	incrVerificationAttempts func(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError)
 	acquireResendCooldown    func(ctx context.Context, dto entities.CheckResendCooldownDTO) (bool, Error.CodeError)
 	incrResendDailyCount     func(ctx context.Context, dto entities.IncrResendDailyCountDTO) (int64, Error.CodeError)
-
-	saveRecoveryCode     func(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError
-	getRecoveryCode      func(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError)
-	deleteRecoveryCode   func(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError
-	incrRecoveryAttempts func(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError)
 }
 
 func (m *mockVerificationRepo) SaveVerificationCode(ctx context.Context, dto entities.SaveVerificationCodeDTO) Error.CodeError {
@@ -123,61 +118,29 @@ func (m *mockVerificationRepo) AcquireResendCooldown(ctx context.Context, dto en
 func (m *mockVerificationRepo) IncrResendDailyCount(ctx context.Context, dto entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
 	return m.incrResendDailyCount(ctx, dto)
 }
-func (m *mockVerificationRepo) SaveRecoveryCode(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError {
-	return m.saveRecoveryCode(ctx, dto)
-}
-func (m *mockVerificationRepo) GetRecoveryCode(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
-	return m.getRecoveryCode(ctx, dto)
-}
-func (m *mockVerificationRepo) DeleteRecoveryCode(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError {
-	return m.deleteRecoveryCode(ctx, dto)
-}
-func (m *mockVerificationRepo) IncrRecoveryAttempts(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
-	return m.incrRecoveryAttempts(ctx, dto)
-}
 
 // ─── Mock: RecoveryRepository ────────────────────────────────────────────────
 
 type mockRecoveryRepo struct {
-	saveRecoveryCode              func(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError
-	getRecoveryCode               func(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError)
-	deleteRecoveryCode            func(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError
-	incrRecoveryAttempts          func(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError)
-	acquireForgotPasswordCooldown func(ctx context.Context, dto entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError)
-	incrForgotPasswordDailyCount  func(ctx context.Context, dto entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError)
+	addToResetTokenBlacklist func(ctx context.Context, dto entities.AddToResetTokenBlacklistDTO) Error.CodeError
+	isResetTokenBlacklisted  func(ctx context.Context, dto entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError)
 }
 
-func (m *mockRecoveryRepo) SaveRecoveryCode(ctx context.Context, dto entities.SaveRecoveryCodeDTO) Error.CodeError {
-	return m.saveRecoveryCode(ctx, dto)
+func (m *mockRecoveryRepo) AddToResetTokenBlacklist(ctx context.Context, dto entities.AddToResetTokenBlacklistDTO) Error.CodeError {
+	return m.addToResetTokenBlacklist(ctx, dto)
 }
-func (m *mockRecoveryRepo) GetRecoveryCode(ctx context.Context, dto entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
-	return m.getRecoveryCode(ctx, dto)
-}
-func (m *mockRecoveryRepo) DeleteRecoveryCode(ctx context.Context, dto entities.DeleteRecoveryCodeDTO) Error.CodeError {
-	return m.deleteRecoveryCode(ctx, dto)
-}
-func (m *mockRecoveryRepo) IncrRecoveryAttempts(ctx context.Context, dto entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
-	return m.incrRecoveryAttempts(ctx, dto)
-}
-func (m *mockRecoveryRepo) AcquireForgotPasswordCooldown(ctx context.Context, dto entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError) {
-	return m.acquireForgotPasswordCooldown(ctx, dto)
-}
-func (m *mockRecoveryRepo) IncrForgotPasswordDailyCount(ctx context.Context, dto entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError) {
-	return m.incrForgotPasswordDailyCount(ctx, dto)
+func (m *mockRecoveryRepo) IsResetTokenBlacklisted(ctx context.Context, dto entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
+	return m.isResetTokenBlacklisted(ctx, dto)
 }
 
 // emptyRecoveryRepo — заглушка для тестов, где RecoveryRepository не должен вызываться.
 func emptyRecoveryRepo() *mockRecoveryRepo {
 	return &mockRecoveryRepo{
-		saveRecoveryCode:     func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
-		getRecoveryCode:      func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) { return "", Error.CodeError{} },
-		deleteRecoveryCode:   func(_ context.Context, _ entities.DeleteRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
-		incrRecoveryAttempts: func(_ context.Context, _ entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
-		acquireForgotPasswordCooldown: func(_ context.Context, _ entities.CheckForgotPasswordCooldownDTO) (bool, Error.CodeError) {
-			return true, Error.CodeError{}
+		addToResetTokenBlacklist: func(_ context.Context, _ entities.AddToResetTokenBlacklistDTO) Error.CodeError {
+			return Error.CodeError{}
 		},
-		incrForgotPasswordDailyCount: func(_ context.Context, _ entities.IncrForgotPasswordDailyCountDTO) (int64, Error.CodeError) {
-			return 1, Error.CodeError{}
+		isResetTokenBlacklisted: func(_ context.Context, _ entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
+			return false, Error.CodeError{}
 		},
 	}
 }
@@ -185,10 +148,12 @@ func emptyRecoveryRepo() *mockRecoveryRepo {
 // ─── Mock: TwoFARepository ───────────────────────────────────────────────────
 
 type mockTwoFARepo struct {
-	save2FAData     func(ctx context.Context, dto entities.Save2FADataDTO) Error.CodeError
-	get2FAData      func(ctx context.Context, dto entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError)
-	delete2FAData   func(ctx context.Context, dto entities.Delete2FADataDTO) Error.CodeError
-	incr2FAAttempts func(ctx context.Context, dto entities.Incr2FAAttemptsDTO) (int64, Error.CodeError)
+	save2FAData            func(ctx context.Context, dto entities.Save2FADataDTO) Error.CodeError
+	get2FAData             func(ctx context.Context, dto entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError)
+	delete2FAData          func(ctx context.Context, dto entities.Delete2FADataDTO) Error.CodeError
+	incr2FAAttempts        func(ctx context.Context, dto entities.Incr2FAAttemptsDTO) (int64, Error.CodeError)
+	acquire2FAEmailCooldown func(ctx context.Context, dto entities.Acquire2FAEmailCooldownDTO) (bool, Error.CodeError)
+	incr2FAEmailDailyCount  func(ctx context.Context, dto entities.Incr2FAEmailDailyCountDTO) (int64, Error.CodeError)
 }
 
 func (m *mockTwoFARepo) Save2FAData(ctx context.Context, dto entities.Save2FADataDTO) Error.CodeError {
@@ -203,14 +168,22 @@ func (m *mockTwoFARepo) Delete2FAData(ctx context.Context, dto entities.Delete2F
 func (m *mockTwoFARepo) Incr2FAAttempts(ctx context.Context, dto entities.Incr2FAAttemptsDTO) (int64, Error.CodeError) {
 	return m.incr2FAAttempts(ctx, dto)
 }
+func (m *mockTwoFARepo) Acquire2FAEmailCooldown(ctx context.Context, dto entities.Acquire2FAEmailCooldownDTO) (bool, Error.CodeError) {
+	return m.acquire2FAEmailCooldown(ctx, dto)
+}
+func (m *mockTwoFARepo) Incr2FAEmailDailyCount(ctx context.Context, dto entities.Incr2FAEmailDailyCountDTO) (int64, Error.CodeError) {
+	return m.incr2FAEmailDailyCount(ctx, dto)
+}
 
 // emptyTwoFARepo — заглушка для тестов, где TwoFARepository не должен вызываться.
 func emptyTwoFARepo() *mockTwoFARepo {
 	return &mockTwoFARepo{
-		save2FAData:     func(_ context.Context, _ entities.Save2FADataDTO) Error.CodeError { return Error.CodeError{} },
-		get2FAData:      func(_ context.Context, _ entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) { return nil, Error.CodeError{} },
-		delete2FAData:   func(_ context.Context, _ entities.Delete2FADataDTO) Error.CodeError { return Error.CodeError{} },
-		incr2FAAttempts: func(_ context.Context, _ entities.Incr2FAAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
+		save2FAData:             func(_ context.Context, _ entities.Save2FADataDTO) Error.CodeError { return Error.CodeError{} },
+		get2FAData:              func(_ context.Context, _ entities.Get2FADataDTO) (*entities.TwoFAData, Error.CodeError) { return nil, Error.CodeError{} },
+		delete2FAData:           func(_ context.Context, _ entities.Delete2FADataDTO) Error.CodeError { return Error.CodeError{} },
+		incr2FAAttempts:         func(_ context.Context, _ entities.Incr2FAAttemptsDTO) (int64, Error.CodeError) { return 0, Error.CodeError{} },
+		acquire2FAEmailCooldown: func(_ context.Context, _ entities.Acquire2FAEmailCooldownDTO) (bool, Error.CodeError) { return true, Error.CodeError{} },
+		incr2FAEmailDailyCount:  func(_ context.Context, _ entities.Incr2FAEmailDailyCountDTO) (int64, Error.CodeError) { return 1, Error.CodeError{} },
 	}
 }
 
@@ -323,14 +296,6 @@ func emptyVerificationRepo() *mockVerificationRepo {
 		},
 		incrResendDailyCount: func(_ context.Context, _ entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
 			return 1, Error.CodeError{}
-		},
-		saveRecoveryCode: func(_ context.Context, _ entities.SaveRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
-		getRecoveryCode: func(_ context.Context, _ entities.GetRecoveryCodeDTO) (string, Error.CodeError) {
-			return "", Error.CodeError{}
-		},
-		deleteRecoveryCode: func(_ context.Context, _ entities.DeleteRecoveryCodeDTO) Error.CodeError { return Error.CodeError{} },
-		incrRecoveryAttempts: func(_ context.Context, _ entities.IncrRecoveryAttemptsDTO) (int64, Error.CodeError) {
-			return 0, Error.CodeError{}
 		},
 	}
 }

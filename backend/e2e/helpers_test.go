@@ -651,18 +651,18 @@ func mustGetApplicationDetail(t *testing.T, client *apiClient, appUUID string) a
 
 // ─── Recovery / password-reset helpers ───────────────────────────────────────
 
-// mustGetRecoveryCode fetches the active password-recovery code for a user via debug endpoint.
+// mustGetResetPasswordToken fetches a reset-password JWT token for the given email via debug endpoint.
 // Only works when APP_ENV=test.
-func mustGetRecoveryCode(t *testing.T, c *apiClient, userUUID string) string {
+func mustGetResetPasswordToken(t *testing.T, c *apiClient, email string) string {
 	t.Helper()
-	code, body := c.get(fmt.Sprintf("/api/debug/user/%s/recovery-code", userUUID))
-	require.Equalf(t, http.StatusOK, code, "get recovery code failed (body: %s)", body)
+	code, body := c.get(fmt.Sprintf("/api/debug/user/email/%s/reset-password-token", email))
+	require.Equalf(t, http.StatusOK, code, "get reset password token failed (body: %s)", body)
 	var resp struct {
-		Code string `json:"code"`
+		Token string `json:"token"`
 	}
 	require.NoError(t, json.Unmarshal(body, &resp))
-	require.NotEmpty(t, resp.Code, "recovery code is empty")
-	return resp.Code
+	require.NotEmpty(t, resp.Token, "reset password token is empty")
+	return resp.Token
 }
 
 // mustForgotPassword triggers the password-recovery flow for the given email.
@@ -699,12 +699,11 @@ func mustRestoreAccount(t *testing.T, c *apiClient, email, password string) {
 	require.Equalf(t, http.StatusOK, code, "restore account failed (body: %s)", body)
 }
 
-// mustResetPassword completes the password-reset using a recovery code.
-func mustResetPassword(t *testing.T, c *apiClient, email, recoveryCode, newPassword string) {
+// mustResetPassword completes the password-reset using a JWT reset-password token.
+func mustResetPassword(t *testing.T, c *apiClient, resetToken, newPassword string) {
 	t.Helper()
 	code, body := c.post("/api/reset-password", map[string]string{
-		"email":        email,
-		"code":         recoveryCode,
+		"reset_token":  resetToken,
 		"new_password": newPassword,
 	})
 	require.Equalf(t, http.StatusOK, code, "reset password failed (body: %s)", body)

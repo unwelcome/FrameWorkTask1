@@ -34,7 +34,7 @@ const (
 	AuthService_VerifyAccount_FullMethodName              = "/auth.AuthService/VerifyAccount"
 	AuthService_ResendVerificationCode_FullMethodName     = "/auth.AuthService/ResendVerificationCode"
 	AuthService_GetVerificationCodeByEmail_FullMethodName = "/auth.AuthService/GetVerificationCodeByEmail"
-	AuthService_GetRecoveryCode_FullMethodName            = "/auth.AuthService/GetRecoveryCode"
+	AuthService_GetResetPasswordToken_FullMethodName      = "/auth.AuthService/GetResetPasswordToken"
 	AuthService_Get2FACode_FullMethodName                 = "/auth.AuthService/Get2FACode"
 	AuthService_ForgotPassword_FullMethodName             = "/auth.AuthService/ForgotPassword"
 	AuthService_ResetPassword_FullMethodName              = "/auth.AuthService/ResetPassword"
@@ -61,7 +61,7 @@ type AuthServiceClient interface {
 	VerifyAccount(ctx context.Context, in *VerifyAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ResendVerificationCode(ctx context.Context, in *ResendVerificationCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetVerificationCodeByEmail(ctx context.Context, in *GetVerificationCodeByEmailRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error)
-	GetRecoveryCode(ctx context.Context, in *GetRecoveryCodeRequest, opts ...grpc.CallOption) (*GetRecoveryCodeResponse, error)
+	GetResetPasswordToken(ctx context.Context, in *GetResetPasswordTokenRequest, opts ...grpc.CallOption) (*GetResetPasswordTokenResponse, error)
 	Get2FACode(ctx context.Context, in *Get2FACodeRequest, opts ...grpc.CallOption) (*Get2FACodeResponse, error)
 	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -218,10 +218,10 @@ func (c *authServiceClient) GetVerificationCodeByEmail(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *authServiceClient) GetRecoveryCode(ctx context.Context, in *GetRecoveryCodeRequest, opts ...grpc.CallOption) (*GetRecoveryCodeResponse, error) {
+func (c *authServiceClient) GetResetPasswordToken(ctx context.Context, in *GetResetPasswordTokenRequest, opts ...grpc.CallOption) (*GetResetPasswordTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetRecoveryCodeResponse)
-	err := c.cc.Invoke(ctx, AuthService_GetRecoveryCode_FullMethodName, in, out, cOpts...)
+	out := new(GetResetPasswordTokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetResetPasswordToken_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +306,7 @@ type AuthServiceServer interface {
 	VerifyAccount(context.Context, *VerifyAccountRequest) (*emptypb.Empty, error)
 	ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error)
 	GetVerificationCodeByEmail(context.Context, *GetVerificationCodeByEmailRequest) (*GetVerificationCodeResponse, error)
-	GetRecoveryCode(context.Context, *GetRecoveryCodeRequest) (*GetRecoveryCodeResponse, error)
+	GetResetPasswordToken(context.Context, *GetResetPasswordTokenRequest) (*GetResetPasswordTokenResponse, error)
 	Get2FACode(context.Context, *Get2FACodeRequest) (*Get2FACodeResponse, error)
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*emptypb.Empty, error)
 	ResetPassword(context.Context, *ResetPasswordRequest) (*emptypb.Empty, error)
@@ -365,8 +365,8 @@ func (UnimplementedAuthServiceServer) ResendVerificationCode(context.Context, *R
 func (UnimplementedAuthServiceServer) GetVerificationCodeByEmail(context.Context, *GetVerificationCodeByEmailRequest) (*GetVerificationCodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVerificationCodeByEmail not implemented")
 }
-func (UnimplementedAuthServiceServer) GetRecoveryCode(context.Context, *GetRecoveryCodeRequest) (*GetRecoveryCodeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRecoveryCode not implemented")
+func (UnimplementedAuthServiceServer) GetResetPasswordToken(context.Context, *GetResetPasswordTokenRequest) (*GetResetPasswordTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetResetPasswordToken not implemented")
 }
 func (UnimplementedAuthServiceServer) Get2FACode(context.Context, *Get2FACodeRequest) (*Get2FACodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get2FACode not implemented")
@@ -659,20 +659,20 @@ func _AuthService_GetVerificationCodeByEmail_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_GetRecoveryCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRecoveryCodeRequest)
+func _AuthService_GetResetPasswordToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetResetPasswordTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).GetRecoveryCode(ctx, in)
+		return srv.(AuthServiceServer).GetResetPasswordToken(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_GetRecoveryCode_FullMethodName,
+		FullMethod: AuthService_GetResetPasswordToken_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).GetRecoveryCode(ctx, req.(*GetRecoveryCodeRequest))
+		return srv.(AuthServiceServer).GetResetPasswordToken(ctx, req.(*GetResetPasswordTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -849,8 +849,8 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthService_GetVerificationCodeByEmail_Handler,
 		},
 		{
-			MethodName: "GetRecoveryCode",
-			Handler:    _AuthService_GetRecoveryCode_Handler,
+			MethodName: "GetResetPasswordToken",
+			Handler:    _AuthService_GetResetPasswordToken_Handler,
 		},
 		{
 			MethodName: "Get2FACode",

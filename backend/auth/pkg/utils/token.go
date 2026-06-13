@@ -77,6 +77,46 @@ func generateToken(userUUID string, privateKey *ecdsa.PrivateKey, tokenType stri
 	return tokenString, nil
 }
 
+// CreateResetPasswordToken Генерация JWT токена для сброса пароля
+func CreateResetPasswordToken(email string, privateKey *ecdsa.PrivateKey, ttl time.Duration) (string, error) {
+	claims := &entities.ResetPasswordTokenClaims{
+		Email:     email,
+		TokenType: entities.ResetPasswordTokenType,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.Must(uuid.NewV7()).String(),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	tokenString, err := token.SignedString(privateKey)
+	if err != nil {
+		return "", fmt.Errorf("generate reset password token error: %w", err)
+	}
+	return tokenString, nil
+}
+
+// ParseResetPasswordToken Парсинг JWT токена для сброса пароля
+func ParseResetPasswordToken(tokenString string, privateKey *ecdsa.PrivateKey) (*entities.ResetPasswordTokenClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &entities.ResetPasswordTokenClaims{}, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return &privateKey.PublicKey, nil
+	})
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, fmt.Errorf("token expired")
+		}
+		return nil, fmt.Errorf("failed verify token")
+	}
+
+	if claims, ok := token.Claims.(*entities.ResetPasswordTokenClaims); ok {
+		return claims, nil
+	}
+	return nil, fmt.Errorf("invalid token")
+}
+
 // HashToken Хеширует refresh токен
 func HashToken(rawToken string) string {
 	hash := sha256.Sum256([]byte(rawToken))

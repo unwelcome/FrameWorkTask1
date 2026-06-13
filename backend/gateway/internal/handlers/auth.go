@@ -220,6 +220,7 @@ func (h *authHandler) GetUser(c *fiber.Ctx) error {
 		Patronymic:  res.GetPatronymic(),
 		Description: res.GetDescription(),
 		CreatedAt:   res.GetCreatedAt(),
+		DeletedAt:   res.GetDeletedAt(),
 	}
 
 	return c.Status(fiber.StatusOK).JSON(httpRes)
@@ -646,16 +647,16 @@ func (h *authHandler) GetVerificationCodeByEmail(c *fiber.Ctx) error {
 
 // GetRecoveryCode
 //
-//	@Summary      GetRecoveryCode
-//	@Description  Debug endpoint: returns the active recovery code. Available only when APP_ENV=test.
+//	@Summary      GetResetPasswordToken
+//	@Description  Debug endpoint: generates and returns a reset password token by email. Available only when APP_ENV=test.
 //	@Tags         Debug
 //	@Produce 			json
-//	@Param 				user_uuid path string true "User UUID"
+//	@Param 				email path string true "Email"
 //	@Success      200  {object}  map[string]string
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      501  {object}  Error.HttpError
-//	@Router       /debug/user/{user_uuid}/recovery-code [get]
+//	@Router       /debug/user/email/{email}/reset-password-token [get]
 func (h *authHandler) GetRecoveryCode(c *fiber.Ctx) error {
 	operationID := utils.GetLocal[string](c, h.operationIDKey)
 
@@ -663,16 +664,14 @@ func (h *authHandler) GetRecoveryCode(c *fiber.Ctx) error {
 	defer cancel()
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
-	req := &auth_proto.GetRecoveryCodeRequest{
-		UserUuid: c.Params("user_uuid", ""),
-	}
-
-	res, err := h.AuthServiceClient.GetRecoveryCode(ctx, req)
+	res, err := h.AuthServiceClient.GetResetPasswordToken(ctx, &auth_proto.GetResetPasswordTokenRequest{
+		Email: c.Params("email", ""),
+	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"code": res.GetCode()})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"token": res.GetToken()})
 }
 
 // Get2FACode
@@ -747,14 +746,13 @@ func (h *authHandler) ForgotPassword(c *fiber.Ctx) error {
 // ResetPassword
 //
 //	@Summary      ResetPassword
-//	@Description  Reset password using a recovery code from email
+//	@Description  Reset password using a one-time JWT reset token from email
 //	@Tags         User
 //	@Accept 			json
 //	@Produce 			json
-//	@Param 				data body entities.ResetPasswordRequest true "Email, код и новый пароль"
+//	@Param 				data body entities.ResetPasswordRequest true "JWT токен и новый пароль"
 //	@Success      200  {object}  entities.ResetPasswordResponse
 //	@Failure      400  {object}  Error.HttpError
-//	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /reset-password [post]
 func (h *authHandler) ResetPassword(c *fiber.Ctx) error {
@@ -774,8 +772,7 @@ func (h *authHandler) ResetPassword(c *fiber.Ctx) error {
 	}
 
 	_, err := h.AuthServiceClient.ResetPassword(ctx, &auth_proto.ResetPasswordRequest{
-		Email:       httpReq.Email,
-		Code:        httpReq.Code,
+		ResetToken:  httpReq.ResetToken,
 		NewPassword: httpReq.NewPassword,
 	})
 	if err != nil {

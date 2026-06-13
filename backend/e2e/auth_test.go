@@ -165,7 +165,7 @@ func TestRefreshToken(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	t.Run("happy_path", func(t *testing.T) {
 		c := newClient()
-		email, login := mustRegisterAndLogin(t, c)
+		_, login := mustRegisterAndLogin(t, c)
 		auth := c.withToken(login.AccessToken)
 
 		code, body := auth.get("/api/auth/user/" + login.UserUUID + "/info")
@@ -175,7 +175,6 @@ func TestGetUser(t *testing.T) {
 		var resp getUserResp
 		require.NoError(t, json.Unmarshal(body, &resp))
 		assert.Equal(t, login.UserUUID, resp.UserUUID)
-		assert.Equal(t, email, resp.Email)
 		assert.NotEmpty(t, resp.FirstName)
 		assert.NotEmpty(t, resp.CreatedAt)
 	})
@@ -188,13 +187,16 @@ func TestGetUser(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, code, "request without token should return 401 (body: %s)", body)
 	})
 
-	t.Run("not_found", func(t *testing.T) {
+	t.Run("access_denied_not_colleague", func(t *testing.T) {
+		// GetUser проверяет коллег через company сервис, прежде чем обратиться в auth.
+		// Попытка получить профиль чужого пользователя (не коллеги) возвращает 403 —
+		// независимо от того, существует такой UUID или нет.
 		c := newClient()
 		_, login := mustRegisterAndLogin(t, c)
 		auth := c.withToken(login.AccessToken)
 
 		code, body := auth.get("/api/auth/user/00000000-0000-0000-0000-000000000001/info")
-		assert.Equal(t, http.StatusNotFound, code, "unknown uuid should return 404 (body: %s)", body)
+		assert.Equal(t, http.StatusForbidden, code, "non-colleague uuid should return 403 (body: %s)", body)
 	})
 }
 
@@ -470,12 +472,11 @@ func TestDeleteUser(t *testing.T) {
 		email, login := mustRegisterAndLogin(t, c)
 		auth := c.withToken(login.AccessToken)
 
-		code, body := auth.delete("/api/auth/user/account", map[string]string{
-			"target_uuid": login.UserUUID,
-		})
+		// Handler берёт UUID из JWT-контекста, тело не нужно
+		code, body := auth.delete("/api/auth/user/account", nil)
 		require.Equal(t, http.StatusOK, code, "delete user failed (body: %s)", body)
 
-		// Soft delete: пользователь всё ещё существует в БД, GetUser возвращает 200 с deleted_at
+		// Soft delete: пользователь всё ещё существует в БД, GetUser на свой UUID возвращает 200 с deleted_at
 		code, body = auth.get("/api/auth/user/" + login.UserUUID + "/info")
 		require.Equal(t, http.StatusOK, code, "soft-deleted user should still be visible via GetUser (body: %s)", body)
 		var user getUserResp
@@ -673,11 +674,11 @@ func TestForgotPassword(t *testing.T) {
 func TestResetPassword(t *testing.T) {
 	t.Run("happy_path", func(t *testing.T) {
 		c := newClient()
-		email, login := mustRegisterAndLogin(t, c)
+		email, _ := mustRegisterAndLogin(t, c)
 
 		mustForgotPassword(t, c, email)
-		recoveryCode := mustGetRecoveryCode(t, c, login.UserUUID)
-		mustResetPassword(t, c, email, recoveryCode, "NewPassword456")
+		resetToken := mustGetResetPasswordToken(t, c, email)
+		mustResetPassword(t, c, resetToken, "NewPassword456")
 
 		// Логин с новым паролем должен пройти
 		newLogin := mustLogin(t, c, email, "NewPassword456")
@@ -691,28 +692,42 @@ func TestResetPassword(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, code, "old password should fail after reset")
 	})
 
-	t.Run("wrong_code", func(t *testing.T) {
+	t.Run("token_reuse_rejected", func(t *testing.T) {
 		c := newClient()
 		email, _ := mustRegisterAndLogin(t, c)
+
 		mustForgotPassword(t, c, email)
+		resetToken := mustGetResetPasswordToken(t, c, email)
+		mustResetPassword(t, c, resetToken, "NewPassword456")
+
+		// Повторное использование того же токена должно быть отклонено
+		code, body := c.post("/api/reset-password", map[string]string{
+			"reset_token":  resetToken,
+			"new_password": "AnotherPassword789",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "token reuse should return 400 (body: %s)", body)
+	})
+
+	t.Run("invalid_token", func(t *testing.T) {
+		c := newClient()
+		_, _ = mustRegisterAndLogin(t, c)
 
 		code, body := c.post("/api/reset-password", map[string]string{
-			"email":        email,
-			"code":         "000000",
+			"reset_token":  "invalid.token.value",
 			"new_password": "NewPassword456",
 		})
-		assert.Equal(t, http.StatusBadRequest, code, "wrong code should return 400 (body: %s)", body)
+		assert.Equal(t, http.StatusBadRequest, code, "invalid token should return 400 (body: %s)", body)
 	})
 
 	t.Run("invalid_new_password", func(t *testing.T) {
 		c := newClient()
 		email, _ := mustRegisterAndLogin(t, c)
 		mustForgotPassword(t, c, email)
+		resetToken := mustGetResetPasswordToken(t, c, email)
 
 		// Невалидный пароль → gateway отклонит до обращения к сервису
 		code, body := c.post("/api/reset-password", map[string]string{
-			"email":        email,
-			"code":         "123456",
+			"reset_token":  resetToken,
 			"new_password": "weak",
 		})
 		assert.Equal(t, http.StatusBadRequest, code, "weak new password should return 400 (body: %s)", body)
@@ -851,7 +866,8 @@ func TestAuthFullFlow(t *testing.T) {
 	require.Equal(t, http.StatusOK, code, "get user: %s", body)
 	var user getUserResp
 	require.NoError(t, json.Unmarshal(body, &user))
-	assert.Equal(t, email, user.Email)
+	assert.Equal(t, userUUID, user.UserUUID)
+	assert.NotEmpty(t, user.FirstName)
 
 	// 6. Update bio (including description)
 	code, body = auth.patch("/api/auth/user/bio", map[string]string{
@@ -913,8 +929,8 @@ func TestAuthFullFlow(t *testing.T) {
 
 	// 18. ResetPassword
 	const resetPassword = "ResetPassword789"
-	recoveryCode := mustGetRecoveryCode(t, c, userUUID)
-	mustResetPassword(t, c, email, recoveryCode, resetPassword)
+	resetToken := mustGetResetPasswordToken(t, c, email)
+	mustResetPassword(t, c, resetToken, resetPassword)
 
 	// 19. Login с новым (сброшенным) паролем
 	login = mustLogin(t, c, email, resetPassword)
@@ -942,8 +958,8 @@ func TestAuthFullFlow(t *testing.T) {
 	login = mustLogin(t, c, email, resetPassword)
 	auth = c.withToken(login.AccessToken)
 
-	// 24. DeleteUser (soft delete)
-	code, body = auth.delete("/api/auth/user/account", map[string]string{"target_uuid": userUUID})
+	// 24. DeleteUser (soft delete) — handler берёт UUID из JWT, тело не нужно
+	code, body = auth.delete("/api/auth/user/account", nil)
 	require.Equal(t, http.StatusOK, code, "delete user: %s", body)
 
 	// 25. Login заблокирован — аккаунт мягко удалён → 403

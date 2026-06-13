@@ -199,7 +199,7 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 
 	// Проверяем статус аккаунта
 	if !user.IsVerified {
-		return nil, status.Errorf(codes.PermissionDenied, "account not verified")
+		return nil, status.Errorf(codes.PermissionDenied, "account is not verified")
 	}
 
 	// Если у пользователя включена 2FA

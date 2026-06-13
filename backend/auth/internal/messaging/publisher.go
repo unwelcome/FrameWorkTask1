@@ -16,6 +16,7 @@ type Publisher interface {
 	SendRecoveryEmail(ctx context.Context, dto entities.RecoveryEmailMsg) errors.CodeError
 	Send2FAEmail(ctx context.Context, dto entities.TwoFAEmailMsg) errors.CodeError
 	SendPasswordChangedEmail(ctx context.Context, dto entities.PasswordChangedEmailMsg) errors.CodeError
+	SendPasswordResetEmail(ctx context.Context, dto entities.PasswordResetEmailMsg) errors.CodeError
 	SendRegistrationAttemptEmail(ctx context.Context, dto entities.RegistrationAttemptEmailMsg) errors.CodeError
 }
 
@@ -25,6 +26,7 @@ type publisher struct {
 	emailRecoveryQueue               amqp.Queue
 	email2FAQueue                    amqp.Queue
 	emailPasswordChangedQueue        amqp.Queue
+	emailPasswordResetQueue          amqp.Queue
 	emailRegistrationAttemptQueue    amqp.Queue
 }
 
@@ -92,6 +94,21 @@ func NewPublisher(connectString string) Publisher {
 		log.Fatal().Err(err).Msg("failed to declare password-changed.email queue")
 	}
 
+	// Создание очереди для уведомления о сбросе пароля через recovery (идемпотентно)
+	emailPasswordResetQueue, err := ch.QueueDeclare(
+		"password-reset.email",
+		true,
+		false,
+		false,
+		false,
+		amqp.Table{
+			amqp.QueueTypeArg: amqp.QueueTypeQuorum,
+		},
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to declare password-reset.email queue")
+	}
+
 	// Создание очереди для уведомления о попытке регистрации с занятым email (идемпотентно)
 	emailRegistrationAttemptQueue, err := ch.QueueDeclare(
 		"registration-attempt.email",
@@ -113,6 +130,7 @@ func NewPublisher(connectString string) Publisher {
 		emailRecoveryQueue:            emailRecoveryQueue,
 		email2FAQueue:                 email2FAQueue,
 		emailPasswordChangedQueue:     emailPasswordChangedQueue,
+		emailPasswordResetQueue:       emailPasswordResetQueue,
 		emailRegistrationAttemptQueue: emailRegistrationAttemptQueue,
 	}
 }
@@ -175,6 +193,29 @@ func (p *publisher) SendPasswordChangedEmail(ctx context.Context, dto entities.P
 	err = p.ch.PublishWithContext(ctx,
 		"",
 		p.emailPasswordChangedQueue.Name,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType:  "application/json",
+			DeliveryMode: amqp.Persistent,
+			Body:         body,
+		})
+	if err != nil {
+		return errors.Internal(err)
+	}
+	return errors.CodeError{}
+}
+
+// SendPasswordResetEmail Отправляет в очередь password-reset.email уведомление о сбросе пароля через recovery
+func (p *publisher) SendPasswordResetEmail(ctx context.Context, dto entities.PasswordResetEmailMsg) errors.CodeError {
+	body, err := json.Marshal(dto)
+	if err != nil {
+		return errors.Internal(err)
+	}
+
+	err = p.ch.PublishWithContext(ctx,
+		"",
+		p.emailPasswordResetQueue.Name,
 		false,
 		false,
 		amqp.Publishing{

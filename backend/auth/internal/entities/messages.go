@@ -27,6 +27,12 @@ type PasswordChangedEmailMsg struct {
 	FirstName string `json:"first_name"`
 }
 
+type PasswordResetEmailMsg struct {
+	UserUUID  string `json:"user_uuid"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+}
+
 type RegistrationAttemptEmailMsg struct {
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`

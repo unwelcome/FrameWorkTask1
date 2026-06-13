@@ -199,6 +199,7 @@ type mockPublisher struct {
 	sendRecoveryEmail            func(ctx context.Context, dto entities.RecoveryEmailMsg) Error.CodeError
 	send2FAEmail                 func(ctx context.Context, dto entities.TwoFAEmailMsg) Error.CodeError
 	sendPasswordChangedEmail     func(ctx context.Context, dto entities.PasswordChangedEmailMsg) Error.CodeError
+	sendPasswordResetEmail       func(ctx context.Context, dto entities.PasswordResetEmailMsg) Error.CodeError
 	sendRegistrationAttemptEmail func(ctx context.Context, dto entities.RegistrationAttemptEmailMsg) Error.CodeError
 }
 
@@ -214,6 +215,9 @@ func (m *mockPublisher) Send2FAEmail(ctx context.Context, dto entities.TwoFAEmai
 func (m *mockPublisher) SendPasswordChangedEmail(ctx context.Context, dto entities.PasswordChangedEmailMsg) Error.CodeError {
 	return m.sendPasswordChangedEmail(ctx, dto)
 }
+func (m *mockPublisher) SendPasswordResetEmail(ctx context.Context, dto entities.PasswordResetEmailMsg) Error.CodeError {
+	return m.sendPasswordResetEmail(ctx, dto)
+}
 func (m *mockPublisher) SendRegistrationAttemptEmail(ctx context.Context, dto entities.RegistrationAttemptEmailMsg) Error.CodeError {
 	return m.sendRegistrationAttemptEmail(ctx, dto)
 }
@@ -225,6 +229,7 @@ func emptyPublisher() messaging.Publisher {
 		sendRecoveryEmail:            func(_ context.Context, _ entities.RecoveryEmailMsg) Error.CodeError { return Error.CodeError{} },
 		send2FAEmail:                 func(_ context.Context, _ entities.TwoFAEmailMsg) Error.CodeError { return Error.CodeError{} },
 		sendPasswordChangedEmail:     func(_ context.Context, _ entities.PasswordChangedEmailMsg) Error.CodeError { return Error.CodeError{} },
+		sendPasswordResetEmail:       func(_ context.Context, _ entities.PasswordResetEmailMsg) Error.CodeError { return Error.CodeError{} },
 		sendRegistrationAttemptEmail: func(_ context.Context, _ entities.RegistrationAttemptEmailMsg) Error.CodeError { return Error.CodeError{} },
 	}
 }

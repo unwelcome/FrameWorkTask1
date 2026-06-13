@@ -1602,9 +1602,10 @@ func TestForgotPassword(t *testing.T) {
 
 func TestResetPassword(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		notified := false
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+				return &entities.UserGetByEmail{UserUUID: testUUID1, Email: "test@example.com", FirstName: "Ivan", IsVerified: true}, ok()
 			},
 			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError { return ok() },
 		}
@@ -1620,7 +1621,16 @@ func TestResetPassword(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			revokeAllRefreshTokens: func(_ context.Context, _ entities.RevokeAllRefreshTokensDTO) Error.CodeError { return ok() },
 		}
-		svc := buildSvc(svcDeps{user: userRepo, auth: authRepo, recovery: recRepo})
+		pub := &mockPublisher{
+			sendPasswordResetEmail: func(_ context.Context, dto entities.PasswordResetEmailMsg) Error.CodeError {
+				notified = true
+				if dto.Email != "test@example.com" {
+					t.Errorf("notification sent to wrong email: got %q", dto.Email)
+				}
+				return ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, auth: authRepo, recovery: recRepo, publisher: pub})
 
 		_, err := svc.ResetPassword(context.Background(), &pb.ResetPasswordRequest{
 			Email:       "test@example.com",
@@ -1629,6 +1639,9 @@ func TestResetPassword(t *testing.T) {
 		})
 
 		assertNoError(t, err)
+		if !notified {
+			t.Error("expected password changed notification to be sent")
+		}
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {

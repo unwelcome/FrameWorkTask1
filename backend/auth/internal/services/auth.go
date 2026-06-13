@@ -675,6 +675,13 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 		return nil, err
 	}
 
+	// Уведомляем пользователя о сбросе пароля через recovery
+	_ = s.publisher.SendPasswordResetEmail(ctx, entities.PasswordResetEmailMsg{
+		UserUUID:  user.UserUUID,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+	})
+
 	// Отзываем все активные сессии после смены пароля
 	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: user.UserUUID})
 	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {

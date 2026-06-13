@@ -788,7 +788,8 @@ func (s *AuthService) RestoreAccount(ctx context.Context, req *pb.RestoreAccount
 		return nil, status.Errorf(codes.InvalidArgument, "account is not deleted")
 	}
 
-	if time.Since(*user.DeletedAt) > accountDeletionRetention {
+	anonymizationTime := nextCleanupTimeAfter(user.DeletedAt.Add(accountDeletionRetention))
+	if !time.Now().Before(anonymizationTime) {
 		return nil, status.Errorf(codes.PermissionDenied, "restoration period has expired")
 	}
 

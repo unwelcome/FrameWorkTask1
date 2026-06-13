@@ -505,7 +505,7 @@ func TestRestoreAccount(t *testing.T) {
 		email, login := mustRegisterAndLogin(t, c)
 		auth := c.withToken(login.AccessToken)
 
-		mustDeleteAccount(t, auth, login.UserUUID)
+		mustDeleteAccount(t, auth)
 
 		// Восстанавливаем аккаунт
 		code, body := c.post("/api/restore-account", map[string]string{
@@ -531,7 +531,7 @@ func TestRestoreAccount(t *testing.T) {
 		c := newClient()
 		email, login := mustRegisterAndLogin(t, c)
 		auth := c.withToken(login.AccessToken)
-		mustDeleteAccount(t, auth, login.UserUUID)
+		mustDeleteAccount(t, auth)
 
 		code, body := c.post("/api/restore-account", map[string]string{
 			"email":    email,

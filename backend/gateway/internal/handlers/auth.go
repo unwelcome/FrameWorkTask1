@@ -327,11 +327,8 @@ func (h *authHandler) UpdateUserBio(c *fiber.Ctx) error {
 //	@Accept 			json
 //	@Produce 			json
 //	@Security 		ApiKeyAuth
-//	@Param 				data body entities.DeleteUserRequest true "Target UUID"
 //	@Success      200  {object}  entities.DeleteUserResponse
-//	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
-//	@Failure      403  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /auth/user/account [delete]
@@ -342,34 +339,16 @@ func (h *authHandler) DeleteUser(c *fiber.Ctx) error {
 	defer cancel()
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
-	// Парсит тело запроса
-	httpReq := &entities.DeleteUserRequest{}
-	if err := c.BodyParser(&httpReq); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
-	}
-
-	// Валидация
-	err := httpReq.Validate()
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
-	}
-
-	// Формируем тело запроса
 	req := &auth_proto.DeleteUserRequest{
-		InitiatorUserUuid: utils.GetLocal[string](c, h.userUUIDKey),
-		TargetUserUuid:    httpReq.TargetUUID,
+		UserUuid: utils.GetLocal[string](c, h.userUUIDKey),
 	}
 
-	// Запрос в auth сервис
-	_, err = h.AuthServiceClient.DeleteUser(ctx, req)
+	_, err := h.AuthServiceClient.DeleteUser(ctx, req)
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	// Формируем тело ответа
-	httpRes := &entities.DeleteUserResponse{}
-
-	return c.Status(fiber.StatusOK).JSON(httpRes)
+	return c.Status(fiber.StatusOK).JSON(&entities.DeleteUserResponse{})
 }
 
 // GetAllActiveTokens

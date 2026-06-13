@@ -698,9 +698,9 @@ func mustChangePassword(t *testing.T, auth *apiClient, oldPassword, newPassword 
 }
 
 // mustDeleteAccount soft-deletes the authenticated user's own account.
-func mustDeleteAccount(t *testing.T, auth *apiClient, userUUID string) {
+func mustDeleteAccount(t *testing.T, auth *apiClient) {
 	t.Helper()
-	code, body := auth.delete("/api/auth/user/account", map[string]string{"target_uuid": userUUID})
+	code, body := auth.delete("/api/auth/user/account", nil)
 	require.Equalf(t, http.StatusOK, code, "delete account failed (body: %s)", body)
 }
 

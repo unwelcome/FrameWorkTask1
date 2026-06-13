@@ -359,24 +359,17 @@ func (s *AuthService) UpdateUserBio(ctx context.Context, req *pb.UpdateUserBioRe
 
 // DeleteUser Удаление пользователя
 func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*emptypb.Empty, error) {
-	if err := validate.UUID(req.GetInitiatorUserUuid()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
-	}
-	if err := validate.UUID(req.GetTargetUserUuid()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid target uuid")
-	}
-
-	if req.GetInitiatorUserUuid() != req.GetTargetUserUuid() {
-		return nil, status.Errorf(codes.PermissionDenied, "not enough rights")
+	if err := validate.UUID(req.GetUserUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
 	}
 
 	// Мягкое удаление - проставляем deleted_at = NOW()
-	if err := s.db.User.DeleteUser(ctx, entities.DeleteUserDTO{UserUUID: req.GetTargetUserUuid()}).GRPCError(); err != nil {
+	if err := s.db.User.DeleteUser(ctx, entities.DeleteUserDTO{UserUUID: req.GetUserUuid()}).GRPCError(); err != nil {
 		return nil, err
 	}
 
 	// Отзываем все активные сессии - удалённый аккаунт не должен оставаться авторизованным
-	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: req.GetTargetUserUuid()})
+	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: req.GetUserUuid()})
 	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
 		if err := revokeErr.GRPCError(); err != nil {
 			return nil, err

@@ -128,8 +128,7 @@ message UpdateUserBioRequest {
 
 // Delete user
 message DeleteUserRequest {
-  string initiator_user_uuid = 1;
-  string target_user_uuid = 2;
+  string user_uuid = 1;
 }
 // Empty response
 

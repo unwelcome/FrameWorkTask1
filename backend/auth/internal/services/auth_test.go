@@ -734,8 +734,7 @@ func TestDeleteUser(t *testing.T) {
 		svc := newTestService(userRepo, authRepo)
 
 		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
-			InitiatorUserUuid: testUUID1,
-			TargetUserUuid:    testUUID1,
+			UserUuid: testUUID1,
 		})
 
 		assertNoError(t, err)
@@ -753,44 +752,20 @@ func TestDeleteUser(t *testing.T) {
 		svc := newTestService(userRepo, authRepo)
 
 		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
-			InitiatorUserUuid: testUUID1,
-			TargetUserUuid:    testUUID1,
+			UserUuid: testUUID1,
 		})
 
 		assertNoError(t, err)
 	})
 
-	t.Run("invalid_initiator_uuid", func(t *testing.T) {
+	t.Run("invalid_uuid", func(t *testing.T) {
 		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
 
 		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
-			InitiatorUserUuid: "not-a-uuid",
-			TargetUserUuid:    testUUID1,
+			UserUuid: "not-a-uuid",
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
-	})
-
-	t.Run("invalid_target_uuid", func(t *testing.T) {
-		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
-
-		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
-			InitiatorUserUuid: testUUID1,
-			TargetUserUuid:    "not-a-uuid",
-		})
-
-		assertCode(t, err, codes.InvalidArgument)
-	})
-
-	t.Run("not_owner", func(t *testing.T) {
-		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
-
-		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
-			InitiatorUserUuid: testUUID1,
-			TargetUserUuid:    testUUID2,
-		})
-
-		assertCode(t, err, codes.PermissionDenied)
 	})
 
 	t.Run("user_not_found_in_db", func(t *testing.T) {
@@ -805,8 +780,7 @@ func TestDeleteUser(t *testing.T) {
 		svc := newTestService(userRepo, authRepo)
 
 		_, err := svc.DeleteUser(context.Background(), &pb.DeleteUserRequest{
-			InitiatorUserUuid: testUUID1,
-			TargetUserUuid:    testUUID1,
+			UserUuid: testUUID1,
 		})
 
 		assertCode(t, err, codes.NotFound)

@@ -799,11 +799,10 @@ func (x *UpdateUserBioRequest) GetDescription() string {
 
 // Delete user
 type DeleteUserRequest struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	InitiatorUserUuid string                 `protobuf:"bytes,1,opt,name=initiator_user_uuid,json=initiatorUserUuid,proto3" json:"initiator_user_uuid,omitempty"`
-	TargetUserUuid    string                 `protobuf:"bytes,2,opt,name=target_user_uuid,json=targetUserUuid,proto3" json:"target_user_uuid,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteUserRequest) Reset() {
@@ -836,16 +835,9 @@ func (*DeleteUserRequest) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *DeleteUserRequest) GetInitiatorUserUuid() string {
+func (x *DeleteUserRequest) GetUserUuid() string {
 	if x != nil {
-		return x.InitiatorUserUuid
-	}
-	return ""
-}
-
-func (x *DeleteUserRequest) GetTargetUserUuid() string {
-	if x != nil {
-		return x.TargetUserUuid
+		return x.UserUuid
 	}
 	return ""
 }
@@ -1965,10 +1957,9 @@ const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"patronymic\x18\x04 \x01(\tR\n" +
 	"patronymic\x12 \n" +
-	"\vdescription\x18\x05 \x01(\tR\vdescription\"m\n" +
-	"\x11DeleteUserRequest\x12.\n" +
-	"\x13initiator_user_uuid\x18\x01 \x01(\tR\x11initiatorUserUuid\x12(\n" +
-	"\x10target_user_uuid\x18\x02 \x01(\tR\x0etargetUserUuid\"J\n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\"0\n" +
+	"\x11DeleteUserRequest\x12\x1b\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"J\n" +
 	"\x13RefreshTokenRequest\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\x12\x0e\n" +
 	"\x02ip\x18\x02 \x01(\tR\x02ip\"^\n" +

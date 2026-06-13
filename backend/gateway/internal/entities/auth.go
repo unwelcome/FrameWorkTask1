@@ -161,18 +161,7 @@ func (e *UpdateUserBioRequest) Validate() error {
 
 // ─── DeleteUser ───────────────────────────────────────────────────────────────
 
-type DeleteUserRequest struct {
-	TargetUUID string `json:"target_uuid"`
-}
 type DeleteUserResponse struct{}
-
-func (e *DeleteUserRequest) Validate() error {
-	e.TargetUUID = strings.TrimSpace(e.TargetUUID)
-	if err := validate.UUID(e.TargetUUID); err != nil {
-		return err
-	}
-	return nil
-}
 
 // ─── GetAllActiveTokens ───────────────────────────────────────────────────────
 

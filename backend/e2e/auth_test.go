@@ -581,19 +581,19 @@ func TestVerifyAccount(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, code, "wrong code should return 400 (body: %s)", body)
 	})
 
-	t.Run("already_verified", func(t *testing.T) {
+	t.Run("already_verified_silent_ok", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
 		mustRegister(t, c, email, "Password123")
 		verCode := mustGetVerificationCodeByEmail(t, c, email)
 		mustVerifyAccount(t, c, email, verCode)
 
-		// Повторная верификация должна вернуть 409
+		// Повторная верификация — тихий ОК, письмо не отправляется
 		code, body := c.post("/api/user/verify", map[string]string{
 			"email": email,
 			"code":  verCode,
 		})
-		assert.Equal(t, http.StatusConflict, code, "already verified should return 409 (body: %s)", body)
+		assert.Equal(t, http.StatusOK, code, "already verified should return 200 silently (body: %s)", body)
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
@@ -623,16 +623,16 @@ func TestResendVerificationCode(t *testing.T) {
 		mustVerifyAccount(t, c, email, newCode)
 	})
 
-	t.Run("already_verified", func(t *testing.T) {
+	t.Run("already_verified_silent_ok", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
 		mustRegister(t, c, email, "Password123")
 		verCode := mustGetVerificationCodeByEmail(t, c, email)
 		mustVerifyAccount(t, c, email, verCode)
 
-		// Повторный resend для уже верифицированного пользователя → 409
+		// Resend для уже верифицированного — тихий ОК, письмо не отправляется
 		code, body := c.post("/api/user/verify/resend", map[string]string{"email": email})
-		assert.Equal(t, http.StatusConflict, code, "resend for verified user should return 409 (body: %s)", body)
+		assert.Equal(t, http.StatusOK, code, "resend for verified user should return 200 silently (body: %s)", body)
 	})
 
 	t.Run("non_existent_email_silent", func(t *testing.T) {

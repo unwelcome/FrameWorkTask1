@@ -1328,7 +1328,7 @@ func TestVerifyAccount(t *testing.T) {
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("already_verified", func(t *testing.T) {
+	t.Run("already_verified_silent_ok", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
 				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
@@ -1341,7 +1341,7 @@ func TestVerifyAccount(t *testing.T) {
 			Code:  "123456",
 		})
 
-		assertCode(t, err, codes.AlreadyExists)
+		assertNoError(t, err)
 	})
 
 	t.Run("code_not_found_or_expired", func(t *testing.T) {
@@ -1464,7 +1464,7 @@ func TestResendVerificationCode(t *testing.T) {
 		assertNoError(t, err)
 	})
 
-	t.Run("already_verified", func(t *testing.T) {
+	t.Run("already_verified_silent_ok", func(t *testing.T) {
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
 				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
@@ -1476,7 +1476,7 @@ func TestResendVerificationCode(t *testing.T) {
 			Email: "test@example.com",
 		})
 
-		assertCode(t, err, codes.AlreadyExists)
+		assertNoError(t, err)
 	})
 
 	t.Run("save_code_error", func(t *testing.T) {

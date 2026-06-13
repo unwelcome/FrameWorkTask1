@@ -118,14 +118,14 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*e
 			return nil, createErr.GRPCError()
 		}
 
-		// Email уже занят — проверяем статус существующего аккаунта
+		// Email уже занят, проверяем, верифицирован ли он
 		existing, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 		if getErr.Code != 0 {
 			return nil, status.Errorf(codes.Internal, "internal error")
 		}
 
 		if existing.IsVerified {
-			// Уведомляем владельца почты о попытке регистрации (fire & forget)
+			// Уведомляем владельца почты о попытке регистрации
 			_ = s.publisher.SendRegistrationAttemptEmail(ctx, entities.RegistrationAttemptEmailMsg{
 				Email:     existing.Email,
 				FirstName: existing.FirstName,
@@ -133,6 +133,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*e
 		}
 
 		// Не раскрываем, что email уже зарегистрирован
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "Register").Msg("user already exists")
 		return &emptypb.Empty{}, nil
 	}
 
@@ -497,7 +498,8 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 	}
 
 	if user.IsVerified {
-		return nil, status.Errorf(codes.AlreadyExists, "account already verified")
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "VerifyAccount").Msg("user already verified")
+		return &emptypb.Empty{}, nil
 	}
 
 	// Проверяем наличие активного кода.
@@ -545,7 +547,8 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 	}
 
 	if user.IsVerified {
-		return nil, status.Errorf(codes.AlreadyExists, "account already verified")
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ResendVerificationCode").Msg("user already verified")
+		return &emptypb.Empty{}, nil
 	}
 
 	// Генерируем новый код (перезаписывает старый и сбрасывает счётчик попыток)
@@ -806,7 +809,6 @@ func (s *AuthService) RestoreAccount(ctx context.Context, req *pb.RestoreAccount
 }
 
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-
 
 // GetVerificationCodeByEmail Отладочный метод — возвращает активный код верификации по email.
 // Доступен только при APP_ENV=test; в production возвращает Unimplemented.

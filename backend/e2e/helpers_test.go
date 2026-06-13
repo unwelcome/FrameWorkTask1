@@ -164,21 +164,6 @@ func mustGetVerificationCodeByEmail(t *testing.T, c *apiClient, email string) st
 	return resp.Code
 }
 
-// mustGetVerificationCode fetches the active verification code for a user via debug endpoint.
-// Only works when APP_ENV=test (gateway registers the route only in test mode).
-func mustGetVerificationCode(t *testing.T, c *apiClient, userUUID string) string {
-	t.Helper()
-	code, body := c.get(fmt.Sprintf("/api/debug/user/%s/verification-code", userUUID))
-	require.Equalf(t, http.StatusOK, code, "get verification code failed (body: %s)", body)
-
-	var resp struct {
-		Code string `json:"code"`
-	}
-	require.NoError(t, json.Unmarshal(body, &resp))
-	require.NotEmpty(t, resp.Code, "verification code is empty")
-	return resp.Code
-}
-
 // mustVerifyAccount verifies a user account using the 6-digit code.
 func mustVerifyAccount(t *testing.T, c *apiClient, email, verificationCode string) {
 	t.Helper()

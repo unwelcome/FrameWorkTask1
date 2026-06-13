@@ -2020,65 +2020,6 @@ func TestUpdateUser2FA(t *testing.T) {
 	})
 }
 
-// ─── GetVerificationCode ──────────────────────────────────────────────────────
-
-func TestGetVerificationCode(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		verRepo := &mockVerificationRepo{
-			getVerificationCode: func(_ context.Context, dto entities.GetVerificationCodeDTO) (string, Error.CodeError) {
-				if dto.UserUUID != testUUID1 {
-					return "", Error.Internal(fmt.Errorf("unexpected uuid"))
-				}
-				return "123456", ok()
-			},
-		}
-		svc := buildSvc(svcDeps{verification: verRepo})
-
-		resp, err := svc.GetVerificationCode(context.Background(), &pb.GetVerificationCodeRequest{
-			UserUuid: testUUID1,
-		})
-
-		assertNoError(t, err)
-		if resp.GetCode() != "123456" {
-			t.Errorf("expected code '123456', got %q", resp.GetCode())
-		}
-	})
-
-	t.Run("unavailable_in_production", func(t *testing.T) {
-		svc := buildSvc(svcDeps{appEnv: "production"})
-
-		_, err := svc.GetVerificationCode(context.Background(), &pb.GetVerificationCodeRequest{
-			UserUuid: testUUID1,
-		})
-
-		assertCode(t, err, codes.Unimplemented)
-	})
-
-	t.Run("invalid_uuid", func(t *testing.T) {
-		svc := buildSvc(svcDeps{})
-
-		_, err := svc.GetVerificationCode(context.Background(), &pb.GetVerificationCodeRequest{
-			UserUuid: "not-a-uuid",
-		})
-
-		assertCode(t, err, codes.InvalidArgument)
-	})
-
-	t.Run("code_not_found", func(t *testing.T) {
-		verRepo := &mockVerificationRepo{
-			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
-				return "", Error.Public(codes.NotFound, "code not found")
-			},
-		}
-		svc := buildSvc(svcDeps{verification: verRepo})
-
-		_, err := svc.GetVerificationCode(context.Background(), &pb.GetVerificationCodeRequest{
-			UserUuid: testUUID1,
-		})
-
-		assertCode(t, err, codes.NotFound)
-	})
-}
 
 // ─── GetRecoveryCode ──────────────────────────────────────────────────────────
 

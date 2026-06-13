@@ -28,7 +28,6 @@ type AuthHandler interface {
 	RevokeAllTokens(c *fiber.Ctx) error
 	VerifyAccount(c *fiber.Ctx) error
 	ResendVerificationCode(c *fiber.Ctx) error
-	GetVerificationCode(c *fiber.Ctx) error
 	GetVerificationCodeByEmail(c *fiber.Ctx) error
 	GetRecoveryCode(c *fiber.Ctx) error
 	Get2FACode(c *fiber.Ctx) error
@@ -599,37 +598,6 @@ func (h *authHandler) ResendVerificationCode(c *fiber.Ctx) error {
 
 	// Формируем тело ответа
 	return c.Status(fiber.StatusOK).JSON(&entities.ResendVerificationCodeResponse{})
-}
-
-// GetVerificationCode
-//
-//	@Summary      GetVerificationCode
-//	@Description  Debug endpoint: returns the active verification code. Available only when APP_ENV=test.
-//	@Tags         Debug
-//	@Produce 			json
-//	@Param 				user_uuid path string true "User UUID"
-//	@Success      200  {object}  map[string]string
-//	@Failure      400  {object}  Error.HttpError
-//	@Failure      404  {object}  Error.HttpError
-//	@Failure      501  {object}  Error.HttpError
-//	@Router       /debug/user/{user_uuid}/verification-code [get]
-func (h *authHandler) GetVerificationCode(c *fiber.Ctx) error {
-	operationID := utils.GetLocal[string](c, h.operationIDKey)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
-
-	req := &auth_proto.GetVerificationCodeRequest{
-		UserUuid: c.Params("user_uuid", ""),
-	}
-
-	res, err := h.AuthServiceClient.GetVerificationCode(ctx, req)
-	if err != nil {
-		return Error.GRPCErrorToHTTP(err, c)
-	}
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"code": res.GetCode()})
 }
 
 // GetVerificationCodeByEmail

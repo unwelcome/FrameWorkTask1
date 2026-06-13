@@ -807,24 +807,6 @@ func (s *AuthService) RestoreAccount(ctx context.Context, req *pb.RestoreAccount
 
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 
-// GetVerificationCode Отладочный метод — возвращает активный код верификации.
-// Доступен только при APP_ENV=test; в production возвращает Unimplemented.
-func (s *AuthService) GetVerificationCode(ctx context.Context, req *pb.GetVerificationCodeRequest) (*pb.GetVerificationCodeResponse, error) {
-	if s.appEnv != "test" {
-		return nil, status.Errorf(codes.Unimplemented, "not available")
-	}
-
-	if err := validate.UUID(req.GetUserUuid()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
-	}
-
-	code, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: req.GetUserUuid()})
-	if err := codeErr.GRPCError(); err != nil {
-		return nil, err
-	}
-
-	return &pb.GetVerificationCodeResponse{Code: code}, nil
-}
 
 // GetVerificationCodeByEmail Отладочный метод — возвращает активный код верификации по email.
 // Доступен только при APP_ENV=test; в production возвращает Unimplemented.

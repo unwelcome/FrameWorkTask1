@@ -150,11 +150,6 @@ definitions:
     type: object
   entities.DeleteDepartmentResponse:
     type: object
-  entities.DeleteUserRequest:
-    properties:
-      target_uuid:
-        type: string
-    type: object
   entities.DeleteUserResponse:
     type: object
   entities.DepartmentListItem:
@@ -390,11 +385,6 @@ definitions:
       password:
         type: string
       patronymic:
-        type: string
-    type: object
-  entities.RegisterResponse:
-    properties:
-      user_uuid:
         type: string
     type: object
   entities.ReleaseApplicationVerificationRequest:
@@ -2292,13 +2282,6 @@ paths:
       consumes:
       - application/json
       description: Delete user
-      parameters:
-      - description: Target UUID
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/entities.DeleteUserRequest'
       produces:
       - application/json
       responses:
@@ -2306,16 +2289,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/entities.DeleteUserResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/Error.HttpError'
         "401":
           description: Unauthorized
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "403":
-          description: Forbidden
           schema:
             $ref: '#/definitions/Error.HttpError'
         "404":
@@ -2581,14 +2556,14 @@ paths:
       summary: GetRecoveryCode
       tags:
       - Debug
-  /debug/user/{user_uuid}/verification-code:
+  /debug/user/email/{email}/verification-code:
     get:
-      description: 'Debug endpoint: returns the active verification code. Available
-        only when APP_ENV=test.'
+      description: 'Debug endpoint: returns the active verification code by email.
+        Available only when APP_ENV=test.'
       parameters:
-      - description: User UUID
+      - description: Email
         in: path
-        name: user_uuid
+        name: email
         required: true
         type: string
       produces:
@@ -2612,7 +2587,7 @@ paths:
           description: Not Implemented
           schema:
             $ref: '#/definitions/Error.HttpError'
-      summary: GetVerificationCode
+      summary: GetVerificationCodeByEmail
       tags:
       - Debug
   /forgot-password:
@@ -2744,14 +2719,8 @@ paths:
       responses:
         "201":
           description: Created
-          schema:
-            $ref: '#/definitions/entities.RegisterResponse'
         "400":
           description: Bad Request
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "409":
-          description: Conflict
           schema:
             $ref: '#/definitions/Error.HttpError'
         "500":

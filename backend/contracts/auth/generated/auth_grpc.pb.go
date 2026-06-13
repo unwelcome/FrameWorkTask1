@@ -33,7 +33,6 @@ const (
 	AuthService_RevokeAllTokens_FullMethodName            = "/auth.AuthService/RevokeAllTokens"
 	AuthService_VerifyAccount_FullMethodName              = "/auth.AuthService/VerifyAccount"
 	AuthService_ResendVerificationCode_FullMethodName     = "/auth.AuthService/ResendVerificationCode"
-	AuthService_GetVerificationCode_FullMethodName        = "/auth.AuthService/GetVerificationCode"
 	AuthService_GetVerificationCodeByEmail_FullMethodName = "/auth.AuthService/GetVerificationCodeByEmail"
 	AuthService_GetRecoveryCode_FullMethodName            = "/auth.AuthService/GetRecoveryCode"
 	AuthService_Get2FACode_FullMethodName                 = "/auth.AuthService/Get2FACode"
@@ -61,7 +60,6 @@ type AuthServiceClient interface {
 	RevokeAllTokens(ctx context.Context, in *RevokeAllTokensRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	VerifyAccount(ctx context.Context, in *VerifyAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ResendVerificationCode(ctx context.Context, in *ResendVerificationCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetVerificationCode(ctx context.Context, in *GetVerificationCodeRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error)
 	GetVerificationCodeByEmail(ctx context.Context, in *GetVerificationCodeByEmailRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error)
 	GetRecoveryCode(ctx context.Context, in *GetRecoveryCodeRequest, opts ...grpc.CallOption) (*GetRecoveryCodeResponse, error)
 	Get2FACode(ctx context.Context, in *Get2FACodeRequest, opts ...grpc.CallOption) (*Get2FACodeResponse, error)
@@ -210,16 +208,6 @@ func (c *authServiceClient) ResendVerificationCode(ctx context.Context, in *Rese
 	return out, nil
 }
 
-func (c *authServiceClient) GetVerificationCode(ctx context.Context, in *GetVerificationCodeRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetVerificationCodeResponse)
-	err := c.cc.Invoke(ctx, AuthService_GetVerificationCode_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *authServiceClient) GetVerificationCodeByEmail(ctx context.Context, in *GetVerificationCodeByEmailRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetVerificationCodeResponse)
@@ -317,7 +305,6 @@ type AuthServiceServer interface {
 	RevokeAllTokens(context.Context, *RevokeAllTokensRequest) (*emptypb.Empty, error)
 	VerifyAccount(context.Context, *VerifyAccountRequest) (*emptypb.Empty, error)
 	ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error)
-	GetVerificationCode(context.Context, *GetVerificationCodeRequest) (*GetVerificationCodeResponse, error)
 	GetVerificationCodeByEmail(context.Context, *GetVerificationCodeByEmailRequest) (*GetVerificationCodeResponse, error)
 	GetRecoveryCode(context.Context, *GetRecoveryCodeRequest) (*GetRecoveryCodeResponse, error)
 	Get2FACode(context.Context, *Get2FACodeRequest) (*Get2FACodeResponse, error)
@@ -374,9 +361,6 @@ func (UnimplementedAuthServiceServer) VerifyAccount(context.Context, *VerifyAcco
 }
 func (UnimplementedAuthServiceServer) ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResendVerificationCode not implemented")
-}
-func (UnimplementedAuthServiceServer) GetVerificationCode(context.Context, *GetVerificationCodeRequest) (*GetVerificationCodeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVerificationCode not implemented")
 }
 func (UnimplementedAuthServiceServer) GetVerificationCodeByEmail(context.Context, *GetVerificationCodeByEmailRequest) (*GetVerificationCodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVerificationCodeByEmail not implemented")
@@ -657,24 +641,6 @@ func _AuthService_ResendVerificationCode_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_GetVerificationCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVerificationCodeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).GetVerificationCode(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthService_GetVerificationCode_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).GetVerificationCode(ctx, req.(*GetVerificationCodeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _AuthService_GetVerificationCodeByEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVerificationCodeByEmailRequest)
 	if err := dec(in); err != nil {
@@ -877,10 +843,6 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResendVerificationCode",
 			Handler:    _AuthService_ResendVerificationCode_Handler,
-		},
-		{
-			MethodName: "GetVerificationCode",
-			Handler:    _AuthService_GetVerificationCode_Handler,
 		},
 		{
 			MethodName: "GetVerificationCodeByEmail",

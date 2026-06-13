@@ -2604,17 +2604,6 @@ const docTemplate = `{
                     "Auth"
                 ],
                 "summary": "DeleteUser",
-                "parameters": [
-                    {
-                        "description": "Target UUID",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entities.DeleteUserRequest"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2622,20 +2611,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/entities.DeleteUserResponse"
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -3050,21 +3027,21 @@ const docTemplate = `{
                 }
             }
         },
-        "/debug/user/{user_uuid}/recovery-code": {
+        "/debug/user/email/{email}/verification-code": {
             "get": {
-                "description": "Debug endpoint: returns the active recovery code. Available only when APP_ENV=test.",
+                "description": "Debug endpoint: returns the active verification code by email. Available only when APP_ENV=test.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Debug"
                 ],
-                "summary": "GetRecoveryCode",
+                "summary": "GetVerificationCodeByEmail",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User UUID",
-                        "name": "user_uuid",
+                        "description": "Email",
+                        "name": "email",
                         "in": "path",
                         "required": true
                     }
@@ -3100,16 +3077,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/debug/user/{user_uuid}/verification-code": {
+        "/debug/user/{user_uuid}/recovery-code": {
             "get": {
-                "description": "Debug endpoint: returns the active verification code. Available only when APP_ENV=test.",
+                "description": "Debug endpoint: returns the active recovery code. Available only when APP_ENV=test.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Debug"
                 ],
-                "summary": "GetVerificationCode",
+                "summary": "GetRecoveryCode",
                 "parameters": [
                     {
                         "type": "string",
@@ -3343,19 +3320,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/entities.RegisterResponse"
-                        }
+                        "description": "Created"
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -3876,14 +3844,6 @@ const docTemplate = `{
         "entities.DeleteDepartmentResponse": {
             "type": "object"
         },
-        "entities.DeleteUserRequest": {
-            "type": "object",
-            "properties": {
-                "target_uuid": {
-                    "type": "string"
-                }
-            }
-        },
         "entities.DeleteUserResponse": {
             "type": "object"
         },
@@ -4249,14 +4209,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "patronymic": {
-                    "type": "string"
-                }
-            }
-        },
-        "entities.RegisterResponse": {
-            "type": "object",
-            "properties": {
-                "user_uuid": {
                     "type": "string"
                 }
             }

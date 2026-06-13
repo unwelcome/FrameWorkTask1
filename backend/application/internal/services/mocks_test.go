@@ -154,6 +154,9 @@ func (m *mockCompanyClient) DeleteDepartment(_ context.Context, _ *company_proto
 func (m *mockCompanyClient) RemoveEmployeeFromDepartment(_ context.Context, _ *company_proto.RemoveEmployeeFromDepartmentRequest, _ ...grpc.CallOption) (*emptypb.Empty, error) {
 	panic("unexpected call to RemoveEmployeeFromDepartment")
 }
+func (m *mockCompanyClient) CheckColleagues(_ context.Context, _ *company_proto.CheckColleaguesRequest, _ ...grpc.CallOption) (*company_proto.CheckColleaguesResponse, error) {
+	panic("unexpected call to CheckColleagues")
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

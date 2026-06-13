@@ -8,6 +8,7 @@ const (
 	AccessTokenType        = "access_token"
 	RefreshTokenType       = "refresh_token"
 	ResetPasswordTokenType = "reset_password_token"
+	VerificationTokenType  = "verification_token"
 )
 
 type TokenPair struct {
@@ -23,6 +24,12 @@ type TokenClaims struct {
 }
 
 type ResetPasswordTokenClaims struct {
+	Email     string `json:"email"`
+	TokenType string `json:"token_type"`
+	jwt.RegisteredClaims
+}
+
+type VerificationTokenClaims struct {
 	Email     string `json:"email"`
 	TokenType string `json:"token_type"`
 	jwt.RegisteredClaims

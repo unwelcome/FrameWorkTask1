@@ -29,7 +29,7 @@ type AuthHandler interface {
 	RevokeAllTokens(c *fiber.Ctx) error
 	VerifyAccount(c *fiber.Ctx) error
 	ResendVerificationCode(c *fiber.Ctx) error
-	GetVerificationCodeByEmail(c *fiber.Ctx) error
+	GetVerificationToken(c *fiber.Ctx) error
 	GetRecoveryCode(c *fiber.Ctx) error
 	Get2FACode(c *fiber.Ctx) error
 	ForgotPassword(c *fiber.Ctx) error
@@ -561,8 +561,7 @@ func (h *authHandler) VerifyAccount(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.VerifyAccountRequest{
-		Email: httpReq.Email,
-		Code:  httpReq.Code,
+		VerificationToken: httpReq.VerificationToken,
 	}
 
 	_, err := h.AuthServiceClient.VerifyAccount(ctx, req)
@@ -616,10 +615,10 @@ func (h *authHandler) ResendVerificationCode(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(&entities.ResendVerificationCodeResponse{})
 }
 
-// GetVerificationCodeByEmail
+// GetVerificationToken
 //
-//	@Summary      GetVerificationCodeByEmail
-//	@Description  Debug endpoint: returns the active verification code by email. Available only when APP_ENV=test.
+//	@Summary      GetVerificationToken
+//	@Description  Debug endpoint: generates and returns a verification token by email. Available only when APP_ENV=test.
 //	@Tags         Debug
 //	@Produce 			json
 //	@Param 				email path string true "Email"
@@ -627,22 +626,22 @@ func (h *authHandler) ResendVerificationCode(c *fiber.Ctx) error {
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      501  {object}  Error.HttpError
-//	@Router       /debug/user/email/{email}/verification-code [get]
-func (h *authHandler) GetVerificationCodeByEmail(c *fiber.Ctx) error {
+//	@Router       /debug/user/email/{email}/verification-token [get]
+func (h *authHandler) GetVerificationToken(c *fiber.Ctx) error {
 	operationID := utils.GetLocal[string](c, h.operationIDKey)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
-	res, err := h.AuthServiceClient.GetVerificationCodeByEmail(ctx, &auth_proto.GetVerificationCodeByEmailRequest{
+	res, err := h.AuthServiceClient.GetVerificationToken(ctx, &auth_proto.GetVerificationTokenRequest{
 		Email: c.Params("email", ""),
 	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"code": res.GetCode()})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"token": res.GetToken()})
 }
 
 // GetRecoveryCode

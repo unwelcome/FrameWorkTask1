@@ -34,6 +34,7 @@ type mockPGCompanyRepo struct {
 	deleteDepartment           func(ctx context.Context, dto entities.DeleteDepartmentDTO) Error.CodeError
 	removeEmployeeFromDepartment func(ctx context.Context, dto entities.RemoveEmployeeFromDepartmentDTO) Error.CodeError
 	getUserCompanies             func(ctx context.Context, dto entities.GetUserCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError)
+	checkColleagues              func(ctx context.Context, dto entities.CheckColleaguesDTO) (bool, Error.CodeError)
 }
 
 func (m *mockPGCompanyRepo) CreateCompany(ctx context.Context, dto entities.CreateCompany) Error.CodeError {
@@ -96,6 +97,9 @@ func (m *mockPGCompanyRepo) RemoveEmployeeFromDepartment(ctx context.Context, dt
 func (m *mockPGCompanyRepo) GetUserCompanies(ctx context.Context, dto entities.GetUserCompaniesDTO) ([]*entities.GetCompanies, Error.CodeError) {
 	return m.getUserCompanies(ctx, dto)
 }
+func (m *mockPGCompanyRepo) CheckColleagues(ctx context.Context, dto entities.CheckColleaguesDTO) (bool, Error.CodeError) {
+	return m.checkColleagues(ctx, dto)
+}
 
 // ─── Mock: Redis CompanyRepository ───────────────────────────────────────────
 
@@ -135,7 +139,13 @@ func newTestService(pgRepo postgresDB.CompanyRepository, redisRepo redisDB.Compa
 	return NewCompanyService(db, cache)
 }
 
-func emptyPGRepo() *mockPGCompanyRepo { return &mockPGCompanyRepo{} }
+func emptyPGRepo() *mockPGCompanyRepo {
+	return &mockPGCompanyRepo{
+		checkColleagues: func(_ context.Context, _ entities.CheckColleaguesDTO) (bool, Error.CodeError) {
+			return false, Error.CodeError{}
+		},
+	}
+}
 
 func emptyRedisRepo() *mockRedisCompanyRepo { return &mockRedisCompanyRepo{} }
 

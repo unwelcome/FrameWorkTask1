@@ -4,7 +4,7 @@ type VerificationEmailMsg struct {
 	UserUUID  string `json:"user_uuid"`
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
-	Code      string `json:"code"`
+	Token     string `json:"token"`
 }
 
 type RecoveryEmailMsg struct {

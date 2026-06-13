@@ -19,7 +19,7 @@ service AuthService {
   rpc RevokeAllTokens(RevokeAllTokensRequest) returns (google.protobuf.Empty);
   rpc VerifyAccount(VerifyAccountRequest) returns (google.protobuf.Empty);
   rpc ResendVerificationCode(ResendVerificationCodeRequest) returns (google.protobuf.Empty);
-  rpc GetVerificationCodeByEmail(GetVerificationCodeByEmailRequest) returns (GetVerificationCodeResponse);
+  rpc GetVerificationToken(GetVerificationTokenRequest) returns (GetVerificationTokenResponse);
   rpc GetResetPasswordToken(GetResetPasswordTokenRequest) returns (GetResetPasswordTokenResponse);
   rpc Get2FACode(Get2FACodeRequest) returns (Get2FACodeResponse);
   rpc ForgotPassword(ForgotPasswordRequest) returns (google.protobuf.Empty);
@@ -169,8 +169,7 @@ message RevokeAllTokensRequest {
 
 // Verify account
 message VerifyAccountRequest {
-  string email = 1;
-  string code = 2;
+  string verification_token = 1;
 }
 // Empty response
 
@@ -182,12 +181,12 @@ message ResendVerificationCodeRequest {
 // Empty response
 
 
-// Get verification code (debug only)
-message GetVerificationCodeByEmailRequest {
+// Get verification token (debug only)
+message GetVerificationTokenRequest {
   string email = 1;
 }
-message GetVerificationCodeResponse {
-  string code = 1;
+message GetVerificationTokenResponse {
+  string token = 1;
 }
 
 

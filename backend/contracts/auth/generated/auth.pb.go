@@ -1136,11 +1136,10 @@ func (x *RevokeAllTokensRequest) GetUserUuid() string {
 
 // Verify account
 type VerifyAccountRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	VerificationToken string                 `protobuf:"bytes,1,opt,name=verification_token,json=verificationToken,proto3" json:"verification_token,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *VerifyAccountRequest) Reset() {
@@ -1173,16 +1172,9 @@ func (*VerifyAccountRequest) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *VerifyAccountRequest) GetEmail() string {
+func (x *VerifyAccountRequest) GetVerificationToken() string {
 	if x != nil {
-		return x.Email
-	}
-	return ""
-}
-
-func (x *VerifyAccountRequest) GetCode() string {
-	if x != nil {
-		return x.Code
+		return x.VerificationToken
 	}
 	return ""
 }
@@ -1232,28 +1224,28 @@ func (x *ResendVerificationCodeRequest) GetEmail() string {
 	return ""
 }
 
-// Get verification code (debug only)
-type GetVerificationCodeByEmailRequest struct {
+// Get verification token (debug only)
+type GetVerificationTokenRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetVerificationCodeByEmailRequest) Reset() {
-	*x = GetVerificationCodeByEmailRequest{}
+func (x *GetVerificationTokenRequest) Reset() {
+	*x = GetVerificationTokenRequest{}
 	mi := &file_auth_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetVerificationCodeByEmailRequest) String() string {
+func (x *GetVerificationTokenRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetVerificationCodeByEmailRequest) ProtoMessage() {}
+func (*GetVerificationTokenRequest) ProtoMessage() {}
 
-func (x *GetVerificationCodeByEmailRequest) ProtoReflect() protoreflect.Message {
+func (x *GetVerificationTokenRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_auth_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1265,39 +1257,39 @@ func (x *GetVerificationCodeByEmailRequest) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetVerificationCodeByEmailRequest.ProtoReflect.Descriptor instead.
-func (*GetVerificationCodeByEmailRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetVerificationTokenRequest.ProtoReflect.Descriptor instead.
+func (*GetVerificationTokenRequest) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{19}
 }
 
-func (x *GetVerificationCodeByEmailRequest) GetEmail() string {
+func (x *GetVerificationTokenRequest) GetEmail() string {
 	if x != nil {
 		return x.Email
 	}
 	return ""
 }
 
-type GetVerificationCodeResponse struct {
+type GetVerificationTokenResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetVerificationCodeResponse) Reset() {
-	*x = GetVerificationCodeResponse{}
+func (x *GetVerificationTokenResponse) Reset() {
+	*x = GetVerificationTokenResponse{}
 	mi := &file_auth_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetVerificationCodeResponse) String() string {
+func (x *GetVerificationTokenResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetVerificationCodeResponse) ProtoMessage() {}
+func (*GetVerificationTokenResponse) ProtoMessage() {}
 
-func (x *GetVerificationCodeResponse) ProtoReflect() protoreflect.Message {
+func (x *GetVerificationTokenResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_auth_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1309,14 +1301,14 @@ func (x *GetVerificationCodeResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetVerificationCodeResponse.ProtoReflect.Descriptor instead.
-func (*GetVerificationCodeResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetVerificationTokenResponse.ProtoReflect.Descriptor instead.
+func (*GetVerificationTokenResponse) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *GetVerificationCodeResponse) GetCode() string {
+func (x *GetVerificationTokenResponse) GetToken() string {
 	if x != nil {
-		return x.Code
+		return x.Token
 	}
 	return ""
 }
@@ -1923,16 +1915,15 @@ const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"token_hash\x18\x02 \x01(\tR\ttokenHash\"5\n" +
 	"\x16RevokeAllTokensRequest\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"@\n" +
-	"\x14VerifyAccountRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
-	"\x04code\x18\x02 \x01(\tR\x04code\"5\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"E\n" +
+	"\x14VerifyAccountRequest\x12-\n" +
+	"\x12verification_token\x18\x01 \x01(\tR\x11verificationToken\"5\n" +
 	"\x1dResendVerificationCodeRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\"9\n" +
-	"!GetVerificationCodeByEmailRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\"1\n" +
-	"\x1bGetVerificationCodeResponse\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\tR\x04code\"4\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\"3\n" +
+	"\x1bGetVerificationTokenRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\"4\n" +
+	"\x1cGetVerificationTokenResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"4\n" +
 	"\x1cGetResetPasswordTokenRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\"5\n" +
 	"\x1dGetResetPasswordTokenResponse\x12\x14\n" +
@@ -1961,7 +1952,7 @@ const file_auth_proto_rawDesc = "" +
 	"enable_2fa\x18\x02 \x01(\bR\tenable2fa\"I\n" +
 	"\x15RestoreAccountRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword2\xde\v\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword2\xd3\v\n" +
 	"\vAuthService\x126\n" +
 	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x14.auth.HealthResponse\x129\n" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.google.protobuf.Empty\x120\n" +
@@ -1976,8 +1967,8 @@ const file_auth_proto_rawDesc = "" +
 	"\vRevokeToken\x12\x18.auth.RevokeTokenRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
 	"\x0fRevokeAllTokens\x12\x1c.auth.RevokeAllTokensRequest\x1a\x16.google.protobuf.Empty\x12C\n" +
 	"\rVerifyAccount\x12\x1a.auth.VerifyAccountRequest\x1a\x16.google.protobuf.Empty\x12U\n" +
-	"\x16ResendVerificationCode\x12#.auth.ResendVerificationCodeRequest\x1a\x16.google.protobuf.Empty\x12h\n" +
-	"\x1aGetVerificationCodeByEmail\x12'.auth.GetVerificationCodeByEmailRequest\x1a!.auth.GetVerificationCodeResponse\x12`\n" +
+	"\x16ResendVerificationCode\x12#.auth.ResendVerificationCodeRequest\x1a\x16.google.protobuf.Empty\x12]\n" +
+	"\x14GetVerificationToken\x12!.auth.GetVerificationTokenRequest\x1a\".auth.GetVerificationTokenResponse\x12`\n" +
 	"\x15GetResetPasswordToken\x12\".auth.GetResetPasswordTokenRequest\x1a#.auth.GetResetPasswordTokenResponse\x12?\n" +
 	"\n" +
 	"Get2FACode\x12\x17.auth.Get2FACodeRequest\x1a\x18.auth.Get2FACodeResponse\x12E\n" +
@@ -2001,38 +1992,38 @@ func file_auth_proto_rawDescGZIP() []byte {
 
 var file_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_auth_proto_goTypes = []any{
-	(*Token)(nil),                             // 0: auth.Token
-	(*SessionInfo)(nil),                       // 1: auth.SessionInfo
-	(*HealthResponse)(nil),                    // 2: auth.HealthResponse
-	(*RegisterRequest)(nil),                   // 3: auth.RegisterRequest
-	(*LoginRequest)(nil),                      // 4: auth.LoginRequest
-	(*LoginResponse)(nil),                     // 5: auth.LoginResponse
-	(*GetUserRequest)(nil),                    // 6: auth.GetUserRequest
-	(*GetUserResponse)(nil),                   // 7: auth.GetUserResponse
-	(*ChangePasswordRequest)(nil),             // 8: auth.ChangePasswordRequest
-	(*UpdateUserBioRequest)(nil),              // 9: auth.UpdateUserBioRequest
-	(*DeleteUserRequest)(nil),                 // 10: auth.DeleteUserRequest
-	(*RefreshTokenRequest)(nil),               // 11: auth.RefreshTokenRequest
-	(*RefreshTokenResponse)(nil),              // 12: auth.RefreshTokenResponse
-	(*GetAllActiveTokensRequest)(nil),         // 13: auth.GetAllActiveTokensRequest
-	(*GetAllActiveTokensResponse)(nil),        // 14: auth.GetAllActiveTokensResponse
-	(*RevokeTokenRequest)(nil),                // 15: auth.RevokeTokenRequest
-	(*RevokeAllTokensRequest)(nil),            // 16: auth.RevokeAllTokensRequest
-	(*VerifyAccountRequest)(nil),              // 17: auth.VerifyAccountRequest
-	(*ResendVerificationCodeRequest)(nil),     // 18: auth.ResendVerificationCodeRequest
-	(*GetVerificationCodeByEmailRequest)(nil), // 19: auth.GetVerificationCodeByEmailRequest
-	(*GetVerificationCodeResponse)(nil),       // 20: auth.GetVerificationCodeResponse
-	(*GetResetPasswordTokenRequest)(nil),      // 21: auth.GetResetPasswordTokenRequest
-	(*GetResetPasswordTokenResponse)(nil),     // 22: auth.GetResetPasswordTokenResponse
-	(*Get2FACodeRequest)(nil),                 // 23: auth.Get2FACodeRequest
-	(*Get2FACodeResponse)(nil),                // 24: auth.Get2FACodeResponse
-	(*ForgotPasswordRequest)(nil),             // 25: auth.ForgotPasswordRequest
-	(*ResetPasswordRequest)(nil),              // 26: auth.ResetPasswordRequest
-	(*Verify2FARequest)(nil),                  // 27: auth.Verify2FARequest
-	(*Verify2FAResponse)(nil),                 // 28: auth.Verify2FAResponse
-	(*UpdateUser2FARequest)(nil),              // 29: auth.UpdateUser2FARequest
-	(*RestoreAccountRequest)(nil),             // 30: auth.RestoreAccountRequest
-	(*emptypb.Empty)(nil),                     // 31: google.protobuf.Empty
+	(*Token)(nil),                         // 0: auth.Token
+	(*SessionInfo)(nil),                   // 1: auth.SessionInfo
+	(*HealthResponse)(nil),                // 2: auth.HealthResponse
+	(*RegisterRequest)(nil),               // 3: auth.RegisterRequest
+	(*LoginRequest)(nil),                  // 4: auth.LoginRequest
+	(*LoginResponse)(nil),                 // 5: auth.LoginResponse
+	(*GetUserRequest)(nil),                // 6: auth.GetUserRequest
+	(*GetUserResponse)(nil),               // 7: auth.GetUserResponse
+	(*ChangePasswordRequest)(nil),         // 8: auth.ChangePasswordRequest
+	(*UpdateUserBioRequest)(nil),          // 9: auth.UpdateUserBioRequest
+	(*DeleteUserRequest)(nil),             // 10: auth.DeleteUserRequest
+	(*RefreshTokenRequest)(nil),           // 11: auth.RefreshTokenRequest
+	(*RefreshTokenResponse)(nil),          // 12: auth.RefreshTokenResponse
+	(*GetAllActiveTokensRequest)(nil),     // 13: auth.GetAllActiveTokensRequest
+	(*GetAllActiveTokensResponse)(nil),    // 14: auth.GetAllActiveTokensResponse
+	(*RevokeTokenRequest)(nil),            // 15: auth.RevokeTokenRequest
+	(*RevokeAllTokensRequest)(nil),        // 16: auth.RevokeAllTokensRequest
+	(*VerifyAccountRequest)(nil),          // 17: auth.VerifyAccountRequest
+	(*ResendVerificationCodeRequest)(nil), // 18: auth.ResendVerificationCodeRequest
+	(*GetVerificationTokenRequest)(nil),   // 19: auth.GetVerificationTokenRequest
+	(*GetVerificationTokenResponse)(nil),  // 20: auth.GetVerificationTokenResponse
+	(*GetResetPasswordTokenRequest)(nil),  // 21: auth.GetResetPasswordTokenRequest
+	(*GetResetPasswordTokenResponse)(nil), // 22: auth.GetResetPasswordTokenResponse
+	(*Get2FACodeRequest)(nil),             // 23: auth.Get2FACodeRequest
+	(*Get2FACodeResponse)(nil),            // 24: auth.Get2FACodeResponse
+	(*ForgotPasswordRequest)(nil),         // 25: auth.ForgotPasswordRequest
+	(*ResetPasswordRequest)(nil),          // 26: auth.ResetPasswordRequest
+	(*Verify2FARequest)(nil),              // 27: auth.Verify2FARequest
+	(*Verify2FAResponse)(nil),             // 28: auth.Verify2FAResponse
+	(*UpdateUser2FARequest)(nil),          // 29: auth.UpdateUser2FARequest
+	(*RestoreAccountRequest)(nil),         // 30: auth.RestoreAccountRequest
+	(*emptypb.Empty)(nil),                 // 31: google.protobuf.Empty
 }
 var file_auth_proto_depIdxs = []int32{
 	1,  // 0: auth.Token.session:type_name -> auth.SessionInfo
@@ -2052,7 +2043,7 @@ var file_auth_proto_depIdxs = []int32{
 	16, // 14: auth.AuthService.RevokeAllTokens:input_type -> auth.RevokeAllTokensRequest
 	17, // 15: auth.AuthService.VerifyAccount:input_type -> auth.VerifyAccountRequest
 	18, // 16: auth.AuthService.ResendVerificationCode:input_type -> auth.ResendVerificationCodeRequest
-	19, // 17: auth.AuthService.GetVerificationCodeByEmail:input_type -> auth.GetVerificationCodeByEmailRequest
+	19, // 17: auth.AuthService.GetVerificationToken:input_type -> auth.GetVerificationTokenRequest
 	21, // 18: auth.AuthService.GetResetPasswordToken:input_type -> auth.GetResetPasswordTokenRequest
 	23, // 19: auth.AuthService.Get2FACode:input_type -> auth.Get2FACodeRequest
 	25, // 20: auth.AuthService.ForgotPassword:input_type -> auth.ForgotPasswordRequest
@@ -2073,7 +2064,7 @@ var file_auth_proto_depIdxs = []int32{
 	31, // 35: auth.AuthService.RevokeAllTokens:output_type -> google.protobuf.Empty
 	31, // 36: auth.AuthService.VerifyAccount:output_type -> google.protobuf.Empty
 	31, // 37: auth.AuthService.ResendVerificationCode:output_type -> google.protobuf.Empty
-	20, // 38: auth.AuthService.GetVerificationCodeByEmail:output_type -> auth.GetVerificationCodeResponse
+	20, // 38: auth.AuthService.GetVerificationToken:output_type -> auth.GetVerificationTokenResponse
 	22, // 39: auth.AuthService.GetResetPasswordToken:output_type -> auth.GetResetPasswordTokenResponse
 	24, // 40: auth.AuthService.Get2FACode:output_type -> auth.Get2FACodeResponse
 	31, // 41: auth.AuthService.ForgotPassword:output_type -> google.protobuf.Empty

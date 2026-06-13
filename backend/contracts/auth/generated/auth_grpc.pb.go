@@ -20,27 +20,27 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Health_FullMethodName                     = "/auth.AuthService/Health"
-	AuthService_Register_FullMethodName                   = "/auth.AuthService/Register"
-	AuthService_Login_FullMethodName                      = "/auth.AuthService/Login"
-	AuthService_GetUser_FullMethodName                    = "/auth.AuthService/GetUser"
-	AuthService_ChangePassword_FullMethodName             = "/auth.AuthService/ChangePassword"
-	AuthService_UpdateUserBio_FullMethodName              = "/auth.AuthService/UpdateUserBio"
-	AuthService_DeleteUser_FullMethodName                 = "/auth.AuthService/DeleteUser"
-	AuthService_RefreshToken_FullMethodName               = "/auth.AuthService/RefreshToken"
-	AuthService_GetAllActiveTokens_FullMethodName         = "/auth.AuthService/GetAllActiveTokens"
-	AuthService_RevokeToken_FullMethodName                = "/auth.AuthService/RevokeToken"
-	AuthService_RevokeAllTokens_FullMethodName            = "/auth.AuthService/RevokeAllTokens"
-	AuthService_VerifyAccount_FullMethodName              = "/auth.AuthService/VerifyAccount"
-	AuthService_ResendVerificationCode_FullMethodName     = "/auth.AuthService/ResendVerificationCode"
-	AuthService_GetVerificationCodeByEmail_FullMethodName = "/auth.AuthService/GetVerificationCodeByEmail"
-	AuthService_GetResetPasswordToken_FullMethodName      = "/auth.AuthService/GetResetPasswordToken"
-	AuthService_Get2FACode_FullMethodName                 = "/auth.AuthService/Get2FACode"
-	AuthService_ForgotPassword_FullMethodName             = "/auth.AuthService/ForgotPassword"
-	AuthService_ResetPassword_FullMethodName              = "/auth.AuthService/ResetPassword"
-	AuthService_Verify2FA_FullMethodName                  = "/auth.AuthService/Verify2FA"
-	AuthService_UpdateUser2FA_FullMethodName              = "/auth.AuthService/UpdateUser2FA"
-	AuthService_RestoreAccount_FullMethodName             = "/auth.AuthService/RestoreAccount"
+	AuthService_Health_FullMethodName                 = "/auth.AuthService/Health"
+	AuthService_Register_FullMethodName               = "/auth.AuthService/Register"
+	AuthService_Login_FullMethodName                  = "/auth.AuthService/Login"
+	AuthService_GetUser_FullMethodName                = "/auth.AuthService/GetUser"
+	AuthService_ChangePassword_FullMethodName         = "/auth.AuthService/ChangePassword"
+	AuthService_UpdateUserBio_FullMethodName          = "/auth.AuthService/UpdateUserBio"
+	AuthService_DeleteUser_FullMethodName             = "/auth.AuthService/DeleteUser"
+	AuthService_RefreshToken_FullMethodName           = "/auth.AuthService/RefreshToken"
+	AuthService_GetAllActiveTokens_FullMethodName     = "/auth.AuthService/GetAllActiveTokens"
+	AuthService_RevokeToken_FullMethodName            = "/auth.AuthService/RevokeToken"
+	AuthService_RevokeAllTokens_FullMethodName        = "/auth.AuthService/RevokeAllTokens"
+	AuthService_VerifyAccount_FullMethodName          = "/auth.AuthService/VerifyAccount"
+	AuthService_ResendVerificationCode_FullMethodName = "/auth.AuthService/ResendVerificationCode"
+	AuthService_GetVerificationToken_FullMethodName   = "/auth.AuthService/GetVerificationToken"
+	AuthService_GetResetPasswordToken_FullMethodName  = "/auth.AuthService/GetResetPasswordToken"
+	AuthService_Get2FACode_FullMethodName             = "/auth.AuthService/Get2FACode"
+	AuthService_ForgotPassword_FullMethodName         = "/auth.AuthService/ForgotPassword"
+	AuthService_ResetPassword_FullMethodName          = "/auth.AuthService/ResetPassword"
+	AuthService_Verify2FA_FullMethodName              = "/auth.AuthService/Verify2FA"
+	AuthService_UpdateUser2FA_FullMethodName          = "/auth.AuthService/UpdateUser2FA"
+	AuthService_RestoreAccount_FullMethodName         = "/auth.AuthService/RestoreAccount"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -60,7 +60,7 @@ type AuthServiceClient interface {
 	RevokeAllTokens(ctx context.Context, in *RevokeAllTokensRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	VerifyAccount(ctx context.Context, in *VerifyAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ResendVerificationCode(ctx context.Context, in *ResendVerificationCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetVerificationCodeByEmail(ctx context.Context, in *GetVerificationCodeByEmailRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error)
+	GetVerificationToken(ctx context.Context, in *GetVerificationTokenRequest, opts ...grpc.CallOption) (*GetVerificationTokenResponse, error)
 	GetResetPasswordToken(ctx context.Context, in *GetResetPasswordTokenRequest, opts ...grpc.CallOption) (*GetResetPasswordTokenResponse, error)
 	Get2FACode(ctx context.Context, in *Get2FACodeRequest, opts ...grpc.CallOption) (*Get2FACodeResponse, error)
 	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -208,10 +208,10 @@ func (c *authServiceClient) ResendVerificationCode(ctx context.Context, in *Rese
 	return out, nil
 }
 
-func (c *authServiceClient) GetVerificationCodeByEmail(ctx context.Context, in *GetVerificationCodeByEmailRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error) {
+func (c *authServiceClient) GetVerificationToken(ctx context.Context, in *GetVerificationTokenRequest, opts ...grpc.CallOption) (*GetVerificationTokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetVerificationCodeResponse)
-	err := c.cc.Invoke(ctx, AuthService_GetVerificationCodeByEmail_FullMethodName, in, out, cOpts...)
+	out := new(GetVerificationTokenResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetVerificationToken_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +305,7 @@ type AuthServiceServer interface {
 	RevokeAllTokens(context.Context, *RevokeAllTokensRequest) (*emptypb.Empty, error)
 	VerifyAccount(context.Context, *VerifyAccountRequest) (*emptypb.Empty, error)
 	ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error)
-	GetVerificationCodeByEmail(context.Context, *GetVerificationCodeByEmailRequest) (*GetVerificationCodeResponse, error)
+	GetVerificationToken(context.Context, *GetVerificationTokenRequest) (*GetVerificationTokenResponse, error)
 	GetResetPasswordToken(context.Context, *GetResetPasswordTokenRequest) (*GetResetPasswordTokenResponse, error)
 	Get2FACode(context.Context, *Get2FACodeRequest) (*Get2FACodeResponse, error)
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*emptypb.Empty, error)
@@ -362,8 +362,8 @@ func (UnimplementedAuthServiceServer) VerifyAccount(context.Context, *VerifyAcco
 func (UnimplementedAuthServiceServer) ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResendVerificationCode not implemented")
 }
-func (UnimplementedAuthServiceServer) GetVerificationCodeByEmail(context.Context, *GetVerificationCodeByEmailRequest) (*GetVerificationCodeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVerificationCodeByEmail not implemented")
+func (UnimplementedAuthServiceServer) GetVerificationToken(context.Context, *GetVerificationTokenRequest) (*GetVerificationTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVerificationToken not implemented")
 }
 func (UnimplementedAuthServiceServer) GetResetPasswordToken(context.Context, *GetResetPasswordTokenRequest) (*GetResetPasswordTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetResetPasswordToken not implemented")
@@ -641,20 +641,20 @@ func _AuthService_ResendVerificationCode_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_GetVerificationCodeByEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVerificationCodeByEmailRequest)
+func _AuthService_GetVerificationToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVerificationTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).GetVerificationCodeByEmail(ctx, in)
+		return srv.(AuthServiceServer).GetVerificationToken(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_GetVerificationCodeByEmail_FullMethodName,
+		FullMethod: AuthService_GetVerificationToken_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).GetVerificationCodeByEmail(ctx, req.(*GetVerificationCodeByEmailRequest))
+		return srv.(AuthServiceServer).GetVerificationToken(ctx, req.(*GetVerificationTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -845,8 +845,8 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthService_ResendVerificationCode_Handler,
 		},
 		{
-			MethodName: "GetVerificationCodeByEmail",
-			Handler:    _AuthService_GetVerificationCodeByEmail_Handler,
+			MethodName: "GetVerificationToken",
+			Handler:    _AuthService_GetVerificationToken_Handler,
 		},
 		{
 			MethodName: "GetResetPasswordToken",

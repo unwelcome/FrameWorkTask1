@@ -25,16 +25,17 @@ import (
 )
 
 const (
-	maxVerificationAttempts = 5
-	max2FAAttempts          = 5
-	max2FAEmailDailyCount   = 5
-	maxResendDailyCount     = 5
+	max2FAAttempts        = 5
+	max2FAEmailDailyCount = 5
 
 	// accountDeletionRetention — срок хранения данных мягко удалённого аккаунта
 	accountDeletionRetention = 30 * 24 * time.Hour
 
 	// resetPasswordTokenTTL — время жизни JWT токена для сброса пароля
 	resetPasswordTokenTTL = 15 * time.Minute
+
+	// verificationTokenTTL — время жизни JWT токена для верификации аккаунта
+	verificationTokenTTL = 48 * time.Hour
 
 	// dummyUUID — nil UUID, используется как заглушка в Redis-запросах при выравнивании времени ответа
 	dummyUUID = "00000000-0000-0000-0000-000000000000"
@@ -134,20 +135,29 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*e
 				Email:     existing.Email,
 				FirstName: existing.FirstName,
 			})
+		} else {
+			// Email занят неверифицированным аккаунтом — отправляем новый токен верификации
+			verificationToken, tokenErr := utils.CreateVerificationToken(existing.Email, s.jwtPrivateKey, verificationTokenTTL)
+			if tokenErr != nil {
+				return nil, status.Errorf(codes.Internal, "internal error")
+			}
+			_ = s.publisher.SendVerificationEmail(ctx, entities.VerificationEmailMsg{
+				UserUUID:  existing.UserUUID,
+				Email:     existing.Email,
+				FirstName: existing.FirstName,
+				Token:     verificationToken,
+			})
 		}
 
 		// Не раскрываем, что email уже зарегистрирован
-		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "Register").Msg("user already exists")
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "Register").Bool("verified", existing.IsVerified).Msg("user already exists")
 		return &emptypb.Empty{}, nil
 	}
 
-	// Генерируем и сохраняем код верификации
-	code := utils.GenerateVerificationCode()
-	if err := s.cache.Verification.SaveVerificationCode(ctx, entities.SaveVerificationCodeDTO{
-		UserUUID: userUUID,
-		Code:     code,
-	}).GRPCError(); err != nil {
-		return nil, err
+	// Генерируем JWT токен верификации
+	verificationToken, err := utils.CreateVerificationToken(req.GetEmail(), s.jwtPrivateKey, verificationTokenTTL)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
 	// Отправляем сообщение в message broker
@@ -155,7 +165,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*e
 		UserUUID:  userUUID,
 		Email:     req.GetEmail(),
 		FirstName: req.GetFirstName(),
-		Code:      code,
+		Token:     verificationToken,
 	})
 
 	return &emptypb.Empty{}, nil
@@ -524,61 +534,53 @@ func (s *AuthService) RevokeAllTokens(ctx context.Context, req *pb.RevokeAllToke
 	return &emptypb.Empty{}, nil
 }
 
-// VerifyAccount Подтверждение аккаунта по коду из письма
+// VerifyAccount Подтверждение аккаунта по JWT токену из письма (magic link)
 func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRequest) (*emptypb.Empty, error) {
-	if err := validate.Email(req.GetEmail()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
-	}
-	if err := validate.UserVerificationCode(req.GetCode()); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid verification code format")
+	claims, err := utils.ParseVerificationToken(req.GetVerificationToken(), s.jwtPrivateKey)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired verification token")
 	}
 
-	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
+	if claims.TokenType != entities.VerificationTokenType {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired verification token")
+	}
+
+	// Проверяем, что токен не был использован ранее
+	blacklisted, blacklistErr := s.cache.Verification.IsVerificationTokenBlacklisted(ctx, entities.IsVerificationTokenBlacklistedDTO{TokenID: claims.ID})
+	if err := blacklistErr.GRPCError(); err != nil {
+		return nil, err
+	}
+	if blacklisted {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired verification token")
+	}
+
+	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: claims.Email})
 	if getErr.Code != 0 {
-		// Защита от timing-атаки: выполняем Redis-запрос, аналогичный тому,
-		// что делается при нахождении пользователя, чтобы выровнять время ответа.
-		// dummyUUID никогда не существует в Redis — запрос всегда промахивается.
-		_, _ = s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: dummyUUID})
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
+		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired verification token")
 	}
 
 	if user.IsVerified {
-		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "VerifyAccount").Msg("user already verified")
-		return &emptypb.Empty{}, nil
+		return nil, status.Errorf(codes.AlreadyExists, "account already verified")
 	}
-
-	// Проверяем наличие активного кода.
-	storedCode, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: user.UserUUID})
-	if codeErr.Code != 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
-	}
-
-	// Увеличиваем счётчик попыток до проверки кода
-	attempts, attemptsErr := s.cache.Verification.IncrVerificationAttempts(ctx, entities.IncrVerificationAttemptsDTO{UserUUID: user.UserUUID})
-	if err := attemptsErr.GRPCError(); err != nil {
-		return nil, err
-	}
-	if attempts > maxVerificationAttempts {
-		_ = s.cache.Verification.DeleteVerificationCode(ctx, entities.DeleteVerificationCodeDTO{UserUUID: user.UserUUID})
-		return nil, status.Errorf(codes.ResourceExhausted, "too many attempts, please request a new verification code")
-	}
-
-	if req.GetCode() != storedCode {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid email or code")
-	}
-
-	// Код верный - удаляем его из Redis
-	_ = s.cache.Verification.DeleteVerificationCode(ctx, entities.DeleteVerificationCodeDTO{UserUUID: user.UserUUID})
 
 	// Помечаем аккаунт верифицированным
 	if err := s.db.User.SetUserVerified(ctx, entities.SetUserVerifiedDTO{UserUUID: user.UserUUID}).GRPCError(); err != nil {
 		return nil, err
 	}
 
+	// Добавляем токен в blacklist — одноразовое использование
+	remainingTTL := time.Until(claims.ExpiresAt.Time)
+	if remainingTTL > 0 {
+		_ = s.cache.Verification.AddToVerificationTokenBlacklist(ctx, entities.AddToVerificationTokenBlacklistDTO{
+			TokenID: claims.ID,
+			TTL:     remainingTTL,
+		})
+	}
+
 	return &emptypb.Empty{}, nil
 }
 
-// ResendVerificationCode Повторная отправка кода верификации
+// ResendVerificationCode Повторная отправка письма верификации (magic link)
 func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.ResendVerificationCodeRequest) (*emptypb.Empty, error) {
 	if err := validate.Email(req.GetEmail()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid email")
@@ -596,41 +598,18 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 		return &emptypb.Empty{}, nil
 	}
 
-	// Rate limiting: cooldown между повторными отправками
-	allowed, rateLimitErr := s.cache.Verification.AcquireResendCooldown(ctx, entities.CheckResendCooldownDTO{UserUUID: user.UserUUID})
-	if err := rateLimitErr.GRPCError(); err != nil {
-		return nil, err
-	}
-	if !allowed {
-		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ResendVerificationCode").Msg("cooldown active")
-		return &emptypb.Empty{}, nil
-	}
-
-	// Rate limiting: суточный лимит отправок
-	count, countErr := s.cache.Verification.IncrResendDailyCount(ctx, entities.IncrResendDailyCountDTO{UserUUID: user.UserUUID})
-	if err := countErr.GRPCError(); err != nil {
-		return nil, err
-	}
-	if count > maxResendDailyCount {
-		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ResendVerificationCode").Msg("daily limit reached")
-		return &emptypb.Empty{}, nil
-	}
-
-	// Генерируем новый код (перезаписывает старый и сбрасывает счётчик попыток)
-	code := utils.GenerateVerificationCode()
-	if err := s.cache.Verification.SaveVerificationCode(ctx, entities.SaveVerificationCodeDTO{
-		UserUUID: user.UserUUID,
-		Code:     code,
-	}).GRPCError(); err != nil {
-		return nil, err
+	// Генерируем новый JWT токен верификации
+	verificationToken, err := utils.CreateVerificationToken(user.Email, s.jwtPrivateKey, verificationTokenTTL)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
 	// Отправляем сообщение в message broker
 	_ = s.publisher.SendVerificationEmail(ctx, entities.VerificationEmailMsg{
 		UserUUID:  user.UserUUID,
-		Email:     req.GetEmail(),
+		Email:     user.Email,
 		FirstName: user.FirstName,
-		Code:      code,
+		Token:     verificationToken,
 	})
 
 	return &emptypb.Empty{}, nil
@@ -883,9 +862,9 @@ func (s *AuthService) RestoreAccount(ctx context.Context, req *pb.RestoreAccount
 
 // ─── Вспомогательные функции ──────────────────────────────────────────────────
 
-// GetVerificationCodeByEmail Отладочный метод — возвращает активный код верификации по email.
+// GetVerificationToken Отладочный метод — генерирует и возвращает токен верификации по email.
 // Доступен только при APP_ENV=test; в production возвращает Unimplemented.
-func (s *AuthService) GetVerificationCodeByEmail(ctx context.Context, req *pb.GetVerificationCodeByEmailRequest) (*pb.GetVerificationCodeResponse, error) {
+func (s *AuthService) GetVerificationToken(ctx context.Context, req *pb.GetVerificationTokenRequest) (*pb.GetVerificationTokenResponse, error) {
 	if s.appEnv != "test" {
 		return nil, status.Errorf(codes.Unimplemented, "not available")
 	}
@@ -899,12 +878,12 @@ func (s *AuthService) GetVerificationCodeByEmail(ctx context.Context, req *pb.Ge
 		return nil, err
 	}
 
-	code, codeErr := s.cache.Verification.GetVerificationCode(ctx, entities.GetVerificationCodeDTO{UserUUID: user.UserUUID})
-	if err := codeErr.GRPCError(); err != nil {
-		return nil, err
+	token, err := utils.CreateVerificationToken(user.Email, s.jwtPrivateKey, verificationTokenTTL)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
-	return &pb.GetVerificationCodeResponse{Code: code}, nil
+	return &pb.GetVerificationTokenResponse{Token: token}, nil
 }
 
 // GetResetPasswordToken Отладочный метод — генерирует и возвращает reset-password токен по email.

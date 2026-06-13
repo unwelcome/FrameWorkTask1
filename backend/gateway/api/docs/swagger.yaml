@@ -294,8 +294,6 @@ definitions:
         type: string
       description:
         type: string
-      email:
-        type: string
       first_name:
         type: string
       last_name:
@@ -407,11 +405,9 @@ definitions:
     type: object
   entities.ResetPasswordRequest:
     properties:
-      code:
-        type: string
-      email:
-        type: string
       new_password:
+        type: string
+      reset_token:
         type: string
     type: object
   entities.ResetPasswordResponse:
@@ -555,9 +551,7 @@ definitions:
     type: object
   entities.VerifyAccountRequest:
     properties:
-      code:
-        type: string
-      email:
+      verification_token:
         type: string
     type: object
   entities.VerifyAccountResponse:
@@ -2206,7 +2200,8 @@ paths:
       - Company
   /auth/user/{user_uuid}/info:
     get:
-      description: Get user info
+      description: Get colleague's public profile. Only accessible if the requester
+        and target share at least one company.
       parameters:
       - description: User UUID
         in: path
@@ -2226,6 +2221,10 @@ paths:
             $ref: '#/definitions/Error.HttpError'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
           schema:
             $ref: '#/definitions/Error.HttpError'
         "404":
@@ -2522,44 +2521,10 @@ paths:
       summary: Get2FACode
       tags:
       - Debug
-  /debug/user/{user_uuid}/recovery-code:
+  /debug/user/email/{email}/reset-password-token:
     get:
-      description: 'Debug endpoint: returns the active recovery code. Available only
-        when APP_ENV=test.'
-      parameters:
-      - description: User UUID
-        in: path
-        name: user_uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "501":
-          description: Not Implemented
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-      summary: GetRecoveryCode
-      tags:
-      - Debug
-  /debug/user/email/{email}/verification-code:
-    get:
-      description: 'Debug endpoint: returns the active verification code by email.
-        Available only when APP_ENV=test.'
+      description: 'Debug endpoint: generates and returns a reset password token by
+        email. Available only when APP_ENV=test.'
       parameters:
       - description: Email
         in: path
@@ -2587,7 +2552,41 @@ paths:
           description: Not Implemented
           schema:
             $ref: '#/definitions/Error.HttpError'
-      summary: GetVerificationCodeByEmail
+      summary: GetResetPasswordToken
+      tags:
+      - Debug
+  /debug/user/email/{email}/verification-token:
+    get:
+      description: 'Debug endpoint: generates and returns a verification token by
+        email. Available only when APP_ENV=test.'
+      parameters:
+      - description: Email
+        in: path
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      summary: GetVerificationToken
       tags:
       - Debug
   /forgot-password:
@@ -2734,9 +2733,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Reset password using a recovery code from email
+      description: Reset password using a one-time JWT reset token from email
       parameters:
-      - description: Email, код и новый пароль
+      - description: JWT токен и новый пароль
         in: body
         name: data
         required: true
@@ -2751,10 +2750,6 @@ paths:
             $ref: '#/definitions/entities.ResetPasswordResponse'
         "400":
           description: Bad Request
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "429":
-          description: Too Many Requests
           schema:
             $ref: '#/definitions/Error.HttpError'
         "500":

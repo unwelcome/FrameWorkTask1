@@ -36,7 +36,7 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	api.Post("/verify-2fa", app.AuthHandler.Verify2FA)
 	// Debug-only routes — доступны только при APP_ENV=test
 	if app.AppEnv == "test" {
-		api.Get("/debug/user/email/:email/verification-code", app.AuthHandler.GetVerificationCodeByEmail)
+		api.Get("/debug/user/email/:email/verification-token", app.AuthHandler.GetVerificationToken)
 		api.Get("/debug/user/email/:email/reset-password-token", app.AuthHandler.GetRecoveryCode)
 		api.Get("/debug/2fa/:session_uuid/code", app.AuthHandler.Get2FACode)
 	}

@@ -63,8 +63,8 @@ func TestLogin(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
 		mustRegister(t, c, email, "Password123")
-		verificationCode := mustGetVerificationCodeByEmail(t, c, email)
-		mustVerifyAccount(t, c, email, verificationCode)
+		verificationToken := mustGetVerificationToken(t, c, email)
+		mustVerifyAccount(t, c, verificationToken)
 
 		code, body := c.post("/api/login", map[string]string{
 			"email":    email,
@@ -561,49 +561,49 @@ func TestVerifyAccount(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
 		mustRegister(t, c, email, "Password123")
-		verCode := mustGetVerificationCodeByEmail(t, c, email)
+		verToken := mustGetVerificationToken(t, c, email)
 
 		code, body := c.post("/api/user/verify", map[string]string{
-			"email": email,
-			"code":  verCode,
+			"verification_token": verToken,
 		})
 		assert.Equal(t, http.StatusOK, code, "verify account should return 200 (body: %s)", body)
 	})
 
-	t.Run("wrong_code", func(t *testing.T) {
+	t.Run("invalid_token", func(t *testing.T) {
+		c := newClient()
+		code, body := c.post("/api/user/verify", map[string]string{
+			"verification_token": "not.a.valid.jwt",
+		})
+		assert.Equal(t, http.StatusBadRequest, code, "invalid token should return 400 (body: %s)", body)
+	})
+
+	t.Run("token_already_used", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
 		mustRegister(t, c, email, "Password123")
+		verToken := mustGetVerificationToken(t, c, email)
+		mustVerifyAccount(t, c, verToken)
 
+		// Повторное использование того же токена — 400 (токен в blacklist)
 		code, body := c.post("/api/user/verify", map[string]string{
-			"email": email,
-			"code":  "000000",
+			"verification_token": verToken,
 		})
-		assert.Equal(t, http.StatusBadRequest, code, "wrong code should return 400 (body: %s)", body)
+		assert.Equal(t, http.StatusBadRequest, code, "used token should return 400 (body: %s)", body)
 	})
 
-	t.Run("already_verified_silent_ok", func(t *testing.T) {
+	t.Run("already_verified_new_token", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
 		mustRegister(t, c, email, "Password123")
-		verCode := mustGetVerificationCodeByEmail(t, c, email)
-		mustVerifyAccount(t, c, email, verCode)
+		verToken := mustGetVerificationToken(t, c, email)
+		mustVerifyAccount(t, c, verToken)
 
-		// Повторная верификация — тихий ОК, письмо не отправляется
+		// Новый токен для уже верифицированного аккаунта — 409 Conflict
+		freshToken := mustGetVerificationToken(t, c, email)
 		code, body := c.post("/api/user/verify", map[string]string{
-			"email": email,
-			"code":  verCode,
+			"verification_token": freshToken,
 		})
-		assert.Equal(t, http.StatusOK, code, "already verified should return 200 silently (body: %s)", body)
-	})
-
-	t.Run("invalid_email", func(t *testing.T) {
-		c := newClient()
-		code, body := c.post("/api/user/verify", map[string]string{
-			"email": "not-an-email",
-			"code":  "123456",
-		})
-		assert.Equal(t, http.StatusBadRequest, code, "invalid email should return 400 (body: %s)", body)
+		assert.Equal(t, http.StatusConflict, code, "already verified with new token should return 409 (body: %s)", body)
 	})
 }
 
@@ -615,23 +615,23 @@ func TestResendVerificationCode(t *testing.T) {
 		email := randomEmail()
 		mustRegister(t, c, email, "Password123")
 
-		// Повторно отправляем код
+		// Повторно отправляем письмо верификации
 		code, body := c.post("/api/user/verify/resend", map[string]string{"email": email})
-		require.Equal(t, http.StatusOK, code, "resend code failed (body: %s)", body)
+		require.Equal(t, http.StatusOK, code, "resend verification failed (body: %s)", body)
 
-		// Получаем актуальный код и верифицируемся
-		newCode := mustGetVerificationCodeByEmail(t, c, email)
-		mustVerifyAccount(t, c, email, newCode)
+		// Получаем свежий токен через debug endpoint и верифицируемся
+		newToken := mustGetVerificationToken(t, c, email)
+		mustVerifyAccount(t, c, newToken)
 	})
 
 	t.Run("already_verified_silent_ok", func(t *testing.T) {
 		c := newClient()
 		email := randomEmail()
 		mustRegister(t, c, email, "Password123")
-		verCode := mustGetVerificationCodeByEmail(t, c, email)
-		mustVerifyAccount(t, c, email, verCode)
+		verToken := mustGetVerificationToken(t, c, email)
+		mustVerifyAccount(t, c, verToken)
 
-		// Resend для уже верифицированного — тихий ОК, письмо не отправляется
+		// Resend для уже верифицированного — тихий ОК
 		code, body := c.post("/api/user/verify/resend", map[string]string{"email": email})
 		assert.Equal(t, http.StatusOK, code, "resend for verified user should return 200 silently (body: %s)", body)
 	})
@@ -848,13 +848,13 @@ func TestAuthFullFlow(t *testing.T) {
 	regCode, regBody := c.post("/api/register", defaultUserPayload(email, password))
 	require.Equal(t, http.StatusCreated, regCode, "register: %s", regBody)
 
-	// 2. Resend verification code (перезаписывает код в Redis)
+	// 2. Resend verification email (отправляет новый magic link)
 	code, body := c.post("/api/user/verify/resend", map[string]string{"email": email})
 	require.Equal(t, http.StatusOK, code, "resend verification code: %s", body)
 
-	// 3. Verify account (используем актуальный код после resend)
-	verCode := mustGetVerificationCodeByEmail(t, c, email)
-	mustVerifyAccount(t, c, email, verCode)
+	// 3. Verify account (используем свежий токен через debug endpoint)
+	verToken := mustGetVerificationToken(t, c, email)
+	mustVerifyAccount(t, c, verToken)
 
 	// 4. Login
 	login := mustLogin(t, c, email, password)

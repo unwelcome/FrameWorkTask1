@@ -2926,7 +2926,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get user info",
+                "description": "Get colleague's public profile. Only accessible if the requester and target share at least one company.",
                 "produces": [
                     "application/json"
                 ],
@@ -2958,6 +2958,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -3027,16 +3033,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/debug/user/email/{email}/verification-code": {
+        "/debug/user/email/{email}/reset-password-token": {
             "get": {
-                "description": "Debug endpoint: returns the active verification code by email. Available only when APP_ENV=test.",
+                "description": "Debug endpoint: generates and returns a reset password token by email. Available only when APP_ENV=test.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Debug"
                 ],
-                "summary": "GetVerificationCodeByEmail",
+                "summary": "GetResetPasswordToken",
                 "parameters": [
                     {
                         "type": "string",
@@ -3077,21 +3083,21 @@ const docTemplate = `{
                 }
             }
         },
-        "/debug/user/{user_uuid}/recovery-code": {
+        "/debug/user/email/{email}/verification-token": {
             "get": {
-                "description": "Debug endpoint: returns the active recovery code. Available only when APP_ENV=test.",
+                "description": "Debug endpoint: generates and returns a verification token by email. Available only when APP_ENV=test.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Debug"
                 ],
-                "summary": "GetRecoveryCode",
+                "summary": "GetVerificationToken",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User UUID",
-                        "name": "user_uuid",
+                        "description": "Email",
+                        "name": "email",
                         "in": "path",
                         "required": true
                     }
@@ -3339,7 +3345,7 @@ const docTemplate = `{
         },
         "/reset-password": {
             "post": {
-                "description": "Reset password using a recovery code from email",
+                "description": "Reset password using a one-time JWT reset token from email",
                 "consumes": [
                     "application/json"
                 ],
@@ -3352,7 +3358,7 @@ const docTemplate = `{
                 "summary": "ResetPassword",
                 "parameters": [
                     {
-                        "description": "Email, код и новый пароль",
+                        "description": "JWT токен и новый пароль",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -3370,12 +3376,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -4068,9 +4068,6 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
-                "email": {
-                    "type": "string"
-                },
                 "first_name": {
                     "type": "string"
                 },
@@ -4244,13 +4241,10 @@ const docTemplate = `{
         "entities.ResetPasswordRequest": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
                 "new_password": {
+                    "type": "string"
+                },
+                "reset_token": {
                     "type": "string"
                 }
             }
@@ -4473,10 +4467,7 @@ const docTemplate = `{
         "entities.VerifyAccountRequest": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "email": {
+                "verification_token": {
                     "type": "string"
                 }
             }

@@ -1,26 +1,12 @@
 package entities
 
-type SaveVerificationCodeDTO struct {
-	UserUUID string
-	Code     string
+import "time"
+
+type AddToVerificationTokenBlacklistDTO struct {
+	TokenID string
+	TTL     time.Duration
 }
 
-type GetVerificationCodeDTO struct {
-	UserUUID string
-}
-
-type DeleteVerificationCodeDTO struct {
-	UserUUID string
-}
-
-type IncrVerificationAttemptsDTO struct {
-	UserUUID string
-}
-
-type CheckResendCooldownDTO struct {
-	UserUUID string
-}
-
-type IncrResendDailyCountDTO struct {
-	UserUUID string
+type IsVerificationTokenBlacklistedDTO struct {
+	TokenID string
 }

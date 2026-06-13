@@ -92,31 +92,15 @@ func (m *mockAuthRepo) RefreshToken(ctx context.Context, dto entities.RefreshTok
 // ─── Mock: VerificationRepository ───────────────────────────────────────────
 
 type mockVerificationRepo struct {
-	saveVerificationCode     func(ctx context.Context, dto entities.SaveVerificationCodeDTO) Error.CodeError
-	getVerificationCode      func(ctx context.Context, dto entities.GetVerificationCodeDTO) (string, Error.CodeError)
-	deleteVerificationCode   func(ctx context.Context, dto entities.DeleteVerificationCodeDTO) Error.CodeError
-	incrVerificationAttempts func(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError)
-	acquireResendCooldown    func(ctx context.Context, dto entities.CheckResendCooldownDTO) (bool, Error.CodeError)
-	incrResendDailyCount     func(ctx context.Context, dto entities.IncrResendDailyCountDTO) (int64, Error.CodeError)
+	addToVerificationTokenBlacklist func(ctx context.Context, dto entities.AddToVerificationTokenBlacklistDTO) Error.CodeError
+	isVerificationTokenBlacklisted  func(ctx context.Context, dto entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError)
 }
 
-func (m *mockVerificationRepo) SaveVerificationCode(ctx context.Context, dto entities.SaveVerificationCodeDTO) Error.CodeError {
-	return m.saveVerificationCode(ctx, dto)
+func (m *mockVerificationRepo) AddToVerificationTokenBlacklist(ctx context.Context, dto entities.AddToVerificationTokenBlacklistDTO) Error.CodeError {
+	return m.addToVerificationTokenBlacklist(ctx, dto)
 }
-func (m *mockVerificationRepo) GetVerificationCode(ctx context.Context, dto entities.GetVerificationCodeDTO) (string, Error.CodeError) {
-	return m.getVerificationCode(ctx, dto)
-}
-func (m *mockVerificationRepo) DeleteVerificationCode(ctx context.Context, dto entities.DeleteVerificationCodeDTO) Error.CodeError {
-	return m.deleteVerificationCode(ctx, dto)
-}
-func (m *mockVerificationRepo) IncrVerificationAttempts(ctx context.Context, dto entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
-	return m.incrVerificationAttempts(ctx, dto)
-}
-func (m *mockVerificationRepo) AcquireResendCooldown(ctx context.Context, dto entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
-	return m.acquireResendCooldown(ctx, dto)
-}
-func (m *mockVerificationRepo) IncrResendDailyCount(ctx context.Context, dto entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
-	return m.incrResendDailyCount(ctx, dto)
+func (m *mockVerificationRepo) IsVerificationTokenBlacklisted(ctx context.Context, dto entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError) {
+	return m.isVerificationTokenBlacklisted(ctx, dto)
 }
 
 // ─── Mock: RecoveryRepository ────────────────────────────────────────────────
@@ -278,24 +262,13 @@ func emptyUserRepo() *mockUserRepo { return &mockUserRepo{} }
 func emptyAuthRepo() *mockAuthRepo { return &mockAuthRepo{} }
 
 // emptyVerificationRepo — заглушка для тестов, где VerificationRepository не должен вызываться.
-// Все операции возвращают успех, чтобы не мешать тестам Register.
 func emptyVerificationRepo() *mockVerificationRepo {
 	return &mockVerificationRepo{
-		saveVerificationCode: func(_ context.Context, _ entities.SaveVerificationCodeDTO) Error.CodeError { return Error.CodeError{} },
-		getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
-			return "", Error.CodeError{}
-		},
-		deleteVerificationCode: func(_ context.Context, _ entities.DeleteVerificationCodeDTO) Error.CodeError {
+		addToVerificationTokenBlacklist: func(_ context.Context, _ entities.AddToVerificationTokenBlacklistDTO) Error.CodeError {
 			return Error.CodeError{}
 		},
-		incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
-			return 0, Error.CodeError{}
-		},
-		acquireResendCooldown: func(_ context.Context, _ entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
-			return true, Error.CodeError{}
-		},
-		incrResendDailyCount: func(_ context.Context, _ entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
-			return 1, Error.CodeError{}
+		isVerificationTokenBlacklisted: func(_ context.Context, _ entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError) {
+			return false, Error.CodeError{}
 		},
 	}
 }

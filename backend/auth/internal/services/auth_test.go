@@ -1305,56 +1305,75 @@ func TestRevokeAllTokens(t *testing.T) {
 
 // ─── VerifyAccount ────────────────────────────────────────────────────────────
 
+// validVerificationToken создаёт валидный JWT токен верификации для указанного email.
+func validVerificationToken(t *testing.T, email string) string {
+	t.Helper()
+	token, err := utils.CreateVerificationToken(email, testPrivateKey, verificationTokenTTL)
+	if err != nil {
+		t.Fatalf("failed to create verification token: %v", err)
+	}
+	return token
+}
+
 func TestVerifyAccount(t *testing.T) {
+	const testEmail = "test@example.com"
+
 	t.Run("success", func(t *testing.T) {
+		token := validVerificationToken(t, testEmail)
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
+				return &entities.UserGetByEmail{UserUUID: testUUID1, Email: testEmail, IsVerified: false}, ok()
 			},
 			setUserVerified: func(_ context.Context, _ entities.SetUserVerifiedDTO) Error.CodeError { return ok() },
 		}
 		verRepo := &mockVerificationRepo{
-			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
-				return "123456", ok()
+			isVerificationTokenBlacklisted: func(_ context.Context, _ entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError) {
+				return false, ok()
 			},
-			incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
-				return 1, ok()
+			addToVerificationTokenBlacklist: func(_ context.Context, _ entities.AddToVerificationTokenBlacklistDTO) Error.CodeError {
+				return ok()
 			},
-			deleteVerificationCode: func(_ context.Context, _ entities.DeleteVerificationCodeDTO) Error.CodeError { return ok() },
 		}
 		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
 
 		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
-			Email: "test@example.com",
-			Code:  "123456",
+			VerificationToken: token,
 		})
 
 		assertNoError(t, err)
 	})
 
-	t.Run("invalid_email", func(t *testing.T) {
+	t.Run("invalid_token", func(t *testing.T) {
 		svc := buildSvc(svcDeps{})
 
 		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
-			Email: "not-an-email",
-			Code:  "123456",
+			VerificationToken: "not.a.valid.jwt",
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("invalid_code_format", func(t *testing.T) {
-		svc := buildSvc(svcDeps{})
+	t.Run("blacklisted_token", func(t *testing.T) {
+		token := validVerificationToken(t, testEmail)
+		verRepo := &mockVerificationRepo{
+			isVerificationTokenBlacklisted: func(_ context.Context, _ entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError) {
+				return true, ok() // токен уже использован
+			},
+			addToVerificationTokenBlacklist: func(_ context.Context, _ entities.AddToVerificationTokenBlacklistDTO) Error.CodeError {
+				return ok()
+			},
+		}
+		svc := buildSvc(svcDeps{verification: verRepo})
 
 		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
-			Email: "test@example.com",
-			Code:  "abc",
+			VerificationToken: token,
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
 	t.Run("user_not_found", func(t *testing.T) {
+		token := validVerificationToken(t, testEmail)
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
 				return nil, Error.Public(codes.NotFound, "user not found")
@@ -1363,100 +1382,26 @@ func TestVerifyAccount(t *testing.T) {
 		svc := buildSvc(svcDeps{user: userRepo})
 
 		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
-			Email: "unknown@example.com",
-			Code:  "123456",
+			VerificationToken: token,
 		})
 
-		// Сервис возвращает нейтральный InvalidArgument, не раскрывая отсутствие пользователя
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("already_verified_silent_ok", func(t *testing.T) {
+	t.Run("already_verified", func(t *testing.T) {
+		token := validVerificationToken(t, testEmail)
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: true}, ok()
+				return &entities.UserGetByEmail{UserUUID: testUUID1, Email: testEmail, IsVerified: true}, ok()
 			},
 		}
 		svc := buildSvc(svcDeps{user: userRepo})
 
 		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
-			Email: "test@example.com",
-			Code:  "123456",
+			VerificationToken: token,
 		})
 
-		assertNoError(t, err)
-	})
-
-	t.Run("code_not_found_or_expired", func(t *testing.T) {
-		userRepo := &mockUserRepo{
-			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
-			},
-		}
-		verRepo := &mockVerificationRepo{
-			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
-				return "", Error.Public(codes.NotFound, "code not found")
-			},
-		}
-		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
-
-		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
-			Email: "test@example.com",
-			Code:  "123456",
-		})
-
-		// Код не найден/истёк должен возвращать InvalidArgument (400), а не NotFound (404),
-		// чтобы атакующий не мог по HTTP-статусу определить наличие активного кода для email.
-		assertCode(t, err, codes.InvalidArgument)
-	})
-
-	t.Run("too_many_attempts", func(t *testing.T) {
-		userRepo := &mockUserRepo{
-			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
-			},
-		}
-		verRepo := &mockVerificationRepo{
-			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
-				return "123456", ok()
-			},
-			incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
-				return maxVerificationAttempts + 1, ok()
-			},
-			deleteVerificationCode: func(_ context.Context, _ entities.DeleteVerificationCodeDTO) Error.CodeError { return ok() },
-		}
-		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
-
-		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
-			Email: "test@example.com",
-			Code:  "123456",
-		})
-
-		assertCode(t, err, codes.ResourceExhausted)
-	})
-
-	t.Run("wrong_code", func(t *testing.T) {
-		userRepo := &mockUserRepo{
-			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
-			},
-		}
-		verRepo := &mockVerificationRepo{
-			getVerificationCode: func(_ context.Context, _ entities.GetVerificationCodeDTO) (string, Error.CodeError) {
-				return "999999", ok()
-			},
-			incrVerificationAttempts: func(_ context.Context, _ entities.IncrVerificationAttemptsDTO) (int64, Error.CodeError) {
-				return 1, ok()
-			},
-		}
-		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
-
-		_, err := svc.VerifyAccount(context.Background(), &pb.VerifyAccountRequest{
-			Email: "test@example.com",
-			Code:  "123456",
-		})
-
-		assertCode(t, err, codes.InvalidArgument)
+		assertCode(t, err, codes.AlreadyExists)
 	})
 }
 
@@ -1464,27 +1409,34 @@ func TestVerifyAccount(t *testing.T) {
 
 func TestResendVerificationCode(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
+		tokenSent := ""
 		userRepo := &mockUserRepo{
 			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false, FirstName: "Ivan"}, ok()
+				return &entities.UserGetByEmail{UserUUID: testUUID1, Email: "test@example.com", IsVerified: false, FirstName: "Ivan"}, ok()
 			},
 		}
-		verRepo := &mockVerificationRepo{
-			acquireResendCooldown: func(_ context.Context, _ entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
-				return true, ok()
+		publisher := &mockPublisher{
+			sendVerificationEmail: func(_ context.Context, dto entities.VerificationEmailMsg) Error.CodeError {
+				tokenSent = dto.Token
+				return ok()
 			},
-			incrResendDailyCount: func(_ context.Context, _ entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
-				return 1, ok()
-			},
-			saveVerificationCode: func(_ context.Context, _ entities.SaveVerificationCodeDTO) Error.CodeError { return ok() },
+			sendRecoveryEmail:            func(_ context.Context, _ entities.RecoveryEmailMsg) Error.CodeError { return ok() },
+			send2FAEmail:                 func(_ context.Context, _ entities.TwoFAEmailMsg) Error.CodeError { return ok() },
+			sendPasswordChangedEmail:     func(_ context.Context, _ entities.PasswordChangedEmailMsg) Error.CodeError { return ok() },
+			sendPasswordResetEmail:       func(_ context.Context, _ entities.PasswordResetEmailMsg) Error.CodeError { return ok() },
+			sendRegistrationAttemptEmail: func(_ context.Context, _ entities.RegistrationAttemptEmailMsg) Error.CodeError { return ok() },
+			sendLoginNotificationEmail:   func(_ context.Context, _ entities.LoginNotificationEmailMsg) Error.CodeError { return ok() },
 		}
-		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
+		svc := buildSvc(svcDeps{user: userRepo, publisher: publisher})
 
 		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
 			Email: "test@example.com",
 		})
 
 		assertNoError(t, err)
+		if tokenSent == "" {
+			t.Error("expected verification email to be sent with a token")
+		}
 	})
 
 	t.Run("invalid_email", func(t *testing.T) {
@@ -1509,7 +1461,6 @@ func TestResendVerificationCode(t *testing.T) {
 			Email: "unknown@example.com",
 		})
 
-		// Тихий 200 — не раскрываем наличие/отсутствие email
 		assertNoError(t, err)
 	})
 
@@ -1526,77 +1477,6 @@ func TestResendVerificationCode(t *testing.T) {
 		})
 
 		assertNoError(t, err)
-	})
-
-	t.Run("cooldown_active_silent_ok", func(t *testing.T) {
-		userRepo := &mockUserRepo{
-			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
-			},
-		}
-		verRepo := &mockVerificationRepo{
-			acquireResendCooldown: func(_ context.Context, _ entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
-				return false, ok() // cooldown ещё активен
-			},
-		}
-		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
-
-		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
-			Email: "test@example.com",
-		})
-
-		// Тихий 200 — не раскрываем rate limit через HTTP-статус
-		assertNoError(t, err)
-	})
-
-	t.Run("daily_limit_reached_silent_ok", func(t *testing.T) {
-		userRepo := &mockUserRepo{
-			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
-			},
-		}
-		verRepo := &mockVerificationRepo{
-			acquireResendCooldown: func(_ context.Context, _ entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
-				return true, ok()
-			},
-			incrResendDailyCount: func(_ context.Context, _ entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
-				return maxResendDailyCount + 1, ok()
-			},
-		}
-		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
-
-		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
-			Email: "test@example.com",
-		})
-
-		// Тихий 200 — не раскрываем rate limit через HTTP-статус
-		assertNoError(t, err)
-	})
-
-	t.Run("save_code_error", func(t *testing.T) {
-		userRepo := &mockUserRepo{
-			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
-				return &entities.UserGetByEmail{UserUUID: testUUID1, IsVerified: false}, ok()
-			},
-		}
-		verRepo := &mockVerificationRepo{
-			acquireResendCooldown: func(_ context.Context, _ entities.CheckResendCooldownDTO) (bool, Error.CodeError) {
-				return true, ok()
-			},
-			incrResendDailyCount: func(_ context.Context, _ entities.IncrResendDailyCountDTO) (int64, Error.CodeError) {
-				return 1, ok()
-			},
-			saveVerificationCode: func(_ context.Context, _ entities.SaveVerificationCodeDTO) Error.CodeError {
-				return Error.Internal(fmt.Errorf("redis error"))
-			},
-		}
-		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
-
-		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
-			Email: "test@example.com",
-		})
-
-		assertCode(t, err, codes.Internal)
 	})
 }
 
@@ -2208,6 +2088,74 @@ func TestGetResetPasswordToken(t *testing.T) {
 		svc := buildSvc(svcDeps{user: userRepo})
 
 		_, err := svc.GetResetPasswordToken(context.Background(), &pb.GetResetPasswordTokenRequest{
+			Email: "unknown@example.com",
+		})
+
+		assertCode(t, err, codes.NotFound)
+	})
+}
+
+// ─── GetVerificationToken ─────────────────────────────────────────────────────
+
+func TestGetVerificationToken(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, dto entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, Email: dto.Email}, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		resp, err := svc.GetVerificationToken(context.Background(), &pb.GetVerificationTokenRequest{
+			Email: "test@example.com",
+		})
+
+		assertNoError(t, err)
+		if resp.GetToken() == "" {
+			t.Error("expected non-empty verification token")
+		}
+		// Проверяем, что токен парсится и содержит правильный email
+		claims, parseErr := utils.ParseVerificationToken(resp.GetToken(), testPrivateKey)
+		if parseErr != nil {
+			t.Fatalf("returned token is not a valid verification JWT: %v", parseErr)
+		}
+		if claims.Email != "test@example.com" {
+			t.Errorf("expected email 'test@example.com' in token claims, got %q", claims.Email)
+		}
+		if claims.TokenType != entities.VerificationTokenType {
+			t.Errorf("expected token_type %q, got %q", entities.VerificationTokenType, claims.TokenType)
+		}
+	})
+
+	t.Run("unavailable_in_production", func(t *testing.T) {
+		svc := buildSvc(svcDeps{appEnv: "production"})
+
+		_, err := svc.GetVerificationToken(context.Background(), &pb.GetVerificationTokenRequest{
+			Email: "test@example.com",
+		})
+
+		assertCode(t, err, codes.Unimplemented)
+	})
+
+	t.Run("invalid_email", func(t *testing.T) {
+		svc := buildSvc(svcDeps{})
+
+		_, err := svc.GetVerificationToken(context.Background(), &pb.GetVerificationTokenRequest{
+			Email: "not-an-email",
+		})
+
+		assertCode(t, err, codes.InvalidArgument)
+	})
+
+	t.Run("user_not_found", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return nil, Error.Public(codes.NotFound, "user not found")
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo})
+
+		_, err := svc.GetVerificationToken(context.Background(), &pb.GetVerificationTokenRequest{
 			Email: "unknown@example.com",
 		})
 

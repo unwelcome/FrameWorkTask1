@@ -149,27 +149,26 @@ func mustRegister(t *testing.T, c *apiClient, email, password string) {
 	require.Equalf(t, http.StatusCreated, code, "register failed (body: %s)", body)
 }
 
-// mustGetVerificationCodeByEmail fetches the active verification code for a user via debug endpoint (by email).
+// mustGetVerificationToken fetches a verification token for a user via debug endpoint (by email).
 // Only works when APP_ENV=test.
-func mustGetVerificationCodeByEmail(t *testing.T, c *apiClient, email string) string {
+func mustGetVerificationToken(t *testing.T, c *apiClient, email string) string {
 	t.Helper()
-	code, body := c.get(fmt.Sprintf("/api/debug/user/email/%s/verification-code", email))
-	require.Equalf(t, http.StatusOK, code, "get verification code by email failed (body: %s)", body)
+	code, body := c.get(fmt.Sprintf("/api/debug/user/email/%s/verification-token", email))
+	require.Equalf(t, http.StatusOK, code, "get verification token by email failed (body: %s)", body)
 
 	var resp struct {
-		Code string `json:"code"`
+		Token string `json:"token"`
 	}
 	require.NoError(t, json.Unmarshal(body, &resp))
-	require.NotEmpty(t, resp.Code, "verification code is empty")
-	return resp.Code
+	require.NotEmpty(t, resp.Token, "verification token is empty")
+	return resp.Token
 }
 
-// mustVerifyAccount verifies a user account using the 6-digit code.
-func mustVerifyAccount(t *testing.T, c *apiClient, email, verificationCode string) {
+// mustVerifyAccount verifies a user account using a JWT verification token (magic link).
+func mustVerifyAccount(t *testing.T, c *apiClient, verificationToken string) {
 	t.Helper()
 	code, body := c.post("/api/user/verify", map[string]string{
-		"email": email,
-		"code":  verificationCode,
+		"verification_token": verificationToken,
 	})
 	require.Equalf(t, http.StatusOK, code, "verify account failed (body: %s)", body)
 }
@@ -180,8 +179,8 @@ func mustRegisterVerifyAndLogin(t *testing.T, c *apiClient) (string, loginResp) 
 	t.Helper()
 	email := randomEmail()
 	mustRegister(t, c, email, "Password123")
-	verificationCode := mustGetVerificationCodeByEmail(t, c, email)
-	mustVerifyAccount(t, c, email, verificationCode)
+	verificationToken := mustGetVerificationToken(t, c, email)
+	mustVerifyAccount(t, c, verificationToken)
 	login := mustLogin(t, c, email, "Password123")
 	return email, login
 }

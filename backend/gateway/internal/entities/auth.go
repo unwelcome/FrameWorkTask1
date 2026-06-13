@@ -210,21 +210,13 @@ type RevokeAllTokensResponse struct{}
 // ─── VerifyAccount ────────────────────────────────────────────────────────────
 
 type VerifyAccountRequest struct {
-	Email string `json:"email"`
-	Code  string `json:"code"`
+	VerificationToken string `json:"verification_token"`
 }
 type VerifyAccountResponse struct{}
 
 func (e *VerifyAccountRequest) Validate() error {
-	e.Email = strings.TrimSpace(e.Email)
-	if err := validate.Email(e.Email); err != nil {
-		return err
-	}
-	e.Code = strings.TrimSpace(e.Code)
-	if err := validate.UserVerificationCode(e.Code); err != nil {
-		return err
-	}
-	return nil
+	e.VerificationToken = strings.TrimSpace(e.VerificationToken)
+	return utils.ValidateJWT(e.VerificationToken)
 }
 
 // ─── ResendVerificationCode ───────────────────────────────────────────────────

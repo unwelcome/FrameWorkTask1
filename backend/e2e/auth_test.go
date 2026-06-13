@@ -326,15 +326,15 @@ func TestChangePassword(t *testing.T) {
 	})
 }
 
-// ─── GetAllActiveTokens ───────────────────────────────────────────────────────
+// ─── GetAllActiveSessions ─────────────────────────────────────────────────────
 
-func TestGetAllActiveTokens(t *testing.T) {
+func TestGetAllActiveSessions(t *testing.T) {
 	t.Run("happy_path", func(t *testing.T) {
 		c := newClient()
 		_, login := mustRegisterAndLogin(t, c)
 		auth := c.withToken(login.AccessToken)
 
-		code, body := auth.get("/api/auth/user/tokens")
+		code, body := auth.get("/api/auth/user/sessions")
 
 		assert.Equal(t, http.StatusOK, code)
 
@@ -359,7 +359,7 @@ func TestGetAllActiveTokens(t *testing.T) {
 		login2 := mustLogin(t, c, email, "Password123")
 		_ = login2
 
-		code, body := auth1.get("/api/auth/user/tokens")
+		code, body := auth1.get("/api/auth/user/sessions")
 		require.Equal(t, http.StatusOK, code)
 
 		var resp tokensResp
@@ -379,7 +379,7 @@ func TestGetAllActiveTokens(t *testing.T) {
 		auth := c.withToken(login.AccessToken)
 
 		// Получаем данные до refresh
-		code, body := auth.get("/api/auth/user/tokens")
+		code, body := auth.get("/api/auth/user/sessions")
 		require.Equal(t, http.StatusOK, code)
 		var before tokensResp
 		require.NoError(t, json.Unmarshal(body, &before))
@@ -394,7 +394,7 @@ func TestGetAllActiveTokens(t *testing.T) {
 		auth = c.withToken(refreshed.AccessToken)
 
 		// Получаем данные после refresh
-		code, body = auth.get("/api/auth/user/tokens")
+		code, body = auth.get("/api/auth/user/sessions")
 		require.Equal(t, http.StatusOK, code)
 		var after tokensResp
 		require.NoError(t, json.Unmarshal(body, &after))
@@ -408,16 +408,16 @@ func TestGetAllActiveTokens(t *testing.T) {
 	})
 }
 
-// ─── RevokeToken ──────────────────────────────────────────────────────────────
+// ─── RevokeSession ────────────────────────────────────────────────────────────
 
-func TestRevokeToken(t *testing.T) {
+func TestRevokeSession(t *testing.T) {
 	t.Run("happy_path", func(t *testing.T) {
 		c := newClient()
 		_, login := mustRegisterAndLogin(t, c)
 		auth := c.withToken(login.AccessToken)
 
 		// Получаем хеш токена из списка активных токенов
-		code, body := auth.get("/api/auth/user/tokens")
+		code, body := auth.get("/api/auth/user/sessions")
 		require.Equal(t, http.StatusOK, code)
 		var tokens tokensResp
 		require.NoError(t, json.Unmarshal(body, &tokens))
@@ -425,7 +425,7 @@ func TestRevokeToken(t *testing.T) {
 		tokenHash := tokens.Tokens[0].TokenHash
 
 		// Отзываем токен по хешу
-		code, body = auth.delete("/api/auth/user/revoke/token", map[string]string{
+		code, body = auth.delete("/api/auth/user/session", map[string]string{
 			"token_hash": tokenHash,
 		})
 		assert.Equal(t, http.StatusOK, code, "revoke token failed (body: %s)", body)
@@ -439,9 +439,9 @@ func TestRevokeToken(t *testing.T) {
 	})
 }
 
-// ─── RevokeAllTokens ──────────────────────────────────────────────────────────
+// ─── RevokeAllSessions ────────────────────────────────────────────────────────
 
-func TestRevokeAllTokens(t *testing.T) {
+func TestRevokeAllSessions(t *testing.T) {
 	t.Run("happy_path", func(t *testing.T) {
 		c := newClient()
 		email, login := mustRegisterAndLogin(t, c)
@@ -450,7 +450,7 @@ func TestRevokeAllTokens(t *testing.T) {
 		// Создаём вторую сессию
 		login2 := mustLogin(t, c, email, "Password123")
 
-		code, body := auth.delete("/api/auth/user/revoke/all", nil)
+		code, body := auth.delete("/api/auth/user/sessions", nil)
 		assert.Equal(t, http.StatusOK, code, "revoke all tokens failed (body: %s)", body)
 
 		// Оба refresh токена должны стать невалидными
@@ -939,14 +939,14 @@ func TestAuthFullFlow(t *testing.T) {
 	auth = c.withToken(login.AccessToken)
 
 	// 20. Проверяем активные токены
-	code, body = auth.get("/api/auth/user/tokens")
+	code, body = auth.get("/api/auth/user/sessions")
 	require.Equal(t, http.StatusOK, code)
 	var activeTokens tokensResp
 	require.NoError(t, json.Unmarshal(body, &activeTokens))
 	assert.GreaterOrEqual(t, len(activeTokens.Tokens), 1)
 
 	// 21. Revoke all
-	code, body = auth.delete("/api/auth/user/revoke/all", nil)
+	code, body = auth.delete("/api/auth/user/sessions", nil)
 	assert.Equal(t, http.StatusOK, code, "revoke all: %s", body)
 
 	// 22. Refresh с отозванным токеном должен упасть

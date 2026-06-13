@@ -947,28 +947,28 @@ func (x *RefreshTokenResponse) GetRefreshToken() string {
 	return ""
 }
 
-// Get all user active refresh tokens
-type GetAllActiveTokensRequest struct {
+// Get all user active sessions
+type GetAllActiveSessionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetAllActiveTokensRequest) Reset() {
-	*x = GetAllActiveTokensRequest{}
+func (x *GetAllActiveSessionsRequest) Reset() {
+	*x = GetAllActiveSessionsRequest{}
 	mi := &file_auth_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetAllActiveTokensRequest) String() string {
+func (x *GetAllActiveSessionsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetAllActiveTokensRequest) ProtoMessage() {}
+func (*GetAllActiveSessionsRequest) ProtoMessage() {}
 
-func (x *GetAllActiveTokensRequest) ProtoReflect() protoreflect.Message {
+func (x *GetAllActiveSessionsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_auth_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -980,39 +980,39 @@ func (x *GetAllActiveTokensRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetAllActiveTokensRequest.ProtoReflect.Descriptor instead.
-func (*GetAllActiveTokensRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetAllActiveSessionsRequest.ProtoReflect.Descriptor instead.
+func (*GetAllActiveSessionsRequest) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *GetAllActiveTokensRequest) GetUserUuid() string {
+func (x *GetAllActiveSessionsRequest) GetUserUuid() string {
 	if x != nil {
 		return x.UserUuid
 	}
 	return ""
 }
 
-type GetAllActiveTokensResponse struct {
+type GetAllActiveSessionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Tokens        []*Token               `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetAllActiveTokensResponse) Reset() {
-	*x = GetAllActiveTokensResponse{}
+func (x *GetAllActiveSessionsResponse) Reset() {
+	*x = GetAllActiveSessionsResponse{}
 	mi := &file_auth_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetAllActiveTokensResponse) String() string {
+func (x *GetAllActiveSessionsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetAllActiveTokensResponse) ProtoMessage() {}
+func (*GetAllActiveSessionsResponse) ProtoMessage() {}
 
-func (x *GetAllActiveTokensResponse) ProtoReflect() protoreflect.Message {
+func (x *GetAllActiveSessionsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_auth_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1024,20 +1024,20 @@ func (x *GetAllActiveTokensResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetAllActiveTokensResponse.ProtoReflect.Descriptor instead.
-func (*GetAllActiveTokensResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetAllActiveSessionsResponse.ProtoReflect.Descriptor instead.
+func (*GetAllActiveSessionsResponse) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *GetAllActiveTokensResponse) GetTokens() []*Token {
+func (x *GetAllActiveSessionsResponse) GetTokens() []*Token {
 	if x != nil {
 		return x.Tokens
 	}
 	return nil
 }
 
-// Revoke token
-type RevokeTokenRequest struct {
+// Revoke session
+type RevokeSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
 	TokenHash     string                 `protobuf:"bytes,2,opt,name=token_hash,json=tokenHash,proto3" json:"token_hash,omitempty"`
@@ -1045,20 +1045,20 @@ type RevokeTokenRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RevokeTokenRequest) Reset() {
-	*x = RevokeTokenRequest{}
+func (x *RevokeSessionRequest) Reset() {
+	*x = RevokeSessionRequest{}
 	mi := &file_auth_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RevokeTokenRequest) String() string {
+func (x *RevokeSessionRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RevokeTokenRequest) ProtoMessage() {}
+func (*RevokeSessionRequest) ProtoMessage() {}
 
-func (x *RevokeTokenRequest) ProtoReflect() protoreflect.Message {
+func (x *RevokeSessionRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_auth_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1070,47 +1070,47 @@ func (x *RevokeTokenRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RevokeTokenRequest.ProtoReflect.Descriptor instead.
-func (*RevokeTokenRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RevokeSessionRequest.ProtoReflect.Descriptor instead.
+func (*RevokeSessionRequest) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *RevokeTokenRequest) GetUserUuid() string {
+func (x *RevokeSessionRequest) GetUserUuid() string {
 	if x != nil {
 		return x.UserUuid
 	}
 	return ""
 }
 
-func (x *RevokeTokenRequest) GetTokenHash() string {
+func (x *RevokeSessionRequest) GetTokenHash() string {
 	if x != nil {
 		return x.TokenHash
 	}
 	return ""
 }
 
-// Revoke all user tokens
-type RevokeAllTokensRequest struct {
+// Revoke all user sessions
+type RevokeAllSessionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RevokeAllTokensRequest) Reset() {
-	*x = RevokeAllTokensRequest{}
+func (x *RevokeAllSessionsRequest) Reset() {
+	*x = RevokeAllSessionsRequest{}
 	mi := &file_auth_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RevokeAllTokensRequest) String() string {
+func (x *RevokeAllSessionsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RevokeAllTokensRequest) ProtoMessage() {}
+func (*RevokeAllSessionsRequest) ProtoMessage() {}
 
-func (x *RevokeAllTokensRequest) ProtoReflect() protoreflect.Message {
+func (x *RevokeAllSessionsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_auth_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1122,12 +1122,12 @@ func (x *RevokeAllTokensRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RevokeAllTokensRequest.ProtoReflect.Descriptor instead.
-func (*RevokeAllTokensRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RevokeAllSessionsRequest.ProtoReflect.Descriptor instead.
+func (*RevokeAllSessionsRequest) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *RevokeAllTokensRequest) GetUserUuid() string {
+func (x *RevokeAllSessionsRequest) GetUserUuid() string {
 	if x != nil {
 		return x.UserUuid
 	}
@@ -1905,16 +1905,16 @@ const file_auth_proto_rawDesc = "" +
 	"\x02ip\x18\x02 \x01(\tR\x02ip\"^\n" +
 	"\x14RefreshTokenResponse\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"8\n" +
-	"\x19GetAllActiveTokensRequest\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"A\n" +
-	"\x1aGetAllActiveTokensResponse\x12#\n" +
-	"\x06tokens\x18\x01 \x03(\v2\v.auth.TokenR\x06tokens\"P\n" +
-	"\x12RevokeTokenRequest\x12\x1b\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\":\n" +
+	"\x1bGetAllActiveSessionsRequest\x12\x1b\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"C\n" +
+	"\x1cGetAllActiveSessionsResponse\x12#\n" +
+	"\x06tokens\x18\x01 \x03(\v2\v.auth.TokenR\x06tokens\"R\n" +
+	"\x14RevokeSessionRequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x1d\n" +
 	"\n" +
-	"token_hash\x18\x02 \x01(\tR\ttokenHash\"5\n" +
-	"\x16RevokeAllTokensRequest\x12\x1b\n" +
+	"token_hash\x18\x02 \x01(\tR\ttokenHash\"7\n" +
+	"\x18RevokeAllSessionsRequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"E\n" +
 	"\x14VerifyAccountRequest\x12-\n" +
 	"\x12verification_token\x18\x01 \x01(\tR\x11verificationToken\"5\n" +
@@ -1952,7 +1952,7 @@ const file_auth_proto_rawDesc = "" +
 	"enable_2fa\x18\x02 \x01(\bR\tenable2fa\"I\n" +
 	"\x15RestoreAccountRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword2\xd3\v\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword2\xe1\v\n" +
 	"\vAuthService\x126\n" +
 	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x14.auth.HealthResponse\x129\n" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.google.protobuf.Empty\x120\n" +
@@ -1962,10 +1962,10 @@ const file_auth_proto_rawDesc = "" +
 	"\rUpdateUserBio\x12\x1a.auth.UpdateUserBioRequest\x1a\x16.google.protobuf.Empty\x12=\n" +
 	"\n" +
 	"DeleteUser\x12\x17.auth.DeleteUserRequest\x1a\x16.google.protobuf.Empty\x12E\n" +
-	"\fRefreshToken\x12\x19.auth.RefreshTokenRequest\x1a\x1a.auth.RefreshTokenResponse\x12W\n" +
-	"\x12GetAllActiveTokens\x12\x1f.auth.GetAllActiveTokensRequest\x1a .auth.GetAllActiveTokensResponse\x12?\n" +
-	"\vRevokeToken\x12\x18.auth.RevokeTokenRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
-	"\x0fRevokeAllTokens\x12\x1c.auth.RevokeAllTokensRequest\x1a\x16.google.protobuf.Empty\x12C\n" +
+	"\fRefreshToken\x12\x19.auth.RefreshTokenRequest\x1a\x1a.auth.RefreshTokenResponse\x12]\n" +
+	"\x14GetAllActiveSessions\x12!.auth.GetAllActiveSessionsRequest\x1a\".auth.GetAllActiveSessionsResponse\x12C\n" +
+	"\rRevokeSession\x12\x1a.auth.RevokeSessionRequest\x1a\x16.google.protobuf.Empty\x12K\n" +
+	"\x11RevokeAllSessions\x12\x1e.auth.RevokeAllSessionsRequest\x1a\x16.google.protobuf.Empty\x12C\n" +
 	"\rVerifyAccount\x12\x1a.auth.VerifyAccountRequest\x1a\x16.google.protobuf.Empty\x12U\n" +
 	"\x16ResendVerificationCode\x12#.auth.ResendVerificationCodeRequest\x1a\x16.google.protobuf.Empty\x12]\n" +
 	"\x14GetVerificationToken\x12!.auth.GetVerificationTokenRequest\x1a\".auth.GetVerificationTokenResponse\x12`\n" +
@@ -2005,10 +2005,10 @@ var file_auth_proto_goTypes = []any{
 	(*DeleteUserRequest)(nil),             // 10: auth.DeleteUserRequest
 	(*RefreshTokenRequest)(nil),           // 11: auth.RefreshTokenRequest
 	(*RefreshTokenResponse)(nil),          // 12: auth.RefreshTokenResponse
-	(*GetAllActiveTokensRequest)(nil),     // 13: auth.GetAllActiveTokensRequest
-	(*GetAllActiveTokensResponse)(nil),    // 14: auth.GetAllActiveTokensResponse
-	(*RevokeTokenRequest)(nil),            // 15: auth.RevokeTokenRequest
-	(*RevokeAllTokensRequest)(nil),        // 16: auth.RevokeAllTokensRequest
+	(*GetAllActiveSessionsRequest)(nil),   // 13: auth.GetAllActiveSessionsRequest
+	(*GetAllActiveSessionsResponse)(nil),  // 14: auth.GetAllActiveSessionsResponse
+	(*RevokeSessionRequest)(nil),          // 15: auth.RevokeSessionRequest
+	(*RevokeAllSessionsRequest)(nil),      // 16: auth.RevokeAllSessionsRequest
 	(*VerifyAccountRequest)(nil),          // 17: auth.VerifyAccountRequest
 	(*ResendVerificationCodeRequest)(nil), // 18: auth.ResendVerificationCodeRequest
 	(*GetVerificationTokenRequest)(nil),   // 19: auth.GetVerificationTokenRequest
@@ -2028,7 +2028,7 @@ var file_auth_proto_goTypes = []any{
 var file_auth_proto_depIdxs = []int32{
 	1,  // 0: auth.Token.session:type_name -> auth.SessionInfo
 	1,  // 1: auth.LoginRequest.session:type_name -> auth.SessionInfo
-	0,  // 2: auth.GetAllActiveTokensResponse.tokens:type_name -> auth.Token
+	0,  // 2: auth.GetAllActiveSessionsResponse.tokens:type_name -> auth.Token
 	1,  // 3: auth.Verify2FARequest.session:type_name -> auth.SessionInfo
 	31, // 4: auth.AuthService.Health:input_type -> google.protobuf.Empty
 	3,  // 5: auth.AuthService.Register:input_type -> auth.RegisterRequest
@@ -2038,9 +2038,9 @@ var file_auth_proto_depIdxs = []int32{
 	9,  // 9: auth.AuthService.UpdateUserBio:input_type -> auth.UpdateUserBioRequest
 	10, // 10: auth.AuthService.DeleteUser:input_type -> auth.DeleteUserRequest
 	11, // 11: auth.AuthService.RefreshToken:input_type -> auth.RefreshTokenRequest
-	13, // 12: auth.AuthService.GetAllActiveTokens:input_type -> auth.GetAllActiveTokensRequest
-	15, // 13: auth.AuthService.RevokeToken:input_type -> auth.RevokeTokenRequest
-	16, // 14: auth.AuthService.RevokeAllTokens:input_type -> auth.RevokeAllTokensRequest
+	13, // 12: auth.AuthService.GetAllActiveSessions:input_type -> auth.GetAllActiveSessionsRequest
+	15, // 13: auth.AuthService.RevokeSession:input_type -> auth.RevokeSessionRequest
+	16, // 14: auth.AuthService.RevokeAllSessions:input_type -> auth.RevokeAllSessionsRequest
 	17, // 15: auth.AuthService.VerifyAccount:input_type -> auth.VerifyAccountRequest
 	18, // 16: auth.AuthService.ResendVerificationCode:input_type -> auth.ResendVerificationCodeRequest
 	19, // 17: auth.AuthService.GetVerificationToken:input_type -> auth.GetVerificationTokenRequest
@@ -2059,9 +2059,9 @@ var file_auth_proto_depIdxs = []int32{
 	31, // 30: auth.AuthService.UpdateUserBio:output_type -> google.protobuf.Empty
 	31, // 31: auth.AuthService.DeleteUser:output_type -> google.protobuf.Empty
 	12, // 32: auth.AuthService.RefreshToken:output_type -> auth.RefreshTokenResponse
-	14, // 33: auth.AuthService.GetAllActiveTokens:output_type -> auth.GetAllActiveTokensResponse
-	31, // 34: auth.AuthService.RevokeToken:output_type -> google.protobuf.Empty
-	31, // 35: auth.AuthService.RevokeAllTokens:output_type -> google.protobuf.Empty
+	14, // 33: auth.AuthService.GetAllActiveSessions:output_type -> auth.GetAllActiveSessionsResponse
+	31, // 34: auth.AuthService.RevokeSession:output_type -> google.protobuf.Empty
+	31, // 35: auth.AuthService.RevokeAllSessions:output_type -> google.protobuf.Empty
 	31, // 36: auth.AuthService.VerifyAccount:output_type -> google.protobuf.Empty
 	31, // 37: auth.AuthService.ResendVerificationCode:output_type -> google.protobuf.Empty
 	20, // 38: auth.AuthService.GetVerificationToken:output_type -> auth.GetVerificationTokenResponse

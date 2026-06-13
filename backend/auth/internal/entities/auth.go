@@ -2,33 +2,33 @@ package entities
 
 import "time"
 
-type SaveRefreshTokenDTO struct {
+type SaveSessionDTO struct {
 	UserUUID    string
 	HashedToken string
 	Session     *SessionInfo
 }
 
-type GetAllRefreshTokensDTO struct {
+type GetAllSessionsDTO struct {
 	UserUUID string
 }
 
-// RefreshTokenEntry — один активный токен с данными сессии.
-type RefreshTokenEntry struct {
+// SessionEntry — одна активная сессия с данными и хешем refresh токена
+type SessionEntry struct {
 	TokenHash string
 	Session   *SessionInfo
 }
 
-type CheckRefreshTokenExistsDTO struct {
+type CheckSessionExistsDTO struct {
 	UserUUID string
 	RawToken string
 }
 
-type RevokeRefreshTokenDTO struct {
+type RevokeSessionDTO struct {
 	UserUUID  string
 	TokenHash string
 }
 
-type RevokeAllRefreshTokensDTO struct {
+type RevokeAllSessionsDTO struct {
 	UserUUID string
 }
 
@@ -37,5 +37,5 @@ type RefreshTokenDTO struct {
 	OldHashToken string
 	NewHashToken string
 	LastIP       string    // IP последнего refresh — обновляется в хеше
-	LastActiveAt time.Time // время последнего refresh — обновляется в хеше
+	LastActiveAt time.Time // Время последнего refresh — обновляется в хеше
 }

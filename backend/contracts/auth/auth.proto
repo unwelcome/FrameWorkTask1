@@ -14,9 +14,9 @@ service AuthService {
   rpc UpdateUserBio(UpdateUserBioRequest) returns (google.protobuf.Empty);
   rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
-  rpc GetAllActiveTokens(GetAllActiveTokensRequest) returns (GetAllActiveTokensResponse);
-  rpc RevokeToken(RevokeTokenRequest) returns (google.protobuf.Empty);
-  rpc RevokeAllTokens(RevokeAllTokensRequest) returns (google.protobuf.Empty);
+  rpc GetAllActiveSessions(GetAllActiveSessionsRequest) returns (GetAllActiveSessionsResponse);
+  rpc RevokeSession(RevokeSessionRequest) returns (google.protobuf.Empty);
+  rpc RevokeAllSessions(RevokeAllSessionsRequest) returns (google.protobuf.Empty);
   rpc VerifyAccount(VerifyAccountRequest) returns (google.protobuf.Empty);
   rpc ResendVerificationCode(ResendVerificationCodeRequest) returns (google.protobuf.Empty);
   rpc GetVerificationToken(GetVerificationTokenRequest) returns (GetVerificationTokenResponse);
@@ -143,25 +143,25 @@ message RefreshTokenResponse {
 }
 
 
-// Get all user active refresh tokens
-message GetAllActiveTokensRequest {
+// Get all user active sessions
+message GetAllActiveSessionsRequest {
   string user_uuid = 1;
 }
-message GetAllActiveTokensResponse{
+message GetAllActiveSessionsResponse{
   repeated Token tokens = 1;
 }
 
 
-// Revoke token
-message RevokeTokenRequest {
+// Revoke session
+message RevokeSessionRequest {
   string user_uuid = 1;
   string token_hash = 2;
 }
 // Empty response
 
 
-// Revoke all user tokens
-message RevokeAllTokensRequest {
+// Revoke all user sessions
+message RevokeAllSessionsRequest {
   string user_uuid = 1;
 }
 // Empty response

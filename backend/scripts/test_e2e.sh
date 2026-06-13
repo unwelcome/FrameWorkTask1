@@ -16,7 +16,7 @@ E2E_SERVICES=("auth" "company" "application")
 get_pattern() {
   case "$1" in
     auth)
-      echo "^(TestRegister|TestLogin|TestRefreshToken|TestGetUser|TestUpdateUserBio|TestChangePassword|TestGetAllActiveTokens|TestRevokeToken|TestRevokeAllTokens|TestDeleteUser|TestAuthFullFlow|TestVerifyAccount|TestResendVerificationCode|TestForgotPassword|TestResetPassword|TestVerify2FA|TestUpdateUser2FA)"
+      echo "^(TestRegister|TestLogin|TestRefreshToken|TestGetUser|TestUpdateUserBio|TestChangePassword|TestGetAllActiveSessions|TestRevokeSession|TestRevokeAllSessions|TestDeleteUser|TestAuthFullFlow|TestVerifyAccount|TestResendVerificationCode|TestForgotPassword|TestResetPassword|TestVerify2FA|TestUpdateUser2FA)"
       ;;
     company)
       echo "^(TestCreateCompany|TestGetCompany|TestGetCompaniesList|TestGetMyCompanies|TestUpdateCompanyTitle|TestUpdateCompanyStatus|TestDeleteCompany|TestCreateJoinCode|TestGetJoinCodes|TestJoinCompany|TestDeleteJoinCode|TestCompanyFullWorkflow|TestCreateDepartment|TestGetDepartment|TestGetCompanyDepartments|TestUpdateDepartmentTitle|TestDeleteDepartment|TestAddEmployeeToDepartment|TestRemoveEmployeeFromDepartment|TestDepartmentFullWorkflow|TestGetCompanyEmployee|TestGetCompanyEmployees|TestGetCompanyEmployeesSummary|TestUpdateEmployeeRole|TestRemoveCompanyEmployee|TestEmployeeFullWorkflow)"

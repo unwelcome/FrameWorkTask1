@@ -2758,63 +2758,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/user/revoke/all": {
+        "/auth/user/session": {
             "delete": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Revoke all user refresh tokens",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "RevokeAllTokens",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/entities.RevokeAllTokensResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/user/revoke/token": {
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Revoke refresh token",
+                "description": "Revoke session by refresh token hash",
                 "consumes": [
                     "application/json"
                 ],
@@ -2824,15 +2775,15 @@ const docTemplate = `{
                 "tags": [
                     "Auth"
                 ],
-                "summary": "RevokeToken",
+                "summary": "RevokeSession",
                 "parameters": [
                     {
-                        "description": "Refresh token for revoke",
+                        "description": "Refresh token hash to revoke",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/entities.RevokeTokenRequest"
+                            "$ref": "#/definitions/entities.RevokeSessionRequest"
                         }
                     }
                 ],
@@ -2840,7 +2791,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/entities.RevokeTokenResponse"
+                            "$ref": "#/definitions/entities.RevokeSessionResponse"
                         }
                     },
                     "400": {
@@ -2870,26 +2821,73 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/user/tokens": {
+        "/auth/user/sessions": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get all active refresh tokens",
+                "description": "Get all active sessions",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Auth"
                 ],
-                "summary": "GetAllActiveTokens",
+                "summary": "GetAllActiveSessions",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/entities.GetAllActiveTokensResponse"
+                            "$ref": "#/definitions/entities.GetAllActiveSessionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Revoke all user sessions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "RevokeAllSessions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.RevokeAllSessionsResponse"
                         }
                     },
                     "400": {
@@ -3886,7 +3884,7 @@ const docTemplate = `{
         "entities.ForgotPasswordResponse": {
             "type": "object"
         },
-        "entities.GetAllActiveTokensResponse": {
+        "entities.GetAllActiveSessionsResponse": {
             "type": "object",
             "properties": {
                 "tokens": {
@@ -4266,10 +4264,10 @@ const docTemplate = `{
         "entities.RestoreAccountResponse": {
             "type": "object"
         },
-        "entities.RevokeAllTokensResponse": {
+        "entities.RevokeAllSessionsResponse": {
             "type": "object"
         },
-        "entities.RevokeTokenRequest": {
+        "entities.RevokeSessionRequest": {
             "type": "object",
             "properties": {
                 "token_hash": {
@@ -4277,7 +4275,7 @@ const docTemplate = `{
                 }
             }
         },
-        "entities.RevokeTokenResponse": {
+        "entities.RevokeSessionResponse": {
             "type": "object"
         },
         "entities.ServiceHealth": {

@@ -28,9 +28,9 @@ const (
 	AuthService_UpdateUserBio_FullMethodName          = "/auth.AuthService/UpdateUserBio"
 	AuthService_DeleteUser_FullMethodName             = "/auth.AuthService/DeleteUser"
 	AuthService_RefreshToken_FullMethodName           = "/auth.AuthService/RefreshToken"
-	AuthService_GetAllActiveTokens_FullMethodName     = "/auth.AuthService/GetAllActiveTokens"
-	AuthService_RevokeToken_FullMethodName            = "/auth.AuthService/RevokeToken"
-	AuthService_RevokeAllTokens_FullMethodName        = "/auth.AuthService/RevokeAllTokens"
+	AuthService_GetAllActiveSessions_FullMethodName   = "/auth.AuthService/GetAllActiveSessions"
+	AuthService_RevokeSession_FullMethodName          = "/auth.AuthService/RevokeSession"
+	AuthService_RevokeAllSessions_FullMethodName      = "/auth.AuthService/RevokeAllSessions"
 	AuthService_VerifyAccount_FullMethodName          = "/auth.AuthService/VerifyAccount"
 	AuthService_ResendVerificationCode_FullMethodName = "/auth.AuthService/ResendVerificationCode"
 	AuthService_GetVerificationToken_FullMethodName   = "/auth.AuthService/GetVerificationToken"
@@ -55,9 +55,9 @@ type AuthServiceClient interface {
 	UpdateUserBio(ctx context.Context, in *UpdateUserBioRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
-	GetAllActiveTokens(ctx context.Context, in *GetAllActiveTokensRequest, opts ...grpc.CallOption) (*GetAllActiveTokensResponse, error)
-	RevokeToken(ctx context.Context, in *RevokeTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	RevokeAllTokens(ctx context.Context, in *RevokeAllTokensRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetAllActiveSessions(ctx context.Context, in *GetAllActiveSessionsRequest, opts ...grpc.CallOption) (*GetAllActiveSessionsResponse, error)
+	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RevokeAllSessions(ctx context.Context, in *RevokeAllSessionsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	VerifyAccount(ctx context.Context, in *VerifyAccountRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ResendVerificationCode(ctx context.Context, in *ResendVerificationCodeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetVerificationToken(ctx context.Context, in *GetVerificationTokenRequest, opts ...grpc.CallOption) (*GetVerificationTokenResponse, error)
@@ -158,30 +158,30 @@ func (c *authServiceClient) RefreshToken(ctx context.Context, in *RefreshTokenRe
 	return out, nil
 }
 
-func (c *authServiceClient) GetAllActiveTokens(ctx context.Context, in *GetAllActiveTokensRequest, opts ...grpc.CallOption) (*GetAllActiveTokensResponse, error) {
+func (c *authServiceClient) GetAllActiveSessions(ctx context.Context, in *GetAllActiveSessionsRequest, opts ...grpc.CallOption) (*GetAllActiveSessionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetAllActiveTokensResponse)
-	err := c.cc.Invoke(ctx, AuthService_GetAllActiveTokens_FullMethodName, in, out, cOpts...)
+	out := new(GetAllActiveSessionsResponse)
+	err := c.cc.Invoke(ctx, AuthService_GetAllActiveSessions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) RevokeToken(ctx context.Context, in *RevokeTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *authServiceClient) RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, AuthService_RevokeToken_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthService_RevokeSession_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) RevokeAllTokens(ctx context.Context, in *RevokeAllTokensRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *authServiceClient) RevokeAllSessions(ctx context.Context, in *RevokeAllSessionsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, AuthService_RevokeAllTokens_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthService_RevokeAllSessions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -300,9 +300,9 @@ type AuthServiceServer interface {
 	UpdateUserBio(context.Context, *UpdateUserBioRequest) (*emptypb.Empty, error)
 	DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error)
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
-	GetAllActiveTokens(context.Context, *GetAllActiveTokensRequest) (*GetAllActiveTokensResponse, error)
-	RevokeToken(context.Context, *RevokeTokenRequest) (*emptypb.Empty, error)
-	RevokeAllTokens(context.Context, *RevokeAllTokensRequest) (*emptypb.Empty, error)
+	GetAllActiveSessions(context.Context, *GetAllActiveSessionsRequest) (*GetAllActiveSessionsResponse, error)
+	RevokeSession(context.Context, *RevokeSessionRequest) (*emptypb.Empty, error)
+	RevokeAllSessions(context.Context, *RevokeAllSessionsRequest) (*emptypb.Empty, error)
 	VerifyAccount(context.Context, *VerifyAccountRequest) (*emptypb.Empty, error)
 	ResendVerificationCode(context.Context, *ResendVerificationCodeRequest) (*emptypb.Empty, error)
 	GetVerificationToken(context.Context, *GetVerificationTokenRequest) (*GetVerificationTokenResponse, error)
@@ -347,14 +347,14 @@ func (UnimplementedAuthServiceServer) DeleteUser(context.Context, *DeleteUserReq
 func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
 }
-func (UnimplementedAuthServiceServer) GetAllActiveTokens(context.Context, *GetAllActiveTokensRequest) (*GetAllActiveTokensResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllActiveTokens not implemented")
+func (UnimplementedAuthServiceServer) GetAllActiveSessions(context.Context, *GetAllActiveSessionsRequest) (*GetAllActiveSessionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllActiveSessions not implemented")
 }
-func (UnimplementedAuthServiceServer) RevokeToken(context.Context, *RevokeTokenRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RevokeToken not implemented")
+func (UnimplementedAuthServiceServer) RevokeSession(context.Context, *RevokeSessionRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeSession not implemented")
 }
-func (UnimplementedAuthServiceServer) RevokeAllTokens(context.Context, *RevokeAllTokensRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RevokeAllTokens not implemented")
+func (UnimplementedAuthServiceServer) RevokeAllSessions(context.Context, *RevokeAllSessionsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeAllSessions not implemented")
 }
 func (UnimplementedAuthServiceServer) VerifyAccount(context.Context, *VerifyAccountRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyAccount not implemented")
@@ -551,56 +551,56 @@ func _AuthService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_GetAllActiveTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAllActiveTokensRequest)
+func _AuthService_GetAllActiveSessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAllActiveSessionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).GetAllActiveTokens(ctx, in)
+		return srv.(AuthServiceServer).GetAllActiveSessions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_GetAllActiveTokens_FullMethodName,
+		FullMethod: AuthService_GetAllActiveSessions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).GetAllActiveTokens(ctx, req.(*GetAllActiveTokensRequest))
+		return srv.(AuthServiceServer).GetAllActiveSessions(ctx, req.(*GetAllActiveSessionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_RevokeToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RevokeTokenRequest)
+func _AuthService_RevokeSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeSessionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).RevokeToken(ctx, in)
+		return srv.(AuthServiceServer).RevokeSession(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_RevokeToken_FullMethodName,
+		FullMethod: AuthService_RevokeSession_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).RevokeToken(ctx, req.(*RevokeTokenRequest))
+		return srv.(AuthServiceServer).RevokeSession(ctx, req.(*RevokeSessionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_RevokeAllTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RevokeAllTokensRequest)
+func _AuthService_RevokeAllSessions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeAllSessionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).RevokeAllTokens(ctx, in)
+		return srv.(AuthServiceServer).RevokeAllSessions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_RevokeAllTokens_FullMethodName,
+		FullMethod: AuthService_RevokeAllSessions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).RevokeAllTokens(ctx, req.(*RevokeAllTokensRequest))
+		return srv.(AuthServiceServer).RevokeAllSessions(ctx, req.(*RevokeAllSessionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -825,16 +825,16 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthService_RefreshToken_Handler,
 		},
 		{
-			MethodName: "GetAllActiveTokens",
-			Handler:    _AuthService_GetAllActiveTokens_Handler,
+			MethodName: "GetAllActiveSessions",
+			Handler:    _AuthService_GetAllActiveSessions_Handler,
 		},
 		{
-			MethodName: "RevokeToken",
-			Handler:    _AuthService_RevokeToken_Handler,
+			MethodName: "RevokeSession",
+			Handler:    _AuthService_RevokeSession_Handler,
 		},
 		{
-			MethodName: "RevokeAllTokens",
-			Handler:    _AuthService_RevokeAllTokens_Handler,
+			MethodName: "RevokeAllSessions",
+			Handler:    _AuthService_RevokeAllSessions_Handler,
 		},
 		{
 			MethodName: "VerifyAccount",

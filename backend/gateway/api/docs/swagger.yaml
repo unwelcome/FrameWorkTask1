@@ -177,7 +177,7 @@ definitions:
     type: object
   entities.ForgotPasswordResponse:
     type: object
-  entities.GetAllActiveTokensResponse:
+  entities.GetAllActiveSessionsResponse:
     properties:
       tokens:
         items:
@@ -421,14 +421,14 @@ definitions:
     type: object
   entities.RestoreAccountResponse:
     type: object
-  entities.RevokeAllTokensResponse:
+  entities.RevokeAllSessionsResponse:
     type: object
-  entities.RevokeTokenRequest:
+  entities.RevokeSessionRequest:
     properties:
       token_hash:
         type: string
     type: object
-  entities.RevokeTokenResponse:
+  entities.RevokeSessionResponse:
     type: object
   entities.ServiceHealth:
     properties:
@@ -2385,56 +2385,25 @@ paths:
       summary: ChangePassword
       tags:
       - User
-  /auth/user/revoke/all:
-    delete:
-      description: Revoke all user refresh tokens
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/entities.RevokeAllTokensResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-      security:
-      - ApiKeyAuth: []
-      summary: RevokeAllTokens
-      tags:
-      - Auth
-  /auth/user/revoke/token:
+  /auth/user/session:
     delete:
       consumes:
       - application/json
-      description: Revoke refresh token
+      description: Revoke session by refresh token hash
       parameters:
-      - description: Refresh token for revoke
+      - description: Refresh token hash to revoke
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/entities.RevokeTokenRequest'
+          $ref: '#/definitions/entities.RevokeSessionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/entities.RevokeTokenResponse'
+            $ref: '#/definitions/entities.RevokeSessionResponse'
         "400":
           description: Bad Request
           schema:
@@ -2453,19 +2422,19 @@ paths:
             $ref: '#/definitions/Error.HttpError'
       security:
       - ApiKeyAuth: []
-      summary: RevokeToken
+      summary: RevokeSession
       tags:
       - Auth
-  /auth/user/tokens:
-    get:
-      description: Get all active refresh tokens
+  /auth/user/sessions:
+    delete:
+      description: Revoke all user sessions
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/entities.GetAllActiveTokensResponse'
+            $ref: '#/definitions/entities.RevokeAllSessionsResponse'
         "400":
           description: Bad Request
           schema:
@@ -2484,7 +2453,37 @@ paths:
             $ref: '#/definitions/Error.HttpError'
       security:
       - ApiKeyAuth: []
-      summary: GetAllActiveTokens
+      summary: RevokeAllSessions
+      tags:
+      - Auth
+    get:
+      description: Get all active sessions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.GetAllActiveSessionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+      security:
+      - ApiKeyAuth: []
+      summary: GetAllActiveSessions
       tags:
       - Auth
   /debug/2fa/{session_uuid}/code:

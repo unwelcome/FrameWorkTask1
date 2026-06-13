@@ -257,7 +257,7 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	session := &entities.SessionInfo{}
 	session.FromProto(req.GetSession())
 
-	if err := s.cache.Auth.SaveRefreshToken(ctx, entities.SaveRefreshTokenDTO{
+	if err := s.cache.Auth.SaveSession(ctx, entities.SaveSessionDTO{
 		UserUUID:    user.UserUUID,
 		HashedToken: utils.HashToken(tokenPair.RefreshToken),
 		Session:     session,
@@ -354,7 +354,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 	})
 
 	// Отзываем все токены после смены пароля
-	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: req.GetUserUuid()})
+	revokeErr := s.cache.Auth.RevokeAllSessions(ctx, entities.RevokeAllSessionsDTO{UserUUID: req.GetUserUuid()})
 	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
 		if err := revokeErr.GRPCError(); err != nil {
 			return nil, err
@@ -415,7 +415,7 @@ func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 	}
 
 	// Отзываем все активные сессии - удалённый аккаунт не должен оставаться авторизованным
-	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: req.GetUserUuid()})
+	revokeErr := s.cache.Auth.RevokeAllSessions(ctx, entities.RevokeAllSessionsDTO{UserUUID: req.GetUserUuid()})
 	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
 		if err := revokeErr.GRPCError(); err != nil {
 			return nil, err
@@ -425,13 +425,13 @@ func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 	return &emptypb.Empty{}, nil
 }
 
-// GetAllActiveTokens Получение всех активных токенов пользователя
-func (s *AuthService) GetAllActiveTokens(ctx context.Context, req *pb.GetAllActiveTokensRequest) (*pb.GetAllActiveTokensResponse, error) {
+// GetAllActiveSessions Получение всех активных сессий пользователя
+func (s *AuthService) GetAllActiveSessions(ctx context.Context, req *pb.GetAllActiveSessionsRequest) (*pb.GetAllActiveSessionsResponse, error) {
 	if err := validate.UUID(req.GetUserUuid()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
 	}
 
-	userTokens, getErr := s.cache.Auth.GetAllRefreshTokens(ctx, entities.GetAllRefreshTokensDTO{UserUUID: req.GetUserUuid()})
+	userTokens, getErr := s.cache.Auth.GetAllSessions(ctx, entities.GetAllSessionsDTO{UserUUID: req.GetUserUuid()})
 	if err := getErr.GRPCError(); err != nil {
 		return nil, err
 	}
@@ -444,7 +444,7 @@ func (s *AuthService) GetAllActiveTokens(ctx context.Context, req *pb.GetAllActi
 		})
 	}
 
-	return &pb.GetAllActiveTokensResponse{Tokens: tokens}, nil
+	return &pb.GetAllActiveSessionsResponse{Tokens: tokens}, nil
 }
 
 // RefreshToken Обновление токенов
@@ -458,7 +458,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 		return nil, status.Errorf(codes.InvalidArgument, "wrong token type")
 	}
 
-	if err = s.cache.Auth.CheckRefreshTokenExists(ctx, entities.CheckRefreshTokenExistsDTO{
+	if err = s.cache.Auth.CheckSessionExists(ctx, entities.CheckSessionExistsDTO{
 		UserUUID: tokenClaims.UserUUID,
 		RawToken: req.GetRefreshToken(),
 	}).GRPCError(); err != nil {
@@ -497,8 +497,8 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	}, nil
 }
 
-// RevokeToken Отзыв refresh токена пользователя по его хешу
-func (s *AuthService) RevokeToken(ctx context.Context, req *pb.RevokeTokenRequest) (*emptypb.Empty, error) {
+// RevokeSession Отзыв сессии пользователя по хешу refresh токена
+func (s *AuthService) RevokeSession(ctx context.Context, req *pb.RevokeSessionRequest) (*emptypb.Empty, error) {
 	if err := validate.UUID(req.GetUserUuid()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
 	}
@@ -506,7 +506,7 @@ func (s *AuthService) RevokeToken(ctx context.Context, req *pb.RevokeTokenReques
 		return nil, status.Errorf(codes.InvalidArgument, "token hash missed")
 	}
 
-	if err := s.cache.Auth.RevokeRefreshToken(ctx, entities.RevokeRefreshTokenDTO{
+	if err := s.cache.Auth.RevokeSession(ctx, entities.RevokeSessionDTO{
 		UserUUID:  req.GetUserUuid(),
 		TokenHash: req.GetTokenHash(),
 	}).GRPCError(); err != nil {
@@ -516,13 +516,13 @@ func (s *AuthService) RevokeToken(ctx context.Context, req *pb.RevokeTokenReques
 	return &emptypb.Empty{}, nil
 }
 
-// RevokeAllTokens Отзыв всех refresh токенов пользователя
-func (s *AuthService) RevokeAllTokens(ctx context.Context, req *pb.RevokeAllTokensRequest) (*emptypb.Empty, error) {
+// RevokeAllSessions Отзыв всех сессий пользователя
+func (s *AuthService) RevokeAllSessions(ctx context.Context, req *pb.RevokeAllSessionsRequest) (*emptypb.Empty, error) {
 	if err := validate.UUID(req.GetUserUuid()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
 	}
 
-	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{
+	revokeErr := s.cache.Auth.RevokeAllSessions(ctx, entities.RevokeAllSessionsDTO{
 		UserUUID: req.GetUserUuid(),
 	})
 	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
@@ -717,7 +717,7 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 	})
 
 	// Отзываем все активные сессии после смены пароля
-	revokeErr := s.cache.Auth.RevokeAllRefreshTokens(ctx, entities.RevokeAllRefreshTokensDTO{UserUUID: user.UserUUID})
+	revokeErr := s.cache.Auth.RevokeAllSessions(ctx, entities.RevokeAllSessionsDTO{UserUUID: user.UserUUID})
 	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
 		if err = revokeErr.GRPCError(); err != nil {
 			return nil, err
@@ -771,7 +771,7 @@ func (s *AuthService) Verify2FA(ctx context.Context, req *pb.Verify2FARequest) (
 	session.FromProto(req.GetSession())
 
 	// Сохраняем refresh токен
-	if err := s.cache.Auth.SaveRefreshToken(ctx, entities.SaveRefreshTokenDTO{
+	if err := s.cache.Auth.SaveSession(ctx, entities.SaveSessionDTO{
 		UserUUID:    data.UserUUID,
 		HashedToken: utils.HashToken(tokenPair.RefreshToken),
 		Session:     session,

@@ -162,10 +162,10 @@ func (e *UpdateUserBioRequest) Validate() error {
 
 type DeleteUserResponse struct{}
 
-// ─── GetAllActiveTokens ───────────────────────────────────────────────────────
+// ─── GetAllActiveSessions ─────────────────────────────────────────────────────
 
-type GetAllActiveTokensRequest struct{}
-type GetAllActiveTokensResponse struct {
+type GetAllActiveSessionsRequest struct{}
+type GetAllActiveSessionsResponse struct {
 	Tokens []*TokenInfo `json:"tokens"`
 }
 
@@ -187,14 +187,14 @@ func (e *RefreshTokenRequest) Validate() error {
 	return nil
 }
 
-// ─── RevokeToken ──────────────────────────────────────────────────────────────
+// ─── RevokeSession ────────────────────────────────────────────────────────────
 
-type RevokeTokenRequest struct {
+type RevokeSessionRequest struct {
 	TokenHash string `json:"token_hash"`
 }
-type RevokeTokenResponse struct{}
+type RevokeSessionResponse struct{}
 
-func (e *RevokeTokenRequest) Validate() error {
+func (e *RevokeSessionRequest) Validate() error {
 	e.TokenHash = strings.TrimSpace(e.TokenHash)
 	if e.TokenHash == "" {
 		return fmt.Errorf("token_hash is required")
@@ -202,10 +202,10 @@ func (e *RevokeTokenRequest) Validate() error {
 	return nil
 }
 
-// ─── RevokeAllTokens ──────────────────────────────────────────────────────────
+// ─── RevokeAllSessions ────────────────────────────────────────────────────────
 
-type RevokeAllTokensRequest struct{}
-type RevokeAllTokensResponse struct{}
+type RevokeAllSessionsRequest struct{}
+type RevokeAllSessionsResponse struct{}
 
 // ─── VerifyAccount ────────────────────────────────────────────────────────────
 

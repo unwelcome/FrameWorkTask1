@@ -41,9 +41,9 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 		api.Get("/debug/2fa/:session_uuid/code", app.AuthHandler.Get2FACode)
 	}
 	// Tokens
-	auth.Get("/user/tokens", app.AuthHandler.GetAllActiveTokens)
-	auth.Delete("/user/revoke/token", app.AuthHandler.RevokeToken)
-	auth.Delete("/user/revoke/all", app.AuthHandler.RevokeAllTokens)
+	auth.Get("/user/sessions", app.AuthHandler.GetAllActiveSessions)
+	auth.Delete("/user/session", app.AuthHandler.RevokeSession)
+	auth.Delete("/user/sessions", app.AuthHandler.RevokeAllSessions)
 	// User
 	api.Post("/register", app.AuthHandler.Register)
 	api.Post("/restore-account", app.AuthHandler.RestoreAccount)

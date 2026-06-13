@@ -62,28 +62,28 @@ func (m *mockUserRepo) SetUserVerified(ctx context.Context, dto entities.SetUser
 // ─── Mock: AuthRepository ────────────────────────────────────────────────────
 
 type mockAuthRepo struct {
-	saveRefreshToken        func(ctx context.Context, dto entities.SaveRefreshTokenDTO) Error.CodeError
-	getAllRefreshTokens     func(ctx context.Context, dto entities.GetAllRefreshTokensDTO) ([]entities.RefreshTokenEntry, Error.CodeError)
-	checkRefreshTokenExists func(ctx context.Context, dto entities.CheckRefreshTokenExistsDTO) Error.CodeError
-	revokeRefreshToken      func(ctx context.Context, dto entities.RevokeRefreshTokenDTO) Error.CodeError
-	revokeAllRefreshTokens  func(ctx context.Context, dto entities.RevokeAllRefreshTokensDTO) Error.CodeError
-	refreshToken            func(ctx context.Context, dto entities.RefreshTokenDTO) Error.CodeError
+	saveSession        func(ctx context.Context, dto entities.SaveSessionDTO) Error.CodeError
+	getAllSessions      func(ctx context.Context, dto entities.GetAllSessionsDTO) ([]entities.SessionEntry, Error.CodeError)
+	checkSessionExists func(ctx context.Context, dto entities.CheckSessionExistsDTO) Error.CodeError
+	revokeSession      func(ctx context.Context, dto entities.RevokeSessionDTO) Error.CodeError
+	revokeAllSessions  func(ctx context.Context, dto entities.RevokeAllSessionsDTO) Error.CodeError
+	refreshToken      func(ctx context.Context, dto entities.RefreshTokenDTO) Error.CodeError
 }
 
-func (m *mockAuthRepo) SaveRefreshToken(ctx context.Context, dto entities.SaveRefreshTokenDTO) Error.CodeError {
-	return m.saveRefreshToken(ctx, dto)
+func (m *mockAuthRepo) SaveSession(ctx context.Context, dto entities.SaveSessionDTO) Error.CodeError {
+	return m.saveSession(ctx, dto)
 }
-func (m *mockAuthRepo) GetAllRefreshTokens(ctx context.Context, dto entities.GetAllRefreshTokensDTO) ([]entities.RefreshTokenEntry, Error.CodeError) {
-	return m.getAllRefreshTokens(ctx, dto)
+func (m *mockAuthRepo) GetAllSessions(ctx context.Context, dto entities.GetAllSessionsDTO) ([]entities.SessionEntry, Error.CodeError) {
+	return m.getAllSessions(ctx, dto)
 }
-func (m *mockAuthRepo) CheckRefreshTokenExists(ctx context.Context, dto entities.CheckRefreshTokenExistsDTO) Error.CodeError {
-	return m.checkRefreshTokenExists(ctx, dto)
+func (m *mockAuthRepo) CheckSessionExists(ctx context.Context, dto entities.CheckSessionExistsDTO) Error.CodeError {
+	return m.checkSessionExists(ctx, dto)
 }
-func (m *mockAuthRepo) RevokeRefreshToken(ctx context.Context, dto entities.RevokeRefreshTokenDTO) Error.CodeError {
-	return m.revokeRefreshToken(ctx, dto)
+func (m *mockAuthRepo) RevokeSession(ctx context.Context, dto entities.RevokeSessionDTO) Error.CodeError {
+	return m.revokeSession(ctx, dto)
 }
-func (m *mockAuthRepo) RevokeAllRefreshTokens(ctx context.Context, dto entities.RevokeAllRefreshTokensDTO) Error.CodeError {
-	return m.revokeAllRefreshTokens(ctx, dto)
+func (m *mockAuthRepo) RevokeAllSessions(ctx context.Context, dto entities.RevokeAllSessionsDTO) Error.CodeError {
+	return m.revokeAllSessions(ctx, dto)
 }
 func (m *mockAuthRepo) RefreshToken(ctx context.Context, dto entities.RefreshTokenDTO) Error.CodeError {
 	return m.refreshToken(ctx, dto)

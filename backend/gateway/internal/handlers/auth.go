@@ -23,10 +23,10 @@ type AuthHandler interface {
 	ChangePassword(c *fiber.Ctx) error
 	UpdateUserBio(c *fiber.Ctx) error
 	DeleteUser(c *fiber.Ctx) error
-	GetAllActiveTokens(c *fiber.Ctx) error
+	GetAllActiveSessions(c *fiber.Ctx) error
 	RefreshToken(c *fiber.Ctx) error
-	RevokeToken(c *fiber.Ctx) error
-	RevokeAllTokens(c *fiber.Ctx) error
+	RevokeSession(c *fiber.Ctx) error
+	RevokeAllSessions(c *fiber.Ctx) error
 	VerifyAccount(c *fiber.Ctx) error
 	ResendVerificationCode(c *fiber.Ctx) error
 	GetVerificationToken(c *fiber.Ctx) error
@@ -366,20 +366,20 @@ func (h *authHandler) DeleteUser(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(&entities.DeleteUserResponse{})
 }
 
-// GetAllActiveTokens
+// GetAllActiveSessions
 //
-//	@Summary      GetAllActiveTokens
-//	@Description  Get all active refresh tokens
+//	@Summary      GetAllActiveSessions
+//	@Description  Get all active sessions
 //	@Tags         Auth
 //	@Produce 			json
 //	@Security 		ApiKeyAuth
-//	@Success      200  {object}  entities.GetAllActiveTokensResponse
+//	@Success      200  {object}  entities.GetAllActiveSessionsResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
-//	@Router       /auth/user/tokens [get]
-func (h *authHandler) GetAllActiveTokens(c *fiber.Ctx) error {
+//	@Router       /auth/user/sessions [get]
+func (h *authHandler) GetAllActiveSessions(c *fiber.Ctx) error {
 	operationID := utils.GetLocal[string](c, h.operationIDKey)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
@@ -387,12 +387,12 @@ func (h *authHandler) GetAllActiveTokens(c *fiber.Ctx) error {
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Формируем тело запроса
-	req := &auth_proto.GetAllActiveTokensRequest{
+	req := &auth_proto.GetAllActiveSessionsRequest{
 		UserUuid: utils.GetLocal[string](c, h.userUUIDKey),
 	}
 
 	// Запрос в auth сервис
-	res, err := h.AuthServiceClient.GetAllActiveTokens(ctx, req)
+	res, err := h.AuthServiceClient.GetAllActiveSessions(ctx, req)
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
@@ -420,7 +420,7 @@ func (h *authHandler) GetAllActiveTokens(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(&entities.GetAllActiveTokensResponse{Tokens: tokens})
+	return c.Status(fiber.StatusOK).JSON(&entities.GetAllActiveSessionsResponse{Tokens: tokens})
 }
 
 // RefreshToken
@@ -475,22 +475,22 @@ func (h *authHandler) RefreshToken(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(httpRes)
 }
 
-// RevokeToken
+// RevokeSession
 //
-//	@Summary      RevokeToken
-//	@Description  Revoke refresh token
+//	@Summary      RevokeSession
+//	@Description  Revoke session by refresh token hash
 //	@Tags         Auth
 //	@Accept 			json
 //	@Produce 			json
 //	@Security 		ApiKeyAuth
-//	@Param 				data body entities.RevokeTokenRequest true "Refresh token for revoke"
-//	@Success      200  {object}  entities.RevokeTokenResponse
+//	@Param 				data body entities.RevokeSessionRequest true "Refresh token hash to revoke"
+//	@Success      200  {object}  entities.RevokeSessionResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
-//	@Router       /auth/user/revoke/token [delete]
-func (h *authHandler) RevokeToken(c *fiber.Ctx) error {
+//	@Router       /auth/user/session [delete]
+func (h *authHandler) RevokeSession(c *fiber.Ctx) error {
 	operationID := utils.GetLocal[string](c, h.operationIDKey)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
@@ -498,7 +498,7 @@ func (h *authHandler) RevokeToken(c *fiber.Ctx) error {
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Парсит тело запроса
-	httpReq := &entities.RevokeTokenRequest{}
+	httpReq := &entities.RevokeSessionRequest{}
 	if err := c.BodyParser(&httpReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: "invalid input"})
 	}
@@ -512,19 +512,19 @@ func (h *authHandler) RevokeToken(c *fiber.Ctx) error {
 	userUUID := utils.GetLocal[string](c, h.userUUIDKey)
 
 	// Формируем тело запроса
-	req := &auth_proto.RevokeTokenRequest{
+	req := &auth_proto.RevokeSessionRequest{
 		UserUuid:  userUUID,
 		TokenHash: httpReq.TokenHash,
 	}
 
 	// Запрос в auth сервис
-	_, err = h.AuthServiceClient.RevokeToken(ctx, req)
+	_, err = h.AuthServiceClient.RevokeSession(ctx, req)
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
 	// Формируем тело ответа
-	httpRes := &entities.RevokeTokenResponse{}
+	httpRes := &entities.RevokeSessionResponse{}
 
 	return c.Status(fiber.StatusOK).JSON(httpRes)
 }
@@ -781,20 +781,20 @@ func (h *authHandler) ResetPassword(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(&entities.ResetPasswordResponse{})
 }
 
-// RevokeAllTokens
+// RevokeAllSessions
 //
-//	@Summary      RevokeAllTokens
-//	@Description  Revoke all user refresh tokens
+//	@Summary      RevokeAllSessions
+//	@Description  Revoke all user sessions
 //	@Tags         Auth
 //	@Produce 			json
 //	@Security 		ApiKeyAuth
-//	@Success      200  {object}  entities.RevokeAllTokensResponse
+//	@Success      200  {object}  entities.RevokeAllSessionsResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
-//	@Router       /auth/user/revoke/all [delete]
-func (h *authHandler) RevokeAllTokens(c *fiber.Ctx) error {
+//	@Router       /auth/user/sessions [delete]
+func (h *authHandler) RevokeAllSessions(c *fiber.Ctx) error {
 	operationID := utils.GetLocal[string](c, h.operationIDKey)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
@@ -802,18 +802,18 @@ func (h *authHandler) RevokeAllTokens(c *fiber.Ctx) error {
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(interceptors.OperationIDMetaKey, operationID))
 
 	// Формируем тело запроса
-	req := &auth_proto.RevokeAllTokensRequest{
+	req := &auth_proto.RevokeAllSessionsRequest{
 		UserUuid: utils.GetLocal[string](c, h.userUUIDKey),
 	}
 
 	// Запрос в auth сервис
-	_, err := h.AuthServiceClient.RevokeAllTokens(ctx, req)
+	_, err := h.AuthServiceClient.RevokeAllSessions(ctx, req)
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
 
 	// Формируем тело ответа
-	httpRes := &entities.RevokeAllTokensResponse{}
+	httpRes := &entities.RevokeAllSessionsResponse{}
 
 	return c.Status(fiber.StatusOK).JSON(httpRes)
 }

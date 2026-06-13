@@ -58,7 +58,7 @@ func InitApp(cfg *config.Config, httpLogger zerolog.Logger) *App {
 	sessionProvider := session.New(cfg.GeoIP.CityDBPath, cfg.GeoIP.ASNDBPath, log.Logger)
 
 	application.HealthHandler = handlers.NewHealthHandler(application.AuthServiceClient, application.CompanyServiceClient, application.ApplicationServiceClient, OperationIDKey)
-	application.AuthHandler = handlers.NewAuthHandler(application.AuthServiceClient, OperationIDKey, UserUUIDKey, sessionProvider)
+	application.AuthHandler = handlers.NewAuthHandler(application.AuthServiceClient, application.CompanyServiceClient, OperationIDKey, UserUUIDKey, sessionProvider)
 	application.CompanyHandler = handlers.NewCompanyHandler(application.CompanyServiceClient, OperationIDKey, UserUUIDKey)
 	application.ApplicationHandler = handlers.NewApplicationHandler(application.ApplicationServiceClient, OperationIDKey, UserUUIDKey)
 

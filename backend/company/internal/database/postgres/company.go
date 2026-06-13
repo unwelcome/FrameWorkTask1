@@ -33,6 +33,7 @@ type CompanyRepository interface {
 	UpdateDepartmentTitle(ctx context.Context, dto *entities.UpdateDepartment) Error.CodeError
 	DeleteDepartment(ctx context.Context, dto entities.DeleteDepartmentDTO) Error.CodeError
 	RemoveEmployeeFromDepartment(ctx context.Context, dto entities.RemoveEmployeeFromDepartmentDTO) Error.CodeError
+	CheckColleagues(ctx context.Context, dto entities.CheckColleaguesDTO) (bool, Error.CodeError)
 }
 
 type companyRepository struct {
@@ -497,6 +498,22 @@ func (r *companyRepository) DeleteDepartment(ctx context.Context, dto entities.D
 	}
 
 	return Error.CodeError{}
+}
+
+// CheckColleagues Проверяет, состоят ли два пользователя в одной компании
+func (r *companyRepository) CheckColleagues(ctx context.Context, dto entities.CheckColleaguesDTO) (bool, Error.CodeError) {
+	query := `SELECT EXISTS (
+		SELECT 1 FROM employees e1
+		JOIN employees e2 ON e1.company_uuid = e2.company_uuid
+		WHERE e1.user_uuid = $1 AND e2.user_uuid = $2
+	)`
+
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, dto.InitiatorUUID, dto.TargetUUID).Scan(&exists)
+	if err != nil {
+		return false, Error.Internal(err)
+	}
+	return exists, Error.CodeError{}
 }
 
 // RemoveEmployeeFromDepartment Удаление сотрудника из департамента

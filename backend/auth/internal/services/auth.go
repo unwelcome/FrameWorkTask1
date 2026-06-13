@@ -25,9 +25,9 @@ import (
 )
 
 const (
-	maxVerificationAttempts = 5
-	maxRecoveryAttempts     = 5
-	max2FAAttempts          = 5
+	maxVerificationAttempts     = 5
+	maxRecoveryAttempts         = 5
+	max2FAAttempts              = 5
 	maxResendDailyCount         = 5
 	maxForgotPasswordDailyCount = 3
 
@@ -880,7 +880,7 @@ func (s *AuthService) RestoreAccount(ctx context.Context, req *pb.RestoreAccount
 	return &emptypb.Empty{}, nil
 }
 
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ─── Вспомогательные функции ──────────────────────────────────────────────────
 
 // GetVerificationCodeByEmail Отладочный метод — возвращает активный код верификации по email.
 // Доступен только при APP_ENV=test; в production возвращает Unimplemented.

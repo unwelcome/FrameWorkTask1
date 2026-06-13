@@ -2327,6 +2327,103 @@ func (x *RemoveEmployeeFromDepartmentRequest) GetTargetUuid() string {
 	return ""
 }
 
+// CheckColleagues
+type CheckColleaguesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InitiatorUuid string                 `protobuf:"bytes,1,opt,name=initiator_uuid,json=initiatorUuid,proto3" json:"initiator_uuid,omitempty"`
+	TargetUuid    string                 `protobuf:"bytes,2,opt,name=target_uuid,json=targetUuid,proto3" json:"target_uuid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckColleaguesRequest) Reset() {
+	*x = CheckColleaguesRequest{}
+	mi := &file_company_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckColleaguesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckColleaguesRequest) ProtoMessage() {}
+
+func (x *CheckColleaguesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_company_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckColleaguesRequest.ProtoReflect.Descriptor instead.
+func (*CheckColleaguesRequest) Descriptor() ([]byte, []int) {
+	return file_company_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *CheckColleaguesRequest) GetInitiatorUuid() string {
+	if x != nil {
+		return x.InitiatorUuid
+	}
+	return ""
+}
+
+func (x *CheckColleaguesRequest) GetTargetUuid() string {
+	if x != nil {
+		return x.TargetUuid
+	}
+	return ""
+}
+
+type CheckColleaguesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AreColleagues bool                   `protobuf:"varint,1,opt,name=are_colleagues,json=areColleagues,proto3" json:"are_colleagues,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckColleaguesResponse) Reset() {
+	*x = CheckColleaguesResponse{}
+	mi := &file_company_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckColleaguesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckColleaguesResponse) ProtoMessage() {}
+
+func (x *CheckColleaguesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_company_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckColleaguesResponse.ProtoReflect.Descriptor instead.
+func (*CheckColleaguesResponse) Descriptor() ([]byte, []int) {
+	return file_company_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *CheckColleaguesResponse) GetAreColleagues() bool {
+	if x != nil {
+		return x.AreColleagues
+	}
+	return false
+}
+
 var File_company_proto protoreflect.FileDescriptor
 
 const file_company_proto_rawDesc = "" +
@@ -2485,7 +2582,13 @@ const file_company_proto_rawDesc = "" +
 	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12'\n" +
 	"\x0fdepartment_uuid\x18\x02 \x01(\tR\x0edepartmentUuid\x12\x1f\n" +
 	"\vtarget_uuid\x18\x03 \x01(\tR\n" +
-	"targetUuid2\xbd\x10\n" +
+	"targetUuid\"`\n" +
+	"\x16CheckColleaguesRequest\x12%\n" +
+	"\x0einitiator_uuid\x18\x01 \x01(\tR\rinitiatorUuid\x12\x1f\n" +
+	"\vtarget_uuid\x18\x02 \x01(\tR\n" +
+	"targetUuid\"@\n" +
+	"\x17CheckColleaguesResponse\x12%\n" +
+	"\x0eare_colleagues\x18\x01 \x01(\bR\rareColleagues2\x93\x11\n" +
 	"\x0eCompanyService\x129\n" +
 	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x17.company.HealthResponse\x12N\n" +
 	"\rCreateCompany\x12\x1d.company.CreateCompanyRequest\x1a\x1e.company.CreateCompanyResponse\x12E\n" +
@@ -2504,7 +2607,8 @@ const file_company_proto_rawDesc = "" +
 	"\x13GetCompanyEmployees\x12#.company.GetCompanyEmployeesRequest\x1a$.company.GetCompanyEmployeesResponse\x12u\n" +
 	"\x1aGetCompanyEmployeesSummary\x12*.company.GetCompanyEmployeesSummaryRequest\x1a+.company.GetCompanyEmployeesSummaryResponse\x12P\n" +
 	"\x12UpdateEmployeeRole\x12\".company.UpdateEmployeeRoleRequest\x1a\x16.google.protobuf.Empty\x12V\n" +
-	"\x15RemoveCompanyEmployee\x12%.company.RemoveCompanyEmployeeRequest\x1a\x16.google.protobuf.Empty\x12W\n" +
+	"\x15RemoveCompanyEmployee\x12%.company.RemoveCompanyEmployeeRequest\x1a\x16.google.protobuf.Empty\x12T\n" +
+	"\x0fCheckColleagues\x12\x1f.company.CheckColleaguesRequest\x1a .company.CheckColleaguesResponse\x12W\n" +
 	"\x10CreateDepartment\x12 .company.CreateDepartmentRequest\x1a!.company.CreateDepartmentResponse\x12Z\n" +
 	"\x17AddEmployeeToDepartment\x12'.company.AddEmployeeToDepartmentRequest\x1a\x16.google.protobuf.Empty\x12N\n" +
 	"\rGetDepartment\x12\x1d.company.GetDepartmentRequest\x1a\x1e.company.GetDepartmentResponse\x12f\n" +
@@ -2525,7 +2629,7 @@ func file_company_proto_rawDescGZIP() []byte {
 	return file_company_proto_rawDescData
 }
 
-var file_company_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
+var file_company_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
 var file_company_proto_goTypes = []any{
 	(*Company)(nil),                             // 0: company.Company
 	(*Employee)(nil),                            // 1: company.Employee
@@ -2567,14 +2671,16 @@ var file_company_proto_goTypes = []any{
 	(*UpdateDepartmentTitleRequest)(nil),        // 37: company.UpdateDepartmentTitleRequest
 	(*DeleteDepartmentRequest)(nil),             // 38: company.DeleteDepartmentRequest
 	(*RemoveEmployeeFromDepartmentRequest)(nil), // 39: company.RemoveEmployeeFromDepartmentRequest
-	(*emptypb.Empty)(nil),                       // 40: google.protobuf.Empty
+	(*CheckColleaguesRequest)(nil),              // 40: company.CheckColleaguesRequest
+	(*CheckColleaguesResponse)(nil),             // 41: company.CheckColleaguesResponse
+	(*emptypb.Empty)(nil),                       // 42: google.protobuf.Empty
 }
 var file_company_proto_depIdxs = []int32{
 	0,  // 0: company.GetCompaniesResponse.companies:type_name -> company.Company
 	0,  // 1: company.GetUserCompaniesResponse.companies:type_name -> company.Company
 	1,  // 2: company.GetCompanyEmployeesResponse.employees:type_name -> company.Employee
 	2,  // 3: company.GetCompanyDepartmentsResponse.departments:type_name -> company.Department
-	40, // 4: company.CompanyService.Health:input_type -> google.protobuf.Empty
+	42, // 4: company.CompanyService.Health:input_type -> google.protobuf.Empty
 	4,  // 5: company.CompanyService.CreateCompany:input_type -> company.CreateCompanyRequest
 	6,  // 6: company.CompanyService.GetCompany:input_type -> company.GetCompanyRequest
 	8,  // 7: company.CompanyService.GetCompanies:input_type -> company.GetCompaniesRequest
@@ -2591,39 +2697,41 @@ var file_company_proto_depIdxs = []int32{
 	26, // 18: company.CompanyService.GetCompanyEmployeesSummary:input_type -> company.GetCompanyEmployeesSummaryRequest
 	28, // 19: company.CompanyService.UpdateEmployeeRole:input_type -> company.UpdateEmployeeRoleRequest
 	29, // 20: company.CompanyService.RemoveCompanyEmployee:input_type -> company.RemoveCompanyEmployeeRequest
-	30, // 21: company.CompanyService.CreateDepartment:input_type -> company.CreateDepartmentRequest
-	32, // 22: company.CompanyService.AddEmployeeToDepartment:input_type -> company.AddEmployeeToDepartmentRequest
-	33, // 23: company.CompanyService.GetDepartment:input_type -> company.GetDepartmentRequest
-	35, // 24: company.CompanyService.GetCompanyDepartments:input_type -> company.GetCompanyDepartmentsRequest
-	37, // 25: company.CompanyService.UpdateDepartmentTitle:input_type -> company.UpdateDepartmentTitleRequest
-	38, // 26: company.CompanyService.DeleteDepartment:input_type -> company.DeleteDepartmentRequest
-	39, // 27: company.CompanyService.RemoveEmployeeFromDepartment:input_type -> company.RemoveEmployeeFromDepartmentRequest
-	3,  // 28: company.CompanyService.Health:output_type -> company.HealthResponse
-	5,  // 29: company.CompanyService.CreateCompany:output_type -> company.CreateCompanyResponse
-	7,  // 30: company.CompanyService.GetCompany:output_type -> company.GetCompanyResponse
-	9,  // 31: company.CompanyService.GetCompanies:output_type -> company.GetCompaniesResponse
-	11, // 32: company.CompanyService.GetUserCompanies:output_type -> company.GetUserCompaniesResponse
-	40, // 33: company.CompanyService.UpdateCompanyTitle:output_type -> google.protobuf.Empty
-	40, // 34: company.CompanyService.UpdateCompanyStatus:output_type -> google.protobuf.Empty
-	40, // 35: company.CompanyService.DeleteCompany:output_type -> google.protobuf.Empty
-	16, // 36: company.CompanyService.CreateCompanyJoinCode:output_type -> company.CreateCompanyJoinCodeResponse
-	18, // 37: company.CompanyService.GetCompanyJoinCodes:output_type -> company.GetCompanyJoinCodesResponse
-	40, // 38: company.CompanyService.DeleteCompanyJoinCode:output_type -> google.protobuf.Empty
-	21, // 39: company.CompanyService.JoinCompany:output_type -> company.JoinCompanyResponse
-	23, // 40: company.CompanyService.GetCompanyEmployee:output_type -> company.GetCompanyEmployeeResponse
-	25, // 41: company.CompanyService.GetCompanyEmployees:output_type -> company.GetCompanyEmployeesResponse
-	27, // 42: company.CompanyService.GetCompanyEmployeesSummary:output_type -> company.GetCompanyEmployeesSummaryResponse
-	40, // 43: company.CompanyService.UpdateEmployeeRole:output_type -> google.protobuf.Empty
-	40, // 44: company.CompanyService.RemoveCompanyEmployee:output_type -> google.protobuf.Empty
-	31, // 45: company.CompanyService.CreateDepartment:output_type -> company.CreateDepartmentResponse
-	40, // 46: company.CompanyService.AddEmployeeToDepartment:output_type -> google.protobuf.Empty
-	34, // 47: company.CompanyService.GetDepartment:output_type -> company.GetDepartmentResponse
-	36, // 48: company.CompanyService.GetCompanyDepartments:output_type -> company.GetCompanyDepartmentsResponse
-	40, // 49: company.CompanyService.UpdateDepartmentTitle:output_type -> google.protobuf.Empty
-	40, // 50: company.CompanyService.DeleteDepartment:output_type -> google.protobuf.Empty
-	40, // 51: company.CompanyService.RemoveEmployeeFromDepartment:output_type -> google.protobuf.Empty
-	28, // [28:52] is the sub-list for method output_type
-	4,  // [4:28] is the sub-list for method input_type
+	40, // 21: company.CompanyService.CheckColleagues:input_type -> company.CheckColleaguesRequest
+	30, // 22: company.CompanyService.CreateDepartment:input_type -> company.CreateDepartmentRequest
+	32, // 23: company.CompanyService.AddEmployeeToDepartment:input_type -> company.AddEmployeeToDepartmentRequest
+	33, // 24: company.CompanyService.GetDepartment:input_type -> company.GetDepartmentRequest
+	35, // 25: company.CompanyService.GetCompanyDepartments:input_type -> company.GetCompanyDepartmentsRequest
+	37, // 26: company.CompanyService.UpdateDepartmentTitle:input_type -> company.UpdateDepartmentTitleRequest
+	38, // 27: company.CompanyService.DeleteDepartment:input_type -> company.DeleteDepartmentRequest
+	39, // 28: company.CompanyService.RemoveEmployeeFromDepartment:input_type -> company.RemoveEmployeeFromDepartmentRequest
+	3,  // 29: company.CompanyService.Health:output_type -> company.HealthResponse
+	5,  // 30: company.CompanyService.CreateCompany:output_type -> company.CreateCompanyResponse
+	7,  // 31: company.CompanyService.GetCompany:output_type -> company.GetCompanyResponse
+	9,  // 32: company.CompanyService.GetCompanies:output_type -> company.GetCompaniesResponse
+	11, // 33: company.CompanyService.GetUserCompanies:output_type -> company.GetUserCompaniesResponse
+	42, // 34: company.CompanyService.UpdateCompanyTitle:output_type -> google.protobuf.Empty
+	42, // 35: company.CompanyService.UpdateCompanyStatus:output_type -> google.protobuf.Empty
+	42, // 36: company.CompanyService.DeleteCompany:output_type -> google.protobuf.Empty
+	16, // 37: company.CompanyService.CreateCompanyJoinCode:output_type -> company.CreateCompanyJoinCodeResponse
+	18, // 38: company.CompanyService.GetCompanyJoinCodes:output_type -> company.GetCompanyJoinCodesResponse
+	42, // 39: company.CompanyService.DeleteCompanyJoinCode:output_type -> google.protobuf.Empty
+	21, // 40: company.CompanyService.JoinCompany:output_type -> company.JoinCompanyResponse
+	23, // 41: company.CompanyService.GetCompanyEmployee:output_type -> company.GetCompanyEmployeeResponse
+	25, // 42: company.CompanyService.GetCompanyEmployees:output_type -> company.GetCompanyEmployeesResponse
+	27, // 43: company.CompanyService.GetCompanyEmployeesSummary:output_type -> company.GetCompanyEmployeesSummaryResponse
+	42, // 44: company.CompanyService.UpdateEmployeeRole:output_type -> google.protobuf.Empty
+	42, // 45: company.CompanyService.RemoveCompanyEmployee:output_type -> google.protobuf.Empty
+	41, // 46: company.CompanyService.CheckColleagues:output_type -> company.CheckColleaguesResponse
+	31, // 47: company.CompanyService.CreateDepartment:output_type -> company.CreateDepartmentResponse
+	42, // 48: company.CompanyService.AddEmployeeToDepartment:output_type -> google.protobuf.Empty
+	34, // 49: company.CompanyService.GetDepartment:output_type -> company.GetDepartmentResponse
+	36, // 50: company.CompanyService.GetCompanyDepartments:output_type -> company.GetCompanyDepartmentsResponse
+	42, // 51: company.CompanyService.UpdateDepartmentTitle:output_type -> google.protobuf.Empty
+	42, // 52: company.CompanyService.DeleteDepartment:output_type -> google.protobuf.Empty
+	42, // 53: company.CompanyService.RemoveEmployeeFromDepartment:output_type -> google.protobuf.Empty
+	29, // [29:54] is the sub-list for method output_type
+	4,  // [4:29] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -2640,7 +2748,7 @@ func file_company_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_company_proto_rawDesc), len(file_company_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   40,
+			NumMessages:   42,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

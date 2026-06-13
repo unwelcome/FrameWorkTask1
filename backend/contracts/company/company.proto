@@ -26,6 +26,8 @@ service CompanyService {
   rpc GetCompanyEmployeesSummary(GetCompanyEmployeesSummaryRequest) returns (GetCompanyEmployeesSummaryResponse);
   rpc UpdateEmployeeRole(UpdateEmployeeRoleRequest) returns (google.protobuf.Empty);
   rpc RemoveCompanyEmployee(RemoveCompanyEmployeeRequest) returns (google.protobuf.Empty);
+  // CheckColleagues
+  rpc CheckColleagues(CheckColleaguesRequest) returns (CheckColleaguesResponse);
   // Departments
   rpc CreateDepartment(CreateDepartmentRequest) returns (CreateDepartmentResponse);
   rpc AddEmployeeToDepartment(AddEmployeeToDepartmentRequest) returns (google.protobuf.Empty);
@@ -307,3 +309,13 @@ message RemoveEmployeeFromDepartmentRequest {
   string target_uuid = 3;
 }
 // Empty response
+
+
+// CheckColleagues
+message CheckColleaguesRequest {
+  string initiator_uuid = 1;
+  string target_uuid = 2;
+}
+message CheckColleaguesResponse {
+  bool are_colleagues = 1;
+}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
+	company_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/company/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/entities"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/errors"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/session"
@@ -39,18 +40,20 @@ type AuthHandler interface {
 }
 
 type authHandler struct {
-	AuthServiceClient auth_proto.AuthServiceClient
-	operationIDKey    string
-	userUUIDKey       string
-	session           *session.Provider
+	AuthServiceClient    auth_proto.AuthServiceClient
+	CompanyServiceClient company_proto.CompanyServiceClient
+	operationIDKey       string
+	userUUIDKey          string
+	session              *session.Provider
 }
 
-func NewAuthHandler(authServiceClient auth_proto.AuthServiceClient, operationIDKey, userUUIDKey string, sessionProvider *session.Provider) AuthHandler {
+func NewAuthHandler(authServiceClient auth_proto.AuthServiceClient, companyServiceClient company_proto.CompanyServiceClient, operationIDKey, userUUIDKey string, sessionProvider *session.Provider) AuthHandler {
 	return &authHandler{
-		AuthServiceClient: authServiceClient,
-		operationIDKey:    operationIDKey,
-		userUUIDKey:       userUUIDKey,
-		session:           sessionProvider,
+		AuthServiceClient:    authServiceClient,
+		CompanyServiceClient: companyServiceClient,
+		operationIDKey:       operationIDKey,
+		userUUIDKey:          userUUIDKey,
+		session:              sessionProvider,
 	}
 }
 
@@ -155,7 +158,7 @@ func (h *authHandler) Login(c *fiber.Ctx) error {
 // GetUser
 //
 //	@Summary      GetUser
-//	@Description  Get user info
+//	@Description  Get colleague's public profile. Only accessible if the requester and target share at least one company.
 //	@Tags         User
 //	@Produce 			json
 //	@Security 		ApiKeyAuth
@@ -163,6 +166,7 @@ func (h *authHandler) Login(c *fiber.Ctx) error {
 //	@Success      200  {object}  entities.GetUserResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
+//	@Failure      403  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /auth/user/{user_uuid}/info [get]
@@ -179,18 +183,31 @@ func (h *authHandler) GetUser(c *fiber.Ctx) error {
 	}
 
 	// Валидация
-	err := httpReq.Validate()
-	if err != nil {
+	if err := httpReq.Validate(); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(Error.HttpError{Code: 400, Message: err.Error()})
 	}
 
-	// Формируем тело запроса
-	req := &auth_proto.GetUserRequest{
-		UserUuid: httpReq.UserUUID,
+	requesterUUID := utils.GetLocal[string](c, h.userUUIDKey)
+
+	// Проверяем, что requester и target — коллеги в одной компании
+	// (пропускаем проверку если пользователь запрашивает свой собственный профиль)
+	if requesterUUID != httpReq.UserUUID {
+		colleagueRes, err := h.CompanyServiceClient.CheckColleagues(ctx, &company_proto.CheckColleaguesRequest{
+			InitiatorUuid: requesterUUID,
+			TargetUuid:    httpReq.UserUUID,
+		})
+		if err != nil {
+			return Error.GRPCErrorToHTTP(err, c)
+		}
+		if !colleagueRes.GetAreColleagues() {
+			return c.Status(fiber.StatusForbidden).JSON(Error.HttpError{Code: 403, Message: "access denied"})
+		}
 	}
 
 	// Запрос в auth сервис
-	res, err := h.AuthServiceClient.GetUser(ctx, req)
+	res, err := h.AuthServiceClient.GetUser(ctx, &auth_proto.GetUserRequest{
+		UserUuid: httpReq.UserUUID,
+	})
 	if err != nil {
 		return Error.GRPCErrorToHTTP(err, c)
 	}
@@ -198,13 +215,11 @@ func (h *authHandler) GetUser(c *fiber.Ctx) error {
 	// Формируем тело ответа
 	httpRes := &entities.GetUserResponse{
 		UserUUID:    res.GetUserUuid(),
-		Email:       res.GetEmail(),
 		FirstName:   res.GetFirstName(),
 		LastName:    res.GetLastName(),
 		Patronymic:  res.GetPatronymic(),
 		Description: res.GetDescription(),
 		CreatedAt:   res.GetCreatedAt(),
-		DeletedAt:   res.GetDeletedAt(),
 	}
 
 	return c.Status(fiber.StatusOK).JSON(httpRes)

@@ -8,13 +8,14 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang/protobuf v1.5.4
 	github.com/google/uuid v1.6.0
+	github.com/mssola/useragent v1.0.0
+	github.com/oschwald/geoip2-golang v1.13.0
 	github.com/rs/zerolog v1.35.1
 	github.com/swaggo/swag v1.16.6
 	github.com/unwelcome/FrameWorkTask1/backend/contracts v0.0.0
 	github.com/unwelcome/FrameWorkTask1/backend/shared v0.0.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.80.0
-	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -37,8 +38,6 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/mattn/go-runewidth v0.0.23 // indirect
-	github.com/mssola/useragent v1.0.0 // indirect
-	github.com/oschwald/geoip2-golang v1.13.0 // indirect
 	github.com/oschwald/maxminddb-golang v1.13.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/redis/go-redis/v9 v9.16.0 // indirect
@@ -53,6 +52,7 @@ require (
 	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 )
 
 replace github.com/unwelcome/FrameWorkTask1/backend/contracts => ../contracts

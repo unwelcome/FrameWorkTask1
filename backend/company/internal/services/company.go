@@ -812,6 +812,26 @@ func (s *CompanyService) RemoveEmployeeFromDepartment(ctx context.Context, req *
 	return &emptypb.Empty{}, nil
 }
 
+// CheckColleagues Проверяет, состоят ли два пользователя в одной компании
+func (s *CompanyService) CheckColleagues(ctx context.Context, req *pb.CheckColleaguesRequest) (*pb.CheckColleaguesResponse, error) {
+	if err := validate.UUID(req.GetInitiatorUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid initiator uuid")
+	}
+	if err := validate.UUID(req.GetTargetUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid target uuid")
+	}
+
+	areColleagues, checkErr := s.db.Company.CheckColleagues(ctx, entities.CheckColleaguesDTO{
+		InitiatorUUID: req.GetInitiatorUuid(),
+		TargetUUID:    req.GetTargetUuid(),
+	})
+	if err := checkErr.GRPCError(); err != nil {
+		return nil, err
+	}
+
+	return &pb.CheckColleaguesResponse{AreColleagues: areColleagues}, nil
+}
+
 // ─── Вспомогательные функции ──────────────────────────────────────────────────
 
 // checkEmployeeRole Проверяет роль пользователя в компании

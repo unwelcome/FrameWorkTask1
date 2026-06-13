@@ -37,6 +37,7 @@ const (
 	CompanyService_GetCompanyEmployeesSummary_FullMethodName   = "/company.CompanyService/GetCompanyEmployeesSummary"
 	CompanyService_UpdateEmployeeRole_FullMethodName           = "/company.CompanyService/UpdateEmployeeRole"
 	CompanyService_RemoveCompanyEmployee_FullMethodName        = "/company.CompanyService/RemoveCompanyEmployee"
+	CompanyService_CheckColleagues_FullMethodName              = "/company.CompanyService/CheckColleagues"
 	CompanyService_CreateDepartment_FullMethodName             = "/company.CompanyService/CreateDepartment"
 	CompanyService_AddEmployeeToDepartment_FullMethodName      = "/company.CompanyService/AddEmployeeToDepartment"
 	CompanyService_GetDepartment_FullMethodName                = "/company.CompanyService/GetDepartment"
@@ -70,6 +71,8 @@ type CompanyServiceClient interface {
 	GetCompanyEmployeesSummary(ctx context.Context, in *GetCompanyEmployeesSummaryRequest, opts ...grpc.CallOption) (*GetCompanyEmployeesSummaryResponse, error)
 	UpdateEmployeeRole(ctx context.Context, in *UpdateEmployeeRoleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RemoveCompanyEmployee(ctx context.Context, in *RemoveCompanyEmployeeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// CheckColleagues
+	CheckColleagues(ctx context.Context, in *CheckColleaguesRequest, opts ...grpc.CallOption) (*CheckColleaguesResponse, error)
 	// Departments
 	CreateDepartment(ctx context.Context, in *CreateDepartmentRequest, opts ...grpc.CallOption) (*CreateDepartmentResponse, error)
 	AddEmployeeToDepartment(ctx context.Context, in *AddEmployeeToDepartmentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -258,6 +261,16 @@ func (c *companyServiceClient) RemoveCompanyEmployee(ctx context.Context, in *Re
 	return out, nil
 }
 
+func (c *companyServiceClient) CheckColleagues(ctx context.Context, in *CheckColleaguesRequest, opts ...grpc.CallOption) (*CheckColleaguesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckColleaguesResponse)
+	err := c.cc.Invoke(ctx, CompanyService_CheckColleagues_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *companyServiceClient) CreateDepartment(ctx context.Context, in *CreateDepartmentRequest, opts ...grpc.CallOption) (*CreateDepartmentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateDepartmentResponse)
@@ -352,6 +365,8 @@ type CompanyServiceServer interface {
 	GetCompanyEmployeesSummary(context.Context, *GetCompanyEmployeesSummaryRequest) (*GetCompanyEmployeesSummaryResponse, error)
 	UpdateEmployeeRole(context.Context, *UpdateEmployeeRoleRequest) (*emptypb.Empty, error)
 	RemoveCompanyEmployee(context.Context, *RemoveCompanyEmployeeRequest) (*emptypb.Empty, error)
+	// CheckColleagues
+	CheckColleagues(context.Context, *CheckColleaguesRequest) (*CheckColleaguesResponse, error)
 	// Departments
 	CreateDepartment(context.Context, *CreateDepartmentRequest) (*CreateDepartmentResponse, error)
 	AddEmployeeToDepartment(context.Context, *AddEmployeeToDepartmentRequest) (*emptypb.Empty, error)
@@ -420,6 +435,9 @@ func (UnimplementedCompanyServiceServer) UpdateEmployeeRole(context.Context, *Up
 }
 func (UnimplementedCompanyServiceServer) RemoveCompanyEmployee(context.Context, *RemoveCompanyEmployeeRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveCompanyEmployee not implemented")
+}
+func (UnimplementedCompanyServiceServer) CheckColleagues(context.Context, *CheckColleaguesRequest) (*CheckColleaguesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckColleagues not implemented")
 }
 func (UnimplementedCompanyServiceServer) CreateDepartment(context.Context, *CreateDepartmentRequest) (*CreateDepartmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateDepartment not implemented")
@@ -769,6 +787,24 @@ func _CompanyService_RemoveCompanyEmployee_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CompanyService_CheckColleagues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckColleaguesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompanyServiceServer).CheckColleagues(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompanyService_CheckColleagues_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompanyServiceServer).CheckColleagues(ctx, req.(*CheckColleaguesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CompanyService_CreateDepartment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateDepartmentRequest)
 	if err := dec(in); err != nil {
@@ -969,6 +1005,10 @@ var CompanyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveCompanyEmployee",
 			Handler:    _CompanyService_RemoveCompanyEmployee_Handler,
+		},
+		{
+			MethodName: "CheckColleagues",
+			Handler:    _CompanyService_CheckColleagues_Handler,
 		},
 		{
 			MethodName: "CreateDepartment",

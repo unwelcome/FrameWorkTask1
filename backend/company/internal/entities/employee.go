@@ -51,3 +51,8 @@ type RemoveCompanyEmployeeDTO struct {
 	CompanyUUID string
 	UserUUID    string
 }
+
+type CheckColleaguesDTO struct {
+	InitiatorUUID string
+	TargetUUID    string
+}

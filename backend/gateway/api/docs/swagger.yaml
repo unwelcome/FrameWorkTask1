@@ -425,7 +425,7 @@ definitions:
     type: object
   entities.RevokeSessionRequest:
     properties:
-      token_hash:
+      session_uuid:
         type: string
     type: object
   entities.RevokeSessionResponse:
@@ -473,9 +473,9 @@ definitions:
         type: string
       os_version:
         type: string
-      timezone:
+      session_uuid:
         type: string
-      token_hash:
+      timezone:
         type: string
     type: object
   entities.UpdateApplicationStatusRequest:
@@ -2265,6 +2265,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
         "404":
           description: Not Found
           schema:
@@ -2332,6 +2336,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
         "404":
           description: Not Found
           schema:
@@ -2372,6 +2380,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
         "404":
           description: Not Found
           schema:
@@ -2389,7 +2401,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Revoke session by refresh token hash
+      description: Revoke session by session UUID
       parameters:
       - description: Refresh token hash to revoke
         in: body
@@ -2435,16 +2447,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/entities.RevokeAllSessionsResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/Error.HttpError'
         "401":
           description: Unauthorized
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "404":
-          description: Not Found
           schema:
             $ref: '#/definitions/Error.HttpError'
         "500":
@@ -2471,10 +2475,6 @@ paths:
             $ref: '#/definitions/Error.HttpError'
         "401":
           description: Unauthorized
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "404":
-          description: Not Found
           schema:
             $ref: '#/definitions/Error.HttpError'
         "500":
@@ -2661,6 +2661,10 @@ paths:
           description: Forbidden
           schema:
             $ref: '#/definitions/Error.HttpError'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/Error.HttpError'
         "500":
           description: Internal Server Error
           schema:
@@ -2687,6 +2691,14 @@ paths:
             $ref: '#/definitions/entities.RefreshTokenResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "403":
+          description: Forbidden
           schema:
             $ref: '#/definitions/Error.HttpError'
         "404":
@@ -2819,10 +2831,6 @@ paths:
           description: Conflict
           schema:
             $ref: '#/definitions/Error.HttpError'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/Error.HttpError'
         "500":
           description: Internal Server Error
           schema:
@@ -2851,10 +2859,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/Error.HttpError'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/Error.HttpError'
         "500":
           description: Internal Server Error
           schema:
@@ -2881,10 +2885,6 @@ paths:
             $ref: '#/definitions/entities.Verify2FAResponse'
         "400":
           description: Bad Request
-          schema:
-            $ref: '#/definitions/Error.HttpError'
-        "403":
-          description: Forbidden
           schema:
             $ref: '#/definitions/Error.HttpError'
         "404":

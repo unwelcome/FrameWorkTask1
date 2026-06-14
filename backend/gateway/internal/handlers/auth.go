@@ -110,6 +110,7 @@ func (h *authHandler) Register(c *fiber.Ctx) error {
 //	@Success      200  {object}  entities.LoginResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      403  {object}  Error.HttpError
+//	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /login [post]
 func (h *authHandler) Login(c *fiber.Ctx) error {
@@ -238,6 +239,7 @@ func (h *authHandler) GetUser(c *fiber.Ctx) error {
 //	@Success      200  {object}  entities.ChangePasswordResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
+//	@Failure      403  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /auth/user/password [patch]
@@ -291,6 +293,7 @@ func (h *authHandler) ChangePassword(c *fiber.Ctx) error {
 //	@Success      200  {object}  entities.UpdateUserBioResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
+//	@Failure      403  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /auth/user/bio [patch]
@@ -376,7 +379,6 @@ func (h *authHandler) DeleteUser(c *fiber.Ctx) error {
 //	@Success      200  {object}  entities.GetAllActiveSessionsResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
-//	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /auth/user/sessions [get]
 func (h *authHandler) GetAllActiveSessions(c *fiber.Ctx) error {
@@ -432,6 +434,8 @@ func (h *authHandler) GetAllActiveSessions(c *fiber.Ctx) error {
 //	@Param 				data body entities.RefreshTokenRequest true "Refresh token"
 //	@Success      200  {object}  entities.RefreshTokenResponse
 //	@Failure      400  {object}  Error.HttpError
+//	@Failure      401  {object}  Error.HttpError
+//	@Failure      403  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /refresh [post]
@@ -478,7 +482,7 @@ func (h *authHandler) RefreshToken(c *fiber.Ctx) error {
 // RevokeSession
 //
 //	@Summary      RevokeSession
-//	@Description  Revoke session by refresh token hash
+//	@Description  Revoke session by session UUID
 //	@Tags         Auth
 //	@Accept 			json
 //	@Produce 			json
@@ -540,7 +544,6 @@ func (h *authHandler) RevokeSession(c *fiber.Ctx) error {
 //	@Success      200  {object}  entities.VerifyAccountResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      409  {object}  Error.HttpError
-//	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /user/verify [post]
 func (h *authHandler) VerifyAccount(c *fiber.Ctx) error {
@@ -582,7 +585,6 @@ func (h *authHandler) VerifyAccount(c *fiber.Ctx) error {
 //	@Param 				data body entities.ResendVerificationCodeRequest true "Email пользователя"
 //	@Success      200  {object}  entities.ResendVerificationCodeResponse
 //	@Failure      400  {object}  Error.HttpError
-//	@Failure      409  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /user/verify/resend [post]
 func (h *authHandler) ResendVerificationCode(c *fiber.Ctx) error {
@@ -789,9 +791,7 @@ func (h *authHandler) ResetPassword(c *fiber.Ctx) error {
 //	@Produce 			json
 //	@Security 		ApiKeyAuth
 //	@Success      200  {object}  entities.RevokeAllSessionsResponse
-//	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
-//	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /auth/user/sessions [delete]
 func (h *authHandler) RevokeAllSessions(c *fiber.Ctx) error {
@@ -827,7 +827,6 @@ func (h *authHandler) RevokeAllSessions(c *fiber.Ctx) error {
 //	@Param 				data body entities.Verify2FARequest true "SessionUUID and email code"
 //	@Success      200  {object}  entities.Verify2FAResponse
 //	@Failure      400  {object}  Error.HttpError
-//	@Failure      403  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
@@ -875,6 +874,7 @@ func (h *authHandler) Verify2FA(c *fiber.Ctx) error {
 //	@Success      200  {object}  entities.UpdateUser2FAResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      401  {object}  Error.HttpError
+//	@Failure      403  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /auth/user/2fa [patch]

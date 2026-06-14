@@ -2571,6 +2571,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -2680,6 +2686,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -2743,6 +2755,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -2765,7 +2783,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Revoke session by refresh token hash",
+                "description": "Revoke session by session UUID",
                 "consumes": [
                     "application/json"
                 ],
@@ -2855,12 +2873,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -2890,20 +2902,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/entities.RevokeAllSessionsResponse"
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -3240,6 +3240,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -3279,6 +3285,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Error.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -3482,12 +3500,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -3531,12 +3543,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/Error.HttpError"
                         }
                     },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -3576,12 +3582,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/Error.HttpError"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/Error.HttpError"
                         }
@@ -4270,7 +4270,7 @@ const docTemplate = `{
         "entities.RevokeSessionRequest": {
             "type": "object",
             "properties": {
-                "token_hash": {
+                "session_uuid": {
                     "type": "string"
                 }
             }
@@ -4343,10 +4343,10 @@ const docTemplate = `{
                 "os_version": {
                     "type": "string"
                 },
-                "timezone": {
+                "session_uuid": {
                     "type": "string"
                 },
-                "token_hash": {
+                "timezone": {
                     "type": "string"
                 }
             }

@@ -825,9 +825,9 @@ func TestGetAllActiveSessions(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			getAllSessions: func(_ context.Context, _ entities.GetAllSessionsDTO) ([]entities.SessionEntry, Error.CodeError) {
 				return []entities.SessionEntry{
-					{TokenHash: "hash1", Session: &entities.SessionInfo{IP: "1.1.1.1", Browser: "Chrome"}},
-					{TokenHash: "hash2", Session: &entities.SessionInfo{IP: "2.2.2.2", Browser: "Firefox"}},
-					{TokenHash: "hash3", Session: &entities.SessionInfo{IP: "3.3.3.3", Browser: "Safari"}},
+					{SessionUUID: "uuid1", Session: &entities.SessionInfo{IP: "1.1.1.1", Browser: "Chrome"}},
+					{SessionUUID: "uuid2", Session: &entities.SessionInfo{IP: "2.2.2.2", Browser: "Firefox"}},
+					{SessionUUID: "uuid3", Session: &entities.SessionInfo{IP: "3.3.3.3", Browser: "Safari"}},
 				}, ok()
 			},
 		}
@@ -841,7 +841,10 @@ func TestGetAllActiveSessions(t *testing.T) {
 		if len(resp.GetTokens()) != 3 {
 			t.Errorf("expected 3 tokens, got %d", len(resp.GetTokens()))
 		}
-		// Проверяем, что данные сессии передались в ответ
+		// Проверяем, что session_uuid и данные сессии корректно передались в ответ
+		if resp.GetTokens()[0].GetSessionUuid() != "uuid1" {
+			t.Errorf("expected session uuid 'uuid1', got %q", resp.GetTokens()[0].GetSessionUuid())
+		}
 		if resp.GetTokens()[0].GetSession().GetBrowser() != "Chrome" {
 			t.Errorf("expected browser Chrome, got %s", resp.GetTokens()[0].GetSession().GetBrowser())
 		}
@@ -972,6 +975,113 @@ func TestRefreshToken(t *testing.T) {
 
 		assertCode(t, err, codes.NotFound)
 	})
+
+	t.Run("account_deleted", func(t *testing.T) {
+		refreshToken := validRefreshToken(t)
+		deletedAt := time.Now().Add(-time.Hour)
+		userRepo := &mockUserRepo{
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return &entities.UserGet{UserUUID: testUUID1, IsVerified: true, DeletedAt: &deletedAt}, ok()
+			},
+		}
+		authRepo := &mockAuthRepo{
+			checkSessionExists: func(_ context.Context, _ entities.CheckSessionExistsDTO) Error.CodeError { return ok() },
+		}
+		svc := newTestService(userRepo, authRepo)
+
+		_, err := svc.RefreshToken(context.Background(), &pb.RefreshTokenRequest{
+			RefreshToken: refreshToken,
+		})
+
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("account_not_verified", func(t *testing.T) {
+		refreshToken := validRefreshToken(t)
+		userRepo := &mockUserRepo{
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return &entities.UserGet{UserUUID: testUUID1, IsVerified: false}, ok()
+			},
+		}
+		authRepo := &mockAuthRepo{
+			checkSessionExists: func(_ context.Context, _ entities.CheckSessionExistsDTO) Error.CodeError { return ok() },
+		}
+		svc := newTestService(userRepo, authRepo)
+
+		_, err := svc.RefreshToken(context.Background(), &pb.RefreshTokenRequest{
+			RefreshToken: refreshToken,
+		})
+
+		assertCode(t, err, codes.PermissionDenied)
+	})
+
+	t.Run("reuse_detected_sends_alert", func(t *testing.T) {
+		// Симулируем ситуацию, когда атакующий пытается повторно использовать
+		// уже ротированный refresh токен. Репозиторий отзывает сессию и
+		// возвращает ErrTokenReuse — сервис должен выслать алёрт и вернуть Unauthenticated.
+		refreshToken := validRefreshToken(t)
+		alertSent := false
+		userRepo := &mockUserRepo{
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return &entities.UserGet{
+					UserUUID:   testUUID1,
+					Email:      "test@example.com",
+					FirstName:  "Ivan",
+					IsVerified: true,
+				}, ok()
+			},
+		}
+		authRepo := &mockAuthRepo{
+			checkSessionExists: func(_ context.Context, _ entities.CheckSessionExistsDTO) Error.CodeError { return ok() },
+			refreshToken: func(_ context.Context, _ entities.RefreshTokenDTO) Error.CodeError {
+				return Error.CodeError{Code: int(codes.Unauthenticated), Err: entities.ErrTokenReuse}
+			},
+		}
+		pub := &mockPublisher{
+			sendTokenReuseAlertEmail: func(_ context.Context, dto entities.TokenReuseAlertEmailMsg) Error.CodeError {
+				alertSent = true
+				if dto.Email != "test@example.com" {
+					t.Errorf("alert sent to wrong email: got %q", dto.Email)
+				}
+				if dto.UserUUID != testUUID1 {
+					t.Errorf("alert has wrong user uuid: got %q", dto.UserUUID)
+				}
+				return ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, auth: authRepo, publisher: pub})
+
+		_, err := svc.RefreshToken(context.Background(), &pb.RefreshTokenRequest{
+			RefreshToken: refreshToken,
+		})
+
+		assertCode(t, err, codes.Unauthenticated)
+		if !alertSent {
+			t.Error("expected token reuse alert email to be sent")
+		}
+	})
+
+	t.Run("refresh_token_cache_error", func(t *testing.T) {
+		refreshToken := validRefreshToken(t)
+		userRepo := &mockUserRepo{
+			getUser: func(_ context.Context, _ entities.GetUserDTO) (*entities.UserGet, Error.CodeError) {
+				return &entities.UserGet{UserUUID: testUUID1, IsVerified: true}, ok()
+			},
+		}
+		authRepo := &mockAuthRepo{
+			checkSessionExists: func(_ context.Context, _ entities.CheckSessionExistsDTO) Error.CodeError { return ok() },
+			refreshToken: func(_ context.Context, _ entities.RefreshTokenDTO) Error.CodeError {
+				return Error.Internal(fmt.Errorf("redis error"))
+			},
+		}
+		svc := newTestService(userRepo, authRepo)
+
+		_, err := svc.RefreshToken(context.Background(), &pb.RefreshTokenRequest{
+			RefreshToken: refreshToken,
+		})
+
+		assertCode(t, err, codes.Internal)
+	})
 }
 
 // ─── RevokeSession ───────────────────────────────────────────────────────────
@@ -984,58 +1094,58 @@ func TestRevokeSession(t *testing.T) {
 		svc := newTestService(emptyUserRepo(), authRepo)
 
 		_, err := svc.RevokeSession(context.Background(), &pb.RevokeSessionRequest{
-			UserUuid:  testUUID1,
-			TokenHash: "abc123hash",
+			UserUuid:    testUUID1,
+			SessionUuid: testUUID2,
 		})
 
 		assertNoError(t, err)
 	})
 
-	t.Run("invalid_uuid", func(t *testing.T) {
+	t.Run("invalid_user_uuid", func(t *testing.T) {
 		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
 
 		_, err := svc.RevokeSession(context.Background(), &pb.RevokeSessionRequest{
-			UserUuid:  "not-a-uuid",
-			TokenHash: "abc123hash",
+			UserUuid:    "not-a-uuid",
+			SessionUuid: testUUID2,
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("empty_token_hash", func(t *testing.T) {
+	t.Run("invalid_session_uuid", func(t *testing.T) {
 		svc := newTestService(emptyUserRepo(), emptyAuthRepo())
 
 		_, err := svc.RevokeSession(context.Background(), &pb.RevokeSessionRequest{
-			UserUuid:  testUUID1,
-			TokenHash: "",
+			UserUuid:    testUUID1,
+			SessionUuid: "not-a-uuid",
 		})
 
 		assertCode(t, err, codes.InvalidArgument)
 	})
 
-	t.Run("token_not_found", func(t *testing.T) {
+	t.Run("session_not_found", func(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			revokeSession: func(_ context.Context, _ entities.RevokeSessionDTO) Error.CodeError {
-				return Error.Public(codes.NotFound, "refresh token not found")
+				return Error.Public(codes.NotFound, "session not found")
 			},
 		}
 		svc := newTestService(emptyUserRepo(), authRepo)
 
 		_, err := svc.RevokeSession(context.Background(), &pb.RevokeSessionRequest{
-			UserUuid:  testUUID1,
-			TokenHash: "abc123hash",
+			UserUuid:    testUUID1,
+			SessionUuid: testUUID2,
 		})
 
 		assertCode(t, err, codes.NotFound)
 	})
 
-	t.Run("token_belongs_to_different_user", func(t *testing.T) {
+	t.Run("session_belongs_to_different_user", func(t *testing.T) {
 		// Слой репозитория проверяет принадлежность и возвращает NotFound
 		const ownerUUID = "cccccccc-cccc-cccc-cccc-cccccccccccc"
 		authRepo := &mockAuthRepo{
 			revokeSession: func(_ context.Context, dto entities.RevokeSessionDTO) Error.CodeError {
 				if dto.UserUUID != ownerUUID {
-					return Error.Public(codes.NotFound, "refresh token not found")
+					return Error.Public(codes.NotFound, "session not found")
 				}
 				return ok()
 			},
@@ -1043,8 +1153,8 @@ func TestRevokeSession(t *testing.T) {
 		svc := newTestService(emptyUserRepo(), authRepo)
 
 		_, err := svc.RevokeSession(context.Background(), &pb.RevokeSessionRequest{
-			UserUuid:  testUUID1, // не владелец токена
-			TokenHash: "abc123hash",
+			UserUuid:    testUUID1, // не владелец сессии
+			SessionUuid: testUUID2,
 		})
 
 		assertCode(t, err, codes.NotFound)

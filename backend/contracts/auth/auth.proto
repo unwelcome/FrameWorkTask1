@@ -31,7 +31,7 @@ service AuthService {
 
 
 message Token {
-  string token = 1;
+  string session_uuid = 1;
   SessionInfo session = 2;
 }
 
@@ -155,7 +155,7 @@ message GetAllActiveSessionsResponse{
 // Revoke session
 message RevokeSessionRequest {
   string user_uuid = 1;
-  string token_hash = 2;
+  string session_uuid = 2;
 }
 // Empty response
 

@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 	"crypto/ecdsa"
-	"strings"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -256,9 +256,11 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 
 	session := &entities.SessionInfo{}
 	session.FromProto(req.GetSession())
+	sessionUUID := uuid.Must(uuid.NewV7()).String()
 
 	if err := s.cache.Auth.SaveSession(ctx, entities.SaveSessionDTO{
 		UserUUID:    user.UserUUID,
+		SessionUUID: sessionUUID,
 		HashedToken: utils.HashToken(tokenPair.RefreshToken),
 		Session:     session,
 	}).GRPCError(); err != nil {
@@ -439,8 +441,8 @@ func (s *AuthService) GetAllActiveSessions(ctx context.Context, req *pb.GetAllAc
 	tokens := make([]*pb.Token, 0, len(userTokens))
 	for _, entry := range userTokens {
 		tokens = append(tokens, &pb.Token{
-			Token:   entry.TokenHash,
-			Session: entry.Session.ToProto(),
+			SessionUuid: entry.SessionUUID,
+			Session:     entry.Session.ToProto(),
 		})
 	}
 
@@ -459,8 +461,8 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	}
 
 	if err = s.cache.Auth.CheckSessionExists(ctx, entities.CheckSessionExistsDTO{
-		UserUUID: tokenClaims.UserUUID,
-		RawToken: req.GetRefreshToken(),
+		UserUUID:    tokenClaims.UserUUID,
+		HashedToken: utils.HashToken(req.GetRefreshToken()),
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
@@ -481,13 +483,21 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	if err = s.cache.Auth.RefreshToken(ctx, entities.RefreshTokenDTO{
+	refreshErr := s.cache.Auth.RefreshToken(ctx, entities.RefreshTokenDTO{
 		UserUUID:     tokenClaims.UserUUID,
 		OldHashToken: utils.HashToken(req.GetRefreshToken()),
 		NewHashToken: utils.HashToken(tokenPair.RefreshToken),
 		LastIP:       req.GetIp(),
 		LastActiveAt: time.Now(),
-	}).GRPCError(); err != nil {
+	})
+	if err = refreshErr.GRPCError(); err != nil {
+		if errors.Is(refreshErr.Err, entities.ErrTokenReuse) {
+			_ = s.publisher.SendTokenReuseAlertEmail(ctx, entities.TokenReuseAlertEmailMsg{
+				UserUUID:  user.UserUUID,
+				Email:     user.Email,
+				FirstName: user.FirstName,
+			})
+		}
 		return nil, err
 	}
 
@@ -497,18 +507,18 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	}, nil
 }
 
-// RevokeSession Отзыв сессии пользователя по хешу refresh токена
+// RevokeSession Отзыв сессии пользователя по UUID сессии
 func (s *AuthService) RevokeSession(ctx context.Context, req *pb.RevokeSessionRequest) (*emptypb.Empty, error) {
 	if err := validate.UUID(req.GetUserUuid()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user uuid")
 	}
-	if strings.TrimSpace(req.GetTokenHash()) == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "token hash missed")
+	if err := validate.UUID(req.GetSessionUuid()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid session uuid")
 	}
 
 	if err := s.cache.Auth.RevokeSession(ctx, entities.RevokeSessionDTO{
-		UserUUID:  req.GetUserUuid(),
-		TokenHash: req.GetTokenHash(),
+		UserUUID:    req.GetUserUuid(),
+		SessionUUID: req.GetSessionUuid(),
 	}).GRPCError(); err != nil {
 		return nil, err
 	}
@@ -809,10 +819,12 @@ func (s *AuthService) Verify2FA(ctx context.Context, req *pb.Verify2FARequest) (
 
 	session := &entities.SessionInfo{}
 	session.FromProto(req.GetSession())
+	verify2FASessionUUID := uuid.Must(uuid.NewV7()).String()
 
-	// Сохраняем refresh токен
+	// Сохраняем новую сессию
 	if err := s.cache.Auth.SaveSession(ctx, entities.SaveSessionDTO{
 		UserUUID:    data.UserUUID,
+		SessionUUID: verify2FASessionUUID,
 		HashedToken: utils.HashToken(tokenPair.RefreshToken),
 		Session:     session,
 	}).GRPCError(); err != nil {

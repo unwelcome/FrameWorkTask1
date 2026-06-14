@@ -47,3 +47,9 @@ type LoginNotificationEmailMsg struct {
 	OS        string `json:"os"`
 	LoginAt   int64  `json:"login_at"`
 }
+
+type TokenReuseAlertEmailMsg struct {
+	UserUUID  string `json:"user_uuid"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+}

@@ -203,6 +203,7 @@ type mockPublisher struct {
 	sendPasswordResetEmail       func(ctx context.Context, dto entities.PasswordResetEmailMsg) Error.CodeError
 	sendRegistrationAttemptEmail func(ctx context.Context, dto entities.RegistrationAttemptEmailMsg) Error.CodeError
 	sendLoginNotificationEmail   func(ctx context.Context, dto entities.LoginNotificationEmailMsg) Error.CodeError
+	sendTokenReuseAlertEmail     func(ctx context.Context, dto entities.TokenReuseAlertEmailMsg) Error.CodeError
 }
 
 func (m *mockPublisher) SendVerificationEmail(ctx context.Context, dto entities.VerificationEmailMsg) Error.CodeError {
@@ -226,6 +227,9 @@ func (m *mockPublisher) SendRegistrationAttemptEmail(ctx context.Context, dto en
 func (m *mockPublisher) SendLoginNotificationEmail(ctx context.Context, dto entities.LoginNotificationEmailMsg) Error.CodeError {
 	return m.sendLoginNotificationEmail(ctx, dto)
 }
+func (m *mockPublisher) SendTokenReuseAlertEmail(ctx context.Context, dto entities.TokenReuseAlertEmailMsg) Error.CodeError {
+	return m.sendTokenReuseAlertEmail(ctx, dto)
+}
 
 // emptyPublisher — заглушка для тестов, где Publisher не должен вызываться.
 func emptyPublisher() messaging.Publisher {
@@ -237,6 +241,7 @@ func emptyPublisher() messaging.Publisher {
 		sendPasswordResetEmail:       func(_ context.Context, _ entities.PasswordResetEmailMsg) Error.CodeError { return Error.CodeError{} },
 		sendRegistrationAttemptEmail: func(_ context.Context, _ entities.RegistrationAttemptEmailMsg) Error.CodeError { return Error.CodeError{} },
 		sendLoginNotificationEmail:   func(_ context.Context, _ entities.LoginNotificationEmailMsg) Error.CodeError { return Error.CodeError{} },
+		sendTokenReuseAlertEmail:     func(_ context.Context, _ entities.TokenReuseAlertEmailMsg) Error.CodeError { return Error.CodeError{} },
 	}
 }
 

@@ -98,7 +98,7 @@ type refreshTokenResp struct {
 }
 
 type tokenInfoResp struct {
-	TokenHash      string `json:"token_hash"`
+	SessionUUID    string `json:"session_uuid"`
 	IP             string `json:"ip"`
 	LastIP         string `json:"last_ip"`
 	ISP            string `json:"isp"`

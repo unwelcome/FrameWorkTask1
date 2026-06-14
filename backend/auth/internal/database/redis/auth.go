@@ -9,10 +9,14 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
-	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/shared/errors"
 	"google.golang.org/grpc/codes"
 )
+
+// tokenIndexTTL is the tombstone lifetime for a rotated refresh token hash in the token index.
+// Keeps reuse detection active for 1 h after rotation.
+// tokenIndexTombstoneTTL TTL для
+const tokenIndexTombstoneTTL = time.Hour
 
 var errSessionNotFound = errors.New("session not found")
 
@@ -35,15 +39,21 @@ func NewAuthRepository(redis *redis.Client, refreshTokenTTL time.Duration, prefi
 	return &authRepository{redis: redis, refreshTokenTTL: refreshTokenTTL, prefix: prefix}
 }
 
-// SaveSession Сохраняет хеш refresh токена вместе с данными сессии.
+// SaveSession сохраняет новую сессию, индексированную по sessionUUID.
+// Поле current_hash хранит хеш текущего refresh токена для детектирования повторного использования.
 func (r *authRepository) SaveSession(ctx context.Context, dto entities.SaveSessionDTO) Error.CodeError {
+	sessionKey := r.getSessionKey(dto.SessionUUID)
+	tokenIndexKey := r.getTokenIndexKey(dto.HashedToken)
 	userSessionsKey := r.getUserSessionsKey(dto.UserUUID)
-	sessionKey := r.getSessionKey(dto.HashedToken)
+
+	fields := dto.Session.ToMap()
+	fields["current_hash"] = dto.HashedToken
 
 	pipeline := r.redis.Pipeline()
-	pipeline.HSet(ctx, sessionKey, dto.Session.ToMap())
+	pipeline.HSet(ctx, sessionKey, fields)
 	pipeline.Expire(ctx, sessionKey, r.refreshTokenTTL)
-	pipeline.SAdd(ctx, userSessionsKey, dto.HashedToken)
+	pipeline.Set(ctx, tokenIndexKey, dto.SessionUUID, r.refreshTokenTTL)
+	pipeline.SAdd(ctx, userSessionsKey, dto.SessionUUID)
 
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
@@ -52,37 +62,35 @@ func (r *authRepository) SaveSession(ctx context.Context, dto entities.SaveSessi
 	return Error.CodeError{}
 }
 
-// GetAllSessions Возвращает все активные сессии пользователя.
+// GetAllSessions возвращает все активные сессии пользователя
 func (r *authRepository) GetAllSessions(ctx context.Context, dto entities.GetAllSessionsDTO) ([]entities.SessionEntry, Error.CodeError) {
 	userSessionsKey := r.getUserSessionsKey(dto.UserUUID)
 
-	hashedTokens, err := r.redis.SMembers(ctx, userSessionsKey).Result()
+	sessionUUIDs, err := r.redis.SMembers(ctx, userSessionsKey).Result()
 	if err != nil {
-		return nil, Error.CodeError{Code: int(codes.Internal), Err: err}
+		return nil, Error.Internal(err)
 	}
 
-	if len(hashedTokens) == 0 {
+	if len(sessionUUIDs) == 0 {
 		return []entities.SessionEntry{}, Error.CodeError{}
 	}
 
-	// Пайплайн: HGETALL для каждой сессии за один сетевой round-trip
 	pipe := r.redis.Pipeline()
-	cmds := make([]*redis.MapStringStringCmd, len(hashedTokens))
-	for i, hash := range hashedTokens {
-		cmds[i] = pipe.HGetAll(ctx, r.getSessionKey(hash))
+	cmds := make([]*redis.MapStringStringCmd, len(sessionUUIDs))
+	for i, sid := range sessionUUIDs {
+		cmds[i] = pipe.HGetAll(ctx, r.getSessionKey(sid))
 	}
 	if _, err = pipe.Exec(ctx); err != nil && !errors.Is(err, redis.Nil) {
 		return nil, Error.Internal(err)
 	}
 
-	activeEntries := make([]entities.SessionEntry, 0, len(hashedTokens))
-	expiredHashes := make([]interface{}, 0)
+	activeEntries := make([]entities.SessionEntry, 0, len(sessionUUIDs))
+	expiredUUIDs := make([]interface{}, 0)
 
-	for i, hash := range hashedTokens {
+	for i, sid := range sessionUUIDs {
 		fields, cmdErr := cmds[i].Result()
 		if cmdErr != nil || len(fields) == 0 {
-			// Ключ истёк или не существует — чистим из сета
-			expiredHashes = append(expiredHashes, hash)
+			expiredUUIDs = append(expiredUUIDs, sid)
 			continue
 		}
 
@@ -90,43 +98,49 @@ func (r *authRepository) GetAllSessions(ctx context.Context, dto entities.GetAll
 		session.FromMap(fields)
 
 		activeEntries = append(activeEntries, entities.SessionEntry{
-			TokenHash: hash,
-			Session:   session,
+			SessionUUID: sid,
+			Session:     session,
 		})
 	}
 
-	if len(expiredHashes) > 0 {
-		_ = r.redis.SRem(ctx, userSessionsKey, expiredHashes...).Err()
+	if len(expiredUUIDs) > 0 {
+		_ = r.redis.SRem(ctx, userSessionsKey, expiredUUIDs...).Err()
 	}
 
 	return activeEntries, Error.CodeError{}
 }
 
-// CheckSessionExists Проверяет существование сессии по хешу refresh токена.
+// CheckSessionExists проверяет наличие сессии
 func (r *authRepository) CheckSessionExists(ctx context.Context, dto entities.CheckSessionExistsDTO) Error.CodeError {
-	hash := utils.HashToken(dto.RawToken)
-	sessionKey := r.getSessionKey(hash)
+	tokenIndexKey := r.getTokenIndexKey(dto.HashedToken)
 
-	exist, err := r.redis.Exists(ctx, sessionKey).Result()
+	sessionUUID, err := r.redis.Get(ctx, tokenIndexKey).Result()
+	if errors.Is(err, redis.Nil) || sessionUUID == "" {
+		return Error.Public(codes.NotFound, "session not found")
+	}
 	if err != nil {
 		return Error.Internal(err)
 	}
 
-	if exist == 0 {
-		userSessionsKey := r.getUserSessionsKey(dto.UserUUID)
-		_ = r.redis.SRem(ctx, userSessionsKey, hash).Err()
+	// Verify the session HSET still exists (could have been revoked concurrently)
+	exists, err := r.redis.Exists(ctx, r.getSessionKey(sessionUUID)).Result()
+	if err != nil {
+		return Error.Internal(err)
+	}
+	if exists == 0 {
+		_ = r.redis.Del(ctx, tokenIndexKey).Err()
 		return Error.Public(codes.NotFound, "session not found")
 	}
 
 	return Error.CodeError{}
 }
 
-// RevokeSession Отзывает конкретную сессию, проверяя принадлежность пользователю.
+// RevokeSession отзывает конкретную сессию по SessionUUID, проверяя принадлежность пользователю
 func (r *authRepository) RevokeSession(ctx context.Context, dto entities.RevokeSessionDTO) Error.CodeError {
 	userSessionsKey := r.getUserSessionsKey(dto.UserUUID)
-	sessionKey := r.getSessionKey(dto.TokenHash)
+	sessionKey := r.getSessionKey(dto.SessionUUID)
 
-	isMember, err := r.redis.SIsMember(ctx, userSessionsKey, dto.TokenHash).Result()
+	isMember, err := r.redis.SIsMember(ctx, userSessionsKey, dto.SessionUUID).Result()
 	if err != nil {
 		return Error.Internal(err)
 	}
@@ -134,39 +148,49 @@ func (r *authRepository) RevokeSession(ctx context.Context, dto entities.RevokeS
 		return Error.Public(codes.NotFound, "session not found")
 	}
 
+	// Fetch current_hash to clean up the token index
+	currentHash, err := r.redis.HGet(ctx, sessionKey, "current_hash").Result()
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return Error.Internal(err)
+	}
+
 	count, err := r.redis.Del(ctx, sessionKey).Result()
 	if err != nil {
 		return Error.Internal(err)
 	}
 	if count == 0 {
-		// Сессия уже истекла, но ещё числилась в сете — чистим
-		_ = r.redis.SRem(ctx, userSessionsKey, dto.TokenHash).Err()
+		_ = r.redis.SRem(ctx, userSessionsKey, dto.SessionUUID).Err()
 		return Error.Public(codes.NotFound, "session not found")
 	}
 
-	if err := r.redis.SRem(ctx, userSessionsKey, dto.TokenHash).Err(); err != nil {
+	pipeline := r.redis.Pipeline()
+	pipeline.SRem(ctx, userSessionsKey, dto.SessionUUID)
+	if currentHash != "" {
+		pipeline.Del(ctx, r.getTokenIndexKey(currentHash))
+	}
+	if _, err := pipeline.Exec(ctx); err != nil {
 		return Error.Internal(err)
 	}
 
 	return Error.CodeError{}
 }
 
-// RevokeAllSessions Отзывает все сессии пользователя.
+// RevokeAllSessions отзывает все сессии пользователя
 func (r *authRepository) RevokeAllSessions(ctx context.Context, dto entities.RevokeAllSessionsDTO) Error.CodeError {
 	userSessionsKey := r.getUserSessionsKey(dto.UserUUID)
 
-	hashedTokens, err := r.redis.SMembers(ctx, userSessionsKey).Result()
+	sessionUUIDs, err := r.redis.SMembers(ctx, userSessionsKey).Result()
 	if err != nil {
 		return Error.Internal(err)
 	}
 
-	if len(hashedTokens) == 0 {
+	if len(sessionUUIDs) == 0 {
 		return Error.Public(codes.NotFound, "sessions not found")
 	}
 
 	pipeline := r.redis.Pipeline()
-	for _, hash := range hashedTokens {
-		pipeline.Del(ctx, r.getSessionKey(hash))
+	for _, sid := range sessionUUIDs {
+		pipeline.Del(ctx, r.getSessionKey(sid))
 	}
 	pipeline.Del(ctx, userSessionsKey)
 	if _, err := pipeline.Exec(ctx); err != nil {
@@ -176,16 +200,26 @@ func (r *authRepository) RevokeAllSessions(ctx context.Context, dto entities.Rev
 	return Error.CodeError{}
 }
 
-// RefreshToken Атомарно заменяет старую сессию на новую,
-// копируя данные и обновляя изменяемые поля (LastIP, LastActiveAt).
+// RefreshToken атомарно ротирует refresh токен.
+// При обнаружении повторного использования (current_hash не совпадает) отзывает сессию и возвращает entities.ErrTokenReuse
 func (r *authRepository) RefreshToken(ctx context.Context, dto entities.RefreshTokenDTO) Error.CodeError {
-	userSessionsKey := r.getUserSessionsKey(dto.UserUUID)
-	oldSessionKey := r.getSessionKey(dto.OldHashToken)
-	newSessionKey := r.getSessionKey(dto.NewHashToken)
+	tokenIndexKey := r.getTokenIndexKey(dto.OldHashToken)
 
-	err := r.redis.Watch(ctx, func(tx *redis.Tx) error {
-		// Читаем все поля старой сессии в рамках Watch-транзакции
-		fields, err := tx.HGetAll(ctx, oldSessionKey).Result()
+	// Получаем sessionUUID из индекса токенов
+	sessionUUID, err := r.redis.Get(ctx, tokenIndexKey).Result()
+	if errors.Is(err, redis.Nil) || sessionUUID == "" {
+		return Error.Public(codes.NotFound, "session not found")
+	}
+	if err != nil {
+		return Error.Internal(err)
+	}
+
+	sessionKey := r.getSessionKey(sessionUUID)
+	userSessionsKey := r.getUserSessionsKey(dto.UserUUID)
+	newTokenIndexKey := r.getTokenIndexKey(dto.NewHashToken)
+
+	watchErr := r.redis.Watch(ctx, func(tx *redis.Tx) error {
+		fields, err := tx.HGetAll(ctx, sessionKey).Result()
 		if err != nil {
 			return err
 		}
@@ -193,34 +227,55 @@ func (r *authRepository) RefreshToken(ctx context.Context, dto entities.RefreshT
 			return errSessionNotFound
 		}
 
-		// Обновляем изменяемые поля
+		// Детектируем повторное использование токена
+		if fields["current_hash"] != dto.OldHashToken {
+			// Токен уже был ротирован — атакующий пытается использовать старый токен.
+			// Отзываем скомпрометированную сессию.
+			_, _ = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+				pipe.Del(ctx, sessionKey)
+				pipe.SRem(ctx, userSessionsKey, sessionUUID)
+				pipe.Del(ctx, tokenIndexKey)
+				return nil
+			})
+			return entities.ErrTokenReuse
+		}
+
+		// Токен актуален — обновляем сессию
 		fields["last_ip"] = dto.LastIP
 		fields["last_active"] = strconv.FormatInt(dto.LastActiveAt.Unix(), 10)
+		fields["current_hash"] = dto.NewHashToken
 
 		_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-			pipe.HSet(ctx, newSessionKey, fields)
-			pipe.Expire(ctx, newSessionKey, r.refreshTokenTTL)
-			pipe.SAdd(ctx, userSessionsKey, dto.NewHashToken)
-			pipe.Del(ctx, oldSessionKey)
-			pipe.SRem(ctx, userSessionsKey, dto.OldHashToken)
+			pipe.HSet(ctx, sessionKey, fields)
+			pipe.Expire(ctx, sessionKey, r.refreshTokenTTL)
+			pipe.Set(ctx, newTokenIndexKey, sessionUUID, r.refreshTokenTTL)
+			// Оставляем старый ключ как tombstone на 1 час для детектирования повторного использования
+			pipe.Expire(ctx, tokenIndexKey, tokenIndexTombstoneTTL)
 			return nil
 		})
 		return err
-	}, oldSessionKey)
+	}, sessionKey)
 
-	if err != nil {
-		if errors.Is(err, errSessionNotFound) {
+	if watchErr != nil {
+		if errors.Is(watchErr, errSessionNotFound) {
 			return Error.Public(codes.NotFound, "session not found")
 		}
-		return Error.Internal(err)
+		if errors.Is(watchErr, entities.ErrTokenReuse) {
+			return Error.CodeError{Code: int(codes.Unauthenticated), Err: entities.ErrTokenReuse}
+		}
+		return Error.Internal(watchErr)
 	}
 	return Error.CodeError{}
 }
 
 // ── Вспомогательные функции ───────────────────────────────────────────────────
 
-func (r *authRepository) getSessionKey(hash string) string {
-	return fmt.Sprintf("%s:session:%s", r.prefix, hash)
+func (r *authRepository) getSessionKey(sessionUUID string) string {
+	return fmt.Sprintf("%s:session:%s", r.prefix, sessionUUID)
+}
+
+func (r *authRepository) getTokenIndexKey(hash string) string {
+	return fmt.Sprintf("%s:token:%s", r.prefix, hash)
 }
 
 func (r *authRepository) getUserSessionsKey(userUUID string) string {

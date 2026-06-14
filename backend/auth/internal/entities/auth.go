@@ -1,9 +1,15 @@
 package entities
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var ErrTokenReuse = errors.New("refresh token reuse detected")
 
 type SaveSessionDTO struct {
 	UserUUID    string
+	SessionUUID string
 	HashedToken string
 	Session     *SessionInfo
 }
@@ -12,20 +18,20 @@ type GetAllSessionsDTO struct {
 	UserUUID string
 }
 
-// SessionEntry — одна активная сессия с данными и хешем refresh токена
+// SessionEntry — одна активная сессия с данными и UUID сессии
 type SessionEntry struct {
-	TokenHash string
-	Session   *SessionInfo
+	SessionUUID string
+	Session     *SessionInfo
 }
 
 type CheckSessionExistsDTO struct {
-	UserUUID string
-	RawToken string
+	UserUUID    string
+	HashedToken string
 }
 
 type RevokeSessionDTO struct {
-	UserUUID  string
-	TokenHash string
+	UserUUID    string
+	SessionUUID string
 }
 
 type RevokeAllSessionsDTO struct {
@@ -36,6 +42,6 @@ type RefreshTokenDTO struct {
 	UserUUID     string
 	OldHashToken string
 	NewHashToken string
-	LastIP       string    // IP последнего refresh — обновляется в хеше
-	LastActiveAt time.Time // Время последнего refresh — обновляется в хеше
+	LastIP       string
+	LastActiveAt time.Time
 }

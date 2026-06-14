@@ -19,6 +19,7 @@ type Publisher interface {
 	SendPasswordResetEmail(ctx context.Context, dto entities.PasswordResetEmailMsg) errors.CodeError
 	SendRegistrationAttemptEmail(ctx context.Context, dto entities.RegistrationAttemptEmailMsg) errors.CodeError
 	SendLoginNotificationEmail(ctx context.Context, dto entities.LoginNotificationEmailMsg) errors.CodeError
+	SendTokenReuseAlertEmail(ctx context.Context, dto entities.TokenReuseAlertEmailMsg) errors.CodeError
 }
 
 type publisher struct {
@@ -30,6 +31,7 @@ type publisher struct {
 	emailPasswordResetQueue       amqp.Queue
 	emailRegistrationAttemptQueue amqp.Queue
 	emailLoginNotificationQueue   amqp.Queue
+	emailTokenReuseAlertQueue     amqp.Queue
 }
 
 func NewPublisher(connectString string) Publisher {
@@ -141,6 +143,21 @@ func NewPublisher(connectString string) Publisher {
 		log.Fatal().Err(err).Msg("failed to declare login-notification.email queue")
 	}
 
+	// Создание очереди для оповещения о повторном использовании refresh токена (идемпотентно)
+	emailTokenReuseAlertQueue, err := ch.QueueDeclare(
+		"token-reuse-alert.email",
+		true,
+		false,
+		false,
+		false,
+		amqp.Table{
+			amqp.QueueTypeArg: amqp.QueueTypeQuorum,
+		},
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to declare token-reuse-alert.email queue")
+	}
+
 	return &publisher{
 		ch:                            ch,
 		emailVerificationQueue:        emailVerificationQueue,
@@ -150,6 +167,7 @@ func NewPublisher(connectString string) Publisher {
 		emailPasswordResetQueue:       emailPasswordResetQueue,
 		emailRegistrationAttemptQueue: emailRegistrationAttemptQueue,
 		emailLoginNotificationQueue:   emailLoginNotificationQueue,
+		emailTokenReuseAlertQueue:     emailTokenReuseAlertQueue,
 	}
 }
 
@@ -280,6 +298,29 @@ func (p *publisher) SendLoginNotificationEmail(ctx context.Context, dto entities
 	err = p.ch.PublishWithContext(ctx,
 		"",
 		p.emailLoginNotificationQueue.Name,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType:  "application/json",
+			DeliveryMode: amqp.Persistent,
+			Body:         body,
+		})
+	if err != nil {
+		return errors.Internal(err)
+	}
+	return errors.CodeError{}
+}
+
+// SendTokenReuseAlertEmail Отправляет в очередь token-reuse-alert.email уведомление о повторном использовании refresh токена
+func (p *publisher) SendTokenReuseAlertEmail(ctx context.Context, dto entities.TokenReuseAlertEmailMsg) errors.CodeError {
+	body, err := json.Marshal(dto)
+	if err != nil {
+		return errors.Internal(err)
+	}
+
+	err = p.ch.PublishWithContext(ctx,
+		"",
+		p.emailTokenReuseAlertQueue.Name,
 		false,
 		false,
 		amqp.Publishing{

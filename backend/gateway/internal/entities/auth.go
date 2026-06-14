@@ -12,7 +12,7 @@ import (
 
 // TokenInfo описывает активную сессию пользователя.
 type TokenInfo struct {
-	TokenHash      string `json:"token_hash"`
+	SessionUUID    string `json:"session_uuid"`
 	IP             string `json:"ip"`
 	LastIP         string `json:"last_ip"`
 	ISP            string `json:"isp,omitempty"`
@@ -190,14 +190,14 @@ func (e *RefreshTokenRequest) Validate() error {
 // ─── RevokeSession ────────────────────────────────────────────────────────────
 
 type RevokeSessionRequest struct {
-	TokenHash string `json:"token_hash"`
+	SessionUUID string `json:"session_uuid"`
 }
 type RevokeSessionResponse struct{}
 
 func (e *RevokeSessionRequest) Validate() error {
-	e.TokenHash = strings.TrimSpace(e.TokenHash)
-	if e.TokenHash == "" {
-		return fmt.Errorf("token_hash is required")
+	e.SessionUUID = strings.TrimSpace(e.SessionUUID)
+	if err := validate.UUID(e.SessionUUID); err != nil {
+		return fmt.Errorf("session_uuid: %w", err)
 	}
 	return nil
 }

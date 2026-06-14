@@ -402,7 +402,7 @@ func (h *authHandler) GetAllActiveSessions(c *fiber.Ctx) error {
 	for _, token := range res.GetTokens() {
 		s := token.GetSession()
 		tokens = append(tokens, &entities.TokenInfo{
-			TokenHash:      token.GetToken(),
+			SessionUUID:    token.GetSessionUuid(),
 			IP:             s.GetIp(),
 			LastIP:         s.GetLastIp(),
 			ISP:            s.GetIsp(),
@@ -513,8 +513,8 @@ func (h *authHandler) RevokeSession(c *fiber.Ctx) error {
 
 	// Формируем тело запроса
 	req := &auth_proto.RevokeSessionRequest{
-		UserUuid:  userUUID,
-		TokenHash: httpReq.TokenHash,
+		UserUuid:    userUUID,
+		SessionUuid: httpReq.SessionUUID,
 	}
 
 	// Запрос в auth сервис

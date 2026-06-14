@@ -158,6 +158,41 @@ func TestRefreshToken(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, code, "invalid token should return 400 (body: %s)", body)
 	})
+
+	t.Run("stolen_refresh_token_reuse_returns_401", func(t *testing.T) {
+		// Симуляция кражи refresh токена:
+		// 1. Жертва логинится — получает RT1.
+		// 2. Жертва делает refresh — RT1 ротируется в RT2 (RT1 становится tombstone).
+		// 3. Атакующий пытается использовать старый RT1.
+		// Система обнаруживает повторное использование → отзывает сессию → 401.
+		c := newClient()
+		_, login := mustRegisterAndLogin(t, c)
+
+		stolenToken := login.RefreshToken
+
+		// Жертва легитимно ротирует токен
+		code, body := c.post("/api/refresh", map[string]string{
+			"refresh_token": stolenToken,
+		})
+		require.Equal(t, http.StatusOK, code, "legitimate refresh should succeed (body: %s)", body)
+		var rotated refreshTokenResp
+		require.NoError(t, json.Unmarshal(body, &rotated))
+		require.NotEmpty(t, rotated.RefreshToken, "rotated refresh token must not be empty")
+
+		// Атакующий пытается использовать уже ротированный (украденный) токен
+		code, body = c.post("/api/refresh", map[string]string{
+			"refresh_token": stolenToken,
+		})
+		assert.Equal(t, http.StatusUnauthorized, code,
+			"reuse of rotated refresh token must return 401 (reuse detection ban) (body: %s)", body)
+
+		// Сессия полностью отозвана — даже новый токен жертвы теперь невалиден
+		code, _ = c.post("/api/refresh", map[string]string{
+			"refresh_token": rotated.RefreshToken,
+		})
+		assert.True(t, code == http.StatusUnauthorized || code == http.StatusNotFound,
+			"victim's current token must also be invalidated after reuse detection, got %d", code)
+	})
 }
 
 // ─── GetUser ──────────────────────────────────────────────────────────────────
@@ -343,7 +378,7 @@ func TestGetAllActiveSessions(t *testing.T) {
 		require.GreaterOrEqual(t, len(resp.Tokens), 1, "should have at least 1 active token after login")
 
 		token := resp.Tokens[0]
-		assert.NotEmpty(t, token.TokenHash, "token_hash should not be empty")
+		assert.NotEmpty(t, token.SessionUUID, "session_uuid should not be empty")
 		assert.NotEmpty(t, token.CreatedAt, "created_at should not be empty")
 		assert.NotEmpty(t, token.LastActiveAt, "last_active_at should not be empty")
 		// IP может быть пустым в тестовой среде, проверяем лишь что поля присутствуют в JSON
@@ -366,9 +401,9 @@ func TestGetAllActiveSessions(t *testing.T) {
 		require.NoError(t, json.Unmarshal(body, &resp))
 		assert.GreaterOrEqual(t, len(resp.Tokens), 2, "both sessions should be visible in active tokens")
 
-		// Оба токена должны иметь непустые хеши
+		// Оба токена должны иметь непустые session UUID
 		for i, tok := range resp.Tokens {
-			assert.NotEmpty(t, tok.TokenHash, "token[%d].token_hash should not be empty", i)
+			assert.NotEmpty(t, tok.SessionUUID, "token[%d].session_uuid should not be empty", i)
 			assert.NotEmpty(t, tok.CreatedAt, "token[%d].created_at should not be empty", i)
 		}
 	})
@@ -416,17 +451,17 @@ func TestRevokeSession(t *testing.T) {
 		_, login := mustRegisterAndLogin(t, c)
 		auth := c.withToken(login.AccessToken)
 
-		// Получаем хеш токена из списка активных токенов
+		// Получаем session UUID из списка активных сессий
 		code, body := auth.get("/api/auth/user/sessions")
 		require.Equal(t, http.StatusOK, code)
 		var tokens tokensResp
 		require.NoError(t, json.Unmarshal(body, &tokens))
 		require.NotEmpty(t, tokens.Tokens, "expected at least one active token")
-		tokenHash := tokens.Tokens[0].TokenHash
+		sessionUUID := tokens.Tokens[0].SessionUUID
 
-		// Отзываем токен по хешу
+		// Отзываем сессию по UUID
 		code, body = auth.delete("/api/auth/user/session", map[string]string{
-			"token_hash": tokenHash,
+			"session_uuid": sessionUUID,
 		})
 		assert.Equal(t, http.StatusOK, code, "revoke token failed (body: %s)", body)
 

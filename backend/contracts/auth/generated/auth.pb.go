@@ -24,7 +24,7 @@ const (
 
 type Token struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	SessionUuid   string                 `protobuf:"bytes,1,opt,name=session_uuid,json=sessionUuid,proto3" json:"session_uuid,omitempty"`
 	Session       *SessionInfo           `protobuf:"bytes,2,opt,name=session,proto3" json:"session,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -60,9 +60,9 @@ func (*Token) Descriptor() ([]byte, []int) {
 	return file_auth_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Token) GetToken() string {
+func (x *Token) GetSessionUuid() string {
 	if x != nil {
-		return x.Token
+		return x.SessionUuid
 	}
 	return ""
 }
@@ -1040,7 +1040,7 @@ func (x *GetAllActiveSessionsResponse) GetTokens() []*Token {
 type RevokeSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
-	TokenHash     string                 `protobuf:"bytes,2,opt,name=token_hash,json=tokenHash,proto3" json:"token_hash,omitempty"`
+	SessionUuid   string                 `protobuf:"bytes,2,opt,name=session_uuid,json=sessionUuid,proto3" json:"session_uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1082,9 +1082,9 @@ func (x *RevokeSessionRequest) GetUserUuid() string {
 	return ""
 }
 
-func (x *RevokeSessionRequest) GetTokenHash() string {
+func (x *RevokeSessionRequest) GetSessionUuid() string {
 	if x != nil {
-		return x.TokenHash
+		return x.SessionUuid
 	}
 	return ""
 }
@@ -1821,9 +1821,9 @@ var File_auth_proto protoreflect.FileDescriptor
 const file_auth_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"auth.proto\x12\x04auth\x1a\x1bgoogle/protobuf/empty.proto\"J\n" +
-	"\x05Token\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\x12+\n" +
+	"auth.proto\x12\x04auth\x1a\x1bgoogle/protobuf/empty.proto\"W\n" +
+	"\x05Token\x12!\n" +
+	"\fsession_uuid\x18\x01 \x01(\tR\vsessionUuid\x12+\n" +
 	"\asession\x18\x02 \x01(\v2\x11.auth.SessionInfoR\asession\"\xbc\x03\n" +
 	"\vSessionInfo\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x17\n" +
@@ -1909,11 +1909,10 @@ const file_auth_proto_rawDesc = "" +
 	"\x1bGetAllActiveSessionsRequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"C\n" +
 	"\x1cGetAllActiveSessionsResponse\x12#\n" +
-	"\x06tokens\x18\x01 \x03(\v2\v.auth.TokenR\x06tokens\"R\n" +
+	"\x06tokens\x18\x01 \x03(\v2\v.auth.TokenR\x06tokens\"V\n" +
 	"\x14RevokeSessionRequest\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x1d\n" +
-	"\n" +
-	"token_hash\x18\x02 \x01(\tR\ttokenHash\"7\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12!\n" +
+	"\fsession_uuid\x18\x02 \x01(\tR\vsessionUuid\"7\n" +
 	"\x18RevokeAllSessionsRequest\x12\x1b\n" +
 	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"E\n" +
 	"\x14VerifyAccountRequest\x12-\n" +

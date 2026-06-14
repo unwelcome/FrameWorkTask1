@@ -6,14 +6,16 @@ import (
 )
 
 const (
-	PasswordMinLen            = 8
-	PasswordMaxLen            = 128
-	NameMinLen                = 2
-	NameMaxLen                = 30
-	UserDescriptionMaxLen     = 500
-	CompanyTitleMaxLen        = 255
-	DepartmentTitleMaxLen     = 255
-	ApplicationTitleMaxLen    = 255
+	EmailMaxLen                  = 254 // RFC 5321
+	PasswordMinLen               = 8
+	PasswordMaxLen               = 128
+	NameMinLen                   = 2
+	NameMaxLen                   = 30
+	UserDescriptionMaxLen        = 500
+	ApplicationDescriptionMaxLen = 4000
+	CompanyTitleMaxLen           = 255
+	DepartmentTitleMaxLen        = 255
+	ApplicationTitleMaxLen       = 255
 )
 
 var (
@@ -44,6 +46,9 @@ func UUID(uuid string) error {
 func Email(email string) error {
 	if email == "" {
 		return fmt.Errorf("email missed")
+	}
+	if len(email) > EmailMaxLen {
+		return fmt.Errorf("email must be less than %d characters", EmailMaxLen)
 	}
 	if !reEmail.MatchString(email) {
 		return fmt.Errorf("incorrect email")
@@ -115,6 +120,9 @@ func Patronymic(s string) error {
 	if !reName.MatchString(s) {
 		return fmt.Errorf("patronymic contains incorrect characters")
 	}
+	if len(s) > NameMaxLen {
+		return fmt.Errorf("patronymic must be less than %d characters", NameMaxLen)
+	}
 	return nil
 }
 
@@ -181,6 +189,9 @@ func ApplicationTitle(title string) error {
 func ApplicationDescription(description string) error {
 	if description == "" {
 		return fmt.Errorf("description missed")
+	}
+	if len([]rune(description)) > ApplicationDescriptionMaxLen {
+		return fmt.Errorf("description must be %d characters or less", ApplicationDescriptionMaxLen)
 	}
 	return nil
 }

@@ -17,15 +17,24 @@ type VerificationRepository interface {
 	AddToVerificationTokenBlacklist(ctx context.Context, dto entities.AddToVerificationTokenBlacklistDTO) Error.CodeError
 	// IsVerificationTokenBlacklisted проверяет, был ли токен уже использован.
 	IsVerificationTokenBlacklisted(ctx context.Context, dto entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError)
+	// AcquireVerificationEmailCooldown устанавливает cooldown-ключ (SetNX). Возвращает true, если разрешено отправить письмо.
+	AcquireVerificationEmailCooldown(ctx context.Context, dto entities.AcquireVerificationEmailCooldownDTO) (bool, Error.CodeError)
+	// IncrVerificationEmailDailyCount увеличивает суточный счётчик отправок писем верификации и возвращает новое значение.
+	IncrVerificationEmailDailyCount(ctx context.Context, dto entities.IncrVerificationEmailDailyCountDTO) (int64, Error.CodeError)
 }
 
 type verificationRepository struct {
-	redis  *redis.Client
-	prefix string
+	redis        *redis.Client
+	prefix       string
+	emailLimiter emailRateLimiter
 }
 
 func NewVerificationRepository(rdb *redis.Client, prefix string) VerificationRepository {
-	return &verificationRepository{redis: rdb, prefix: prefix}
+	return &verificationRepository{
+		redis:        rdb,
+		prefix:       prefix,
+		emailLimiter: newEmailRateLimiter(rdb, prefix+":verification"),
+	}
 }
 
 func (r *verificationRepository) AddToVerificationTokenBlacklist(ctx context.Context, dto entities.AddToVerificationTokenBlacklistDTO) Error.CodeError {
@@ -48,6 +57,14 @@ func (r *verificationRepository) IsVerificationTokenBlacklisted(ctx context.Cont
 		return false, Error.CodeError{}
 	}
 	return false, Error.Internal(err)
+}
+
+func (r *verificationRepository) AcquireVerificationEmailCooldown(ctx context.Context, dto entities.AcquireVerificationEmailCooldownDTO) (bool, Error.CodeError) {
+	return r.emailLimiter.acquireCooldown(ctx, dto.UserUUID)
+}
+
+func (r *verificationRepository) IncrVerificationEmailDailyCount(ctx context.Context, dto entities.IncrVerificationEmailDailyCountDTO) (int64, Error.CodeError) {
+	return r.emailLimiter.incrDailyCount(ctx, dto.UserUUID)
 }
 
 func (r *verificationRepository) blacklistKey(tokenID string) string {

@@ -10,3 +10,11 @@ type AddToResetTokenBlacklistDTO struct {
 type IsResetTokenBlacklistedDTO struct {
 	TokenID string
 }
+
+type AcquireRecoveryEmailCooldownDTO struct {
+	UserUUID string
+}
+
+type IncrRecoveryEmailDailyCountDTO struct {
+	UserUUID string
+}

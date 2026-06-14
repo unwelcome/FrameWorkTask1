@@ -1478,6 +1478,49 @@ func TestResendVerificationCode(t *testing.T) {
 
 		assertNoError(t, err)
 	})
+
+	t.Run("cooldown_active_silent_ok", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, Email: "test@example.com", IsVerified: false}, ok()
+			},
+		}
+		verificationRepo := &mockVerificationRepo{
+			acquireVerificationEmailCooldown: func(_ context.Context, _ entities.AcquireVerificationEmailCooldownDTO) (bool, Error.CodeError) {
+				return false, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verificationRepo})
+
+		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
+			Email: "test@example.com",
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("daily_limit_reached_silent_ok", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, Email: "test@example.com", IsVerified: false}, ok()
+			},
+		}
+		verificationRepo := &mockVerificationRepo{
+			acquireVerificationEmailCooldown: func(_ context.Context, _ entities.AcquireVerificationEmailCooldownDTO) (bool, Error.CodeError) {
+				return true, ok()
+			},
+			incrVerificationEmailDailyCount: func(_ context.Context, _ entities.IncrVerificationEmailDailyCountDTO) (int64, Error.CodeError) {
+				return maxVerificationEmailDailyCount + 1, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, verification: verificationRepo})
+
+		_, err := svc.ResendVerificationCode(context.Background(), &pb.ResendVerificationCodeRequest{
+			Email: "test@example.com",
+		})
+
+		assertNoError(t, err)
+	})
 }
 
 // ─── ForgotPassword ───────────────────────────────────────────────────────────
@@ -1561,6 +1604,49 @@ func TestForgotPassword(t *testing.T) {
 
 		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
 			Email: "deleted@example.com",
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("cooldown_active_silent_ok", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, Email: "test@example.com", IsVerified: true}, ok()
+			},
+		}
+		recoveryRepo := &mockRecoveryRepo{
+			acquireRecoveryEmailCooldown: func(_ context.Context, _ entities.AcquireRecoveryEmailCooldownDTO) (bool, Error.CodeError) {
+				return false, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, recovery: recoveryRepo})
+
+		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
+			Email: "test@example.com",
+		})
+
+		assertNoError(t, err)
+	})
+
+	t.Run("daily_limit_reached_silent_ok", func(t *testing.T) {
+		userRepo := &mockUserRepo{
+			getUserByEmail: func(_ context.Context, _ entities.GetUserByEmailDTO) (*entities.UserGetByEmail, Error.CodeError) {
+				return &entities.UserGetByEmail{UserUUID: testUUID1, Email: "test@example.com", IsVerified: true}, ok()
+			},
+		}
+		recoveryRepo := &mockRecoveryRepo{
+			acquireRecoveryEmailCooldown: func(_ context.Context, _ entities.AcquireRecoveryEmailCooldownDTO) (bool, Error.CodeError) {
+				return true, ok()
+			},
+			incrRecoveryEmailDailyCount: func(_ context.Context, _ entities.IncrRecoveryEmailDailyCountDTO) (int64, Error.CodeError) {
+				return maxRecoveryEmailDailyCount + 1, ok()
+			},
+		}
+		svc := buildSvc(svcDeps{user: userRepo, recovery: recoveryRepo})
+
+		_, err := svc.ForgotPassword(context.Background(), &pb.ForgotPasswordRequest{
+			Email: "test@example.com",
 		})
 
 		assertNoError(t, err)

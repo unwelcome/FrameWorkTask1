@@ -26,7 +26,10 @@ import (
 
 const (
 	max2FAAttempts        = 5
-	max2FAEmailDailyCount = 5
+	max2FAEmailDailyCount = 10
+
+	maxVerificationEmailDailyCount = 5
+	maxRecoveryEmailDailyCount     = 3
 
 	// accountDeletionRetention — срок хранения данных мягко удалённого аккаунта
 	accountDeletionRetention = 30 * 24 * time.Hour
@@ -36,9 +39,6 @@ const (
 
 	// verificationTokenTTL — время жизни JWT токена для верификации аккаунта
 	verificationTokenTTL = 48 * time.Hour
-
-	// dummyUUID — nil UUID, используется как заглушка в Redis-запросах при выравнивании времени ответа
-	dummyUUID = "00000000-0000-0000-0000-000000000000"
 )
 
 // dummyPasswordHash вычисляется один раз при старте сервиса и используется
@@ -598,6 +598,26 @@ func (s *AuthService) ResendVerificationCode(ctx context.Context, req *pb.Resend
 		return &emptypb.Empty{}, nil
 	}
 
+	// Rate limiting: cooldown между отправками писем верификации
+	allowed, rateLimitErr := s.cache.Verification.AcquireVerificationEmailCooldown(ctx, entities.AcquireVerificationEmailCooldownDTO{UserUUID: user.UserUUID})
+	if err := rateLimitErr.GRPCError(); err != nil {
+		return nil, err
+	}
+	if !allowed {
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ResendVerificationCode").Msg("verification email cooldown active")
+		return &emptypb.Empty{}, nil
+	}
+
+	// Rate limiting: суточный лимит отправок писем верификации
+	count, countErr := s.cache.Verification.IncrVerificationEmailDailyCount(ctx, entities.IncrVerificationEmailDailyCountDTO{UserUUID: user.UserUUID})
+	if err := countErr.GRPCError(); err != nil {
+		return nil, err
+	}
+	if count > maxVerificationEmailDailyCount {
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ResendVerificationCode").Msg("verification email daily limit reached")
+		return &emptypb.Empty{}, nil
+	}
+
 	// Генерируем новый JWT токен верификации
 	verificationToken, err := utils.CreateVerificationToken(user.Email, s.jwtPrivateKey, verificationTokenTTL)
 	if err != nil {
@@ -635,6 +655,26 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 	}
 	if user.DeletedAt != nil {
 		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("account is deleted")
+		return &emptypb.Empty{}, nil
+	}
+
+	// Rate limiting: cooldown между отправками писем восстановления пароля
+	allowed, rateLimitErr := s.cache.Recovery.AcquireRecoveryEmailCooldown(ctx, entities.AcquireRecoveryEmailCooldownDTO{UserUUID: user.UserUUID})
+	if err := rateLimitErr.GRPCError(); err != nil {
+		return nil, err
+	}
+	if !allowed {
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("recovery email cooldown active")
+		return &emptypb.Empty{}, nil
+	}
+
+	// Rate limiting: суточный лимит отправок писем восстановления пароля
+	count, countErr := s.cache.Recovery.IncrRecoveryEmailDailyCount(ctx, entities.IncrRecoveryEmailDailyCountDTO{UserUUID: user.UserUUID})
+	if err := countErr.GRPCError(); err != nil {
+		return nil, err
+	}
+	if count > maxRecoveryEmailDailyCount {
+		log.Warn().Time("time", time.Now()).Str("id", interceptors.OperationIDFromContext(ctx)).Str("method", "ForgotPassword").Msg("recovery email daily limit reached")
 		return &emptypb.Empty{}, nil
 	}
 

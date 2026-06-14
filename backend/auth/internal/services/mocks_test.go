@@ -92,8 +92,10 @@ func (m *mockAuthRepo) RefreshToken(ctx context.Context, dto entities.RefreshTok
 // ─── Mock: VerificationRepository ───────────────────────────────────────────
 
 type mockVerificationRepo struct {
-	addToVerificationTokenBlacklist func(ctx context.Context, dto entities.AddToVerificationTokenBlacklistDTO) Error.CodeError
-	isVerificationTokenBlacklisted  func(ctx context.Context, dto entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError)
+	addToVerificationTokenBlacklist  func(ctx context.Context, dto entities.AddToVerificationTokenBlacklistDTO) Error.CodeError
+	isVerificationTokenBlacklisted   func(ctx context.Context, dto entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError)
+	acquireVerificationEmailCooldown func(ctx context.Context, dto entities.AcquireVerificationEmailCooldownDTO) (bool, Error.CodeError)
+	incrVerificationEmailDailyCount  func(ctx context.Context, dto entities.IncrVerificationEmailDailyCountDTO) (int64, Error.CodeError)
 }
 
 func (m *mockVerificationRepo) AddToVerificationTokenBlacklist(ctx context.Context, dto entities.AddToVerificationTokenBlacklistDTO) Error.CodeError {
@@ -102,12 +104,20 @@ func (m *mockVerificationRepo) AddToVerificationTokenBlacklist(ctx context.Conte
 func (m *mockVerificationRepo) IsVerificationTokenBlacklisted(ctx context.Context, dto entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError) {
 	return m.isVerificationTokenBlacklisted(ctx, dto)
 }
+func (m *mockVerificationRepo) AcquireVerificationEmailCooldown(ctx context.Context, dto entities.AcquireVerificationEmailCooldownDTO) (bool, Error.CodeError) {
+	return m.acquireVerificationEmailCooldown(ctx, dto)
+}
+func (m *mockVerificationRepo) IncrVerificationEmailDailyCount(ctx context.Context, dto entities.IncrVerificationEmailDailyCountDTO) (int64, Error.CodeError) {
+	return m.incrVerificationEmailDailyCount(ctx, dto)
+}
 
 // ─── Mock: RecoveryRepository ────────────────────────────────────────────────
 
 type mockRecoveryRepo struct {
-	addToResetTokenBlacklist func(ctx context.Context, dto entities.AddToResetTokenBlacklistDTO) Error.CodeError
-	isResetTokenBlacklisted  func(ctx context.Context, dto entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError)
+	addToResetTokenBlacklist     func(ctx context.Context, dto entities.AddToResetTokenBlacklistDTO) Error.CodeError
+	isResetTokenBlacklisted      func(ctx context.Context, dto entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError)
+	acquireRecoveryEmailCooldown func(ctx context.Context, dto entities.AcquireRecoveryEmailCooldownDTO) (bool, Error.CodeError)
+	incrRecoveryEmailDailyCount  func(ctx context.Context, dto entities.IncrRecoveryEmailDailyCountDTO) (int64, Error.CodeError)
 }
 
 func (m *mockRecoveryRepo) AddToResetTokenBlacklist(ctx context.Context, dto entities.AddToResetTokenBlacklistDTO) Error.CodeError {
@@ -115,6 +125,12 @@ func (m *mockRecoveryRepo) AddToResetTokenBlacklist(ctx context.Context, dto ent
 }
 func (m *mockRecoveryRepo) IsResetTokenBlacklisted(ctx context.Context, dto entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
 	return m.isResetTokenBlacklisted(ctx, dto)
+}
+func (m *mockRecoveryRepo) AcquireRecoveryEmailCooldown(ctx context.Context, dto entities.AcquireRecoveryEmailCooldownDTO) (bool, Error.CodeError) {
+	return m.acquireRecoveryEmailCooldown(ctx, dto)
+}
+func (m *mockRecoveryRepo) IncrRecoveryEmailDailyCount(ctx context.Context, dto entities.IncrRecoveryEmailDailyCountDTO) (int64, Error.CodeError) {
+	return m.incrRecoveryEmailDailyCount(ctx, dto)
 }
 
 // emptyRecoveryRepo — заглушка для тестов, где RecoveryRepository не должен вызываться.
@@ -125,6 +141,12 @@ func emptyRecoveryRepo() *mockRecoveryRepo {
 		},
 		isResetTokenBlacklisted: func(_ context.Context, _ entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
 			return false, Error.CodeError{}
+		},
+		acquireRecoveryEmailCooldown: func(_ context.Context, _ entities.AcquireRecoveryEmailCooldownDTO) (bool, Error.CodeError) {
+			return true, Error.CodeError{}
+		},
+		incrRecoveryEmailDailyCount: func(_ context.Context, _ entities.IncrRecoveryEmailDailyCountDTO) (int64, Error.CodeError) {
+			return 1, Error.CodeError{}
 		},
 	}
 }
@@ -269,6 +291,12 @@ func emptyVerificationRepo() *mockVerificationRepo {
 		},
 		isVerificationTokenBlacklisted: func(_ context.Context, _ entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError) {
 			return false, Error.CodeError{}
+		},
+		acquireVerificationEmailCooldown: func(_ context.Context, _ entities.AcquireVerificationEmailCooldownDTO) (bool, Error.CodeError) {
+			return true, Error.CodeError{}
+		},
+		incrVerificationEmailDailyCount: func(_ context.Context, _ entities.IncrVerificationEmailDailyCountDTO) (int64, Error.CodeError) {
+			return 1, Error.CodeError{}
 		},
 	}
 }

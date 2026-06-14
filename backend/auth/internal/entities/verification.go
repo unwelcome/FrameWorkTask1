@@ -10,3 +10,11 @@ type AddToVerificationTokenBlacklistDTO struct {
 type IsVerificationTokenBlacklistedDTO struct {
 	TokenID string
 }
+
+type AcquireVerificationEmailCooldownDTO struct {
+	UserUUID string
+}
+
+type IncrVerificationEmailDailyCountDTO struct {
+	UserUUID string
+}

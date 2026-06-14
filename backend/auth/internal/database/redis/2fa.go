@@ -14,9 +14,7 @@ import (
 )
 
 const (
-	twoFACodeTTL          = 15 * time.Minute
-	twoFAEmailCooldownTTL = 60 * time.Second
-	twoFAEmailDailyTTL    = 24 * time.Hour
+	twoFACodeTTL = 15 * time.Minute
 )
 
 type TwoFARepository interface {
@@ -31,12 +29,17 @@ type TwoFARepository interface {
 }
 
 type twoFARepository struct {
-	redis  *redis.Client
-	prefix string
+	redis        *redis.Client
+	prefix       string
+	emailLimiter emailRateLimiter
 }
 
-func NewTwoFARepository(redis *redis.Client, prefix string) TwoFARepository {
-	return &twoFARepository{redis: redis, prefix: prefix}
+func NewTwoFARepository(rdb *redis.Client, prefix string) TwoFARepository {
+	return &twoFARepository{
+		redis:        rdb,
+		prefix:       prefix,
+		emailLimiter: newEmailRateLimiter(rdb, prefix+":2fa"),
+	}
 }
 
 // Save2FAData Сохраняет 2FA данные по uuid сессии авторизации
@@ -103,24 +106,12 @@ func (r *twoFARepository) Incr2FAAttempts(ctx context.Context, dto entities.Incr
 // Acquire2FAEmailCooldown Устанавливает cooldown-ключ. Возвращает true, если ключ создан (разрешено отправить),
 // false — если ключ уже существует (cooldown ещё активен).
 func (r *twoFARepository) Acquire2FAEmailCooldown(ctx context.Context, dto entities.Acquire2FAEmailCooldownDTO) (bool, Error.CodeError) {
-	set, err := r.redis.SetNX(ctx, r.get2FAEmailCooldownKey(dto.UserUUID), 1, twoFAEmailCooldownTTL).Result()
-	if err != nil {
-		return false, Error.Internal(err)
-	}
-	return set, Error.CodeError{}
+	return r.emailLimiter.acquireCooldown(ctx, dto.UserUUID)
 }
 
 // Incr2FAEmailDailyCount Увеличивает суточный счётчик отправок 2FA писем
 func (r *twoFARepository) Incr2FAEmailDailyCount(ctx context.Context, dto entities.Incr2FAEmailDailyCountDTO) (int64, Error.CodeError) {
-	key := r.get2FAEmailDailyKey(dto.UserUUID)
-	count, err := r.redis.Incr(ctx, key).Result()
-	if err != nil {
-		return 0, Error.Internal(err)
-	}
-	if count == 1 {
-		r.redis.Expire(ctx, key, twoFAEmailDailyTTL)
-	}
-	return count, Error.CodeError{}
+	return r.emailLimiter.incrDailyCount(ctx, dto.UserUUID)
 }
 
 // ─── Вспомогательные функции ──────────────────────────────────────────────────
@@ -133,10 +124,3 @@ func (r *twoFARepository) get2FAAttemptsKey(sessionUUID string) string {
 	return fmt.Sprintf("%s:2fa:%s:attempts", r.prefix, sessionUUID)
 }
 
-func (r *twoFARepository) get2FAEmailCooldownKey(userUUID string) string {
-	return fmt.Sprintf("%s:2fa:%s:email:cooldown", r.prefix, userUUID)
-}
-
-func (r *twoFARepository) get2FAEmailDailyKey(userUUID string) string {
-	return fmt.Sprintf("%s:2fa:%s:email:daily", r.prefix, userUUID)
-}

@@ -13,6 +13,7 @@ import (
 	redisDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/redis"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/messaging"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/services"
+	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/password"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/pkg/utils"
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
@@ -25,6 +26,9 @@ func main() {
 
 	loggerConf, httpLogger := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
 	log.Logger = *loggerConf
+
+	// Ограничиваем одновременные вычисления Argon2 (защита от resource-exhaustion DoS)
+	password.Setup(cfg.Password.MaxConcurrentHashes, cfg.Password.AcquireTimeout)
 
 	// Загружаем приватный ключ из PEM-файла
 	privateKey, err := utils.LoadPrivateKey(cfg.JWT.PrivateKeyPath)

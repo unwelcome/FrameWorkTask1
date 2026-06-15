@@ -2388,6 +2388,10 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/Error.HttpError'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/Error.HttpError'
         "500":
           description: Internal Server Error
           schema:
@@ -2733,6 +2737,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/Error.HttpError'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/Error.HttpError'
         "500":
           description: Internal Server Error
           schema:
@@ -2761,6 +2769,10 @@ paths:
             $ref: '#/definitions/entities.ResetPasswordResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "429":
+          description: Too Many Requests
           schema:
             $ref: '#/definitions/Error.HttpError'
         "500":
@@ -2795,6 +2807,10 @@ paths:
             $ref: '#/definitions/Error.HttpError'
         "403":
           description: Forbidden
+          schema:
+            $ref: '#/definitions/Error.HttpError'
+        "429":
+          description: Too Many Requests
           schema:
             $ref: '#/definitions/Error.HttpError'
         "500":

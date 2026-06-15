@@ -42,7 +42,7 @@ func assertNoError(t *testing.T, err error) {
 
 func hashPassword(t *testing.T, pwd string) string {
 	t.Helper()
-	hash, err := password.Hash(pwd)
+	hash, err := password.Hash(context.Background(), pwd)
 	if err != nil {
 		t.Fatalf("failed to hash password: %v", err)
 	}

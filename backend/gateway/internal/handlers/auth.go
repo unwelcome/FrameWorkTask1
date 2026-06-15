@@ -67,6 +67,7 @@ func NewAuthHandler(authServiceClient auth_proto.AuthServiceClient, companyServi
 //	@Param 				data body entities.RegisterRequest true "Данные пользователя"
 //	@Success      201
 //	@Failure      400  {object}  Error.HttpError
+//	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /register [post]
 func (h *authHandler) Register(c *fiber.Ctx) error {
@@ -241,6 +242,7 @@ func (h *authHandler) GetUser(c *fiber.Ctx) error {
 //	@Failure      401  {object}  Error.HttpError
 //	@Failure      403  {object}  Error.HttpError
 //	@Failure      404  {object}  Error.HttpError
+//	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /auth/user/password [patch]
 func (h *authHandler) ChangePassword(c *fiber.Ctx) error {
@@ -754,6 +756,7 @@ func (h *authHandler) ForgotPassword(c *fiber.Ctx) error {
 //	@Param 				data body entities.ResetPasswordRequest true "JWT токен и новый пароль"
 //	@Success      200  {object}  entities.ResetPasswordResponse
 //	@Failure      400  {object}  Error.HttpError
+//	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /reset-password [post]
 func (h *authHandler) ResetPassword(c *fiber.Ctx) error {
@@ -918,6 +921,7 @@ func (h *authHandler) UpdateUser2FA(c *fiber.Ctx) error {
 //	@Success      200  {object}  entities.RestoreAccountResponse
 //	@Failure      400  {object}  Error.HttpError
 //	@Failure      403  {object}  Error.HttpError
+//	@Failure      429  {object}  Error.HttpError
 //	@Failure      500  {object}  Error.HttpError
 //	@Router       /restore-account [post]
 func (h *authHandler) RestoreAccount(c *fiber.Ctx) error {

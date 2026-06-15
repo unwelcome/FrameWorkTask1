@@ -103,8 +103,11 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*e
 
 	userUUID := uuid.Must(uuid.NewV7()).String()
 
-	passwordHash, err := password.Hash(req.GetPassword())
+	passwordHash, err := password.Hash(ctx, req.GetPassword())
 	if err != nil {
+		if errors.Is(err, password.ErrOverloaded) {
+			return nil, status.Errorf(codes.ResourceExhausted, "server is busy, please retry")
+		}
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
@@ -183,11 +186,17 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	if getErr.Code != 0 {
 		// Запускаем Argon2id на фиктивном хеше, чтобы путь "email не найден" занимал столько же времени, что и "неверный пароль".
-		_, _ = password.Verify(dummyPasswordHash, req.GetPassword())
+		// При перегрузке отвечаем так же, как путь с найденным email (429), иначе код ответа выдал бы существование аккаунта.
+		if _, dummyErr := password.Verify(ctx, dummyPasswordHash, req.GetPassword()); errors.Is(dummyErr, password.ErrOverloaded) {
+			return nil, status.Errorf(codes.ResourceExhausted, "server is busy, please retry")
+		}
 		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
 	}
 
-	ok, err := password.Verify(user.PasswordHash, req.GetPassword())
+	ok, err := password.Verify(ctx, user.PasswordHash, req.GetPassword())
+	if errors.Is(err, password.ErrOverloaded) {
+		return nil, status.Errorf(codes.ResourceExhausted, "server is busy, please retry")
+	}
 	if err != nil || !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
 	}
@@ -335,12 +344,19 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 	}
 
 	// Проверяем старый пароль
-	if ok, err := password.Verify(user.PasswordHash, req.GetOldPassword()); err != nil || !ok {
+	ok, verifyErr := password.Verify(ctx, user.PasswordHash, req.GetOldPassword())
+	if errors.Is(verifyErr, password.ErrOverloaded) {
+		return nil, status.Errorf(codes.ResourceExhausted, "server is busy, please retry")
+	}
+	if verifyErr != nil || !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "wrong old password")
 	}
 
-	newPasswordHash, err := password.Hash(req.GetPassword())
+	newPasswordHash, err := password.Hash(ctx, req.GetPassword())
 	if err != nil {
+		if errors.Is(err, password.ErrOverloaded) {
+			return nil, status.Errorf(codes.ResourceExhausted, "server is busy, please retry")
+		}
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
@@ -741,8 +757,11 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired reset token")
 	}
 
-	passwordHash, hashErr := password.Hash(req.GetNewPassword())
+	passwordHash, hashErr := password.Hash(ctx, req.GetNewPassword())
 	if hashErr != nil {
+		if errors.Is(hashErr, password.ErrOverloaded) {
+			return nil, status.Errorf(codes.ResourceExhausted, "server is busy, please retry")
+		}
 		return nil, status.Errorf(codes.Internal, "internal error")
 	}
 
@@ -890,11 +909,17 @@ func (s *AuthService) RestoreAccount(ctx context.Context, req *pb.RestoreAccount
 
 	user, getErr := s.db.User.GetUserByEmail(ctx, entities.GetUserByEmailDTO{Email: req.GetEmail()})
 	if getErr.Code != 0 {
-		_, _ = password.Verify(dummyPasswordHash, req.GetPassword())
+		// При перегрузке отвечаем так же, как путь с найденным email (429), иначе код ответа выдал бы существование аккаунта.
+		if _, dummyErr := password.Verify(ctx, dummyPasswordHash, req.GetPassword()); errors.Is(dummyErr, password.ErrOverloaded) {
+			return nil, status.Errorf(codes.ResourceExhausted, "server is busy, please retry")
+		}
 		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
 	}
 
-	ok, err := password.Verify(user.PasswordHash, req.GetPassword())
+	ok, err := password.Verify(ctx, user.PasswordHash, req.GetPassword())
+	if errors.Is(err, password.ErrOverloaded) {
+		return nil, status.Errorf(codes.ResourceExhausted, "server is busy, please retry")
+	}
 	if err != nil || !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "wrong email or password")
 	}

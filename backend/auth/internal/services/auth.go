@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/subtle"
 	"errors"
 	"time"
 
@@ -825,8 +826,8 @@ func (s *AuthService) Verify2FA(ctx context.Context, req *pb.Verify2FARequest) (
 		return nil, status.Errorf(codes.ResourceExhausted, "too many attempts, please try login again")
 	}
 
-	// Сравниваем code
-	if data.Code != req.GetCode() {
+	// Сравниваем code в constant-time, чтобы не утекало число совпавших символов через тайминг
+	if subtle.ConstantTimeCompare([]byte(data.Code), []byte(req.GetCode())) != 1 {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired code")
 	}
 

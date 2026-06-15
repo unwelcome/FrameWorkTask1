@@ -51,7 +51,7 @@ func GRPCErrorToHTTP(err error, c *fiber.Ctx) error {
 	case codes.DataLoss:
 		return c.Status(fiber.StatusInternalServerError).JSON(HttpError{Code: 500, Message: st.Message()})
 	case codes.Unauthenticated:
-		return c.Status(fiber.StatusUnauthorized).JSON(HttpError{Code: 401, Message: st.Message()})
+		return Unauthorized(c, st.Message())
 	default:
 		return c.Status(fiber.StatusInternalServerError).JSON(HttpError{Code: 500, Message: st.Message()})
 	}

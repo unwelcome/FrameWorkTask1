@@ -180,3 +180,39 @@ func MustParseDuration(key string) time.Duration {
 	}
 	return d
 }
+
+func ParseIntOrDefault(key string, defaultVal int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return defaultVal
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		panic(fmt.Sprintf("environment variable %q must be an integer, got %q", key, v))
+	}
+	return n
+}
+
+func ParseDurationOrDefault(key string, defaultVal time.Duration) time.Duration {
+	v := os.Getenv(key)
+	if v == "" {
+		return defaultVal
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		panic(fmt.Sprintf("environment variable %q must be a duration (e.g. 5m, 720h), got %q", key, v))
+	}
+	return d
+}
+
+func ParseFloatOrDefault(key string, defaultVal float64) float64 {
+	v := os.Getenv(key)
+	if v == "" {
+		return defaultVal
+	}
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		panic(fmt.Sprintf("environment variable %q must be a float, got %q", key, v))
+	}
+	return f
+}

@@ -10,7 +10,6 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	api := router.Group("/api")
 
 	// Инициализация swagger
-	// swag init -o ./api/docs --dir ./cmd,./internal/entities,./internal/errors,./internal/handlers
 	api.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Middleware индексирования операций
@@ -22,18 +21,22 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	// Middleware авторизации
 	api.Use("/auth", app.AuthMiddleware)
 	auth := api.Group("/auth")
+	// Аутентифицированные ручки — rate-limit по userUUID
+	auth.Use(app.UserRateLimiter)
 
 	// Health handler
 	api.Get("/health", app.HealthHandler.Health)
 
-	// Auth handler
-	api.Post("/login", app.AuthHandler.Login)
-	api.Post("/refresh", app.AuthHandler.RefreshToken)
-	api.Post("/user/verify", app.AuthHandler.VerifyAccount)
-	api.Post("/user/verify/resend", app.AuthHandler.ResendVerificationCode)
-	api.Post("/forgot-password", app.AuthHandler.ForgotPassword)
-	api.Post("/reset-password", app.AuthHandler.ResetPassword)
-	api.Post("/verify-2fa", app.AuthHandler.Verify2FA)
+	// Auth handler — публичные ручки с rate-limit по IP
+	api.Post("/login", app.PasswordRateLimiter, app.AuthHandler.Login)
+	api.Post("/register", app.PasswordRateLimiter, app.AuthHandler.Register)
+	api.Post("/restore-account", app.PasswordRateLimiter, app.AuthHandler.RestoreAccount)
+	api.Post("/reset-password", app.PasswordRateLimiter, app.AuthHandler.ResetPassword)
+	api.Post("/refresh", app.CodeRateLimiter, app.AuthHandler.RefreshToken)
+	api.Post("/user/verify", app.CodeRateLimiter, app.AuthHandler.VerifyAccount)
+	api.Post("/user/verify/resend", app.CodeRateLimiter, app.AuthHandler.ResendVerificationCode)
+	api.Post("/forgot-password", app.CodeRateLimiter, app.AuthHandler.ForgotPassword)
+	api.Post("/verify-2fa", app.CodeRateLimiter, app.AuthHandler.Verify2FA)
 	// Debug-only routes — доступны только при APP_ENV=test
 	if app.AppEnv == "test" {
 		api.Get("/debug/user/email/:email/verification-token", app.AuthHandler.GetVerificationToken)
@@ -45,8 +48,6 @@ func SetupRoutes(router *fiber.App, app *app.App) {
 	auth.Delete("/user/session", app.AuthHandler.RevokeSession)
 	auth.Delete("/user/sessions", app.AuthHandler.RevokeAllSessions)
 	// User
-	api.Post("/register", app.AuthHandler.Register)
-	api.Post("/restore-account", app.AuthHandler.RestoreAccount)
 	auth.Get("/user/:user_uuid/info", app.AuthHandler.GetUser)
 	auth.Patch("/user/password", app.AuthHandler.ChangePassword)
 	auth.Patch("/user/bio", app.AuthHandler.UpdateUserBio)

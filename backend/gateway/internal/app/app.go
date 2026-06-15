@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	application_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/application/generated"
@@ -32,13 +33,17 @@ type App struct {
 	LoggerMiddleware      fiber.Handler
 	AuthMiddleware        fiber.Handler
 
+	PasswordRateLimiter fiber.Handler
+	CodeRateLimiter     fiber.Handler
+	UserRateLimiter     fiber.Handler
+
 	HealthHandler      handlers.HealthHandler
 	AuthHandler        handlers.AuthHandler
 	CompanyHandler     handlers.CompanyHandler
 	ApplicationHandler handlers.ApplicationHandler
 }
 
-func InitApp(cfg *config.Config, httpLogger zerolog.Logger) *App {
+func InitApp(cfg *config.Config, httpLogger zerolog.Logger, redisClient *redis.Client) *App {
 	// Загружаем публичный ключ из PEM-файла
 	publicKey, err := utils.LoadPublicKey(cfg.JWT.PublicKeyPath)
 	if err != nil {
@@ -54,6 +59,25 @@ func InitApp(cfg *config.Config, httpLogger zerolog.Logger) *App {
 	application.OperationIDMiddleware = middlewares.NewOperationIDMiddleware(OperationIDKey)
 	application.LoggerMiddleware = middlewares.NewRequestLoggerMiddleware(OperationIDKey, UserUUIDKey, httpLogger)
 	application.AuthMiddleware = middlewares.NewAuthMiddleware(publicKey, UserUUIDKey)
+
+	ipKey := func(c *fiber.Ctx) string { return c.IP() }
+	userKey := func(c *fiber.Ctx) string { return utils.GetLocal[string](c, UserUUIDKey) }
+
+	application.PasswordRateLimiter = middlewares.NewRateLimiter(redisClient, cfg.Redis.Prefix, "password", middlewares.RateLimiterConfig{
+		Capacity:     cfg.RateLimit.Password.Capacity,
+		RefillPerSec: cfg.RateLimit.Password.RefillPerSec,
+		KeyFn:        ipKey,
+	})
+	application.CodeRateLimiter = middlewares.NewRateLimiter(redisClient, cfg.Redis.Prefix, "code", middlewares.RateLimiterConfig{
+		Capacity:     cfg.RateLimit.Code.Capacity,
+		RefillPerSec: cfg.RateLimit.Code.RefillPerSec,
+		KeyFn:        ipKey,
+	})
+	application.UserRateLimiter = middlewares.NewRateLimiter(redisClient, cfg.Redis.Prefix, "user", middlewares.RateLimiterConfig{
+		Capacity:     cfg.RateLimit.User.Capacity,
+		RefillPerSec: cfg.RateLimit.User.RefillPerSec,
+		KeyFn:        userKey,
+	})
 
 	sessionProvider := session.New(cfg.GeoIP.CityDBPath, cfg.GeoIP.ASNDBPath, log.Logger)
 

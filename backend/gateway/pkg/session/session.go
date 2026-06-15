@@ -70,7 +70,7 @@ func (p *Provider) Close() {
 // они будут обновлены при следующем RefreshToken.
 func (p *Provider) Extract(c *fiber.Ctx) *auth_proto.SessionInfo {
 	now := time.Now().Unix()
-	ip := ClientIP(c)
+	ip := c.IP()
 	rawUA := c.Get("User-Agent")
 
 	deviceType, os, osVersion, browser, browserVersion := parseUA(rawUA)
@@ -92,26 +92,6 @@ func (p *Provider) Extract(c *fiber.Ctx) *auth_proto.SessionInfo {
 
 	p.fillGeo(s, ip, p.logger)
 	return s
-}
-
-// ClientIP возвращает реальный IP клиента с учётом proxy-заголовков.
-func ClientIP(c *fiber.Ctx) string {
-	// Cloudflare
-	if ip := c.Get("CF-Connecting-IP"); ip != "" {
-		return ip
-	}
-	// Стандартный reverse-proxy заголовок
-	if fwd := c.Get("X-Forwarded-For"); fwd != "" {
-		// Может содержать цепочку IP через запятую — берём первый (клиентский)
-		if idx := strings.IndexByte(fwd, ','); idx != -1 {
-			return strings.TrimSpace(fwd[:idx])
-		}
-		return strings.TrimSpace(fwd)
-	}
-	if ip := c.Get("X-Real-IP"); ip != "" {
-		return ip
-	}
-	return c.IP()
 }
 
 // ── Приватные хелперы ─────────────────────────────────────────────────────────

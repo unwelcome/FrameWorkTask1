@@ -7,8 +7,12 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog/log"
 	Error "github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/errors"
 )
+
+// rateLimitRedisTimeout ограничивает один вызов к Redis в rate-limiter-е
+const rateLimitRedisTimeout = 100 * time.Millisecond
 
 // tokenBucketScript реализует алгоритм token bucket целиком на стороне Redis,
 // чтобы чтение состояния, пополнение, списание токена и установка TTL
@@ -19,11 +23,12 @@ import (
 //   - ts     — момент последнего пересчёта, unix-время в миллисекундах.
 //
 // Аргументы:
-//   KEYS[1] — ключ корзины
-//   ARGV[1] — capacity (размер корзины / максимальный burst)
-//   ARGV[2] — refill rate (токенов в секунду)
-//   ARGV[3] — now (unix-время в миллисекундах)
-//   ARGV[4] — requested (сколько токенов списываем, обычно 1)
+//
+//	KEYS[1] — ключ корзины
+//	ARGV[1] — capacity (размер корзины / максимальный burst)
+//	ARGV[2] — refill rate (токенов в секунду)
+//	ARGV[3] — now (unix-время в миллисекундах)
+//	ARGV[4] — requested (сколько токенов списываем, обычно 1)
 //
 // Возвращает массив {allowed, retry_after}:
 //   - allowed = 1, если запрос разрешён, иначе 0;
@@ -89,14 +94,21 @@ type RateLimiterConfig struct {
 func NewRateLimiter(client *redis.Client, prefix, tierPrefix string, cfg RateLimiterConfig) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		key := fmt.Sprintf("%s:rl:%s:%s", prefix, tierPrefix, cfg.KeyFn(c))
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(context.Background(), rateLimitRedisTimeout)
+		defer cancel()
 
 		res, err := tokenBucketScript.Run(
 			ctx, client, []string{key},
 			cfg.Capacity, cfg.RefillPerSec, time.Now().UnixMilli(), 1,
 		).Int64Slice()
 		if err != nil || len(res) < 2 {
-			return c.Next() // fail-open
+			// fail-open: при сбое или таймауте Redis пропускаем запрос, чтобы
+			// инфраструктурная проблема не блокировала легитимный трафик.
+			// Логируем на Warn — защита временно отключена, это должно быть видно.
+			if err != nil {
+				log.Warn().Err(err).Str("tier", tierPrefix).Msg("rate limiter: redis unavailable, failing open")
+			}
+			return c.Next()
 		}
 
 		if res[0] == 0 {

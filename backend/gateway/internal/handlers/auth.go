@@ -461,7 +461,7 @@ func (h *authHandler) RefreshToken(c *fiber.Ctx) error {
 	// Формируем тело запроса
 	req := &auth_proto.RefreshTokenRequest{
 		RefreshToken: httpReq.RefreshToken,
-		Ip:           session.ClientIP(c),
+		Ip:           c.IP(),
 	}
 
 	// Запрос в auth сервис

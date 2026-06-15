@@ -9,20 +9,6 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/pkg/utils"
 )
 
-// clientIP resolves the real client IP address.
-// Priority: X-Real-IP → first entry of X-Forwarded-For → TCP connection address.
-// When running behind nginx/traefik the proxy sets one of the first two headers;
-// without a reverse proxy (e.g. direct Docker) the connection address is used.
-func clientIP(c *fiber.Ctx) string {
-	if ip := c.Get("X-Real-IP"); ip != "" {
-		return ip
-	}
-	if ips := c.IPs(); len(ips) > 0 {
-		return ips[0]
-	}
-	return c.IP()
-}
-
 // NewRequestLoggerMiddleware logs every HTTP request after it is handled.
 //
 // Log level is determined by the response status code:
@@ -62,7 +48,7 @@ func NewRequestLoggerMiddleware(operationIDKey, userUUIDKey string, httpLog zero
 			Str("id", utils.GetLocal[string](c, operationIDKey)).
 			Str("method", c.Method()).
 			Str("path", c.Path()).
-			Str("ip", clientIP(c)).
+			Str("ip", c.IP()).
 			Int("status", statusCode).
 			Int64("duration", duration)
 

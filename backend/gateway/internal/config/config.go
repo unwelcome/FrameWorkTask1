@@ -7,16 +7,17 @@ import (
 )
 
 type Config struct {
-	Port      int
-	AppEnv    string
-	Log       LogConfig
-	JWT       JWTConfig
-	GeoIP     GeoIPConfig
-	Redis     sharedConfig.RedisConfig
-	RateLimit RateLimitConfig
-	Auth      ServiceAddress
-	Company   ServiceAddress
-	App       ServiceAddress
+	Port           int
+	AppEnv         string
+	Log            LogConfig
+	JWT            JWTConfig
+	GeoIP          GeoIPConfig
+	Redis          sharedConfig.RedisConfig
+	RateLimit      RateLimitConfig
+	TrustedProxies []string
+	Auth           ServiceAddress
+	Company        ServiceAddress
+	App            ServiceAddress
 }
 
 type RateLimitConfig struct {
@@ -89,6 +90,7 @@ func NewConfig() *Config {
 				RefillPerSec: sharedConfig.ParseFloatOrDefault("RATE_LIMIT_USER_REFILL", 1),
 			},
 		},
+		TrustedProxies: sharedConfig.ParseStringSliceOrDefault("TRUSTED_PROXIES", nil),
 		Auth: ServiceAddress{
 			Host: sharedConfig.MustGetEnv("AUTH_SERVICE_HOST"),
 			Port: sharedConfig.MustParseInt("AUTH_SERVICE_PORT"),

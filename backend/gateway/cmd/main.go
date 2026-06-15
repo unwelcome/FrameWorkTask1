@@ -31,8 +31,12 @@ func main() {
 	// Подключение Redis для rate-limit-ов
 	redisClient := redis.NewClient(cfg.Redis.Options())
 
-	// Инициализация fiber-сервера
-	server := fiber.New()
+	// Инициализация fiber-сервера.
+	server := fiber.New(fiber.Config{
+		EnableTrustedProxyCheck: true,
+		TrustedProxies:          cfg.TrustedProxies,
+		ProxyHeader:             fiber.HeaderXForwardedFor,
+	})
 
 	// Инициализация всех зависимостей
 	application := app.InitApp(cfg, *httpLogger, redisClient)

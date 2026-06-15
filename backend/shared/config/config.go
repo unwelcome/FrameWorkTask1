@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -215,4 +216,22 @@ func ParseFloatOrDefault(key string, defaultVal float64) float64 {
 		panic(fmt.Sprintf("environment variable %q must be a float, got %q", key, v))
 	}
 	return f
+}
+
+// ParseStringSliceOrDefault читает переменную окружения как список значений,
+// разделённых запятыми. Пустые элементы и пробелы отбрасываются.
+// Если переменная не задана — возвращает defaultVal.
+func ParseStringSliceOrDefault(key string, defaultVal []string) []string {
+	v := os.Getenv(key)
+	if v == "" {
+		return defaultVal
+	}
+	parts := strings.Split(v, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

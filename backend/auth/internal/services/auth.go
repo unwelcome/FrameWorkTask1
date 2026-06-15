@@ -223,7 +223,10 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		}
 
 		sessionUUID := uuid.Must(uuid.NewV7()).String()
-		code := utils.GenerateTwoFACode()
+		code, codeErr := utils.GenerateTwoFACode()
+		if codeErr != nil {
+			return nil, status.Errorf(codes.Internal, "internal error")
+		}
 
 		// Сохраняем данные для 2FA авторизации
 		if err := s.cache.TwoFA.Save2FAData(ctx, entities.Save2FADataDTO{

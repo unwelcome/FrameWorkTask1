@@ -2,7 +2,6 @@ package redisDB
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -12,14 +11,11 @@ import (
 )
 
 type VerificationRepository interface {
-	// AddToVerificationTokenBlacklist добавляет jti использованного токена в blacklist.
-	// TTL = оставшееся время жизни токена, чтобы Redis самоочищался.
-	AddToVerificationTokenBlacklist(ctx context.Context, dto entities.AddToVerificationTokenBlacklistDTO) Error.CodeError
-	// IsVerificationTokenBlacklisted проверяет, был ли токен уже использован.
-	IsVerificationTokenBlacklisted(ctx context.Context, dto entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError)
-	// AcquireVerificationEmailCooldown устанавливает cooldown-ключ (SetNX). Возвращает true, если разрешено отправить письмо.
+	// TryConsumeVerificationToken атомарно помечает jti токена использованным
+	TryConsumeVerificationToken(ctx context.Context, dto entities.ConsumeVerificationTokenDTO) (bool, Error.CodeError)
+	// AcquireVerificationEmailCooldown устанавливает cooldown-ключ (SetNX). Возвращает true, если разрешено отправить письмо
 	AcquireVerificationEmailCooldown(ctx context.Context, dto entities.AcquireVerificationEmailCooldownDTO) (bool, Error.CodeError)
-	// IncrVerificationEmailDailyCount увеличивает суточный счётчик отправок писем верификации и возвращает новое значение.
+	// IncrVerificationEmailDailyCount увеличивает суточный счётчик отправок писем верификации и возвращает новое значение
 	IncrVerificationEmailDailyCount(ctx context.Context, dto entities.IncrVerificationEmailDailyCountDTO) (int64, Error.CodeError)
 }
 
@@ -37,26 +33,17 @@ func NewVerificationRepository(rdb *redis.Client, prefix string) VerificationRep
 	}
 }
 
-func (r *verificationRepository) AddToVerificationTokenBlacklist(ctx context.Context, dto entities.AddToVerificationTokenBlacklistDTO) Error.CodeError {
+func (r *verificationRepository) TryConsumeVerificationToken(ctx context.Context, dto entities.ConsumeVerificationTokenDTO) (bool, Error.CodeError) {
 	ttl := dto.TTL
 	if ttl <= 0 {
 		ttl = time.Second
 	}
-	if err := r.redis.Set(ctx, r.blacklistKey(dto.TokenID), 1, ttl).Err(); err != nil {
-		return Error.Internal(err)
+	// SetNX атомарно: ставит ключ только если его ещё нет. true → токен claimed впервые.
+	claimed, err := r.redis.SetNX(ctx, r.usedKey(dto.TokenID), 1, ttl).Result()
+	if err != nil {
+		return false, Error.Internal(err)
 	}
-	return Error.CodeError{}
-}
-
-func (r *verificationRepository) IsVerificationTokenBlacklisted(ctx context.Context, dto entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError) {
-	err := r.redis.Get(ctx, r.blacklistKey(dto.TokenID)).Err()
-	if err == nil {
-		return true, Error.CodeError{}
-	}
-	if errors.Is(err, redis.Nil) {
-		return false, Error.CodeError{}
-	}
-	return false, Error.Internal(err)
+	return claimed, Error.CodeError{}
 }
 
 func (r *verificationRepository) AcquireVerificationEmailCooldown(ctx context.Context, dto entities.AcquireVerificationEmailCooldownDTO) (bool, Error.CodeError) {
@@ -67,6 +54,6 @@ func (r *verificationRepository) IncrVerificationEmailDailyCount(ctx context.Con
 	return r.emailLimiter.incrDailyCount(ctx, dto.UserUUID)
 }
 
-func (r *verificationRepository) blacklistKey(tokenID string) string {
+func (r *verificationRepository) usedKey(tokenID string) string {
 	return fmt.Sprintf("%s:verification:%s:used", r.prefix, tokenID)
 }

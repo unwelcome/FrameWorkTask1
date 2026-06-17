@@ -1437,11 +1437,8 @@ func TestVerifyAccount(t *testing.T) {
 			setUserVerified: func(_ context.Context, _ entities.SetUserVerifiedDTO) Error.CodeError { return ok() },
 		}
 		verRepo := &mockVerificationRepo{
-			isVerificationTokenBlacklisted: func(_ context.Context, _ entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError) {
-				return false, ok()
-			},
-			addToVerificationTokenBlacklist: func(_ context.Context, _ entities.AddToVerificationTokenBlacklistDTO) Error.CodeError {
-				return ok()
+			tryConsumeVerificationToken: func(_ context.Context, _ entities.ConsumeVerificationTokenDTO) (bool, Error.CodeError) {
+				return true, ok()
 			},
 		}
 		svc := buildSvc(svcDeps{user: userRepo, verification: verRepo})
@@ -1466,11 +1463,8 @@ func TestVerifyAccount(t *testing.T) {
 	t.Run("blacklisted_token", func(t *testing.T) {
 		token := validVerificationToken(t, testEmail)
 		verRepo := &mockVerificationRepo{
-			isVerificationTokenBlacklisted: func(_ context.Context, _ entities.IsVerificationTokenBlacklistedDTO) (bool, Error.CodeError) {
-				return true, ok() // токен уже использован
-			},
-			addToVerificationTokenBlacklist: func(_ context.Context, _ entities.AddToVerificationTokenBlacklistDTO) Error.CodeError {
-				return ok()
+			tryConsumeVerificationToken: func(_ context.Context, _ entities.ConsumeVerificationTokenDTO) (bool, Error.CodeError) {
+				return false, ok() // токен уже использован
 			},
 		}
 		svc := buildSvc(svcDeps{verification: verRepo})
@@ -1780,10 +1774,9 @@ func TestResetPassword(t *testing.T) {
 			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError { return ok() },
 		}
 		recRepo := &mockRecoveryRepo{
-			isResetTokenBlacklisted: func(_ context.Context, _ entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
-				return false, ok()
+			tryConsumeResetToken: func(_ context.Context, _ entities.ConsumeResetTokenDTO) (bool, Error.CodeError) {
+				return true, ok()
 			},
-			addToResetTokenBlacklist: func(_ context.Context, _ entities.AddToResetTokenBlacklistDTO) Error.CodeError { return ok() },
 		}
 		authRepo := &mockAuthRepo{
 			revokeAllSessions: func(_ context.Context, _ entities.RevokeAllSessionsDTO) Error.CodeError { return ok() },
@@ -1849,8 +1842,8 @@ func TestResetPassword(t *testing.T) {
 	t.Run("token_blacklisted", func(t *testing.T) {
 		token := validResetPasswordToken(t, userEmail)
 		recRepo := &mockRecoveryRepo{
-			isResetTokenBlacklisted: func(_ context.Context, _ entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
-				return true, ok()
+			tryConsumeResetToken: func(_ context.Context, _ entities.ConsumeResetTokenDTO) (bool, Error.CodeError) {
+				return false, ok()
 			},
 		}
 		svc := buildSvc(svcDeps{recovery: recRepo})
@@ -1871,8 +1864,8 @@ func TestResetPassword(t *testing.T) {
 			},
 		}
 		recRepo := &mockRecoveryRepo{
-			isResetTokenBlacklisted: func(_ context.Context, _ entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
-				return false, ok()
+			tryConsumeResetToken: func(_ context.Context, _ entities.ConsumeResetTokenDTO) (bool, Error.CodeError) {
+				return true, ok()
 			},
 		}
 		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
@@ -1893,8 +1886,8 @@ func TestResetPassword(t *testing.T) {
 			},
 		}
 		recRepo := &mockRecoveryRepo{
-			isResetTokenBlacklisted: func(_ context.Context, _ entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
-				return false, ok()
+			tryConsumeResetToken: func(_ context.Context, _ entities.ConsumeResetTokenDTO) (bool, Error.CodeError) {
+				return true, ok()
 			},
 		}
 		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
@@ -1916,8 +1909,8 @@ func TestResetPassword(t *testing.T) {
 			},
 		}
 		recRepo := &mockRecoveryRepo{
-			isResetTokenBlacklisted: func(_ context.Context, _ entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
-				return false, ok()
+			tryConsumeResetToken: func(_ context.Context, _ entities.ConsumeResetTokenDTO) (bool, Error.CodeError) {
+				return true, ok()
 			},
 		}
 		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
@@ -1941,8 +1934,8 @@ func TestResetPassword(t *testing.T) {
 			},
 		}
 		recRepo := &mockRecoveryRepo{
-			isResetTokenBlacklisted: func(_ context.Context, _ entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
-				return false, ok()
+			tryConsumeResetToken: func(_ context.Context, _ entities.ConsumeResetTokenDTO) (bool, Error.CodeError) {
+				return true, ok()
 			},
 		}
 		svc := buildSvc(svcDeps{user: userRepo, recovery: recRepo})
@@ -1964,10 +1957,9 @@ func TestResetPassword(t *testing.T) {
 			updateUserPassword: func(_ context.Context, _ entities.UpdateUserPasswordDTO) Error.CodeError { return ok() },
 		}
 		recRepo := &mockRecoveryRepo{
-			isResetTokenBlacklisted: func(_ context.Context, _ entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
-				return false, ok()
+			tryConsumeResetToken: func(_ context.Context, _ entities.ConsumeResetTokenDTO) (bool, Error.CodeError) {
+				return true, ok()
 			},
-			addToResetTokenBlacklist: func(_ context.Context, _ entities.AddToResetTokenBlacklistDTO) Error.CodeError { return ok() },
 		}
 		authRepo := &mockAuthRepo{
 			revokeAllSessions: func(_ context.Context, _ entities.RevokeAllSessionsDTO) Error.CodeError {

@@ -37,8 +37,7 @@ func ParseToken(tokenString string, privateKey *ecdsa.PrivateKey) (*entities.Tok
 // parseTokenWithPublicKey Парсинг токена с помощью открытого ключа
 func parseTokenWithPublicKey(tokenString string, publicKey *ecdsa.PublicKey) (*entities.TokenClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &entities.TokenClaims{}, func(token *jwt.Token) (any, error) {
-		// Проверяем алгоритм — защита от подмены alg=none или RS256
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+		if token.Method != jwt.SigningMethodES256 {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return publicKey, nil
@@ -99,7 +98,7 @@ func CreateResetPasswordToken(email string, privateKey *ecdsa.PrivateKey, ttl ti
 // ParseResetPasswordToken Парсинг JWT токена для сброса пароля
 func ParseResetPasswordToken(tokenString string, privateKey *ecdsa.PrivateKey) (*entities.ResetPasswordTokenClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &entities.ResetPasswordTokenClaims{}, func(token *jwt.Token) (any, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+		if token.Method != jwt.SigningMethodES256 {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return &privateKey.PublicKey, nil
@@ -138,7 +137,7 @@ func CreateVerificationToken(email string, privateKey *ecdsa.PrivateKey, ttl tim
 // ParseVerificationToken Парсинг JWT токена для верификации аккаунта
 func ParseVerificationToken(tokenString string, privateKey *ecdsa.PrivateKey) (*entities.VerificationTokenClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &entities.VerificationTokenClaims{}, func(token *jwt.Token) (any, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+		if token.Method != jwt.SigningMethodES256 {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return &privateKey.PublicKey, nil

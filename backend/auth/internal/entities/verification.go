@@ -2,13 +2,9 @@ package entities
 
 import "time"
 
-type AddToVerificationTokenBlacklistDTO struct {
+type ConsumeVerificationTokenDTO struct {
 	TokenID string
 	TTL     time.Duration
-}
-
-type IsVerificationTokenBlacklistedDTO struct {
-	TokenID string
 }
 
 type AcquireVerificationEmailCooldownDTO struct {

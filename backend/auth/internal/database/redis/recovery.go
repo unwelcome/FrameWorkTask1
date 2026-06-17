@@ -3,6 +3,7 @@ package redisDB
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/entities"
@@ -10,10 +11,8 @@ import (
 )
 
 type RecoveryRepository interface {
-	// AddToResetTokenBlacklist добавляет использованный reset-password токен в blacklist.
-	AddToResetTokenBlacklist(ctx context.Context, dto entities.AddToResetTokenBlacklistDTO) Error.CodeError
-	// IsResetTokenBlacklisted проверяет, находится ли токен в blacklist.
-	IsResetTokenBlacklisted(ctx context.Context, dto entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError)
+	// TryConsumeResetToken атомарно помечает reset-password токен использованным.
+	TryConsumeResetToken(ctx context.Context, dto entities.ConsumeResetTokenDTO) (bool, Error.CodeError)
 	// AcquireRecoveryEmailCooldown устанавливает cooldown-ключ (SetNX). Возвращает true, если разрешено отправить письмо.
 	AcquireRecoveryEmailCooldown(ctx context.Context, dto entities.AcquireRecoveryEmailCooldownDTO) (bool, Error.CodeError)
 	// IncrRecoveryEmailDailyCount увеличивает суточный счётчик отправок писем восстановления пароля и возвращает новое значение.
@@ -34,22 +33,17 @@ func NewRecoveryRepository(rdb *redis.Client, prefix string) RecoveryRepository 
 	}
 }
 
-// AddToResetTokenBlacklist Добавляет jti токена в blacklist с TTL равным оставшемуся времени жизни токена
-func (r *recoveryRepository) AddToResetTokenBlacklist(ctx context.Context, dto entities.AddToResetTokenBlacklistDTO) Error.CodeError {
-	err := r.redis.Set(ctx, r.getResetTokenBlacklistKey(dto.TokenID), 1, dto.TTL).Err()
-	if err != nil {
-		return Error.Internal(err)
+func (r *recoveryRepository) TryConsumeResetToken(ctx context.Context, dto entities.ConsumeResetTokenDTO) (bool, Error.CodeError) {
+	ttl := dto.TTL
+	if ttl <= 0 {
+		ttl = time.Second
 	}
-	return Error.CodeError{}
-}
-
-// IsResetTokenBlacklisted Проверяет, был ли токен уже использован
-func (r *recoveryRepository) IsResetTokenBlacklisted(ctx context.Context, dto entities.IsResetTokenBlacklistedDTO) (bool, Error.CodeError) {
-	exists, err := r.redis.Exists(ctx, r.getResetTokenBlacklistKey(dto.TokenID)).Result()
+	// SetNX атомарно: ставит ключ только если его ещё нет. true → токен claimed впервые.
+	claimed, err := r.redis.SetNX(ctx, r.usedKey(dto.TokenID), 1, ttl).Result()
 	if err != nil {
 		return false, Error.Internal(err)
 	}
-	return exists > 0, Error.CodeError{}
+	return claimed, Error.CodeError{}
 }
 
 func (r *recoveryRepository) AcquireRecoveryEmailCooldown(ctx context.Context, dto entities.AcquireRecoveryEmailCooldownDTO) (bool, Error.CodeError) {
@@ -60,8 +54,6 @@ func (r *recoveryRepository) IncrRecoveryEmailDailyCount(ctx context.Context, dt
 	return r.emailLimiter.incrDailyCount(ctx, dto.UserUUID)
 }
 
-// ─── Вспомогательные функции ──────────────────────────────────────────────────
-
-func (r *recoveryRepository) getResetTokenBlacklistKey(tokenID string) string {
+func (r *recoveryRepository) usedKey(tokenID string) string {
 	return fmt.Sprintf("%s:reset-password:%s:used", r.prefix, tokenID)
 }

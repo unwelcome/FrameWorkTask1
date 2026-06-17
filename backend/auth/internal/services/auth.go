@@ -575,12 +575,15 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired verification token")
 	}
 
-	// Проверяем, что токен не был использован ранее
-	blacklisted, blacklistErr := s.cache.Verification.IsVerificationTokenBlacklisted(ctx, entities.IsVerificationTokenBlacklistedDTO{TokenID: claims.ID})
-	if err := blacklistErr.GRPCError(); err != nil {
+	// Атомарно помечаем токен использованным
+	claimed, claimErr := s.cache.Verification.TryConsumeVerificationToken(ctx, entities.ConsumeVerificationTokenDTO{
+		TokenID: claims.ID,
+		TTL:     time.Until(claims.ExpiresAt.Time),
+	})
+	if err := claimErr.GRPCError(); err != nil {
 		return nil, err
 	}
-	if blacklisted {
+	if !claimed {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired verification token")
 	}
 
@@ -596,15 +599,6 @@ func (s *AuthService) VerifyAccount(ctx context.Context, req *pb.VerifyAccountRe
 	// Помечаем аккаунт верифицированным
 	if err := s.db.User.SetUserVerified(ctx, entities.SetUserVerifiedDTO{UserUUID: user.UserUUID}).GRPCError(); err != nil {
 		return nil, err
-	}
-
-	// Добавляем токен в blacklist — одноразовое использование
-	remainingTTL := time.Until(claims.ExpiresAt.Time)
-	if remainingTTL > 0 {
-		_ = s.cache.Verification.AddToVerificationTokenBlacklist(ctx, entities.AddToVerificationTokenBlacklistDTO{
-			TokenID: claims.ID,
-			TTL:     remainingTTL,
-		})
 	}
 
 	return &emptypb.Empty{}, nil
@@ -740,12 +734,15 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired reset token")
 	}
 
-	// Проверяем, что токен не был использован ранее
-	blacklisted, blacklistErr := s.cache.Recovery.IsResetTokenBlacklisted(ctx, entities.IsResetTokenBlacklistedDTO{TokenID: claims.ID})
-	if err := blacklistErr.GRPCError(); err != nil {
+	// Атомарно помечаем токен использованным
+	claimed, claimErr := s.cache.Recovery.TryConsumeResetToken(ctx, entities.ConsumeResetTokenDTO{
+		TokenID: claims.ID,
+		TTL:     time.Until(claims.ExpiresAt.Time),
+	})
+	if err := claimErr.GRPCError(); err != nil {
 		return nil, err
 	}
-	if blacklisted {
+	if !claimed {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid or expired reset token")
 	}
 
@@ -771,15 +768,6 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 		PasswordHash: passwordHash,
 	}).GRPCError(); err != nil {
 		return nil, err
-	}
-
-	// Добавляем токен в blacklist с TTL равным оставшемуся времени жизни
-	remainingTTL := time.Until(claims.ExpiresAt.Time)
-	if remainingTTL > 0 {
-		_ = s.cache.Recovery.AddToResetTokenBlacklist(ctx, entities.AddToResetTokenBlacklistDTO{
-			TokenID: claims.ID,
-			TTL:     remainingTTL,
-		})
 	}
 
 	// Уведомляем пользователя о сбросе пароля

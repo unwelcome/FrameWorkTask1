@@ -21,8 +21,7 @@ type TokenClaims struct {
 // ParseToken Парсинг и верификация JWT токена по публичному ключу (ES256)
 func ParseToken(tokenString string, publicKey *ecdsa.PublicKey) (*TokenClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (any, error) {
-		// Проверяем алгоритм — защита от подмены alg=none или RS256
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+		if token.Method != jwt.SigningMethodES256 {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return publicKey, nil

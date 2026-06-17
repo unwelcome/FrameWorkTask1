@@ -7,6 +7,9 @@ import (
 )
 
 func SetupRoutes(router *fiber.App, app *app.App) {
+	// Prometheus middleware - первым, чтобы считать все запросы включая swagger
+	router.Use(app.PrometheusMiddleware)
+
 	api := router.Group("/api")
 
 	// Инициализация swagger

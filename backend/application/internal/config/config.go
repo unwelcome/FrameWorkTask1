@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	Port           int
+	MetricsPort    int
 	Log            LogConfig
 	Postgres       sharedConfig.PostgresConfig
 	CompanyService ServiceAddress
@@ -29,7 +30,8 @@ func (s ServiceAddress) Addr() string {
 
 func NewConfig() *Config {
 	return &Config{
-		Port: sharedConfig.MustParseInt("APPLICATION_SERVICE_PORT"),
+		Port:        sharedConfig.MustParseInt("APPLICATION_SERVICE_PORT"),
+		MetricsPort: sharedConfig.ParseIntOrDefault("METRICS_PORT", 2112),
 		Log: LogConfig{
 			Path:       sharedConfig.MustGetEnv("LOG_PATH"),
 			ConsoleOut: sharedConfig.MustParseBool("LOG_CONSOLE_OUT"),

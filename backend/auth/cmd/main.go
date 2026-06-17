@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	grpcprom "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/rs/zerolog/log"
 	"github.com/unwelcome/FrameWorkTask1/backend/auth/internal/config"
 	postgresDB "github.com/unwelcome/FrameWorkTask1/backend/auth/internal/database/postgres"
@@ -18,6 +19,7 @@ import (
 	auth_proto "github.com/unwelcome/FrameWorkTask1/backend/contracts/auth/generated"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/interceptors"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/metrics"
 	"google.golang.org/grpc"
 )
 
@@ -52,8 +54,15 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to start tcp server")
 	}
 
+	// Включаем гистограмму latency (выключена по умолчанию из-за кардинальности)
+	grpcprom.EnableHandlingTimeHistogram()
+
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptors.NewLoggingInterceptor(*httpLogger)),
+		grpc.ChainUnaryInterceptor(
+			grpcprom.UnaryServerInterceptor,
+			interceptors.NewLoggingInterceptor(*httpLogger),
+		),
+		grpc.StreamInterceptor(grpcprom.StreamServerInterceptor),
 	)
 	auth_proto.RegisterAuthServiceServer(grpcServer, services.NewAuthService(
 		db, cache, rabbitMQ,
@@ -62,6 +71,11 @@ func main() {
 		cfg.JWT.RefreshTokenLifetime,
 		cfg.AppEnv,
 	))
+
+	// Инициализируем метрики для всех зарегистрированных методов
+	grpcprom.Register(grpcServer)
+
+	metrics.StartServer(cfg.MetricsPort)
 
 	log.Info().Int("port", cfg.Port).Msg("auth service started")
 	if err := grpcServer.Serve(listener); err != nil {

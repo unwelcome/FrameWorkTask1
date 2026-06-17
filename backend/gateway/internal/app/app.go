@@ -1,6 +1,7 @@
 package app
 
 import (
+	fiberprometheus "github.com/ansrivas/fiberprometheus/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
@@ -29,6 +30,7 @@ type App struct {
 	CompanyServiceClient     company_proto.CompanyServiceClient
 	ApplicationServiceClient application_proto.ApplicationServiceClient
 
+	PrometheusMiddleware  fiber.Handler
 	OperationIDMiddleware fiber.Handler
 	LoggerMiddleware      fiber.Handler
 	AuthMiddleware        fiber.Handler
@@ -52,14 +54,21 @@ func InitApp(cfg *config.Config, httpLogger zerolog.Logger, redisClient *redis.C
 
 	application := &App{AppEnv: cfg.AppEnv}
 
+	// Подключение к сервисам
 	application.AuthServiceClient = auth_proto.NewAuthServiceClient(dial(cfg.Auth.Addr()))
 	application.CompanyServiceClient = company_proto.NewCompanyServiceClient(dial(cfg.Company.Addr()))
 	application.ApplicationServiceClient = application_proto.NewApplicationServiceClient(dial(cfg.App.Addr()))
 
+	// Инициализация prometheus middleware
+	fp := fiberprometheus.New("gateway")
+	application.PrometheusMiddleware = fp.Middleware
+
+	// Инициализация остальных middleware
 	application.OperationIDMiddleware = middlewares.NewOperationIDMiddleware(OperationIDKey)
 	application.LoggerMiddleware = middlewares.NewRequestLoggerMiddleware(OperationIDKey, UserUUIDKey, httpLogger)
 	application.AuthMiddleware = middlewares.NewAuthMiddleware(publicKey, UserUUIDKey)
 
+	// Инициализация rate limiter-ов
 	ipKey := func(c *fiber.Ctx) string { return c.IP() }
 	userKey := func(c *fiber.Ctx) string { return utils.GetLocal[string](c, UserUUIDKey) }
 
@@ -79,8 +88,10 @@ func InitApp(cfg *config.Config, httpLogger zerolog.Logger, redisClient *redis.C
 		KeyFn:        userKey,
 	})
 
+	// Инициализация Geo
 	sessionProvider := session.New(cfg.GeoIP.CityDBPath, cfg.GeoIP.ASNDBPath, log.Logger)
 
+	// Инициализация handler-ов
 	application.HealthHandler = handlers.NewHealthHandler(application.AuthServiceClient, application.CompanyServiceClient, application.ApplicationServiceClient, OperationIDKey)
 	application.AuthHandler = handlers.NewAuthHandler(application.AuthServiceClient, application.CompanyServiceClient, OperationIDKey, UserUUIDKey, sessionProvider)
 	application.CompanyHandler = handlers.NewCompanyHandler(application.CompanyServiceClient, OperationIDKey, UserUUIDKey)

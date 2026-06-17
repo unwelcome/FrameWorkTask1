@@ -11,6 +11,7 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/routes"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
+	"github.com/unwelcome/FrameWorkTask1/backend/shared/metrics"
 )
 
 // @title     Framework task 2 API
@@ -24,14 +25,14 @@ func main() {
 	// Инициализация конфига
 	cfg := config.NewConfig()
 
-	// Инициализация logger-ов
+	// Инициализация logger-а
 	loggerConf, httpLogger := logger.Setup(cfg.Log.Path, cfg.Log.ConsoleOut)
 	log.Logger = *loggerConf
 
-	// Подключение Redis для rate-limit-ов
+	// Подключение cache
 	redisClient := redis.NewClient(cfg.Redis.Options())
 
-	// Инициализация fiber-сервера.
+	// Инициализация fiber сервера
 	server := fiber.New(fiber.Config{
 		EnableTrustedProxyCheck: true,
 		TrustedProxies:          cfg.TrustedProxies,
@@ -40,11 +41,12 @@ func main() {
 
 	// Инициализация всех зависимостей
 	application := app.InitApp(cfg, *httpLogger, redisClient)
-
-	// Настройка маршрутизации
 	routes.SetupRoutes(server, application)
 
-	// Запуск сервера
+	// Сервер для сбора метрик
+	metrics.StartServer(cfg.MetricsPort)
+
+	// Запуск fiber сервера
 	log.Info().Msgf("server listening on http://localhost:%d/api/", cfg.Port)
 	if err := server.Listen(fmt.Sprintf(":%d", cfg.Port)); err != nil {
 		log.Fatal().Err(err).Msg("failed to start http server")

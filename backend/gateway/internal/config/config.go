@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	Port           int
+	MetricsPort    int
 	AppEnv         string
 	Log            LogConfig
 	JWT            JWTConfig
@@ -62,8 +63,9 @@ func (s ServiceAddress) Addr() string {
 
 func NewConfig() *Config {
 	return &Config{
-		Port:   sharedConfig.MustParseInt("GATEWAY_PORT"),
-		AppEnv: sharedConfig.GetEnvOrDefault("APP_ENV", "production"),
+		Port:        sharedConfig.MustParseInt("GATEWAY_PORT"),
+		MetricsPort: sharedConfig.ParseIntOrDefault("METRICS_PORT", 2112),
+		AppEnv:      sharedConfig.GetEnvOrDefault("APP_ENV", "production"),
 		Log: LogConfig{
 			Path:       sharedConfig.MustGetEnv("LOG_PATH"),
 			ConsoleOut: sharedConfig.MustParseBool("LOG_CONSOLE_OUT"),

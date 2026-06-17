@@ -7,14 +7,15 @@ import (
 )
 
 type Config struct {
-	Port     int
-	AppEnv   string
-	Log      LogConfig
-	Postgres sharedConfig.PostgresConfig
-	Redis    sharedConfig.RedisConfig
-	RabbitMQ sharedConfig.RabbitMQConfig
-	JWT      JWTConfig
-	Password PasswordConfig
+	Port        int
+	MetricsPort int
+	AppEnv      string
+	Log         LogConfig
+	Postgres    sharedConfig.PostgresConfig
+	Redis       sharedConfig.RedisConfig
+	RabbitMQ    sharedConfig.RabbitMQConfig
+	JWT         JWTConfig
+	Password    PasswordConfig
 }
 
 // PasswordConfig ограничивает одновременные вычисления Argon2 (защита от resource-exhaustion DoS).
@@ -37,8 +38,9 @@ type JWTConfig struct {
 
 func NewConfig() *Config {
 	return &Config{
-		Port:   sharedConfig.MustParseInt("AUTH_SERVICE_PORT"),
-		AppEnv: sharedConfig.GetEnvOrDefault("APP_ENV", "production"),
+		Port:        sharedConfig.MustParseInt("AUTH_SERVICE_PORT"),
+		MetricsPort: sharedConfig.ParseIntOrDefault("METRICS_PORT", 2112),
+		AppEnv:      sharedConfig.GetEnvOrDefault("APP_ENV", "production"),
 		Log: LogConfig{
 			Path:       sharedConfig.MustGetEnv("LOG_PATH"),
 			ConsoleOut: sharedConfig.MustParseBool("LOG_CONSOLE_OUT"),

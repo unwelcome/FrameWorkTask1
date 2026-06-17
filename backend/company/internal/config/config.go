@@ -5,10 +5,11 @@ import (
 )
 
 type Config struct {
-	Port     int
-	Log      LogConfig
-	Postgres sharedConfig.PostgresConfig
-	Redis    sharedConfig.RedisConfig
+	Port        int
+	MetricsPort int
+	Log         LogConfig
+	Postgres    sharedConfig.PostgresConfig
+	Redis       sharedConfig.RedisConfig
 }
 
 type LogConfig struct {
@@ -18,7 +19,8 @@ type LogConfig struct {
 
 func NewConfig() *Config {
 	return &Config{
-		Port: sharedConfig.MustParseInt("COMPANY_SERVICE_PORT"),
+		Port:        sharedConfig.MustParseInt("COMPANY_SERVICE_PORT"),
+		MetricsPort: sharedConfig.ParseIntOrDefault("METRICS_PORT", 2112),
 		Log: LogConfig{
 			Path:       sharedConfig.MustGetEnv("LOG_PATH"),
 			ConsoleOut: sharedConfig.MustParseBool("LOG_CONSOLE_OUT"),

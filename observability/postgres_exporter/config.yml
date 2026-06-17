@@ -1,0 +1,30 @@
+# Конфигурация auth-модулей для multi-target режима postgres_exporter v0.15+.
+# Prometheus сам выбирает нужный модуль через параметр auth_module в запросе.
+#
+# Переменные окружения задаются в docker-compose.observability.yml
+# в секции environment контейнера postgres_exporter.
+
+auth_modules:
+  auth_db:
+    type: userpass
+    userpass:
+      username: "${AUTH_POSTGRES_USER}"
+      password: "${AUTH_POSTGRES_PASSWORD}"
+    options:
+      sslmode: disable
+
+  company_db:
+    type: userpass
+    userpass:
+      username: "${COMPANY_POSTGRES_USER}"
+      password: "${COMPANY_POSTGRES_PASSWORD}"
+    options:
+      sslmode: disable
+
+  application_db:
+    type: userpass
+    userpass:
+      username: "${APPLICATION_POSTGRES_USER}"
+      password: "${APPLICATION_POSTGRES_PASSWORD}"
+    options:
+      sslmode: disable

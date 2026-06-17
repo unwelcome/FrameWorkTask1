@@ -1,0 +1,84 @@
+global:
+  scrape_interval: 3s
+  evaluation_interval: 3s
+
+scrape_configs:
+  # ── Приложения ──────────────────────────────────────────────────────────────
+
+  - job_name: gateway
+    static_configs:
+      - targets: ['gateway:2112']
+
+  - job_name: auth
+    static_configs:
+      - targets: ['auth_service:2112']
+
+  - job_name: company
+    static_configs:
+      - targets: ['company_service:2112']
+
+  - job_name: application
+    static_configs:
+      - targets: ['application_service:2112']
+
+  # ── Инфраструктура ──────────────────────────────────────────────────────────
+
+  - job_name: redis
+    static_configs:
+      - targets: ['redis_exporter:9121']
+
+  # Один postgres_exporter обслуживает все три БД (multi-target режим).
+  # Prometheus передаёт хост БД через ?target= и auth_module через ?auth_module=.
+
+  - job_name: postgres_auth
+    static_configs:
+      - targets: ['auth_postgres:5432']
+    metrics_path: /probe
+    params:
+      auth_module: [auth_db]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - replacement: postgres_exporter:9187
+        target_label: __address__
+
+  - job_name: postgres_company
+    static_configs:
+      - targets: ['company_postgres:5432']
+    metrics_path: /probe
+    params:
+      auth_module: [company_db]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - replacement: postgres_exporter:9187
+        target_label: __address__
+
+  - job_name: postgres_application
+    static_configs:
+      - targets: ['application_postgres:5432']
+    metrics_path: /probe
+    params:
+      auth_module: [application_db]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - replacement: postgres_exporter:9187
+        target_label: __address__
+
+  # RabbitMQ встроенный prometheus endpoint
+  - job_name: rabbitmq
+    static_configs:
+      - targets: ['rabbitmq:15692']
+
+  # ── Хост ────────────────────────────────────────────────────────────────────
+
+  - job_name: node
+    static_configs:
+      - targets: ['node_exporter:9100']

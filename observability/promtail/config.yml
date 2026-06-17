@@ -1,0 +1,102 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: gateway
+    static_configs:
+      - targets: [localhost]
+        labels:
+          service: gateway
+          __path__: /var/log/app/gateway.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            ts: time
+            msg: message
+      - labels:
+          level:
+      - timestamp:
+          source: ts
+          format: RFC3339Nano
+          fallback_formats:
+            - RFC3339
+            - UnixMs
+      - output:
+          source: msg
+
+  - job_name: auth
+    static_configs:
+      - targets: [localhost]
+        labels:
+          service: auth
+          __path__: /var/log/app/auth_service.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            ts: time
+            msg: message
+      - labels:
+          level:
+      - timestamp:
+          source: ts
+          format: RFC3339Nano
+          fallback_formats:
+            - RFC3339
+            - UnixMs
+      - output:
+          source: msg
+
+  - job_name: company
+    static_configs:
+      - targets: [localhost]
+        labels:
+          service: company
+          __path__: /var/log/app/company_service.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            ts: time
+            msg: message
+      - labels:
+          level:
+      - timestamp:
+          source: ts
+          format: RFC3339Nano
+          fallback_formats:
+            - RFC3339
+            - UnixMs
+      - output:
+          source: msg
+
+  - job_name: application
+    static_configs:
+      - targets: [localhost]
+        labels:
+          service: application
+          __path__: /var/log/app/application_service.log
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            ts: time
+            msg: message
+      - labels:
+          level:
+      - timestamp:
+          source: ts
+          format: RFC3339Nano
+          fallback_formats:
+            - RFC3339
+            - UnixMs
+      - output:
+          source: msg

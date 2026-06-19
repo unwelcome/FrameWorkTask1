@@ -16,7 +16,7 @@ func StartServer(port int) {
 
 	go func() {
 		addr := fmt.Sprintf(":%d", port)
-		log.Info().Str("addr", addr).Msg("metrics server started")
+		log.Info().Int("port", port).Msg("metrics server started")
 		if err := http.ListenAndServe(addr, mux); err != nil {
 			log.Fatal().Err(err).Msg("failed to serve metrics server")
 		}

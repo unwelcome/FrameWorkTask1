@@ -30,6 +30,8 @@ type App struct {
 	CompanyServiceClient     company_proto.CompanyServiceClient
 	ApplicationServiceClient application_proto.ApplicationServiceClient
 
+	FiberPrometheus *fiberprometheus.FiberPrometheus
+
 	PrometheusMiddleware  fiber.Handler
 	OperationIDMiddleware fiber.Handler
 	LoggerMiddleware      fiber.Handler
@@ -61,6 +63,7 @@ func InitApp(cfg *config.Config, httpLogger zerolog.Logger, redisClient *redis.C
 
 	// Инициализация prometheus middleware
 	fp := fiberprometheus.New("gateway")
+	application.FiberPrometheus = fp
 	application.PrometheusMiddleware = fp.Middleware
 
 	// Инициализация остальных middleware

@@ -6,8 +6,9 @@ scrape_configs:
   # ── Приложения ──────────────────────────────────────────────────────────────
 
   - job_name: gateway
+    metrics_path: /metrics
     static_configs:
-      - targets: ['gateway:2112']
+      - targets: ['gateway:8080']
 
   - job_name: auth
     static_configs:

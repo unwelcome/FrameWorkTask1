@@ -11,7 +11,6 @@ import (
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/config"
 	"github.com/unwelcome/FrameWorkTask1/backend/gateway/internal/routes"
 	"github.com/unwelcome/FrameWorkTask1/backend/shared/logger"
-	"github.com/unwelcome/FrameWorkTask1/backend/shared/metrics"
 )
 
 // @title     Framework task 2 API
@@ -43,8 +42,8 @@ func main() {
 	application := app.InitApp(cfg, *httpLogger, redisClient)
 	routes.SetupRoutes(server, application)
 
-	// Сервер для сбора метрик
-	metrics.StartServer(cfg.MetricsPort)
+	// Регистрируем метрики fiber prometheus на том же сервере
+	application.FiberPrometheus.RegisterAt(server, "/metrics")
 
 	// Запуск fiber сервера
 	log.Info().Msgf("server listening on http://localhost:%d/api/", cfg.Port)

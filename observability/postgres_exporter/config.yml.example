@@ -3,7 +3,7 @@ auth_modules:
     type: userpass
     userpass:
       username: "auth_service_user"
-      password: "12345678"
+      password: "CHANGE_ME"
     options:
       sslmode: disable
       dbname: auth_service_db
@@ -12,7 +12,7 @@ auth_modules:
     type: userpass
     userpass:
       username: "company_service_user"
-      password: "12345678"
+      password: "CHANGE_ME"
     options:
       sslmode: disable
       dbname: company_service_db
@@ -21,7 +21,7 @@ auth_modules:
     type: userpass
     userpass:
       username: "application_service_user"
-      password: "12345678"
+      password: "CHANGE_ME"
     options:
       sslmode: disable
       dbname: application_service_db

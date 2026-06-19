@@ -8,6 +8,8 @@ services:
   loki:
     container_name: loki
     image: grafana/loki:3.5.0
+    ports:
+      - "3100:3100"
     volumes:
       - ./observability/loki:/etc/loki
       - loki_data:/loki
@@ -82,6 +84,8 @@ services:
   postgres_exporter:
     container_name: postgres_exporter
     image: prometheuscommunity/postgres-exporter:v0.17.0
+    ports:
+      - "9187:9187"
     volumes:
       - ./observability/postgres_exporter:/etc/postgres_exporter
     command:

@@ -15,3 +15,7 @@ backend/keys/public.pem
 
 # MaxMind GeoLite2 databases — download via scripts/download-geo.sh
 backend/geo/
+
+# Observability secrets — copy from *.example and fill in credentials
+observability/postgres_exporter/config.yml
+observability/.env

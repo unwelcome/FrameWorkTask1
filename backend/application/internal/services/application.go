@@ -131,10 +131,10 @@ func (s *ApplicationService) GetApplication(ctx context.Context, req *pb.GetAppl
 			ApplicationUuid: application.ApplicationUUID,
 			CompanyUuid:     application.CompanyUUID,
 			DepartmentUuid:  application.DepartmentUUID,
-			Version:         int64(application.Version),
+			Version:         application.Version,
 			Title:           application.Title,
 			Description:     application.Description,
-			RevisionCount:   int64(application.RevisionCount),
+			RevisionCount:   application.RevisionCount,
 			Status:          application.Status,
 			CreatedAt:       application.CreatedAt,
 			CreatedBy:       application.CreatedBy,
@@ -189,8 +189,8 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 			CompanyUUID:    req.GetCompanyUuid(),
 			DepartmentUUID: req.GetDepartmentUuid(),
 			Statuses:       req.GetStatuses(),
-			Offset:         int(req.GetOffset()),
-			Count:          int(req.GetCount()),
+			Offset:         req.GetOffset(),
+			Count:          req.GetCount(),
 			IsDeleted:      req.GetIsDeleted(),
 		})
 
@@ -201,8 +201,8 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 				CompanyUUID:    req.GetCompanyUuid(),
 				DepartmentUUID: initiator.DepartmentUUID,
 				Statuses:       []string{"pending_verification"},
-				Offset:         int(req.GetOffset()),
-				Count:          int(req.GetCount()),
+				Offset:         req.GetOffset(),
+				Count:          req.GetCount(),
 			})
 		} else {
 			createdBy := req.GetInitiatorUuid()
@@ -223,8 +223,8 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 				Statuses:       req.GetStatuses(),
 				CreatedBy:      createdBy,
 				InspectedBy:    inspectedBy,
-				Offset:         int(req.GetOffset()),
-				Count:          int(req.GetCount()),
+				Offset:         req.GetOffset(),
+				Count:          req.GetCount(),
 				IsDeleted:      req.GetIsDeleted(),
 			})
 		}
@@ -237,16 +237,16 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 				DepartmentUUID:   initiator.DepartmentUUID,
 				Statuses:         []string{"created", "redirected", "recalled", "on_revision"},
 				ExecutedByIsNull: true,
-				Offset:           int(req.GetOffset()),
-				Count:            int(req.GetCount()),
+				Offset:           req.GetOffset(),
+				Count:            req.GetCount(),
 			})
 		} else {
 			applications, dbErr = s.db.ApplicationRepository.GetApplications(ctx, entities.GetApplicationsDTO{
 				CompanyUUID:    req.GetCompanyUuid(),
 				DepartmentUUID: initiator.DepartmentUUID,
 				ManagedBy:      req.GetInitiatorUuid(),
-				Offset:         int(req.GetOffset()),
-				Count:          int(req.GetCount()),
+				Offset:         req.GetOffset(),
+				Count:          req.GetCount(),
 			})
 		}
 
@@ -261,8 +261,8 @@ func (s *ApplicationService) GetApplications(ctx context.Context, req *pb.GetApp
 			DepartmentUUID: initiator.DepartmentUUID,
 			Statuses:       req.GetStatuses(),
 			ExecutedBy:     req.GetInitiatorUuid(),
-			Offset:         int(req.GetOffset()),
-			Count:          int(req.GetCount()),
+			Offset:         req.GetOffset(),
+			Count:          req.GetCount(),
 		})
 
 	default:
@@ -743,11 +743,11 @@ func (s *ApplicationService) GetApplicationHistory(ctx context.Context, req *pb.
 			ApplicationUuid: app.ApplicationUUID,
 			CompanyUuid:     app.CompanyUUID,
 			DepartmentUuid:  app.DepartmentUUID,
-			Version:         int64(app.Version),
+			Version:         app.Version,
 			Title:           app.Title,
 			Description:     app.Description,
 			Status:          app.Status,
-			RevisionCount:   int64(app.RevisionCount),
+			RevisionCount:   app.RevisionCount,
 			CreatedAt:       app.CreatedAt,
 			CreatedBy:       app.CreatedBy,
 			UpdatedAt:       app.UpdatedAt,

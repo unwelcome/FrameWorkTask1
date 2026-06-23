@@ -4,11 +4,11 @@ type Application struct {
 	ApplicationUUID string `db:"uuid" json:"uuid"`
 	CompanyUUID     string `db:"company_uuid" json:"company_uuid"`
 	DepartmentUUID  string `db:"department_uuid" json:"department_uuid"`
-	Version         int    `db:"version" json:"version"`
+	Version         int64  `db:"version" json:"version"`
 	Title           string `db:"title" json:"title"`
 	Description     string `db:"description" json:"description"`
 	Status          string `db:"status" json:"status"`
-	RevisionCount   int    `db:"revision_count" json:"revision_count"`
+	RevisionCount   int64  `db:"revision_count" json:"revision_count"`
 	CreatedAt       string `db:"created_at" json:"created_at"`
 	CreatedBy       string `db:"created_by" json:"created_by"`
 	UpdatedAt       string `db:"updated_at" json:"updated_at"`
@@ -43,8 +43,8 @@ type GetApplicationsDTO struct {
 	InspectedBy      string // Если указано - личные заявки инспектора
 	ExecutedByIsNull bool   // При запросе заявок из пула менеджеров включаем заявки с on_revision и executed_by = null
 	Statuses         []string
-	Count            int
-	Offset           int
+	Count            int64
+	Offset           int64
 	IsDeleted        bool
 }
 

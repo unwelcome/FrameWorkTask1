@@ -1034,7 +1034,7 @@ func TestRefreshToken(t *testing.T) {
 		authRepo := &mockAuthRepo{
 			checkSessionExists: func(_ context.Context, _ entities.CheckSessionExistsDTO) Error.CodeError { return ok() },
 			refreshToken: func(_ context.Context, _ entities.RefreshTokenDTO) Error.CodeError {
-				return Error.CodeError{Code: int(codes.Unauthenticated), Err: entities.ErrTokenReuse}
+				return Error.CodeError{Code: codes.Unauthenticated, Err: entities.ErrTokenReuse}
 			},
 		}
 		pub := &mockPublisher{

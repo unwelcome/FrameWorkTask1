@@ -28,7 +28,7 @@ import (
 //	16 - UNAUTHENTICATED
 
 type CodeError struct {
-	Code int
+	Code codes.Code
 	Err  error
 	// Msg — публичное сообщение для пользователя.
 	// Если пусто, возвращается "internal error".
@@ -37,12 +37,12 @@ type CodeError struct {
 
 // Public создаёт CodeError с публичным сообщением, видимым пользователю.
 func Public(code codes.Code, msg string) CodeError {
-	return CodeError{Code: int(code), Err: fmt.Errorf(msg), Msg: msg}
+	return CodeError{Code: code, Err: fmt.Errorf(msg), Msg: msg}
 }
 
 // Internal создаёт CodeError для неожиданных ошибок — детали скрыты, пользователь видит "internal error".
 func Internal(err error) CodeError {
-	return CodeError{Code: int(codes.Internal), Err: err}
+	return CodeError{Code: codes.Internal, Err: err}
 }
 
 func (e CodeError) Error() string {
@@ -64,9 +64,9 @@ func (e CodeError) GRPCError() error {
 		msg = "internal error"
 	}
 
-	if e.Code < 1 || e.Code > 16 {
+	if e.Code > 16 {
 		return status.Errorf(codes.Internal, "internal error")
 	}
 
-	return status.Errorf(codes.Code(e.Code), msg)
+	return status.Errorf(e.Code, msg)
 }

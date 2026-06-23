@@ -248,7 +248,7 @@ func (s *CompanyService) CreateCompanyJoinCode(ctx context.Context, req *pb.Crea
 
 		// Проверяем, что такого кода ещё нет
 		checkErr := s.cache.Company.CheckJoinCodeExists(ctx, entities.CheckJoinCodeExistsDTO{Code: code})
-		if checkErr.Code == int(codes.NotFound) {
+		if checkErr.Code == codes.NotFound {
 			joinCode = code
 			found = true
 			break
@@ -358,7 +358,7 @@ func (s *CompanyService) JoinCompany(ctx context.Context, req *pb.JoinCompanyReq
 	if getEmployeeErr.Code == 0 {
 		return nil, status.Error(codes.AlreadyExists, "user already in company")
 	}
-	if getEmployeeErr.Code != int(codes.NotFound) {
+	if getEmployeeErr.Code != codes.NotFound {
 		if err := getEmployeeErr.GRPCError(); err != nil {
 			return nil, err
 		}
@@ -623,7 +623,7 @@ func (s *CompanyService) AddEmployeeToDepartment(ctx context.Context, req *pb.Ad
 		CompanyUUID: department.CompanyUUID,
 		UserUUID:    req.GetTargetUuid(),
 	})
-	if getTargetErr.Code == int(codes.NotFound) {
+	if getTargetErr.Code == codes.NotFound {
 		return nil, status.Errorf(codes.PermissionDenied, "employee not found in company")
 	}
 	if err := getTargetErr.GRPCError(); err != nil {
@@ -838,7 +838,7 @@ func (s *CompanyService) CheckColleagues(ctx context.Context, req *pb.CheckColle
 func (s *CompanyService) checkEmployeeRole(ctx context.Context, companyUUID, userUUID string, requiredRoles []string) error {
 	// Проверяем существование компании
 	_, getCompanyErr := s.db.Company.GetCompany(ctx, entities.GetCompanyDTO{CompanyUUID: companyUUID})
-	if getCompanyErr.Code == int(codes.NotFound) {
+	if getCompanyErr.Code == codes.NotFound {
 		return status.Error(codes.NotFound, "company not found")
 	}
 	if err := getCompanyErr.GRPCError(); err != nil {
@@ -850,7 +850,7 @@ func (s *CompanyService) checkEmployeeRole(ctx context.Context, companyUUID, use
 		CompanyUUID: companyUUID,
 		UserUUID:    userUUID,
 	})
-	if getErr.Code == int(codes.NotFound) {
+	if getErr.Code == codes.NotFound {
 		return status.Errorf(codes.PermissionDenied, "access denied")
 	}
 	if err := getErr.GRPCError(); err != nil {

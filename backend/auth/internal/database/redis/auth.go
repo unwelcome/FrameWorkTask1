@@ -261,7 +261,7 @@ func (r *authRepository) RefreshToken(ctx context.Context, dto entities.RefreshT
 			return Error.Public(codes.NotFound, "session not found")
 		}
 		if errors.Is(watchErr, entities.ErrTokenReuse) {
-			return Error.CodeError{Code: int(codes.Unauthenticated), Err: entities.ErrTokenReuse}
+			return Error.CodeError{Code: codes.Unauthenticated, Err: entities.ErrTokenReuse}
 		}
 		return Error.Internal(watchErr)
 	}

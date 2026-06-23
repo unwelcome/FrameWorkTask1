@@ -123,7 +123,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*e
 
 	createErr := s.db.User.CreateUser(ctx, user)
 	if createErr.Code != 0 {
-		if createErr.Code != int(codes.AlreadyExists) {
+		if createErr.Code != codes.AlreadyExists {
 			return nil, createErr.GRPCError()
 		}
 
@@ -377,7 +377,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 
 	// Отзываем все токены после смены пароля
 	revokeErr := s.cache.Auth.RevokeAllSessions(ctx, entities.RevokeAllSessionsDTO{UserUUID: req.GetUserUuid()})
-	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
+	if revokeErr.Code != 0 && revokeErr.Code != codes.NotFound {
 		if err := revokeErr.GRPCError(); err != nil {
 			return nil, err
 		}
@@ -438,7 +438,7 @@ func (s *AuthService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 
 	// Отзываем все активные сессии - удалённый аккаунт не должен оставаться авторизованным
 	revokeErr := s.cache.Auth.RevokeAllSessions(ctx, entities.RevokeAllSessionsDTO{UserUUID: req.GetUserUuid()})
-	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
+	if revokeErr.Code != 0 && revokeErr.Code != codes.NotFound {
 		if err := revokeErr.GRPCError(); err != nil {
 			return nil, err
 		}
@@ -555,7 +555,7 @@ func (s *AuthService) RevokeAllSessions(ctx context.Context, req *pb.RevokeAllSe
 	revokeErr := s.cache.Auth.RevokeAllSessions(ctx, entities.RevokeAllSessionsDTO{
 		UserUUID: req.GetUserUuid(),
 	})
-	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
+	if revokeErr.Code != 0 && revokeErr.Code != codes.NotFound {
 		if err := revokeErr.GRPCError(); err != nil {
 			return nil, err
 		}
@@ -779,7 +779,7 @@ func (s *AuthService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 
 	// Отзываем все активные сессии после смены пароля
 	revokeErr := s.cache.Auth.RevokeAllSessions(ctx, entities.RevokeAllSessionsDTO{UserUUID: user.UserUUID})
-	if revokeErr.Code != 0 && revokeErr.Code != int(codes.NotFound) {
+	if revokeErr.Code != 0 && revokeErr.Code != codes.NotFound {
 		if err = revokeErr.GRPCError(); err != nil {
 			return nil, err
 		}
